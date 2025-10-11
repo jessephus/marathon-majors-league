@@ -808,18 +808,22 @@ async function handleResetGame() {
                 body: JSON.stringify({ results: {} })
             });
 
-            gameState = {
-                athletes: gameState.athletes,
-                players: [],
-                currentPlayer: null,
-                rankings: {},
-                teams: {},
-                results: {},
-                draftComplete: false
-            };
+            // Update local game state
+            gameState.players = [];
+            gameState.currentPlayer = null;
+            gameState.rankings = {};
+            gameState.teams = {};
+            gameState.results = {};
+            gameState.draftComplete = false;
+
+            // Clear any displayed data
+            document.getElementById('player-codes-display').innerHTML = '';
+            document.getElementById('draft-status').innerHTML = '';
+            document.getElementById('results-form').innerHTML = '';
+            document.getElementById('winner-display').innerHTML = '';
             
             alert('Game has been reset.');
-            location.reload();
+            showPage('landing-page');
         } catch (error) {
             console.error('Error resetting game:', error);
             alert('Error resetting game. Please try again.');
