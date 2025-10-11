@@ -1,0 +1,240 @@
+{
+  "men": [
+    {
+      "id": 1,
+      "name": "John Korir",
+      "country": "KEN",
+      "pb": "2:02:44"
+    },
+    {
+      "id": 2,
+      "name": "Timothy Kiplagat",
+      "country": "KEN",
+      "pb": "2:02:55"
+    },
+    {
+      "id": 3,
+      "name": "Amos Kipruto",
+      "country": "KEN",
+      "pb": "2:03:13"
+    },
+    {
+      "id": 4,
+      "name": "CyBrian Kotut",
+      "country": "KEN",
+      "pb": "2:03:22"
+    },
+    {
+      "id": 5,
+      "name": "Bashir Abdi",
+      "country": "BEL",
+      "pb": "2:03:36"
+    },
+    {
+      "id": 6,
+      "name": "Jacob Kiplimo",
+      "country": "UGA",
+      "pb": "2:03:37"
+    },
+    {
+      "id": 7,
+      "name": "Philemon Kiplimo",
+      "country": "KEN",
+      "pb": "2:04:01"
+    },
+    {
+      "id": 8,
+      "name": "Geoffrey Kamworor",
+      "country": "KEN",
+      "pb": "2:04:23"
+    },
+    {
+      "id": 9,
+      "name": "Seifu Tura",
+      "country": "ETH",
+      "pb": "2:04:29"
+    },
+    {
+      "id": 10,
+      "name": "Huseydin Mohamed Esa",
+      "country": "ETH",
+      "pb": "2:04:39"
+    },
+    {
+      "id": 11,
+      "name": "Daniel Ebenyo",
+      "country": "KEN",
+      "pb": "2:06:04"
+    },
+    {
+      "id": 12,
+      "name": "Galen Rupp",
+      "country": "USA",
+      "pb": "2:06:07"
+    },
+    {
+      "id": 13,
+      "name": "Hiroto Inoue",
+      "country": "JPN",
+      "pb": "2:06:14"
+    },
+    {
+      "id": 14,
+      "name": "Zouhair Talbi",
+      "country": "MAR",
+      "pb": "2:06:39"
+    },
+    {
+      "id": 15,
+      "name": "Conner Mantz",
+      "country": "USA",
+      "pb": "2:07:47"
+    },
+    {
+      "id": 16,
+      "name": "Rory Linkletter",
+      "country": "CAN",
+      "pb": "2:08:01"
+    },
+    {
+      "id": 17,
+      "name": "Alex Masai",
+      "country": "KEN",
+      "pb": "2:08:03"
+    },
+    {
+      "id": 18,
+      "name": "CJ Albertson",
+      "country": "USA",
+      "pb": "2:08:17"
+    },
+    {
+      "id": 19,
+      "name": "Jia Erenjia",
+      "country": "CHN",
+      "pb": "2:08:32"
+    },
+    {
+      "id": 20,
+      "name": "Haftu Knight",
+      "country": "USA",
+      "pb": "2:09:38"
+    },
+    {
+      "id": 21,
+      "name": "Andrew Colley",
+      "country": "USA",
+      "pb": "2:09:46"
+    }
+  ],
+  "women": [
+    {
+      "id": 101,
+      "name": "Megertu Alemu",
+      "country": "ETH",
+      "pb": "2:16:34"
+    },
+    {
+      "id": 102,
+      "name": "Hawi Feysa",
+      "country": "ETH",
+      "pb": "2:17:00"
+    },
+    {
+      "id": 103,
+      "name": "Bedatu Hirpa",
+      "country": "ETH",
+      "pb": "2:18:27"
+    },
+    {
+      "id": 104,
+      "name": "Haven Hailu Desse",
+      "country": "ETH",
+      "pb": "2:19:17"
+    },
+    {
+      "id": 105,
+      "name": "Mary Ngugi-Cooper",
+      "country": "KEN",
+      "pb": "2:20:22"
+    },
+    {
+      "id": 106,
+      "name": "Calli Hauger-Thackery",
+      "country": "GBR",
+      "pb": "2:21:24"
+    },
+    {
+      "id": 107,
+      "name": "Natosha Rogers",
+      "country": "USA",
+      "pb": "2:23:51"
+    },
+    {
+      "id": 108,
+      "name": "Florencia Borelli",
+      "country": "ARG",
+      "pb": "2:24:18"
+    },
+    {
+      "id": 109,
+      "name": "Gabi Rooker",
+      "country": "USA",
+      "pb": "2:24:29"
+    },
+    {
+      "id": 110,
+      "name": "Dakotah Popehn",
+      "country": "USA",
+      "pb": "2:24:40"
+    },
+    {
+      "id": 111,
+      "name": "Melody Julien",
+      "country": "FRA",
+      "pb": "2:25:01"
+    },
+    {
+      "id": 112,
+      "name": "Makenna Myler",
+      "country": "USA",
+      "pb": "2:26:14"
+    },
+    {
+      "id": 113,
+      "name": "Marta Galimany",
+      "country": "ESP",
+      "pb": "2:26:14"
+    },
+    {
+      "id": 114,
+      "name": "Aubrey Frentheway",
+      "country": "USA",
+      "pb": "2:27:14"
+    },
+    {
+      "id": 115,
+      "name": "Maggie Montoya",
+      "country": "USA",
+      "pb": "2:27:50"
+    },
+    {
+      "id": 116,
+      "name": "Loice Chemnung",
+      "country": "KEN",
+      "pb": "debut"
+    },
+    {
+      "id": 117,
+      "name": "Ejgayehu Taye",
+      "country": "ETH",
+      "pb": "debut"
+    },
+    {
+      "id": 118,
+      "name": "Emily Venters",
+      "country": "USA",
+      "pb": "debut"
+    }
+  ]
+}
