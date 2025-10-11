@@ -8,7 +8,7 @@ A simple fantasy game for the Chicago Marathon where you can compete with 2-3 fr
 - 🏆 **Snake Draft System**: Automatic snake draft of 3 men and 3 women per player
 - 📱 **Mobile Friendly**: Fully responsive design for mobile devices
 - 🎨 **Red & Blue Theme**: Chicago-inspired color scheme
-- 💾 **Browser Storage**: Game state saved in localStorage
+- 💾 **Persistent Database**: Game state saved in Vercel Postgres database
 - 👑 **Commissioner Controls**: Full game management dashboard
 
 ## How to Play
@@ -36,13 +36,35 @@ A simple fantasy game for the Chicago Marathon where you can compete with 2-3 fr
 5. Wait for the draft to complete
 6. View your team and the results!
 
-## Deployment to GitHub Pages
+## Deployment to Vercel
 
-1. Go to your repository settings
-2. Navigate to **Pages** in the sidebar
-3. Under **Source**, select the `main` branch
-4. Click **Save**
-5. Your site will be available at `https://[username].github.io/fantasy-chicago-marathon/`
+### Prerequisites
+- [Vercel account](https://vercel.com)
+- [Vercel CLI](https://vercel.com/cli) (optional, for local development)
+
+### Deploy to Production
+
+1. Fork or clone this repository
+2. Sign up for a [Vercel account](https://vercel.com) if you don't have one
+3. Install Vercel CLI: `npm install -g vercel`
+4. Run `vercel` in the project directory and follow the prompts
+5. Add a Postgres database:
+   - Go to your project in the Vercel dashboard
+   - Click on the **Storage** tab
+   - Create a new **Postgres** database
+   - The database will automatically be linked to your project
+6. Initialize the database:
+   - Visit `https://your-project.vercel.app/api/init-db` once to create tables
+7. Your game is now live at `https://your-project.vercel.app`
+
+### Local Development
+
+1. Install dependencies: `npm install`
+2. Create a Postgres database on Vercel (via the dashboard)
+3. Link your local project: `vercel link`
+4. Pull environment variables: `vercel env pull`
+5. Run locally: `vercel dev`
+6. Visit `http://localhost:3000`
 
 ## Game Rules
 
@@ -53,10 +75,24 @@ A simple fantasy game for the Chicago Marathon where you can compete with 2-3 fr
 
 ## Technical Details
 
-- Pure HTML, CSS, and JavaScript (no build step required)
-- Uses localStorage for persistent game state
-- Static site compatible with GitHub Pages
-- Drag-and-drop rankings using HTML5 Drag API
+- **Frontend**: Pure HTML, CSS, and JavaScript (no build step required)
+- **Backend**: Vercel Serverless Functions (Node.js)
+- **Database**: Vercel Postgres
+- **Hosting**: Vercel
+- **API Endpoints**:
+  - `/api/game-state` - Get/update game configuration and players
+  - `/api/rankings` - Store and retrieve player rankings
+  - `/api/draft` - Save draft results
+  - `/api/results` - Store race results
+  - `/api/init-db` - Initialize database tables
+
+## Database Schema
+
+The app uses four tables:
+- `game_state` - Stores game configuration and player list
+- `player_rankings` - Stores each player's ranked athletes
+- `draft_results` - Stores drafted teams
+- `race_results` - Stores athlete finish times
 
 ## Athletes Data
 
@@ -65,6 +101,11 @@ The game includes the confirmed Chicago Marathon elite field with:
 - 18 women's elite runners
 
 Athletes include their country and personal best times.
+
+## Environment Variables
+
+Required environment variables (automatically set by Vercel when you add Postgres):
+- `POSTGRES_URL` - Database connection string
 
 ## License
 

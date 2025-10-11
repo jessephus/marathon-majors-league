@@ -9,17 +9,41 @@ let gameState = {
     draftComplete: false
 };
 
-// Load game state from localStorage
-function loadGameState() {
-    const saved = localStorage.getItem('fantasyMarathonState');
-    if (saved) {
-        gameState = { ...gameState, ...JSON.parse(saved) };
+// API base URL - will be relative in production
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+const GAME_ID = 'default'; // Can be made configurable if multiple games needed
+
+// Load game state from database
+async function loadGameState() {
+    try {
+        const response = await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        if (response.ok) {
+            const data = await response.json();
+            gameState.players = data.players || [];
+            gameState.draftComplete = data.draftComplete || false;
+            gameState.rankings = data.rankings || {};
+            gameState.teams = data.teams || {};
+            gameState.results = data.results || {};
+        }
+    } catch (error) {
+        console.error('Error loading game state:', error);
     }
 }
 
-// Save game state to localStorage
-function saveGameState() {
-    localStorage.setItem('fantasyMarathonState', JSON.stringify(gameState));
+// Save game state to database
+async function saveGameState() {
+    try {
+        await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                players: gameState.players,
+                draftComplete: gameState.draftComplete
+            })
+        });
+    } catch (error) {
+        console.error('Error saving game state:', error);
+    }
 }
 
 // Load athletes data
@@ -37,7 +61,7 @@ async function loadAthletes() {
 // Initialize the app
 async function init() {
     await loadAthletes();
-    loadGameState();
+    await loadGameState();
     setupEventListeners();
     showPage('landing-page');
 }
@@ -136,10 +160,17 @@ function displayAthletePool(gender) {
         const isSelected = currentRankings.some(r => r.id === athlete.id);
         const card = document.createElement('div');
         card.className = `athlete-card ${isSelected ? 'selected' : ''}`;
-        card.innerHTML = `
-            <div class="name">${athlete.name}</div>
-            <div class="details">${athlete.country} - PB: ${athlete.pb}</div>
-        `;
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'name';
+        nameDiv.textContent = athlete.name;
+        
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'details';
+        detailsDiv.textContent = `${athlete.country} - PB: ${athlete.pb}`;
+        
+        card.appendChild(nameDiv);
+        card.appendChild(detailsDiv);
         
         if (!isSelected && currentRankings.length < 10) {
             card.addEventListener('click', () => addAthleteToRanking(gender, athlete));
@@ -191,12 +222,28 @@ function updateRankingDisplay(gender) {
         item.draggable = true;
         item.dataset.index = index;
         item.dataset.gender = gender;
-        item.innerHTML = `
-            <span class="rank">${index + 1}.</span>
-            <span class="name">${athlete.name}</span>
-            <span class="country">${athlete.country}</span>
-            <button class="remove-btn" onclick="removeAthleteFromRanking('${gender}', ${athlete.id})">×</button>
-        `;
+        
+        const rankSpan = document.createElement('span');
+        rankSpan.className = 'rank';
+        rankSpan.textContent = `${index + 1}.`;
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'name';
+        nameSpan.textContent = athlete.name;
+        
+        const countrySpan = document.createElement('span');
+        countrySpan.className = 'country';
+        countrySpan.textContent = athlete.country;
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => removeAthleteFromRanking(gender, athlete.id));
+        
+        item.appendChild(rankSpan);
+        item.appendChild(nameSpan);
+        item.appendChild(countrySpan);
+        item.appendChild(removeBtn);
         
         // Drag events
         item.addEventListener('dragstart', handleDragStart);
@@ -280,7 +327,7 @@ function getDragAfterElement(container, y) {
 }
 
 // Handle submit rankings
-function handleSubmitRankings() {
+async function handleSubmitRankings() {
     const menRankings = gameState.rankings[gameState.currentPlayer]?.men || [];
     const womenRankings = gameState.rankings[gameState.currentPlayer]?.women || [];
 
@@ -289,13 +336,28 @@ function handleSubmitRankings() {
         return;
     }
 
-    saveGameState();
-    alert('Rankings submitted successfully! The draft will run once all players have submitted.');
-    showPage('landing-page');
+    try {
+        // Save rankings to database
+        await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                playerCode: gameState.currentPlayer,
+                men: menRankings,
+                women: womenRankings
+            })
+        });
+
+        alert('Rankings submitted successfully! The draft will run once all players have submitted.');
+        showPage('landing-page');
+    } catch (error) {
+        console.error('Error submitting rankings:', error);
+        alert('Error submitting rankings. Please try again.');
+    }
 }
 
 // Commissioner functions
-function handleGenerateCodes() {
+async function handleGenerateCodes() {
     const numPlayers = parseInt(document.getElementById('num-players').value);
     if (numPlayers < 2 || numPlayers > 4) {
         alert('Please enter a number between 2 and 4');
@@ -312,15 +374,15 @@ function handleGenerateCodes() {
     gameState.players.forEach(code => {
         const item = document.createElement('div');
         item.className = 'player-code-item';
-        item.textContent = `${code} - ${window.location.href}`;
+        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}`;
         display.appendChild(item);
     });
 
-    saveGameState();
+    await saveGameState();
 }
 
 // Snake draft algorithm
-function handleRunDraft() {
+async function handleRunDraft() {
     // Check if all players have submitted rankings
     const allSubmitted = gameState.players.every(player => gameState.rankings[player]);
     
@@ -345,12 +407,23 @@ function handleRunDraft() {
     snakeDraft(draftOrder, 'women', 3);
 
     gameState.draftComplete = true;
-    saveGameState();
 
-    // Display draft results
-    displayDraftResults();
-    document.getElementById('draft-status').innerHTML = '<p style="color: green; font-weight: bold;">✓ Draft completed successfully!</p>';
-    showPage('draft-page');
+    try {
+        // Save draft results to database
+        await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teams: gameState.teams })
+        });
+
+        // Display draft results
+        displayDraftResults();
+        document.getElementById('draft-status').innerHTML = '<p style="color: green; font-weight: bold;">✓ Draft completed successfully!</p>';
+        showPage('draft-page');
+    } catch (error) {
+        console.error('Error saving draft:', error);
+        alert('Error saving draft results. Please try again.');
+    }
 }
 
 function snakeDraft(draftOrder, gender, perPlayer) {
@@ -410,54 +483,88 @@ function createTeamCard(player, team, showScore = false) {
     const card = document.createElement('div');
     card.className = 'team-card';
 
-    let html = `<h3>${player}</h3>`;
+    const title = document.createElement('h3');
+    title.textContent = player;
+    card.appendChild(title);
 
     // Men's team
-    html += `<div class="team-section">
-        <h4>Men's Team</h4>`;
+    const menSection = document.createElement('div');
+    menSection.className = 'team-section';
+    
+    const menTitle = document.createElement('h4');
+    menTitle.textContent = "Men's Team";
+    menSection.appendChild(menTitle);
+    
     team.men.forEach(athlete => {
         const time = gameState.results[athlete.id] || '-';
-        html += `
-            <div class="athlete">
-                <div>
-                    <div class="name">${athlete.name}</div>
-                    <div class="country">${athlete.country}</div>
-                </div>
-                <div>${time}</div>
-            </div>
-        `;
+        const athleteDiv = document.createElement('div');
+        athleteDiv.className = 'athlete';
+        
+        const infoDiv = document.createElement('div');
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'name';
+        nameDiv.textContent = athlete.name;
+        const countryDiv = document.createElement('div');
+        countryDiv.className = 'country';
+        countryDiv.textContent = athlete.country;
+        infoDiv.appendChild(nameDiv);
+        infoDiv.appendChild(countryDiv);
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.textContent = time;
+        
+        athleteDiv.appendChild(infoDiv);
+        athleteDiv.appendChild(timeDiv);
+        menSection.appendChild(athleteDiv);
     });
-    html += `</div>`;
+    card.appendChild(menSection);
 
     // Women's team
-    html += `<div class="team-section">
-        <h4>Women's Team</h4>`;
+    const womenSection = document.createElement('div');
+    womenSection.className = 'team-section';
+    
+    const womenTitle = document.createElement('h4');
+    womenTitle.textContent = "Women's Team";
+    womenSection.appendChild(womenTitle);
+    
     team.women.forEach(athlete => {
         const time = gameState.results[athlete.id] || '-';
-        html += `
-            <div class="athlete">
-                <div>
-                    <div class="name">${athlete.name}</div>
-                    <div class="country">${athlete.country}</div>
-                </div>
-                <div>${time}</div>
-            </div>
-        `;
+        const athleteDiv = document.createElement('div');
+        athleteDiv.className = 'athlete';
+        
+        const infoDiv = document.createElement('div');
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'name';
+        nameDiv.textContent = athlete.name;
+        const countryDiv = document.createElement('div');
+        countryDiv.className = 'country';
+        countryDiv.textContent = athlete.country;
+        infoDiv.appendChild(nameDiv);
+        infoDiv.appendChild(countryDiv);
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.textContent = time;
+        
+        athleteDiv.appendChild(infoDiv);
+        athleteDiv.appendChild(timeDiv);
+        womenSection.appendChild(athleteDiv);
     });
-    html += `</div>`;
+    card.appendChild(womenSection);
 
     // Show score if results are available
     if (showScore && Object.keys(gameState.results).length > 0) {
         const score = calculateTeamScore(team);
-        html += `<div class="score">Total Score: ${score.toFixed(2)}</div>`;
+        const scoreDiv = document.createElement('div');
+        scoreDiv.className = 'score';
+        scoreDiv.textContent = `Total Score: ${score.toFixed(2)}`;
+        card.appendChild(scoreDiv);
     }
 
-    card.innerHTML = html;
     return card;
 }
 
 // Results management
-function handleCalculateWinner() {
+async function handleCalculateWinner() {
     if (Object.keys(gameState.results).length === 0) {
         alert('Please enter results first using the form above.');
         setupResultsForm();
@@ -487,7 +594,16 @@ function handleCalculateWinner() {
         ).join('')}
     `;
 
-    saveGameState();
+    try {
+        // Save results to database
+        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results: gameState.results })
+        });
+    } catch (error) {
+        console.error('Error saving results:', error);
+    }
 }
 
 function calculateTeamScore(team) {
@@ -505,7 +621,7 @@ function calculateTeamScore(team) {
 
 function timeToSeconds(timeStr) {
     // Convert "HH:MM:SS" or "H:MM:SS" to seconds
-    const parts = timeStr.split(':').map(p => parseInt(p));
+    const parts = timeStr.split(':').map(p => parseInt(p, 10));
     if (parts.length === 3) {
         return parts[0] * 3600 + parts[1] * 60 + parts[2];
     }
@@ -528,11 +644,13 @@ function setupResultsForm() {
         const entry = document.createElement('div');
         entry.className = 'result-entry';
         const currentTime = gameState.results[athlete.id] || '';
+        const athleteName = document.createTextNode('');
+        const athleteCountry = document.createTextNode('');
         entry.innerHTML = `
-            <label>${athlete.name} (${athlete.country})</label>
+            <label>${escapeHtml(athlete.name)} (${escapeHtml(athlete.country)})</label>
             <input type="text" 
                    data-athlete-id="${athlete.id}"
-                   value="${currentTime}"
+                   value="${escapeHtml(currentTime)}"
                    placeholder="2:05:30"
                    pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
         `;
@@ -541,32 +659,62 @@ function setupResultsForm() {
 
     // Add event listeners to save results
     form.querySelectorAll('input').forEach(input => {
-        input.addEventListener('change', (e) => {
-            const athleteId = parseInt(e.target.dataset.athleteId);
+        input.addEventListener('change', async (e) => {
+            const athleteId = parseInt(e.target.dataset.athleteId, 10);
             const time = e.target.value;
             if (time && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
                 gameState.results[athleteId] = time;
-                saveGameState();
+                // Auto-save to database
+                try {
+                    await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ results: { [athleteId]: time } })
+                    });
+                } catch (error) {
+                    console.error('Error saving result:', error);
+                }
             }
         });
     });
 }
 
-function handleResetGame() {
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function handleResetGame() {
     if (confirm('Are you sure you want to reset the entire game? This cannot be undone.')) {
-        localStorage.removeItem('fantasyMarathonState');
-        gameState = {
-            athletes: gameState.athletes,
-            players: [],
-            currentPlayer: null,
-            rankings: {},
-            teams: {},
-            results: {},
-            draftComplete: false
-        };
-        saveGameState();
-        alert('Game has been reset.');
-        location.reload();
+        try {
+            // Clear database by deleting all records for this game
+            await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    players: [],
+                    draftComplete: false
+                })
+            });
+
+            gameState = {
+                athletes: gameState.athletes,
+                players: [],
+                currentPlayer: null,
+                rankings: {},
+                teams: {},
+                results: {},
+                draftComplete: false
+            };
+            
+            alert('Game has been reset.');
+            location.reload();
+        } catch (error) {
+            console.error('Error resetting game:', error);
+            alert('Error resetting game. Please try again.');
+        }
     }
 }
 
