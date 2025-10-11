@@ -574,10 +574,10 @@ function createTeamCard(player, team, showScore = false) {
 
     // Show score if results are available
     if (showScore && Object.keys(gameState.results).length > 0) {
-        const score = calculateTeamScore(team);
+        const averageTime = calculateAverageTime(team);
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
-        scoreDiv.textContent = `Total Score: ${score.toFixed(2)}`;
+        scoreDiv.textContent = `Average Finish Time: ${averageTime}`;
         card.appendChild(scoreDiv);
     }
 
@@ -593,8 +593,10 @@ async function handleCalculateWinner() {
     }
 
     const scores = {};
+    const averageTimes = {};
     Object.entries(gameState.teams).forEach(([player, team]) => {
         scores[player] = calculateTeamScore(team);
+        averageTimes[player] = calculateAverageTime(team);
     });
 
     // Find winner (lowest score wins in marathon)
@@ -608,10 +610,10 @@ async function handleCalculateWinner() {
     const display = document.getElementById('winner-display');
     display.innerHTML = `
         <h3>🏆 Winner: ${winner.player}</h3>
-        <p>Total Time: ${winner.score.toFixed(2)} seconds</p>
+        <p>Average Finish Time: ${averageTimes[winner.player]}</p>
         <hr style="margin: 10px 0; border-color: rgba(255,255,255,0.3);">
         ${Object.entries(scores).sort((a, b) => a[1] - b[1]).map(([player, score], i) => 
-            `<div>${i + 1}. ${player}: ${score.toFixed(2)} seconds</div>`
+            `<div>${i + 1}. ${player}: ${averageTimes[player]}</div>`
         ).join('')}
     `;
 
@@ -647,6 +649,27 @@ function timeToSeconds(timeStr) {
         return parts[0] * 3600 + parts[1] * 60 + parts[2];
     }
     return 0;
+}
+
+function secondsToTime(totalSeconds) {
+    // Convert seconds to "H:MM:SS" format
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function calculateAverageTime(team) {
+    const totalSeconds = calculateTeamScore(team);
+    const numAthletes = team.men.length + team.women.length;
+    
+    if (numAthletes === 0) {
+        return '0:00:00';
+    }
+    
+    const averageSeconds = totalSeconds / numAthletes;
+    return secondsToTime(averageSeconds);
 }
 
 function setupResultsForm() {
