@@ -364,10 +364,17 @@ async function handleGenerateCodes() {
         return;
     }
 
-    gameState.players = [];
-    for (let i = 1; i <= numPlayers; i++) {
-        gameState.players.push(`PLAYER${i}`);
-    }
+    // Marathon-themed words for player codes
+    const marathonWords = [
+        'RUNNER', 'SPRINTER', 'PACER', 'CHAMPION', 
+        'FINISHER', 'STRIDE', 'ENDURANCE', 'VELOCITY',
+        'RACER', 'ATHLETE', 'DASHER', 'JOGGER',
+        'TRACKSTAR', 'SPEEDSTER', 'MARATHON', 'DISTANCE'
+    ];
+
+    // Shuffle and pick unique codes
+    const shuffled = marathonWords.sort(() => Math.random() - 0.5);
+    gameState.players = shuffled.slice(0, numPlayers);
 
     const display = document.getElementById('player-codes-display');
     display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
