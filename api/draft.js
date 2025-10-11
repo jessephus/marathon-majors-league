@@ -28,11 +28,14 @@ export default async function handler(req, res) {
       // Save teams
       await saveData(gameId, 'teams', teams);
 
-      // Mark draft as complete in game state
-      let gameState = await getData(gameId, 'game-state') || getDefaultGameState();
-      gameState.draft_complete = true;
-      gameState.updated_at = new Date().toISOString();
-      await saveData(gameId, 'game-state', gameState);
+      // Mark draft as complete in game state only if teams is not empty (not a reset)
+      const isReset = Object.keys(teams).length === 0;
+      if (!isReset) {
+        let gameState = await getData(gameId, 'game-state') || getDefaultGameState();
+        gameState.draft_complete = true;
+        gameState.updated_at = new Date().toISOString();
+        await saveData(gameId, 'game-state', gameState);
+      }
 
       res.status(200).json({ message: 'Draft results saved successfully' });
     } else {

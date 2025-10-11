@@ -787,6 +787,20 @@ async function handleResetGame() {
                 })
             });
 
+            // Clear rankings from database
+            await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rankings: {} })
+            });
+
+            // Clear teams (draft results) from database
+            await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teams: {} })
+            });
+
             // Clear results from database
             await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                 method: 'POST',
@@ -794,18 +808,22 @@ async function handleResetGame() {
                 body: JSON.stringify({ results: {} })
             });
 
-            gameState = {
-                athletes: gameState.athletes,
-                players: [],
-                currentPlayer: null,
-                rankings: {},
-                teams: {},
-                results: {},
-                draftComplete: false
-            };
+            // Update local game state
+            gameState.players = [];
+            gameState.currentPlayer = null;
+            gameState.rankings = {};
+            gameState.teams = {};
+            gameState.results = {};
+            gameState.draftComplete = false;
+
+            // Clear any displayed data
+            document.getElementById('player-codes-display').innerHTML = '';
+            document.getElementById('draft-status').innerHTML = '';
+            document.getElementById('results-form').innerHTML = '';
+            document.getElementById('winner-display').innerHTML = '';
             
             alert('Game has been reset.');
-            location.reload();
+            showPage('landing-page');
         } catch (error) {
             console.error('Error resetting game:', error);
             alert('Error resetting game. Please try again.');
