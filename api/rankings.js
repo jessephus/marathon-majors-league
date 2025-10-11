@@ -29,8 +29,15 @@ export default async function handler(req, res) {
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
       // Save or update rankings
-      const { playerCode: bodyPlayerCode, men, women } = req.body;
+      const { playerCode: bodyPlayerCode, men, women, rankings: resetRankings } = req.body;
       const code = bodyPlayerCode || playerCode;
+
+      // Check if this is a reset operation
+      if (resetRankings !== undefined) {
+        // Reset all rankings
+        await saveData(gameId, 'rankings', resetRankings);
+        return res.status(200).json({ message: 'Rankings reset successfully' });
+      }
 
       if (!code) {
         return res.status(400).json({ error: 'Player code is required' });

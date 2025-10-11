@@ -787,6 +787,20 @@ async function handleResetGame() {
                 })
             });
 
+            // Clear rankings from database
+            await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rankings: {} })
+            });
+
+            // Clear teams (draft results) from database
+            await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teams: {} })
+            });
+
             // Clear results from database
             await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                 method: 'POST',
