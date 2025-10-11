@@ -1,4 +1,4 @@
-import { put, list, head } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 
 // Blob storage helper functions
 const BLOB_PREFIX = 'fantasy-marathon';
@@ -37,6 +37,8 @@ export async function getData(gameId, type) {
 // Save data to blob storage
 export async function saveData(gameId, type, data) {
   const path = getBlobPath(gameId, type);
+  // Note: Using 'public' access is consistent with the app's security model
+  // where player codes provide access control, not storage-level permissions
   const blob = await put(path, JSON.stringify(data, null, 2), {
     access: 'public',
     addRandomSuffix: false,
