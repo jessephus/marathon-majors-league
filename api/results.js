@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { getData, saveData, getDefaultResults } from './storage.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,15 +14,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get all race results
-      const result = await sql`
-        SELECT * FROM race_results WHERE game_id = ${gameId}
-      `;
-
-      const results = {};
-      result.rows.forEach(row => {
-        results[row.athlete_id] = row.finish_time;
-      });
-
+      const results = await getData(gameId, 'results') || getDefaultResults();
       res.status(200).json(results);
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
@@ -33,17 +25,16 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Results data is required' });
       }
 
-      // Upsert each result
+      // Get existing results or create new
+      let existingResults = await getData(gameId, 'results') || getDefaultResults();
+
+      // Update results
       for (const [athleteId, finishTime] of Object.entries(results)) {
-        await sql`
-          INSERT INTO race_results (game_id, athlete_id, finish_time)
-          VALUES (${gameId}, ${parseInt(athleteId)}, ${finishTime})
-          ON CONFLICT (game_id, athlete_id) 
-          DO UPDATE SET 
-            finish_time = ${finishTime},
-            updated_at = CURRENT_TIMESTAMP
-        `;
+        existingResults[athleteId] = finishTime;
       }
+
+      // Save updated results
+      await saveData(gameId, 'results', existingResults);
 
       res.status(200).json({ message: 'Results saved successfully' });
     } else {

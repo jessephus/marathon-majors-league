@@ -8,7 +8,7 @@ A simple fantasy game for the Chicago Marathon where you can compete with 2-3 fr
 - 🏆 **Snake Draft System**: Automatic snake draft of 3 men and 3 women per player
 - 📱 **Mobile Friendly**: Fully responsive design for mobile devices
 - 🎨 **Red & Blue Theme**: Chicago-inspired color scheme
-- 💾 **Persistent Database**: Game state saved in Vercel Postgres database
+- 💾 **Persistent Storage**: Game state saved in Vercel Blob storage
 - 👑 **Commissioner Controls**: Full game management dashboard
 
 ## How to Play
@@ -48,19 +48,19 @@ A simple fantasy game for the Chicago Marathon where you can compete with 2-3 fr
 2. Sign up for a [Vercel account](https://vercel.com) if you don't have one
 3. Install Vercel CLI: `npm install -g vercel`
 4. Run `vercel` in the project directory and follow the prompts
-5. Add a Postgres database:
+5. Add Blob storage:
    - Go to your project in the Vercel dashboard
    - Click on the **Storage** tab
-   - Create a new **Postgres** database
-   - The database will automatically be linked to your project
-6. Initialize the database:
-   - Visit `https://your-project.vercel.app/api/init-db` once to create tables
+   - Create a new **Blob** store
+   - The storage will automatically be linked to your project
+6. Initialize the storage (optional):
+   - Visit `https://your-project.vercel.app/api/init-db` to verify setup
 7. Your game is now live at `https://your-project.vercel.app`
 
 ### Local Development
 
 1. Install dependencies: `npm install`
-2. Create a Postgres database on Vercel (via the dashboard)
+2. Create Blob storage on Vercel (via the dashboard)
 3. Link your local project: `vercel link`
 4. Pull environment variables: `vercel env pull`
 5. Run locally: `vercel dev`
@@ -77,22 +77,24 @@ A simple fantasy game for the Chicago Marathon where you can compete with 2-3 fr
 
 - **Frontend**: Pure HTML, CSS, and JavaScript (no build step required)
 - **Backend**: Vercel Serverless Functions (Node.js)
-- **Database**: Vercel Postgres
+- **Database**: Vercel Blob Storage
 - **Hosting**: Vercel
 - **API Endpoints**:
   - `/api/game-state` - Get/update game configuration and players
   - `/api/rankings` - Store and retrieve player rankings
   - `/api/draft` - Save draft results
   - `/api/results` - Store race results
-  - `/api/init-db` - Initialize database tables
+  - `/api/init-db` - Initialize blob storage (no action required)
 
 ## Database Schema
 
-The app uses four tables:
-- `game_state` - Stores game configuration and player list
-- `player_rankings` - Stores each player's ranked athletes
-- `draft_results` - Stores drafted teams
-- `race_results` - Stores athlete finish times
+The app uses Vercel Blob storage with JSON files:
+- `game-state.json` - Stores game configuration and player list
+- `rankings.json` - Stores each player's ranked athletes
+- `teams.json` - Stores drafted teams
+- `results.json` - Stores athlete finish times
+
+Each game has its own blob namespace for data isolation.
 
 ## Athletes Data
 
@@ -104,8 +106,8 @@ Athletes include their country and personal best times.
 
 ## Environment Variables
 
-Required environment variables (automatically set by Vercel when you add Postgres):
-- `POSTGRES_URL` - Database connection string
+Required environment variables (automatically set by Vercel when you add Blob storage):
+- `BLOB_READ_WRITE_TOKEN` - Blob storage access token
 
 ## License
 

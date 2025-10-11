@@ -15,25 +15,24 @@
 - Import your GitHub repository
 - Vercel will automatically detect the configuration
 
-### 3. Add Postgres Database
+### 3. Add Blob Storage
 - In your project dashboard, go to the **Storage** tab
 - Click "Create Database"
-- Select **Postgres**
-- Choose a name for your database (e.g., "fantasy-marathon-db")
-- Select your region (choose one close to your users)
+- Select **Blob**
+- Choose a name for your storage (e.g., "fantasy-marathon-storage")
 - Click "Create"
 
-The database will be automatically connected to your project with the `POSTGRES_URL` environment variable.
+The blob storage will be automatically connected to your project with the `BLOB_READ_WRITE_TOKEN` environment variable.
 
 ### 4. Deploy
 - Click "Deploy" 
 - Wait for the build to complete
 - Your site will be live at `https://your-project.vercel.app`
 
-### 5. Initialize Database
+### 5. Initialize Storage
 - Visit `https://your-project.vercel.app/api/init-db`
 - You should see a success message
-- This creates all necessary database tables
+- Storage is ready to use (no setup required)
 
 ### 6. Share with Friends
 - Give your friends the URL: `https://your-project.vercel.app`
@@ -53,7 +52,7 @@ npm install
 # Link to your Vercel project
 vercel link
 
-# Pull environment variables (including database connection)
+# Pull environment variables (including blob storage token)
 vercel env pull
 
 # Start development server
@@ -62,38 +61,37 @@ vercel dev
 
 ### Access Locally
 - Open `http://localhost:3000` in your browser
-- The app will use your production database
-- Visit `http://localhost:3000/api/init-db` to initialize tables if needed
+- The app will use your production blob storage
+- Visit `http://localhost:3000/api/init-db` to verify storage setup if needed
 
-## Database Management
+## Storage Management
 
-### View Database
+### View Blob Storage
 1. Go to your Vercel project dashboard
 2. Click on "Storage" tab
-3. Click on your Postgres database
-4. Use the "Query" tab to run SQL queries
-5. Use the "Data" tab to browse tables
+3. Click on your Blob store
+4. Browse stored files and data
 
-### Backup Database
+### Backup Data
 ```bash
-# Export data from Vercel dashboard
-# Or use pg_dump with connection string from environment variables
+# Export data using Vercel dashboard
+# Or use the blob storage API to download JSON files
 ```
 
 ### Reset Game Data
 - Use the "Reset Game" button in Commissioner Mode, or
-- Manually delete records from the database tables in Vercel dashboard
+- Manually delete blob files from the storage dashboard
 
 ## Troubleshooting
 
-### Database Connection Errors
-- Ensure Postgres database is created and linked
-- Check that `POSTGRES_URL` environment variable is set
+### Storage Connection Errors
+- Ensure Blob storage is created and linked
+- Check that `BLOB_READ_WRITE_TOKEN` environment variable is set
 - Redeploy the project to refresh environment variables
 
 ### API Errors
 - Check function logs in Vercel dashboard under "Deployments"
-- Ensure database tables are initialized (visit `/api/init-db`)
+- Ensure storage is accessible (visit `/api/init-db`)
 - Verify API routes are accessible (e.g., `/api/game-state`)
 
 ### CORS Issues
@@ -118,7 +116,7 @@ vercel dev
 
 - Vercel Hobby plan: Free for personal projects
   - Includes serverless functions
-  - Includes Postgres database (limited storage)
+  - Includes Blob storage (limited storage)
 - For higher traffic or storage, upgrade to Pro plan
 
 ## Support
