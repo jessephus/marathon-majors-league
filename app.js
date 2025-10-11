@@ -70,7 +70,7 @@ async function init() {
 function setupEventListeners() {
     // Landing page
     document.getElementById('enter-game').addEventListener('click', handleEnterGame);
-    document.getElementById('commissioner-mode').addEventListener('click', () => showPage('commissioner-page'));
+    document.getElementById('commissioner-mode').addEventListener('click', handleCommissionerMode);
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
@@ -130,6 +130,16 @@ function handleEnterGame() {
     } else {
         setupRankingPage();
         showPage('ranking-page');
+    }
+}
+
+// Handle commissioner mode
+function handleCommissionerMode() {
+    const password = prompt('Enter commissioner password:');
+    if (password === 'kipchoge') {
+        showPage('commissioner-page');
+    } else if (password !== null) {
+        alert('Incorrect password');
     }
 }
 
