@@ -70,7 +70,7 @@ async function init() {
 function setupEventListeners() {
     // Landing page
     document.getElementById('enter-game').addEventListener('click', handleEnterGame);
-    document.getElementById('commissioner-mode').addEventListener('click', () => showPage('commissioner-page'));
+    document.getElementById('commissioner-mode').addEventListener('click', handleCommissionerMode);
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
@@ -130,6 +130,16 @@ function handleEnterGame() {
     } else {
         setupRankingPage();
         showPage('ranking-page');
+    }
+}
+
+// Handle commissioner mode
+function handleCommissionerMode() {
+    const password = prompt('Enter commissioner password:');
+    if (password === 'kipchoge') {
+        showPage('commissioner-page');
+    } else if (password !== null) {
+        alert('Incorrect password');
     }
 }
 
@@ -364,17 +374,28 @@ async function handleGenerateCodes() {
         return;
     }
 
-    gameState.players = [];
-    for (let i = 1; i <= numPlayers; i++) {
-        gameState.players.push(`PLAYER${i}`);
+    // Marathon-themed words for player codes
+    const marathonWords = [
+        'RUNNER', 'SPRINTER', 'PACER', 'CHAMPION', 
+        'FINISHER', 'STRIDE', 'ENDURANCE', 'VELOCITY',
+        'RACER', 'ATHLETE', 'DASHER', 'JOGGER',
+        'TRACKSTAR', 'SPEEDSTER', 'MARATHON', 'DISTANCE'
+    ];
+
+    // Fisher-Yates shuffle for better randomization
+    const shuffled = [...marathonWords];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
+    gameState.players = shuffled.slice(0, numPlayers);
 
     const display = document.getElementById('player-codes-display');
     display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
     gameState.players.forEach(code => {
         const item = document.createElement('div');
         item.className = 'player-code-item';
-        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}`;
+        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
         display.appendChild(item);
     });
 
