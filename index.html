@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Chicago Marathon</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏃 Fantasy Chicago Marathon</h1>
+        </header>
+
+        <main id="app">
+            <!-- Landing Page -->
+            <div id="landing-page" class="page active">
+                <div class="welcome-card">
+                    <h2>Welcome to the Fantasy Chicago Marathon!</h2>
+                    <p>Compete with friends by drafting elite marathon runners.</p>
+                    <div class="auth-section">
+                        <label for="player-code">Enter Your Player Code:</label>
+                        <input type="text" id="player-code" placeholder="e.g., PLAYER1">
+                        <button id="enter-game" class="btn btn-primary">Enter Game</button>
+                    </div>
+                    <div class="commissioner-section">
+                        <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ranking Page -->
+            <div id="ranking-page" class="page">
+                <div class="player-info">
+                    <h2>Welcome, <span id="player-name"></span>!</h2>
+                    <p>Rank your top 10 athletes in each category. Drag to reorder.</p>
+                </div>
+
+                <div class="ranking-container">
+                    <div class="ranking-section">
+                        <h3>Top 10 Men</h3>
+                        <div id="men-ranking" class="ranking-list"></div>
+                    </div>
+
+                    <div class="ranking-section">
+                        <h3>Top 10 Women</h3>
+                        <div id="women-ranking" class="ranking-list"></div>
+                    </div>
+                </div>
+
+                <div class="athlete-selection">
+                    <h3>Available Athletes</h3>
+                    <div class="tabs">
+                        <button class="tab active" data-gender="men">Men</button>
+                        <button class="tab" data-gender="women">Women</button>
+                    </div>
+                    <div id="athlete-pool" class="athlete-list"></div>
+                </div>
+
+                <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
+            </div>
+
+            <!-- Draft Page -->
+            <div id="draft-page" class="page">
+                <h2>Draft Results</h2>
+                <p class="draft-info">The snake draft has been completed! Here are the teams:</p>
+                <div id="draft-results"></div>
+                <button id="view-teams" class="btn btn-primary">View Teams</button>
+            </div>
+
+            <!-- Teams Page -->
+            <div id="teams-page" class="page">
+                <h2>Team Rosters</h2>
+                <div id="teams-display"></div>
+                <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+            </div>
+
+            <!-- Commissioner Page -->
+            <div id="commissioner-page" class="page">
+                <h2>Commissioner Dashboard</h2>
+                <div class="commissioner-actions">
+                    <div class="action-card">
+                        <h3>Game Setup</h3>
+                        <label>Number of Players:</label>
+                        <input type="number" id="num-players" min="2" max="4" value="3">
+                        <button id="generate-codes" class="btn btn-primary">Generate Player Codes</button>
+                        <div id="player-codes-display"></div>
+                    </div>
+
+                    <div class="action-card">
+                        <h3>Draft Control</h3>
+                        <button id="run-draft" class="btn btn-primary">Run Snake Draft</button>
+                        <div id="draft-status"></div>
+                    </div>
+
+                    <div class="action-card">
+                        <h3>Results Entry</h3>
+                        <div id="results-form"></div>
+                        <button id="calculate-winner" class="btn btn-primary">Calculate Winner</button>
+                        <div id="winner-display"></div>
+                    </div>
+
+                    <div class="action-card">
+                        <h3>Game State</h3>
+                        <button id="reset-game" class="btn btn-danger">Reset Game</button>
+                        <button id="export-data" class="btn btn-secondary">Export Data</button>
+                    </div>
+                </div>
+                <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
+            </div>
+        </main>
+
+        <footer>
+            <p>Fantasy Chicago Marathon &copy; 2025</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
