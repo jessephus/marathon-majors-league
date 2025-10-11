@@ -372,8 +372,12 @@ async function handleGenerateCodes() {
         'TRACKSTAR', 'SPEEDSTER', 'MARATHON', 'DISTANCE'
     ];
 
-    // Shuffle and pick unique codes
-    const shuffled = marathonWords.sort(() => Math.random() - 0.5);
+    // Fisher-Yates shuffle for better randomization
+    const shuffled = [...marathonWords];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
     gameState.players = shuffled.slice(0, numPlayers);
 
     const display = document.getElementById('player-codes-display');
