@@ -55,6 +55,10 @@ footer {
     font-size: 0.9rem;
 }
 
+footer .btn {
+    margin-top: 10px;
+}
+
 .page {
     display: none;
 }

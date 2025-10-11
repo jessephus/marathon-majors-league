@@ -374,7 +374,7 @@ async function handleGenerateCodes() {
     gameState.players.forEach(code => {
         const item = document.createElement('div');
         item.className = 'player-code-item';
-        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}`;
+        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
         display.appendChild(item);
     });
 
