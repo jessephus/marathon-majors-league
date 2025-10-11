@@ -16,6 +16,12 @@
     --white: #ffffff;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --success-green: #28a745;
+    --warning-yellow: #ffc107;
+    --success-bg: #d4edda;
+    --success-text: #155724;
+    --warning-bg: #fff3cd;
+    --warning-text: #856404;
 }
 
 body {
@@ -478,11 +484,11 @@ footer .btn {
 }
 
 .player-code-item.submitted {
-    border-left-color: #28a745;
+    border-left-color: var(--success-green);
 }
 
 .player-code-item.pending {
-    border-left-color: #ffc107;
+    border-left-color: var(--warning-yellow);
 }
 
 .player-code-item .status-icon {
@@ -493,11 +499,11 @@ footer .btn {
 }
 
 .player-code-item.submitted .status-icon {
-    color: #28a745;
+    color: var(--success-green);
 }
 
 .player-code-item.pending .status-icon {
-    color: #ffc107;
+    color: var(--warning-yellow);
 }
 
 .player-code-item .status-text {
@@ -509,13 +515,13 @@ footer .btn {
 }
 
 .player-code-item.submitted .status-text {
-    background: #d4edda;
-    color: #155724;
+    background: var(--success-bg);
+    color: var(--success-text);
 }
 
 .player-code-item.pending .status-text {
-    background: #fff3cd;
-    color: #856404;
+    background: var(--warning-bg);
+    color: var(--warning-text);
 }
 
 .rankings-summary {

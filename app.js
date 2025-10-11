@@ -399,16 +399,21 @@ async function handleGenerateCodes() {
     await saveGameState();
 }
 
+function hasPlayerSubmittedRankings(playerCode) {
+    const ranking = gameState.rankings[playerCode];
+    return ranking && 
+           ranking.men && 
+           ranking.women && 
+           ranking.men.length === 10 && 
+           ranking.women.length === 10;
+}
+
 function displayPlayerCodes() {
     const display = document.getElementById('player-codes-display');
     display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
     
     gameState.players.forEach(code => {
-        const hasSubmitted = gameState.rankings[code] && 
-                            gameState.rankings[code].men && 
-                            gameState.rankings[code].women &&
-                            gameState.rankings[code].men.length === 10 &&
-                            gameState.rankings[code].women.length === 10;
+        const hasSubmitted = hasPlayerSubmittedRankings(code);
         
         const item = document.createElement('div');
         item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
@@ -431,11 +436,7 @@ function displayPlayerCodes() {
     });
     
     // Add summary
-    const submittedCount = gameState.players.filter(code => {
-        const ranking = gameState.rankings[code];
-        return ranking && ranking.men && ranking.women && 
-               ranking.men.length === 10 && ranking.women.length === 10;
-    }).length;
+    const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
     
     const summary = document.createElement('div');
     summary.className = 'rankings-summary';
@@ -784,6 +785,13 @@ async function handleResetGame() {
                     players: [],
                     draftComplete: false
                 })
+            });
+
+            // Clear results from database
+            await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ results: {} })
             });
 
             gameState = {
