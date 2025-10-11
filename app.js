@@ -653,9 +653,11 @@ function timeToSeconds(timeStr) {
 
 function secondsToTime(totalSeconds) {
     // Convert seconds to "H:MM:SS" format
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.floor(totalSeconds % 60);
+    // Round to handle floating point precision
+    const roundedSeconds = Math.round(totalSeconds);
+    const hours = Math.floor(roundedSeconds / 3600);
+    const minutes = Math.floor((roundedSeconds % 3600) / 60);
+    const seconds = roundedSeconds % 60;
     
     return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 }
