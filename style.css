@@ -472,6 +472,60 @@ footer .btn {
     background: var(--white);
     border-left: 4px solid var(--primary-blue);
     border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-code-item.submitted {
+    border-left-color: #28a745;
+}
+
+.player-code-item.pending {
+    border-left-color: #ffc107;
+}
+
+.player-code-item .status-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+
+.player-code-item.submitted .status-icon {
+    color: #28a745;
+}
+
+.player-code-item.pending .status-icon {
+    color: #ffc107;
+}
+
+.player-code-item .status-text {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+
+.player-code-item.submitted .status-text {
+    background: #d4edda;
+    color: #155724;
+}
+
+.player-code-item.pending .status-text {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.rankings-summary {
+    margin-top: 15px;
+    padding: 12px;
+    background: var(--white);
+    border-radius: 5px;
+    text-align: center;
+    color: var(--primary-blue);
+    border: 2px solid var(--primary-blue);
 }
 
 #results-form {

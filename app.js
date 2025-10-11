@@ -138,6 +138,10 @@ function handleCommissionerMode() {
     const password = prompt('Enter commissioner password:');
     if (password === 'kipchoge') {
         showPage('commissioner-page');
+        // Refresh player codes display if players exist
+        if (gameState.players.length > 0) {
+            displayPlayerCodes();
+        }
     } else if (password !== null) {
         alert('Incorrect password');
     }
@@ -390,16 +394,53 @@ async function handleGenerateCodes() {
     }
     gameState.players = shuffled.slice(0, numPlayers);
 
-    const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
-    gameState.players.forEach(code => {
-        const item = document.createElement('div');
-        item.className = 'player-code-item';
-        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
-        display.appendChild(item);
-    });
+    displayPlayerCodes();
 
     await saveGameState();
+}
+
+function displayPlayerCodes() {
+    const display = document.getElementById('player-codes-display');
+    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
+    
+    gameState.players.forEach(code => {
+        const hasSubmitted = gameState.rankings[code] && 
+                            gameState.rankings[code].men && 
+                            gameState.rankings[code].women &&
+                            gameState.rankings[code].men.length === 10 &&
+                            gameState.rankings[code].women.length === 10;
+        
+        const item = document.createElement('div');
+        item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
+        
+        const statusIcon = document.createElement('span');
+        statusIcon.className = 'status-icon';
+        statusIcon.textContent = hasSubmitted ? '✓' : '○';
+        
+        const codeText = document.createElement('span');
+        codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+        
+        const statusText = document.createElement('span');
+        statusText.className = 'status-text';
+        statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+        
+        item.appendChild(statusIcon);
+        item.appendChild(codeText);
+        item.appendChild(statusText);
+        display.appendChild(item);
+    });
+    
+    // Add summary
+    const submittedCount = gameState.players.filter(code => {
+        const ranking = gameState.rankings[code];
+        return ranking && ranking.men && ranking.women && 
+               ranking.men.length === 10 && ranking.women.length === 10;
+    }).length;
+    
+    const summary = document.createElement('div');
+    summary.className = 'rankings-summary';
+    summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
+    display.appendChild(summary);
 }
 
 // Snake draft algorithm
