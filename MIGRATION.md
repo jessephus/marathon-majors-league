@@ -90,4 +90,29 @@ fantasy-marathon/
 3. Old Postgres database can be deleted
 
 ## Security Note
-Blob access is set to 'public' which is consistent with the app's existing security model where player codes provide access control, not storage-level permissions. The app doesn't have traditional authentication, so this matches the current design.
+
+### Blob Access: Public vs Private
+
+**Current Setting:** `access: 'public'`
+
+**Rationale:**
+1. The application has no traditional authentication - player codes are just identifiers, not secrets
+2. Game data (rankings, teams, results) isn't sensitive - it's a fun game among friends
+3. The Vercel dashboard and API endpoints already expose this data without authentication
+4. Public access allows easier debugging and data inspection
+5. Consistent with the app's design philosophy of simplicity over security
+
+**Trade-off:**
+- Anyone with the blob URL can read the JSON data
+- However, this is acceptable for a casual fantasy game where:
+  - There's no personal/financial information
+  - The audience is small (2-4 friends)
+  - Security through obscurity is sufficient (random gameId in URL)
+
+**Future Enhancement:**
+If stronger security is needed, consider:
+- Using `access: 'private'` and generating signed URLs
+- Adding API-level authorization checks
+- Implementing proper authentication beyond player codes
+
+For now, public access matches the app's current security model and keeps the implementation simple.
