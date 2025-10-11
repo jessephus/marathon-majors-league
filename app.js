@@ -138,6 +138,10 @@ function handleCommissionerMode() {
     const password = prompt('Enter commissioner password:');
     if (password === 'kipchoge') {
         showPage('commissioner-page');
+        // Refresh player codes display if players exist
+        if (gameState.players.length > 0) {
+            displayPlayerCodes();
+        }
     } else if (password !== null) {
         alert('Incorrect password');
     }
@@ -390,16 +394,54 @@ async function handleGenerateCodes() {
     }
     gameState.players = shuffled.slice(0, numPlayers);
 
-    const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
-    gameState.players.forEach(code => {
-        const item = document.createElement('div');
-        item.className = 'player-code-item';
-        item.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
-        display.appendChild(item);
-    });
+    displayPlayerCodes();
 
     await saveGameState();
+}
+
+function hasPlayerSubmittedRankings(playerCode) {
+    const ranking = gameState.rankings[playerCode];
+    return ranking && 
+           ranking.men && 
+           ranking.women && 
+           ranking.men.length === 10 && 
+           ranking.women.length === 10;
+}
+
+function displayPlayerCodes() {
+    const display = document.getElementById('player-codes-display');
+    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
+    
+    gameState.players.forEach(code => {
+        const hasSubmitted = hasPlayerSubmittedRankings(code);
+        
+        const item = document.createElement('div');
+        item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
+        
+        const statusIcon = document.createElement('span');
+        statusIcon.className = 'status-icon';
+        statusIcon.textContent = hasSubmitted ? '✓' : '○';
+        
+        const codeText = document.createElement('span');
+        codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+        
+        const statusText = document.createElement('span');
+        statusText.className = 'status-text';
+        statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+        
+        item.appendChild(statusIcon);
+        item.appendChild(codeText);
+        item.appendChild(statusText);
+        display.appendChild(item);
+    });
+    
+    // Add summary
+    const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
+    
+    const summary = document.createElement('div');
+    summary.className = 'rankings-summary';
+    summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
+    display.appendChild(summary);
 }
 
 // Snake draft algorithm
@@ -574,10 +616,10 @@ function createTeamCard(player, team, showScore = false) {
 
     // Show score if results are available
     if (showScore && Object.keys(gameState.results).length > 0) {
-        const score = calculateTeamScore(team);
+        const averageTime = calculateAverageTime(team);
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
-        scoreDiv.textContent = `Total Score: ${score.toFixed(2)}`;
+        scoreDiv.textContent = `Average Finish Time: ${averageTime}`;
         card.appendChild(scoreDiv);
     }
 
@@ -593,8 +635,10 @@ async function handleCalculateWinner() {
     }
 
     const scores = {};
+    const averageTimes = {};
     Object.entries(gameState.teams).forEach(([player, team]) => {
         scores[player] = calculateTeamScore(team);
+        averageTimes[player] = calculateAverageTime(team);
     });
 
     // Find winner (lowest score wins in marathon)
@@ -608,10 +652,10 @@ async function handleCalculateWinner() {
     const display = document.getElementById('winner-display');
     display.innerHTML = `
         <h3>🏆 Winner: ${winner.player}</h3>
-        <p>Total Time: ${winner.score.toFixed(2)} seconds</p>
+        <p>Average Finish Time: ${averageTimes[winner.player]}</p>
         <hr style="margin: 10px 0; border-color: rgba(255,255,255,0.3);">
         ${Object.entries(scores).sort((a, b) => a[1] - b[1]).map(([player, score], i) => 
-            `<div>${i + 1}. ${player}: ${score.toFixed(2)} seconds</div>`
+            `<div>${i + 1}. ${player}: ${averageTimes[player]}</div>`
         ).join('')}
     `;
 
@@ -647,6 +691,29 @@ function timeToSeconds(timeStr) {
         return parts[0] * 3600 + parts[1] * 60 + parts[2];
     }
     return 0;
+}
+
+function secondsToTime(totalSeconds) {
+    // Convert seconds to "H:MM:SS" format
+    // Round to handle floating point precision
+    const roundedSeconds = Math.round(totalSeconds);
+    const hours = Math.floor(roundedSeconds / 3600);
+    const minutes = Math.floor((roundedSeconds % 3600) / 60);
+    const seconds = roundedSeconds % 60;
+    
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function calculateAverageTime(team) {
+    const totalSeconds = calculateTeamScore(team);
+    const numAthletes = team.men.length + team.women.length;
+    
+    if (numAthletes === 0) {
+        return '0:00:00';
+    }
+    
+    const averageSeconds = totalSeconds / numAthletes;
+    return secondsToTime(averageSeconds);
 }
 
 function setupResultsForm() {
@@ -718,6 +785,13 @@ async function handleResetGame() {
                     players: [],
                     draftComplete: false
                 })
+            });
+
+            // Clear results from database
+            await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ results: {} })
             });
 
             gameState = {

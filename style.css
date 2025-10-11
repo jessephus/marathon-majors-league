@@ -16,6 +16,12 @@
     --white: #ffffff;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --success-green: #28a745;
+    --warning-yellow: #ffc107;
+    --success-bg: #d4edda;
+    --success-text: #155724;
+    --warning-bg: #fff3cd;
+    --warning-text: #856404;
 }
 
 body {
@@ -472,6 +478,60 @@ footer .btn {
     background: var(--white);
     border-left: 4px solid var(--primary-blue);
     border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-code-item.submitted {
+    border-left-color: var(--success-green);
+}
+
+.player-code-item.pending {
+    border-left-color: var(--warning-yellow);
+}
+
+.player-code-item .status-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+
+.player-code-item.submitted .status-icon {
+    color: var(--success-green);
+}
+
+.player-code-item.pending .status-icon {
+    color: var(--warning-yellow);
+}
+
+.player-code-item .status-text {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+
+.player-code-item.submitted .status-text {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.player-code-item.pending .status-text {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.rankings-summary {
+    margin-top: 15px;
+    padding: 12px;
+    background: var(--white);
+    border-radius: 5px;
+    text-align: center;
+    color: var(--primary-blue);
+    border: 2px solid var(--primary-blue);
 }
 
 #results-form {
