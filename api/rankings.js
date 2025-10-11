@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { getData, saveData, getDefaultRankings } from './storage.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,33 +15,15 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get rankings for a player or all players
+      const rankings = await getData(gameId, 'rankings') || getDefaultRankings();
+
       if (playerCode) {
-        const result = await sql`
-          SELECT * FROM player_rankings 
-          WHERE game_id = ${gameId} AND player_code = ${playerCode}
-        `;
-        
-        if (result.rows.length > 0) {
-          res.status(200).json({
-            men: result.rows[0].men_rankings,
-            women: result.rows[0].women_rankings
-          });
+        if (rankings[playerCode]) {
+          res.status(200).json(rankings[playerCode]);
         } else {
           res.status(404).json({ error: 'Rankings not found' });
         }
       } else {
-        const result = await sql`
-          SELECT * FROM player_rankings WHERE game_id = ${gameId}
-        `;
-        
-        const rankings = {};
-        result.rows.forEach(row => {
-          rankings[row.player_code] = {
-            men: row.men_rankings,
-            women: row.women_rankings
-          };
-        });
-        
         res.status(200).json(rankings);
       }
 
@@ -54,15 +36,18 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Player code is required' });
       }
 
-      await sql`
-        INSERT INTO player_rankings (game_id, player_code, men_rankings, women_rankings)
-        VALUES (${gameId}, ${code}, ${JSON.stringify(men)}, ${JSON.stringify(women)})
-        ON CONFLICT (game_id, player_code) 
-        DO UPDATE SET 
-          men_rankings = ${JSON.stringify(men)},
-          women_rankings = ${JSON.stringify(women)},
-          submitted_at = CURRENT_TIMESTAMP
-      `;
+      // Get existing rankings or create new
+      let rankings = await getData(gameId, 'rankings') || getDefaultRankings();
+
+      // Update player rankings
+      rankings[code] = {
+        men: men,
+        women: women,
+        submitted_at: new Date().toISOString()
+      };
+
+      // Save updated rankings
+      await saveData(gameId, 'rankings', rankings);
 
       res.status(200).json({ message: 'Rankings saved successfully' });
     } else {

@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { getData, saveData, getDefaultTeams, getDefaultGameState } from './storage.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,18 +14,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get draft results
-      const result = await sql`
-        SELECT * FROM draft_results WHERE game_id = ${gameId}
-      `;
-
-      const teams = {};
-      result.rows.forEach(row => {
-        teams[row.player_code] = {
-          men: row.men_team,
-          women: row.women_team
-        };
-      });
-
+      const teams = await getData(gameId, 'teams') || getDefaultTeams();
       res.status(200).json(teams);
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
@@ -36,28 +25,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Teams data is required' });
       }
 
-      // Delete existing draft results for this game
-      await sql`DELETE FROM draft_results WHERE game_id = ${gameId}`;
-
-      // Insert new draft results
-      for (const [playerCode, team] of Object.entries(teams)) {
-        await sql`
-          INSERT INTO draft_results (game_id, player_code, men_team, women_team)
-          VALUES (
-            ${gameId}, 
-            ${playerCode}, 
-            ${JSON.stringify(team.men)}, 
-            ${JSON.stringify(team.women)}
-          )
-        `;
-      }
+      // Save teams
+      await saveData(gameId, 'teams', teams);
 
       // Mark draft as complete in game state
-      await sql`
-        UPDATE game_state 
-        SET draft_complete = true, updated_at = CURRENT_TIMESTAMP
-        WHERE game_id = ${gameId}
-      `;
+      let gameState = await getData(gameId, 'game-state') || getDefaultGameState();
+      gameState.draft_complete = true;
+      gameState.updated_at = new Date().toISOString();
+      await saveData(gameId, 'game-state', gameState);
 
       res.status(200).json({ message: 'Draft results saved successfully' });
     } else {
