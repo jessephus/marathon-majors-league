@@ -577,7 +577,8 @@ function createHeadshotElement(athlete, className) {
     img.src = athlete.headshotUrl;
     img.alt = athlete.name;
     img.onerror = function() {
-        this.style.display = 'none';
+        // Hide the entire headshot container if image fails to load
+        headshotDiv.style.display = 'none';
     };
     headshotDiv.appendChild(img);
     return headshotDiv;
