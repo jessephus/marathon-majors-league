@@ -782,9 +782,20 @@ function createTeamCard(player, team, showScore = false) {
 
 // Results management - Update live results
 async function handleUpdateResults() {
+    // First, collect all results from the form inputs (in case user hasn't left the field yet)
+    const form = document.getElementById('results-form');
+    const inputs = form.querySelectorAll('input[data-athlete-id]');
+    
+    inputs.forEach(input => {
+        const athleteId = parseInt(input.dataset.athleteId, 10);
+        const time = input.value.trim();
+        if (time && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+            gameState.results[athleteId] = time;
+        }
+    });
+
     if (Object.keys(gameState.results).length === 0) {
         alert('Please enter results first using the form above.');
-        setupResultsForm();
         return;
     }
 
