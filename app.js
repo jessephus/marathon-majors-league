@@ -580,8 +580,8 @@ function displayTeams() {
     // Add live results notice if results exist but not finalized
     if (Object.keys(gameState.results).length > 0 && !gameState.resultsFinalized) {
         const notice = document.createElement('div');
-        notice.style.cssText = 'background: var(--warning-bg); color: var(--warning-text); padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; font-weight: bold;';
-        notice.textContent = '⚡ Live Results in Progress - Refresh page to see latest updates';
+        notice.style.cssText = 'background: var(--warning-bg); color: var(--warning-text); padding: 8px 12px; border-radius: 5px; margin-bottom: 15px; text-align: center; font-size: 0.85em; border-left: 3px solid var(--warning-yellow);';
+        notice.innerHTML = '⚡ <strong>Live Results:</strong> Refresh to see updates';
         container.appendChild(notice);
     }
 
@@ -644,6 +644,36 @@ function createTeamCard(player, team, showScore = false) {
     const title = document.createElement('h3');
     title.textContent = player;
     card.appendChild(title);
+
+    // Show score/ranking at the top if results are available
+    if (showScore && Object.keys(gameState.results).length > 0) {
+        const averageTime = calculateAverageTime(team);
+        
+        // Calculate team rankings
+        const allScores = {};
+        Object.entries(gameState.teams).forEach(([p, t]) => {
+            allScores[p] = calculateTeamScore(t);
+        });
+        const sortedTeams = Object.entries(allScores).sort((a, b) => a[1] - b[1]);
+        const rank = sortedTeams.findIndex(([p, s]) => p === player) + 1;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+        
+        const scoreDiv = document.createElement('div');
+        scoreDiv.className = 'score';
+        scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
+        scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
+        scoreDiv.style.marginBottom = '15px';
+        scoreDiv.style.padding = '10px';
+        scoreDiv.style.background = rank === 1 ? 'rgba(220, 53, 69, 0.1)' : 'var(--light-gray)';
+        scoreDiv.style.borderRadius = '5px';
+        scoreDiv.innerHTML = `
+            <div style="font-size: 1.2em; margin-bottom: 5px;">
+                ${medal} Rank: #${rank} of ${sortedTeams.length}
+            </div>
+            <div>Average Finish Time: ${averageTime}</div>
+        `;
+        card.appendChild(scoreDiv);
+    }
 
     // Men's team
     const menSection = document.createElement('div');
@@ -750,32 +780,6 @@ function createTeamCard(player, team, showScore = false) {
         womenSection.appendChild(athleteDiv);
     });
     card.appendChild(womenSection);
-
-    // Show score if results are available
-    if (showScore && Object.keys(gameState.results).length > 0) {
-        const averageTime = calculateAverageTime(team);
-        
-        // Calculate team rankings
-        const allScores = {};
-        Object.entries(gameState.teams).forEach(([p, t]) => {
-            allScores[p] = calculateTeamScore(t);
-        });
-        const sortedTeams = Object.entries(allScores).sort((a, b) => a[1] - b[1]);
-        const rank = sortedTeams.findIndex(([p, s]) => p === player) + 1;
-        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-        
-        const scoreDiv = document.createElement('div');
-        scoreDiv.className = 'score';
-        scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
-        scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
-        scoreDiv.innerHTML = `
-            <div style="font-size: 1.2em; margin-bottom: 5px;">
-                ${medal} Rank: #${rank} of ${sortedTeams.length}
-            </div>
-            <div>Average Finish Time: ${averageTime}</div>
-        `;
-        card.appendChild(scoreDiv);
-    }
 
     return card;
 }
