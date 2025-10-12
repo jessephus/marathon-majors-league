@@ -784,18 +784,47 @@ function createTeamCard(player, team, showScore = false) {
 async function handleUpdateResults() {
     // First, collect all results from the form inputs (in case user hasn't left the field yet)
     const form = document.getElementById('results-form');
+    
+    // Check if form exists
+    if (!form) {
+        alert('Please complete the draft first before entering results.');
+        return;
+    }
+    
     const inputs = form.querySelectorAll('input[data-athlete-id]');
     
+    console.log('Found', inputs.length, 'input fields');
+    
+    if (inputs.length === 0) {
+        alert('No results form found. Please make sure the draft is complete.');
+        return;
+    }
+    
+    // Collect all values from inputs
+    let hasAnyValues = false;
     inputs.forEach(input => {
         const athleteId = parseInt(input.dataset.athleteId, 10);
         const time = input.value.trim();
-        if (time && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
-            gameState.results[athleteId] = time;
+        console.log(`Athlete ${athleteId}: "${time}"`);
+        if (time) {
+            hasAnyValues = true;
+            if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+                gameState.results[athleteId] = time;
+                console.log(`Added result for athlete ${athleteId}: ${time}`);
+            } else {
+                console.log(`Invalid format for athlete ${athleteId}: ${time}`);
+            }
         }
     });
+    
+    console.log('Total results in gameState:', Object.keys(gameState.results).length);
 
     if (Object.keys(gameState.results).length === 0) {
-        alert('Please enter results first using the form above.');
+        if (hasAnyValues) {
+            alert('Please check the time format. Times should be in HH:MM:SS format (e.g., 2:05:30)');
+        } else {
+            alert('Please enter results first using the form above.');
+        }
         return;
     }
 
@@ -816,6 +845,7 @@ async function handleUpdateResults() {
         alert('Live results updated! Players can now see the current standings.');
     } catch (error) {
         console.error('Error saving results:', error);
+        alert('Error saving results. Please check the console for details.');
     }
 }
 
