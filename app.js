@@ -800,8 +800,9 @@ async function handleUpdateResults() {
         return;
     }
     
-    // Collect all values from inputs
+    // Collect all values from inputs and track invalid ones
     let hasAnyValues = false;
+    const invalidFields = [];
     inputs.forEach(input => {
         const athleteId = parseInt(input.dataset.athleteId, 10);
         const time = input.value.trim();
@@ -811,8 +812,19 @@ async function handleUpdateResults() {
             if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
                 gameState.results[athleteId] = time;
                 console.log(`Added result for athlete ${athleteId}: ${time}`);
+                // Mark as valid
+                input.style.borderColor = '#28a745';
+                input.style.backgroundColor = '#d4edda';
             } else {
                 console.log(`Invalid format for athlete ${athleteId}: ${time}`);
+                // Mark as invalid
+                input.style.borderColor = '#dc3545';
+                input.style.backgroundColor = '#f8d7da';
+                // Get athlete name from label
+                const label = input.previousElementSibling;
+                if (label) {
+                    invalidFields.push(label.textContent + ': "' + time + '"');
+                }
             }
         }
     });
@@ -820,7 +832,9 @@ async function handleUpdateResults() {
     console.log('Total results in gameState:', Object.keys(gameState.results).length);
 
     if (Object.keys(gameState.results).length === 0) {
-        if (hasAnyValues) {
+        if (invalidFields.length > 0) {
+            alert('Invalid time format detected. Please use HH:MM:SS format (e.g., 2:05:30 or 0:14:30).\n\nFields with invalid format:\n' + invalidFields.slice(0, 5).join('\n') + (invalidFields.length > 5 ? '\n... and ' + (invalidFields.length - 5) + ' more' : ''));
+        } else if (hasAnyValues) {
             alert('Please check the time format. Times should be in HH:MM:SS format (e.g., 2:05:30)');
         } else {
             alert('Please enter results first using the form above.');
@@ -981,7 +995,7 @@ function calculateAverageTime(team) {
 
 function setupResultsForm() {
     const form = document.getElementById('results-form');
-    form.innerHTML = '<h4>Enter Athlete Finish Times (HH:MM:SS)</h4>';
+    form.innerHTML = '<h4>Enter Athlete Finish Times (HH:MM:SS - e.g., 2:05:30)</h4><p style="color: var(--dark-gray); font-size: 0.9em; margin-bottom: 15px;">Format: Hours:Minutes:Seconds (e.g., 2:15:45 or 0:14:30)</p>';
 
     // Get all unique athletes from teams
     const allAthletes = new Set();
@@ -1000,14 +1014,37 @@ function setupResultsForm() {
             <input type="text" 
                    data-athlete-id="${athlete.id}"
                    value="${escapeHtml(currentTime)}"
-                   placeholder="2:05:30"
+                   placeholder="0:14:30 or 2:05:30"
                    pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
         `;
         form.appendChild(entry);
     });
 
-    // Add event listeners to save results
+    // Add event listeners to save results and validate format
     form.querySelectorAll('input').forEach(input => {
+        // Real-time validation on input
+        input.addEventListener('input', (e) => {
+            const time = e.target.value.trim();
+            if (time === '') {
+                // Empty is valid (not yet entered)
+                e.target.style.borderColor = '';
+                e.target.style.backgroundColor = '';
+                return;
+            }
+            
+            // Check if format is valid (HH:MM:SS or H:MM:SS)
+            if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+                // Valid format
+                e.target.style.borderColor = '#28a745';
+                e.target.style.backgroundColor = '#d4edda';
+            } else {
+                // Invalid format
+                e.target.style.borderColor = '#dc3545';
+                e.target.style.backgroundColor = '#f8d7da';
+            }
+        });
+        
+        // Save on change (when user leaves the field)
         input.addEventListener('change', async (e) => {
             const athleteId = parseInt(e.target.dataset.athleteId, 10);
             const time = e.target.value;
