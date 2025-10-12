@@ -82,7 +82,9 @@ function setupEventListeners() {
     document.getElementById('submit-rankings').addEventListener('click', handleSubmitRankings);
 
     // Draft page
-    document.getElementById('view-teams').addEventListener('click', () => {
+    document.getElementById('view-teams').addEventListener('click', async () => {
+        // Reload game state to get latest results
+        await loadGameState();
         displayTeams();
         showPage('teams-page');
     });
@@ -150,6 +152,21 @@ function handleCommissionerMode() {
         if (gameState.draftComplete) {
             setupResultsForm();
             updateLiveStandings();
+            
+            // Update button states based on finalized state
+            if (gameState.resultsFinalized) {
+                document.getElementById('update-results').textContent = 'Results Finalized';
+                document.getElementById('update-results').disabled = true;
+                document.getElementById('finalize-results').style.display = 'none';
+            } else {
+                document.getElementById('update-results').textContent = 'Update Live Results';
+                document.getElementById('update-results').disabled = false;
+                if (Object.keys(gameState.results).length > 0) {
+                    document.getElementById('finalize-results').style.display = 'inline-block';
+                } else {
+                    document.getElementById('finalize-results').style.display = 'none';
+                }
+            }
         }
     } else if (password !== null) {
         alert('Incorrect password');
@@ -557,6 +574,14 @@ function displayTeams() {
     if (!gameState.draftComplete) {
         container.innerHTML = '<p>Draft has not been completed yet.</p>';
         return;
+    }
+
+    // Add live results notice if results exist but not finalized
+    if (Object.keys(gameState.results).length > 0 && !gameState.resultsFinalized) {
+        const notice = document.createElement('div');
+        notice.style.cssText = 'background: var(--warning-bg); color: var(--warning-text); padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: center; font-weight: bold;';
+        notice.textContent = '⚡ Live Results in Progress - Refresh page to see latest updates';
+        container.appendChild(notice);
     }
 
     Object.entries(gameState.teams).forEach(([player, team]) => {
