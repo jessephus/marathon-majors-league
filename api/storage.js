@@ -52,6 +52,7 @@ export function getDefaultGameState() {
   return {
     players: [],
     draft_complete: false,
+    results_finalized: false,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

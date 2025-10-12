@@ -6,7 +6,8 @@ let gameState = {
     rankings: {},
     teams: {},
     results: {},
-    draftComplete: false
+    draftComplete: false,
+    resultsFinalized: false
 };
 
 // API base URL - will be relative in production
@@ -21,6 +22,7 @@ async function loadGameState() {
             const data = await response.json();
             gameState.players = data.players || [];
             gameState.draftComplete = data.draftComplete || false;
+            gameState.resultsFinalized = data.resultsFinalized || false;
             gameState.rankings = data.rankings || {};
             gameState.teams = data.teams || {};
             gameState.results = data.results || {};
@@ -38,7 +40,8 @@ async function saveGameState() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 players: gameState.players,
-                draftComplete: gameState.draftComplete
+                draftComplete: gameState.draftComplete,
+                resultsFinalized: gameState.resultsFinalized
             })
         });
     } catch (error) {
@@ -90,7 +93,8 @@ function setupEventListeners() {
     // Commissioner page
     document.getElementById('generate-codes').addEventListener('click', handleGenerateCodes);
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
-    document.getElementById('calculate-winner').addEventListener('click', handleCalculateWinner);
+    document.getElementById('update-results').addEventListener('click', handleUpdateResults);
+    document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
     document.getElementById('export-data').addEventListener('click', handleExportData);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
@@ -141,6 +145,11 @@ function handleCommissionerMode() {
         // Refresh player codes display if players exist
         if (gameState.players.length > 0) {
             displayPlayerCodes();
+        }
+        // Setup results form if draft is complete
+        if (gameState.draftComplete) {
+            setupResultsForm();
+            updateLiveStandings();
         }
     } else if (password !== null) {
         alert('Incorrect password');
@@ -719,20 +728,63 @@ function createTeamCard(player, team, showScore = false) {
     // Show score if results are available
     if (showScore && Object.keys(gameState.results).length > 0) {
         const averageTime = calculateAverageTime(team);
+        
+        // Calculate team rankings
+        const allScores = {};
+        Object.entries(gameState.teams).forEach(([p, t]) => {
+            allScores[p] = calculateTeamScore(t);
+        });
+        const sortedTeams = Object.entries(allScores).sort((a, b) => a[1] - b[1]);
+        const rank = sortedTeams.findIndex(([p, s]) => p === player) + 1;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+        
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
-        scoreDiv.textContent = `Average Finish Time: ${averageTime}`;
+        scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
+        scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
+        scoreDiv.innerHTML = `
+            <div style="font-size: 1.2em; margin-bottom: 5px;">
+                ${medal} Rank: #${rank} of ${sortedTeams.length}
+            </div>
+            <div>Average Finish Time: ${averageTime}</div>
+        `;
         card.appendChild(scoreDiv);
     }
 
     return card;
 }
 
-// Results management
-async function handleCalculateWinner() {
+// Results management - Update live results
+async function handleUpdateResults() {
     if (Object.keys(gameState.results).length === 0) {
         alert('Please enter results first using the form above.');
         setupResultsForm();
+        return;
+    }
+
+    // Update live standings display
+    updateLiveStandings();
+    
+    // Show finalize button
+    document.getElementById('finalize-results').style.display = 'inline-block';
+
+    try {
+        // Save results to database
+        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results: gameState.results })
+        });
+        
+        alert('Live results updated! Players can now see the current standings.');
+    } catch (error) {
+        console.error('Error saving results:', error);
+    }
+}
+
+// Finalize results and crown winner
+async function handleFinalizeResults() {
+    if (!confirm('Are you sure you want to finalize the results? This will declare the winner and lock all results.')) {
         return;
     }
 
@@ -761,7 +813,18 @@ async function handleCalculateWinner() {
         ).join('')}
     `;
 
+    // Mark results as finalized
+    gameState.resultsFinalized = true;
+    
+    // Hide the finalize button and update button text
+    document.getElementById('finalize-results').style.display = 'none';
+    document.getElementById('update-results').textContent = 'Results Finalized';
+    document.getElementById('update-results').disabled = true;
+
     try {
+        // Save finalized state
+        await saveGameState();
+        
         // Save results to database
         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
             method: 'POST',
@@ -771,6 +834,37 @@ async function handleCalculateWinner() {
     } catch (error) {
         console.error('Error saving results:', error);
     }
+}
+
+// Update live standings display
+function updateLiveStandings() {
+    const display = document.getElementById('live-standings');
+    
+    if (Object.keys(gameState.results).length === 0) {
+        display.innerHTML = '';
+        return;
+    }
+
+    const scores = {};
+    const averageTimes = {};
+    Object.entries(gameState.teams).forEach(([player, team]) => {
+        scores[player] = calculateTeamScore(team);
+        averageTimes[player] = calculateAverageTime(team);
+    });
+
+    const sortedTeams = Object.entries(scores).sort((a, b) => a[1] - b[1]);
+
+    display.innerHTML = `
+        <h4 style="margin-top: 20px;">Current Standings</h4>
+        <div style="background: var(--light-gray); padding: 15px; border-radius: 5px; margin-top: 10px;">
+            ${sortedTeams.map(([player, score], i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                return `<div style="padding: 8px 0; font-weight: ${i === 0 ? 'bold' : 'normal'}; color: ${i === 0 ? 'var(--primary-red)' : 'inherit'};">
+                    ${medal} ${player}: ${averageTimes[player]}
+                </div>`;
+            }).join('')}
+        </div>
+    `;
 }
 
 function calculateTeamScore(team) {
@@ -861,6 +955,8 @@ function setupResultsForm() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ results: { [athleteId]: time } })
                     });
+                    // Update live standings as results are entered
+                    updateLiveStandings();
                 } catch (error) {
                     console.error('Error saving result:', error);
                 }
@@ -917,12 +1013,14 @@ async function handleResetGame() {
             gameState.teams = {};
             gameState.results = {};
             gameState.draftComplete = false;
+            gameState.resultsFinalized = false;
 
             // Clear any displayed data
             document.getElementById('player-codes-display').innerHTML = '';
             document.getElementById('draft-status').innerHTML = '';
             document.getElementById('results-form').innerHTML = '';
             document.getElementById('winner-display').innerHTML = '';
+            document.getElementById('live-standings').innerHTML = '';
             
             alert('Game has been reset.');
             showPage('landing-page');

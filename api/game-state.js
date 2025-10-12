@@ -22,6 +22,7 @@ export default async function handler(req, res) {
       res.status(200).json({
         players: gameState.players,
         draftComplete: gameState.draft_complete,
+        resultsFinalized: gameState.results_finalized,
         rankings,
         teams,
         results
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
       // Update game state
-      const { players, draftComplete } = req.body;
+      const { players, draftComplete, resultsFinalized } = req.body;
 
       // Get existing game state or create new
       let gameState = await getData(gameId, 'game-state') || getDefaultGameState();
@@ -40,6 +41,9 @@ export default async function handler(req, res) {
       }
       if (draftComplete !== undefined) {
         gameState.draft_complete = draftComplete;
+      }
+      if (resultsFinalized !== undefined) {
+        gameState.results_finalized = resultsFinalized;
       }
       gameState.updated_at = new Date().toISOString();
 
