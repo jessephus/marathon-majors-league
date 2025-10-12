@@ -567,6 +567,14 @@ function getCountryFlag(countryCode) {
     return flagMap[countryCode] || '🏁';
 }
 
+// Helper function to enrich athlete data with current information from athletes.json
+function enrichAthleteData(athlete, gender) {
+    // Find the current athlete data from gameState.athletes
+    const currentData = gameState.athletes[gender]?.find(a => a.id === athlete.id);
+    // Merge the saved athlete data with current data, prioritizing current data
+    return currentData ? { ...athlete, ...currentData } : athlete;
+}
+
 // Helper function to create headshot element
 function createHeadshotElement(athlete, className) {
     if (!athlete.headshotUrl) return null;
@@ -611,12 +619,14 @@ function createTeamCard(player, team, showScore = false) {
     menSection.appendChild(menTitle);
     
     team.men.forEach(athlete => {
-        const time = gameState.results[athlete.id] || '-';
+        // Enrich athlete data with current information
+        const enrichedAthlete = enrichAthleteData(athlete, 'men');
+        const time = gameState.results[enrichedAthlete.id] || '-';
         const athleteDiv = document.createElement('div');
         athleteDiv.className = 'athlete';
         
         // Create headshot container
-        const headshot = createHeadshotElement(athlete, 'headshot');
+        const headshot = createHeadshotElement(enrichedAthlete, 'headshot');
         if (headshot) athleteDiv.appendChild(headshot);
         
         const infoDiv = document.createElement('div');
@@ -624,13 +634,13 @@ function createTeamCard(player, team, showScore = false) {
         
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
-        nameDiv.textContent = athlete.name;
+        nameDiv.textContent = enrichedAthlete.name;
         
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';
-        countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
+        countryDiv.innerHTML = `${getCountryFlag(enrichedAthlete.country)} ${enrichedAthlete.country}`;
         
-        const detailsText = formatAthleteDetails(athlete);
+        const detailsText = formatAthleteDetails(enrichedAthlete);
         if (detailsText) {
             const detailsDiv = document.createElement('div');
             detailsDiv.className = 'details';
@@ -662,12 +672,14 @@ function createTeamCard(player, team, showScore = false) {
     womenSection.appendChild(womenTitle);
     
     team.women.forEach(athlete => {
-        const time = gameState.results[athlete.id] || '-';
+        // Enrich athlete data with current information
+        const enrichedAthlete = enrichAthleteData(athlete, 'women');
+        const time = gameState.results[enrichedAthlete.id] || '-';
         const athleteDiv = document.createElement('div');
         athleteDiv.className = 'athlete';
         
         // Create headshot container
-        const headshot = createHeadshotElement(athlete, 'headshot');
+        const headshot = createHeadshotElement(enrichedAthlete, 'headshot');
         if (headshot) athleteDiv.appendChild(headshot);
         
         const infoDiv = document.createElement('div');
@@ -675,13 +687,13 @@ function createTeamCard(player, team, showScore = false) {
         
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
-        nameDiv.textContent = athlete.name;
+        nameDiv.textContent = enrichedAthlete.name;
         
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';
-        countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
+        countryDiv.innerHTML = `${getCountryFlag(enrichedAthlete.country)} ${enrichedAthlete.country}`;
         
-        const detailsText = formatAthleteDetails(athlete);
+        const detailsText = formatAthleteDetails(enrichedAthlete);
         if (detailsText) {
             const detailsDiv = document.createElement('div');
             detailsDiv.className = 'details';
