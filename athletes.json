@@ -38,7 +38,7 @@
       "age": 29,
       "sponsor": "Adidas",
       "worldRanking": null,
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": "https://cdn.prod.website-files.com/5f58a4616a9e717a6fa059d0/66fe8050a7ffca4555c3f020_Kotut-headshot.jpg"
     },
     {
       "id": 5,
@@ -48,7 +48,7 @@
       "age": 36,
       "sponsor": "NN Running Team",
       "worldRanking": 78,
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/14375137.jpg"
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14375137.jpg"
     },
     {
       "id": 6,
@@ -58,7 +58,7 @@
       "age": 24,
       "sponsor": "Nike",
       "worldRanking": 15,
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14735365.jpg"
     },
     {
       "id": 7,
@@ -128,7 +128,7 @@
       "age": 25,
       "sponsor": "Asics",
       "worldRanking": null,
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14493782.jpg"
     },
     {
       "id": 14,
@@ -148,7 +148,7 @@
       "age": 28,
       "sponsor": "Nike",
       "worldRanking": 43,
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/14628442.jpg"
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14628442.jpg"
     },
     {
       "id": 16,
@@ -158,7 +158,7 @@
       "age": 28,
       "sponsor": "New Balance",
       "worldRanking": null,
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14617088.jpg"
     },
     {
       "id": 17,
