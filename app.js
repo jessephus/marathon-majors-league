@@ -953,8 +953,6 @@ function setupResultsForm() {
         const entry = document.createElement('div');
         entry.className = 'result-entry';
         const currentTime = gameState.results[athlete.id] || '';
-        const athleteName = document.createTextNode('');
-        const athleteCountry = document.createTextNode('');
         entry.innerHTML = `
             <label>${escapeHtml(athlete.name)} (${escapeHtml(athlete.country)})</label>
             <input type="text" 
