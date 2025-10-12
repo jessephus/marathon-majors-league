@@ -315,10 +315,13 @@ footer .btn {
 .athlete-card {
     background: var(--light-gray);
     padding: 12px;
-    border-radius: 5px;
+    border-radius: 8px;
     border: 2px solid var(--medium-gray);
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .athlete-card:hover {
@@ -338,13 +341,51 @@ footer .btn {
     cursor: not-allowed;
 }
 
+.athlete-card .headshot-small {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--primary-blue);
+}
+
+.athlete-card.selected .headshot-small {
+    border-color: var(--white);
+}
+
+.athlete-card .headshot-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.athlete-card .athlete-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
 .athlete-card .name {
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+}
+
+.athlete-card .country {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    margin-bottom: 2px;
+}
+
+.athlete-card.selected .country {
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .athlete-card .details {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--dark-gray);
 }
 
@@ -391,22 +432,61 @@ footer .btn {
 }
 
 .team-card .athlete {
-    padding: 8px;
-    margin-bottom: 5px;
+    padding: 10px;
+    margin-bottom: 8px;
     background: var(--light-gray);
-    border-radius: 5px;
+    border-radius: 8px;
     display: flex;
-    justify-content: space-between;
+    gap: 12px;
     align-items: center;
+}
+
+.team-card .athlete .headshot {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--primary-blue);
+}
+
+.team-card .athlete .headshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.team-card .athlete .athlete-info {
+    flex: 1;
+    min-width: 0;
 }
 
 .team-card .athlete .name {
     font-weight: 600;
+    margin-bottom: 2px;
 }
 
 .team-card .athlete .country {
     color: var(--dark-gray);
     font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.team-card .athlete .details {
+    color: var(--dark-gray);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.team-card .athlete .time {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--primary-blue);
+    font-size: 0.95rem;
 }
 
 .team-card .score {

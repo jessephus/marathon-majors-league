@@ -4,127 +4,211 @@
       "id": 1,
       "name": "John Korir",
       "country": "KEN",
-      "pb": "2:02:44"
+      "pb": "2:02:44",
+      "age": 28,
+      "sponsor": "Nike",
+      "worldRanking": 3,
+      "headshotUrl": "https://d2a3o6pzho379u.cloudfront.net/88167.jpg"
     },
     {
       "id": 2,
       "name": "Timothy Kiplagat",
       "country": "KEN",
-      "pb": "2:02:55"
+      "pb": "2:02:55",
+      "age": 32,
+      "sponsor": "Nike",
+      "worldRanking": 8,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14825076.jpg"
     },
     {
       "id": 3,
       "name": "Amos Kipruto",
       "country": "KEN",
-      "pb": "2:03:13"
+      "pb": "2:03:13",
+      "age": 33,
+      "sponsor": "Nike",
+      "worldRanking": 26,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14694013.jpg"
     },
     {
       "id": 4,
       "name": "CyBrian Kotut",
       "country": "KEN",
-      "pb": "2:03:22"
+      "pb": "2:03:22",
+      "age": 29,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://cdn.prod.website-files.com/5f58a4616a9e717a6fa059d0/66fe8050a7ffca4555c3f020_Kotut-headshot.jpg"
     },
     {
       "id": 5,
       "name": "Bashir Abdi",
       "country": "BEL",
-      "pb": "2:03:36"
+      "pb": "2:03:36",
+      "age": 36,
+      "sponsor": "Asics",
+      "worldRanking": 78,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14375137.jpg"
     },
     {
       "id": 6,
       "name": "Jacob Kiplimo",
       "country": "UGA",
-      "pb": "2:03:37"
+      "pb": "2:03:37",
+      "age": 24,
+      "sponsor": "Nike",
+      "worldRanking": 15,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14735365.jpg"
     },
     {
       "id": 7,
       "name": "Philemon Kiplimo",
       "country": "KEN",
-      "pb": "2:04:01"
+      "pb": "2:04:01",
+      "age": 27,
+      "sponsor": "Nike",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 8,
       "name": "Geoffrey Kamworor",
       "country": "KEN",
-      "pb": "2:04:23"
+      "pb": "2:04:23",
+      "age": 32,
+      "sponsor": "Nike",
+      "worldRanking": 45,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 9,
       "name": "Seifu Tura",
       "country": "ETH",
-      "pb": "2:04:29"
+      "pb": "2:04:29",
+      "age": 27,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 10,
       "name": "Huseydin Mohamed Esa",
       "country": "ETH",
-      "pb": "2:04:39"
+      "pb": "2:04:39",
+      "age": 25,
+      "sponsor": "Nike",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 11,
       "name": "Daniel Ebenyo",
       "country": "KEN",
-      "pb": "2:06:04"
+      "pb": "2:06:04",
+      "age": 26,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 12,
       "name": "Galen Rupp",
       "country": "USA",
-      "pb": "2:06:07"
+      "pb": "2:06:07",
+      "age": 39,
+      "sponsor": "Nike",
+      "worldRanking": 120,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 13,
       "name": "Hiroto Inoue",
       "country": "JPN",
-      "pb": "2:06:14"
+      "pb": "2:06:14",
+      "age": 25,
+      "sponsor": "Asics",
+      "worldRanking": null,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14493782.jpg"
     },
     {
       "id": 14,
       "name": "Zouhair Talbi",
       "country": "MAR",
-      "pb": "2:06:39"
+      "pb": "2:06:39",
+      "age": 30,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 15,
       "name": "Conner Mantz",
       "country": "USA",
-      "pb": "2:07:47"
+      "pb": "2:07:47",
+      "age": 28,
+      "sponsor": "Nike",
+      "worldRanking": 43,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14628442.jpg"
     },
     {
       "id": 16,
       "name": "Rory Linkletter",
       "country": "CAN",
-      "pb": "2:08:01"
+      "pb": "2:08:01",
+      "age": 28,
+      "sponsor": "Puma",
+      "worldRanking": null,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14617088.jpg"
     },
     {
       "id": 17,
       "name": "Alex Masai",
       "country": "KEN",
-      "pb": "2:08:03"
+      "pb": "2:08:03",
+      "age": 26,
+      "sponsor": "Nike",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 18,
       "name": "CJ Albertson",
       "country": "USA",
-      "pb": "2:08:17"
+      "pb": "2:08:17",
+      "age": 31,
+      "sponsor": "Hoka",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 19,
       "name": "Jia Erenjia",
       "country": "CHN",
-      "pb": "2:08:32"
+      "pb": "2:08:32",
+      "age": 24,
+      "sponsor": "361 Degrees",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 20,
       "name": "Haftu Knight",
       "country": "USA",
-      "pb": "2:09:38"
+      "pb": "2:09:38",
+      "age": 31,
+      "sponsor": "On Running",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 21,
       "name": "Andrew Colley",
       "country": "USA",
-      "pb": "2:09:46"
+      "pb": "2:09:46",
+      "age": 29,
+      "sponsor": "Brooks",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     }
   ],
   "women": [
@@ -132,109 +216,181 @@
       "id": 101,
       "name": "Megertu Alemu",
       "country": "ETH",
-      "pb": "2:16:34"
+      "pb": "2:16:34",
+      "age": 27,
+      "sponsor": "Nike",
+      "worldRanking": 4,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14815683.jpg"
     },
     {
       "id": 102,
       "name": "Hawi Feysa",
       "country": "ETH",
-      "pb": "2:17:00"
+      "pb": "2:17:00",
+      "age": 26,
+      "sponsor": "Nike",
+      "worldRanking": 12,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14786742.jpg"
     },
     {
       "id": 103,
       "name": "Bedatu Hirpa",
       "country": "ETH",
-      "pb": "2:18:27"
+      "pb": "2:18:27",
+      "age": 28,
+      "sponsor": "Adidas",
+      "worldRanking": 25,
+      "headshotUrl": "https://livesport-ott-images.ssl.cdn.cra.cz/r900xfq60/eef9a257-6ec9-4b16-9839-bbee898240ec.avif"
     },
     {
       "id": 104,
       "name": "Haven Hailu Desse",
       "country": "ETH",
-      "pb": "2:19:17"
+      "pb": "2:19:17",
+      "age": 24,
+      "sponsor": "Nike",
+      "worldRanking": null,
+      "headshotUrl": "https://www.nnrunningteam.com/files/images/1191-1379-3240-slide.jpg?1702287733"
     },
     {
       "id": 105,
       "name": "Mary Ngugi-Cooper",
       "country": "KEN",
-      "pb": "2:20:22"
+      "pb": "2:20:22",
+      "age": 36,
+      "sponsor": "Nike",
+      "worldRanking": null,
+      "headshotUrl": "https://pbs.twimg.com/media/FQpVZp8XIAYJqWA?format=jpg"
     },
     {
       "id": 106,
       "name": "Calli Hauger-Thackery",
       "country": "GBR",
-      "pb": "2:21:24"
+      "pb": "2:21:24",
+      "age": 29,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14276523.jpg"
     },
     {
       "id": 107,
       "name": "Natosha Rogers",
       "country": "USA",
-      "pb": "2:23:51"
+      "pb": "2:23:51",
+      "age": 34,
+      "sponsor": "Puma",
+      "worldRanking": null,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14413831.jpg"
     },
     {
       "id": 108,
       "name": "Florencia Borelli",
       "country": "ARG",
-      "pb": "2:24:18"
+      "pb": "2:24:18",
+      "age": 27,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 109,
       "name": "Gabi Rooker",
       "country": "USA",
-      "pb": "2:24:29"
+      "pb": "2:24:29",
+      "age": 29,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 110,
       "name": "Dakotah Popehn",
       "country": "USA",
-      "pb": "2:24:40"
+      "pb": "2:24:40",
+      "age": 27,
+      "sponsor": "Puma",
+      "worldRanking": null,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14644196.jpg"
     },
     {
       "id": 111,
       "name": "Melody Julien",
       "country": "FRA",
-      "pb": "2:25:01"
+      "pb": "2:25:01",
+      "age": 30,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 112,
       "name": "Makenna Myler",
       "country": "USA",
-      "pb": "2:26:14"
+      "pb": "2:26:14",
+      "age": 26,
+      "sponsor": "Brooks",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 113,
       "name": "Marta Galimany",
       "country": "ESP",
-      "pb": "2:26:14"
+      "pb": "2:26:14",
+      "age": 32,
+      "sponsor": "Asics",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 114,
       "name": "Aubrey Frentheway",
       "country": "USA",
-      "pb": "2:27:14"
+      "pb": "2:27:14",
+      "age": 28,
+      "sponsor": "Hoka",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 115,
       "name": "Maggie Montoya",
       "country": "USA",
-      "pb": "2:27:50"
+      "pb": "2:27:50",
+      "age": 33,
+      "sponsor": "New Balance",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 116,
       "name": "Loice Chemnung",
       "country": "KEN",
-      "pb": "debut"
+      "pb": "debut",
+      "age": 23,
+      "sponsor": "Nike",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     },
     {
       "id": 117,
       "name": "Ejgayehu Taye",
       "country": "ETH",
-      "pb": "debut"
+      "pb": "debut",
+      "age": 25,
+      "sponsor": "Adidas",
+      "worldRanking": null,
+      "headshotUrl": "https://media.aws.iaaf.org/athletes/14848746.jpg"
     },
     {
       "id": 118,
       "name": "Emily Venters",
       "country": "USA",
-      "pb": "debut"
+      "pb": "debut",
+      "age": 27,
+      "sponsor": "On Running",
+      "worldRanking": null,
+      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
     }
   ]
 }

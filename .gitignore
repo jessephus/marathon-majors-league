@@ -143,3 +143,6 @@ vite.config.ts.timestamp-*
 
 # Package lock
 package-lock.json
+
+# Test files
+test-*.html
