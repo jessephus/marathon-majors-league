@@ -175,16 +175,44 @@ function displayAthletePool(gender) {
         const card = document.createElement('div');
         card.className = `athlete-card ${isSelected ? 'selected' : ''}`;
         
+        // Create headshot container if available
+        if (athlete.headshotUrl) {
+            const headshotDiv = document.createElement('div');
+            headshotDiv.className = 'headshot-small';
+            const img = document.createElement('img');
+            img.src = athlete.headshotUrl;
+            img.alt = athlete.name;
+            img.onerror = function() {
+                this.style.display = 'none';
+            };
+            headshotDiv.appendChild(img);
+            card.appendChild(headshotDiv);
+        }
+        
+        const infoContainer = document.createElement('div');
+        infoContainer.className = 'athlete-card-info';
+        
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
         nameDiv.textContent = athlete.name;
         
+        const countryDiv = document.createElement('div');
+        countryDiv.className = 'country';
+        countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
+        
         const detailsDiv = document.createElement('div');
         detailsDiv.className = 'details';
-        detailsDiv.textContent = `${athlete.country} - PB: ${athlete.pb}`;
+        let detailsParts = [`PB: ${athlete.pb}`];
+        if (athlete.age) detailsParts.push(`Age: ${athlete.age}`);
+        if (athlete.sponsor) detailsParts.push(athlete.sponsor);
+        if (athlete.worldRanking) detailsParts.push(`#${athlete.worldRanking}`);
+        detailsDiv.textContent = detailsParts.join(' • ');
         
-        card.appendChild(nameDiv);
-        card.appendChild(detailsDiv);
+        infoContainer.appendChild(nameDiv);
+        infoContainer.appendChild(countryDiv);
+        infoContainer.appendChild(detailsDiv);
+        
+        card.appendChild(infoContainer);
         
         if (!isSelected && currentRankings.length < 10) {
             card.addEventListener('click', () => addAthleteToRanking(gender, athlete));
@@ -542,6 +570,17 @@ function displayTeams() {
     });
 }
 
+// Helper function to get country flag emoji
+function getCountryFlag(countryCode) {
+    const flagMap = {
+        'KEN': '🇰🇪', 'ETH': '🇪🇹', 'BEL': '🇧🇪', 'UGA': '🇺🇬', 
+        'USA': '🇺🇸', 'JPN': '🇯🇵', 'MAR': '🇲🇦', 'CAN': '🇨🇦',
+        'CHN': '🇨🇳', 'FRA': '🇫🇷', 'GBR': '🇬🇧', 'ARG': '🇦🇷',
+        'ESP': '🇪🇸'
+    };
+    return flagMap[countryCode] || '🏁';
+}
+
 function createTeamCard(player, team, showScore = false) {
     const card = document.createElement('div');
     card.className = 'team-card';
@@ -563,17 +602,47 @@ function createTeamCard(player, team, showScore = false) {
         const athleteDiv = document.createElement('div');
         athleteDiv.className = 'athlete';
         
+        // Create headshot container
+        if (athlete.headshotUrl) {
+            const headshotDiv = document.createElement('div');
+            headshotDiv.className = 'headshot';
+            const img = document.createElement('img');
+            img.src = athlete.headshotUrl;
+            img.alt = athlete.name;
+            img.onerror = function() {
+                this.style.display = 'none';
+            };
+            headshotDiv.appendChild(img);
+            athleteDiv.appendChild(headshotDiv);
+        }
+        
         const infoDiv = document.createElement('div');
+        infoDiv.className = 'athlete-info';
+        
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
         nameDiv.textContent = athlete.name;
+        
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';
-        countryDiv.textContent = athlete.country;
+        countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
+        
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'details';
+        let detailsText = [];
+        if (athlete.age) detailsText.push(`Age: ${athlete.age}`);
+        if (athlete.sponsor) detailsText.push(`${athlete.sponsor}`);
+        if (athlete.worldRanking) detailsText.push(`Rank: #${athlete.worldRanking}`);
+        detailsDiv.textContent = detailsText.join(' • ');
+        
         infoDiv.appendChild(nameDiv);
         infoDiv.appendChild(countryDiv);
+        if (detailsText.length > 0) {
+            infoDiv.appendChild(detailsDiv);
+        }
         
         const timeDiv = document.createElement('div');
+        timeDiv.className = 'time';
         timeDiv.textContent = time;
         
         athleteDiv.appendChild(infoDiv);
@@ -595,17 +664,47 @@ function createTeamCard(player, team, showScore = false) {
         const athleteDiv = document.createElement('div');
         athleteDiv.className = 'athlete';
         
+        // Create headshot container
+        if (athlete.headshotUrl) {
+            const headshotDiv = document.createElement('div');
+            headshotDiv.className = 'headshot';
+            const img = document.createElement('img');
+            img.src = athlete.headshotUrl;
+            img.alt = athlete.name;
+            img.onerror = function() {
+                this.style.display = 'none';
+            };
+            headshotDiv.appendChild(img);
+            athleteDiv.appendChild(headshotDiv);
+        }
+        
         const infoDiv = document.createElement('div');
+        infoDiv.className = 'athlete-info';
+        
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
         nameDiv.textContent = athlete.name;
+        
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';
-        countryDiv.textContent = athlete.country;
+        countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
+        
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'details';
+        let detailsText = [];
+        if (athlete.age) detailsText.push(`Age: ${athlete.age}`);
+        if (athlete.sponsor) detailsText.push(`${athlete.sponsor}`);
+        if (athlete.worldRanking) detailsText.push(`Rank: #${athlete.worldRanking}`);
+        detailsDiv.textContent = detailsText.join(' • ');
+        
         infoDiv.appendChild(nameDiv);
         infoDiv.appendChild(countryDiv);
+        if (detailsText.length > 0) {
+            infoDiv.appendChild(detailsDiv);
+        }
         
         const timeDiv = document.createElement('div');
+        timeDiv.className = 'time';
         timeDiv.textContent = time;
         
         athleteDiv.appendChild(infoDiv);
