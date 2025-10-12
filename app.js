@@ -97,6 +97,7 @@ function setupEventListeners() {
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
     document.getElementById('update-results').addEventListener('click', handleUpdateResults);
     document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
+    document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
     document.getElementById('export-data').addEventListener('click', handleExportData);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
@@ -993,6 +994,47 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+async function handleResetResults() {
+    if (!confirm('Are you sure you want to reset live results? This will clear all athlete times but keep teams and draft intact.')) {
+        return;
+    }
+
+    try {
+        // Clear results from database
+        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results: {} })
+        });
+
+        // Clear resultsFinalized flag
+        gameState.resultsFinalized = false;
+        await saveGameState();
+
+        // Update local game state
+        gameState.results = {};
+
+        // Clear displayed data
+        document.getElementById('live-standings').innerHTML = '';
+        document.getElementById('winner-display').innerHTML = '';
+        
+        // Re-setup the results form with empty values
+        if (gameState.draftComplete) {
+            setupResultsForm();
+        }
+
+        // Reset button states
+        document.getElementById('update-results').textContent = 'Update Live Results';
+        document.getElementById('update-results').disabled = false;
+        document.getElementById('finalize-results').style.display = 'none';
+
+        alert('Live results have been reset. You can now enter new times.');
+    } catch (error) {
+        console.error('Error resetting results:', error);
+        alert('Error resetting results. Please try again.');
+    }
 }
 
 async function handleResetGame() {
