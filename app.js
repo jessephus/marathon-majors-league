@@ -176,18 +176,8 @@ function displayAthletePool(gender) {
         card.className = `athlete-card ${isSelected ? 'selected' : ''}`;
         
         // Create headshot container if available
-        if (athlete.headshotUrl) {
-            const headshotDiv = document.createElement('div');
-            headshotDiv.className = 'headshot-small';
-            const img = document.createElement('img');
-            img.src = athlete.headshotUrl;
-            img.alt = athlete.name;
-            img.onerror = function() {
-                this.style.display = 'none';
-            };
-            headshotDiv.appendChild(img);
-            card.appendChild(headshotDiv);
-        }
+        const headshot = createHeadshotElement(athlete, 'headshot-small');
+        if (headshot) card.appendChild(headshot);
         
         const infoContainer = document.createElement('div');
         infoContainer.className = 'athlete-card-info';
@@ -202,11 +192,7 @@ function displayAthletePool(gender) {
         
         const detailsDiv = document.createElement('div');
         detailsDiv.className = 'details';
-        let detailsParts = [`PB: ${athlete.pb}`];
-        if (athlete.age) detailsParts.push(`Age: ${athlete.age}`);
-        if (athlete.sponsor) detailsParts.push(athlete.sponsor);
-        if (athlete.worldRanking) detailsParts.push(`#${athlete.worldRanking}`);
-        detailsDiv.textContent = detailsParts.join(' • ');
+        detailsDiv.textContent = formatAthleteDetails(athlete, true);
         
         infoContainer.appendChild(nameDiv);
         infoContainer.appendChild(countryDiv);
@@ -581,6 +567,32 @@ function getCountryFlag(countryCode) {
     return flagMap[countryCode] || '🏁';
 }
 
+// Helper function to create headshot element
+function createHeadshotElement(athlete, className) {
+    if (!athlete.headshotUrl) return null;
+    
+    const headshotDiv = document.createElement('div');
+    headshotDiv.className = className;
+    const img = document.createElement('img');
+    img.src = athlete.headshotUrl;
+    img.alt = athlete.name;
+    img.onerror = function() {
+        this.style.display = 'none';
+    };
+    headshotDiv.appendChild(img);
+    return headshotDiv;
+}
+
+// Helper function to format athlete details
+function formatAthleteDetails(athlete, includePersonalBest = false) {
+    let detailsParts = [];
+    if (includePersonalBest) detailsParts.push(`PB: ${athlete.pb}`);
+    if (athlete.age) detailsParts.push(`Age: ${athlete.age}`);
+    if (athlete.sponsor) detailsParts.push(athlete.sponsor);
+    if (athlete.worldRanking) detailsParts.push(`${includePersonalBest ? '#' : 'Rank: #'}${athlete.worldRanking}`);
+    return detailsParts.join(' • ');
+}
+
 function createTeamCard(player, team, showScore = false) {
     const card = document.createElement('div');
     card.className = 'team-card';
@@ -603,18 +615,8 @@ function createTeamCard(player, team, showScore = false) {
         athleteDiv.className = 'athlete';
         
         // Create headshot container
-        if (athlete.headshotUrl) {
-            const headshotDiv = document.createElement('div');
-            headshotDiv.className = 'headshot';
-            const img = document.createElement('img');
-            img.src = athlete.headshotUrl;
-            img.alt = athlete.name;
-            img.onerror = function() {
-                this.style.display = 'none';
-            };
-            headshotDiv.appendChild(img);
-            athleteDiv.appendChild(headshotDiv);
-        }
+        const headshot = createHeadshotElement(athlete, 'headshot');
+        if (headshot) athleteDiv.appendChild(headshot);
         
         const infoDiv = document.createElement('div');
         infoDiv.className = 'athlete-info';
@@ -627,18 +629,17 @@ function createTeamCard(player, team, showScore = false) {
         countryDiv.className = 'country';
         countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
         
-        const detailsDiv = document.createElement('div');
-        detailsDiv.className = 'details';
-        let detailsText = [];
-        if (athlete.age) detailsText.push(`Age: ${athlete.age}`);
-        if (athlete.sponsor) detailsText.push(`${athlete.sponsor}`);
-        if (athlete.worldRanking) detailsText.push(`Rank: #${athlete.worldRanking}`);
-        detailsDiv.textContent = detailsText.join(' • ');
-        
-        infoDiv.appendChild(nameDiv);
-        infoDiv.appendChild(countryDiv);
-        if (detailsText.length > 0) {
+        const detailsText = formatAthleteDetails(athlete);
+        if (detailsText) {
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'details';
+            detailsDiv.textContent = detailsText;
+            infoDiv.appendChild(nameDiv);
+            infoDiv.appendChild(countryDiv);
             infoDiv.appendChild(detailsDiv);
+        } else {
+            infoDiv.appendChild(nameDiv);
+            infoDiv.appendChild(countryDiv);
         }
         
         const timeDiv = document.createElement('div');
@@ -665,18 +666,8 @@ function createTeamCard(player, team, showScore = false) {
         athleteDiv.className = 'athlete';
         
         // Create headshot container
-        if (athlete.headshotUrl) {
-            const headshotDiv = document.createElement('div');
-            headshotDiv.className = 'headshot';
-            const img = document.createElement('img');
-            img.src = athlete.headshotUrl;
-            img.alt = athlete.name;
-            img.onerror = function() {
-                this.style.display = 'none';
-            };
-            headshotDiv.appendChild(img);
-            athleteDiv.appendChild(headshotDiv);
-        }
+        const headshot = createHeadshotElement(athlete, 'headshot');
+        if (headshot) athleteDiv.appendChild(headshot);
         
         const infoDiv = document.createElement('div');
         infoDiv.className = 'athlete-info';
@@ -689,18 +680,17 @@ function createTeamCard(player, team, showScore = false) {
         countryDiv.className = 'country';
         countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
         
-        const detailsDiv = document.createElement('div');
-        detailsDiv.className = 'details';
-        let detailsText = [];
-        if (athlete.age) detailsText.push(`Age: ${athlete.age}`);
-        if (athlete.sponsor) detailsText.push(`${athlete.sponsor}`);
-        if (athlete.worldRanking) detailsText.push(`Rank: #${athlete.worldRanking}`);
-        detailsDiv.textContent = detailsText.join(' • ');
-        
-        infoDiv.appendChild(nameDiv);
-        infoDiv.appendChild(countryDiv);
-        if (detailsText.length > 0) {
+        const detailsText = formatAthleteDetails(athlete);
+        if (detailsText) {
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'details';
+            detailsDiv.textContent = detailsText;
+            infoDiv.appendChild(nameDiv);
+            infoDiv.appendChild(countryDiv);
             infoDiv.appendChild(detailsDiv);
+        } else {
+            infoDiv.appendChild(nameDiv);
+            infoDiv.appendChild(countryDiv);
         }
         
         const timeDiv = document.createElement('div');
