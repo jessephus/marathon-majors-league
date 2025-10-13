@@ -121,6 +121,9 @@ vercel dev
 
 ## Support
 
-For issues specific to Vercel deployment:
-- [Vercel Documentation](https://vercel.com/docs)
-- [Vercel Support](https://vercel.com/support)
+For deployment issues and questions:
+- **[User Guide](USER_GUIDE.md)** - End-user setup and gameplay instructions
+- **[Development Guide](DEVELOPMENT.md)** - Local development and contribution setup
+- **[Architecture Guide](ARCHITECTURE.md)** - Technical architecture and data models
+- **[Vercel Documentation](https://vercel.com/docs)** - Platform-specific help
+- **[Vercel Support](https://vercel.com/support)** - Direct platform support
