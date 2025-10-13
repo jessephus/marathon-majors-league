@@ -4,6 +4,8 @@
 
 Experience the thrill of the New York City Marathon like never before with this interactive fantasy game. Compete with your friends by drafting elite runners and cheering them on as they race through the five boroughs. With live result tracking, snake draft mechanics, and mobile-friendly gameplay, every step of the marathon becomes edge-of-your-seat entertainment.
 
+<img width="1536" height="1024" alt="AI generated image depicting a Ugandan athlete finishing a marathon with a Marathon Majors Fantasy League graphic on his racing singlet." src="https://github.com/user-attachments/assets/c66852b6-3087-4335-9be5-dd16ee4ed431" />
+
 Perfect for marathon fans, running enthusiasts, or anyone who loves friendly competition during one of the world's most prestigious races!
 
 ## ✨ Features
