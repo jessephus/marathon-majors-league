@@ -1,13 +1,13 @@
-# Fantasy Chicago Marathon 🏃
+# Fantasy NY Marathon 🗽
 
-A simple fantasy game for the Chicago Marathon where you can compete with 2-3 friends!
+A simple fantasy game for the NY Marathon where you can compete with 2-3 friends!
 
 ## Features
 
 - 🎮 **No Traditional Login**: Players authenticate using special codes
 - 🏆 **Snake Draft System**: Automatic snake draft of 3 men and 3 women per player
 - 📱 **Mobile Friendly**: Fully responsive design for mobile devices
-- 🎨 **Red & Blue Theme**: Chicago-inspired color scheme
+- 🎨 **Orange Red & Blue Blue Theme**: NY-inspired color scheme
 - 💾 **Persistent Storage**: Game state saved in Vercel Blob storage
 - 👑 **Commissioner Controls**: Full game management dashboard
 
@@ -98,9 +98,9 @@ Each game has its own blob namespace for data isolation.
 
 ## Athletes Data
 
-The game includes the confirmed Chicago Marathon elite field with:
-- 21 men's elite runners
-- 18 women's elite runners
+The game includes the confirmed NY Marathon elite field with:
+- 33 men's elite runners
+- 25 women's elite runners
 
 Athletes include their country and personal best times.
 
