@@ -1,7 +1,7 @@
 {
-  "name": "fantasy-chicago-marathon",
+  "name": "fantasy-ny-marathon",
   "version": "1.0.0",
-  "description": "Fantasy game for the Chicago Marathon",
+  "description": "Fantasy game for the NY Marathon",
   "type": "module",
   "main": "index.html",
   "scripts": {
@@ -13,7 +13,7 @@
     "@vercel/blob": "^0.23.0"
   },
   "devDependencies": {},
-  "keywords": ["fantasy", "marathon", "chicago"],
+  "keywords": ["fantasy", "marathon", "ny", "new-york"],
   "author": "Jesse Geraci",
   "license": "MIT"
 }

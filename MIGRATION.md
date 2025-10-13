@@ -1,7 +1,7 @@
 # Database Migration Summary
 
 ## Overview
-This document summarizes the migration from Vercel Postgres to Vercel Blob Storage for the Fantasy Chicago Marathon application.
+This document summarizes the migration from Vercel Postgres to Vercel Blob Storage for the Fantasy NY Marathon application.
 
 ## Changes Summary
 - **10 files modified**

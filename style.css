@@ -5,10 +5,10 @@
 }
 
 :root {
-    --primary-red: #dc3545;
-    --primary-blue: #007bff;
-    --dark-red: #c82333;
-    --dark-blue: #0056b3;
+    --primary-orange: #ff6900;
+    --primary-blue: #2C39A2;
+    --dark-orange: #e55d00;
+    --dark-blue: #161C4F;
     --light-gray: #f8f9fa;
     --medium-gray: #e9ecef;
     --dark-gray: #6c757d;
@@ -39,7 +39,7 @@ body {
 }
 
 header {
-    background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
     color: var(--white);
     padding: 30px 20px;
     border-radius: 10px;
@@ -85,7 +85,7 @@ footer .btn {
 }
 
 .welcome-card h2 {
-    color: var(--primary-red);
+    color: var(--primary-orange);
     margin-bottom: 15px;
 }
 
@@ -157,12 +157,12 @@ footer .btn {
 }
 
 .btn-danger {
-    background: var(--primary-red);
+    background: var(--primary-orange);
     color: var(--white);
 }
 
 .btn-danger:hover {
-    background: var(--dark-red);
+    background: var(--dark-orange);
 }
 
 .btn-success {
@@ -212,7 +212,7 @@ footer .btn {
 }
 
 .player-info span {
-    color: var(--primary-red);
+    color: var(--primary-orange);
 }
 
 /* Ranking Container */
@@ -231,7 +231,7 @@ footer .btn {
 }
 
 .ranking-section h3 {
-    color: var(--primary-red);
+    color: var(--primary-orange);
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--medium-gray);
@@ -263,7 +263,7 @@ footer .btn {
 
 .ranking-item .rank {
     font-weight: bold;
-    color: var(--primary-red);
+    color: var(--primary-orange);
     margin-right: 10px;
     min-width: 25px;
 }
@@ -280,7 +280,7 @@ footer .btn {
 }
 
 .ranking-item .remove-btn {
-    background: var(--primary-red);
+    background: var(--primary-orange);
     color: var(--white);
     border: none;
     border-radius: 3px;
@@ -291,7 +291,7 @@ footer .btn {
 }
 
 .ranking-item .remove-btn:hover {
-    background: var(--dark-red);
+    background: var(--dark-orange);
 }
 
 /* Athlete Selection */
@@ -447,7 +447,7 @@ footer .btn {
 }
 
 .team-card h3 {
-    color: var(--primary-red);
+    color: var(--primary-orange);
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--medium-gray);
@@ -524,7 +524,7 @@ footer .btn {
 .team-card .score {
     margin-top: 15px;
     padding: 15px;
-    background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
     color: var(--white);
     border-radius: 5px;
     text-align: center;
@@ -673,7 +673,7 @@ footer .btn {
 #winner-display {
     margin-top: 20px;
     padding: 20px;
-    background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
     color: var(--white);
     border-radius: 10px;
     text-align: center;
