@@ -1,6 +1,7 @@
 import { initializeDatabase, seedAthletes, getAllAthletes } from './db.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -13,8 +14,53 @@ export default async function handler(req, res) {
   }
 
   try {
+    const DATABASE_URL = process.env.DATABASE_URL;
+    
+    if (!DATABASE_URL) {
+      return res.status(500).json({ 
+        error: 'DATABASE_URL not configured',
+        details: 'Please add Neon Postgres integration to your Vercel project'
+      });
+    }
+    
+    const sql = neon(DATABASE_URL);
+    
     // Test database connection
     const connectionTest = await initializeDatabase();
+    
+    // Check if athletes table exists
+    let tableExists = true;
+    try {
+      await sql`SELECT 1 FROM athletes LIMIT 1`;
+    } catch (error) {
+      if (error.message.includes('does not exist')) {
+        tableExists = false;
+      } else {
+        throw error;
+      }
+    }
+    
+    // If table doesn't exist, create schema
+    if (!tableExists) {
+      console.log('Creating database schema...');
+      
+      try {
+        // Read and execute schema.sql
+        const schemaPath = join(process.cwd(), 'schema.sql');
+        const schemaSQL = readFileSync(schemaPath, 'utf-8');
+        
+        // Execute the schema SQL
+        await sql.unsafe(schemaSQL);
+        
+        console.log('Database schema created successfully');
+      } catch (schemaError) {
+        console.error('Schema creation error:', schemaError);
+        return res.status(500).json({ 
+          error: 'Failed to create database schema',
+          details: schemaError.message 
+        });
+      }
+    }
     
     // Check if athletes table is populated
     const athletes = await getAllAthletes();
@@ -51,7 +97,8 @@ export default async function handler(req, res) {
       status: 'initialized',
       database: 'Neon Postgres',
       connectionTime: connectionTest.current_time,
-      athletesCount: athletesCount
+      athletesCount: athletesCount,
+      schemaExists: tableExists
     });
   } catch (error) {
     console.error('Database initialization error:', error);

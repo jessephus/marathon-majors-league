@@ -27,7 +27,34 @@ async function initializeDatabase() {
   try {
     const sql = neon(DATABASE_URL);
     
-    // Check if athletes table exists and has data
+    // Check if athletes table exists
+    let tableExists = true;
+    try {
+      await sql`SELECT 1 FROM athletes LIMIT 1`;
+    } catch (error) {
+      if (error.message.includes('does not exist')) {
+        tableExists = false;
+      } else {
+        throw error;
+      }
+    }
+    
+    // If table doesn't exist, create schema
+    if (!tableExists) {
+      console.log('📋 Creating database schema...');
+      
+      // Read and execute schema.sql
+      const schemaPath = join(__dirname, '..', 'schema.sql');
+      const schemaSQL = readFileSync(schemaPath, 'utf-8');
+      
+      // Execute the schema SQL
+      // Note: We need to execute this as a raw query since it contains multiple statements
+      await sql.unsafe(schemaSQL);
+      
+      console.log('✅ Database schema created successfully');
+    }
+    
+    // Check if athletes table has data
     const athletes = await sql`
       SELECT COUNT(*) as count FROM athletes
     `;

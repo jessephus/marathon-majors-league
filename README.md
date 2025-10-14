@@ -77,15 +77,13 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
    - Search for and add the **Neon** integration
    - Follow prompts to create/connect a Neon Postgres database
    - Vercel automatically configures the `DATABASE_URL` environment variable
-5. **Initialize database schema**:
-   - See [NEON_SETUP.md](NEON_SETUP.md) for detailed instructions
-   - Run the `schema.sql` file in your Neon database
-6. **Deploy** - Athletes data will be automatically seeded during deployment
-   - The build process runs `npm run postbuild` which seeds the database
-   - If that fails, the app will auto-seed on first API request
-7. **Share** your game URL with friends!
+5. **Deploy** - Database schema and athletes data are automatically initialized
+   - The build process creates database tables and seeds athletes
+   - If build fails, the app will auto-initialize on first access
+   - **Your game data persists across deployments** - no data loss!
+6. **Share** your game URL with friends!
 
-**Note:** The database is the single source of truth - no fallback to static files.
+**Note:** The database schema is automatically created - no manual SQL execution needed!
 
 ### Local Development
 

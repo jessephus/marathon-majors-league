@@ -1,6 +1,7 @@
 import { getAllAthletes, seedAthletes } from './db.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +14,51 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      const DATABASE_URL = process.env.DATABASE_URL;
+      
+      if (!DATABASE_URL) {
+        return res.status(500).json({ 
+          error: 'DATABASE_URL not configured',
+          details: 'Please add Neon Postgres integration to your Vercel project'
+        });
+      }
+      
+      const sql = neon(DATABASE_URL);
+      
+      // Check if athletes table exists
+      let tableExists = true;
+      try {
+        await sql`SELECT 1 FROM athletes LIMIT 1`;
+      } catch (error) {
+        if (error.message.includes('does not exist')) {
+          tableExists = false;
+        } else {
+          throw error;
+        }
+      }
+      
+      // If table doesn't exist, create schema
+      if (!tableExists) {
+        console.log('Athletes table does not exist, creating schema...');
+        
+        try {
+          // Read and execute schema.sql
+          const schemaPath = join(process.cwd(), 'schema.sql');
+          const schemaSQL = readFileSync(schemaPath, 'utf-8');
+          
+          // Execute the schema SQL
+          await sql.unsafe(schemaSQL);
+          
+          console.log('Database schema created successfully');
+        } catch (schemaError) {
+          console.error('Schema creation error:', schemaError);
+          return res.status(500).json({ 
+            error: 'Database schema does not exist and auto-creation failed',
+            details: schemaError.message 
+          });
+        }
+      }
+      
       // Get all athletes from database
       let athletes = await getAllAthletes();
       

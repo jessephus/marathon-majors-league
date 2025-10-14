@@ -23,32 +23,9 @@ The integration will automatically:
 - Set the `DATABASE_URL` environment variable in your Vercel project
 - Configure the connection for all environments (development, preview, production)
 
-### Step 2: Initialize Database Schema
+### Step 2: Deploy Application
 
-After the integration is set up, you need to create the database tables:
-
-#### Option A: Using Neon Console (Recommended)
-
-1. Go to [console.neon.tech](https://console.neon.tech)
-2. Select your database
-3. Click on **SQL Editor**
-4. Copy the contents of `schema.sql` from the project root
-5. Paste and execute the SQL in the editor
-
-#### Option B: Using Vercel CLI
-
-```bash
-# Pull the DATABASE_URL environment variable
-vercel env pull
-
-# Connect to your database and run the schema
-# You can use psql or any Postgres client
-psql $DATABASE_URL < schema.sql
-```
-
-### Step 3: Deploy and Auto-Initialize
-
-The database will be automatically seeded during deployment:
+**The database schema is now created automatically!**
 
 1. **Deploy your application** to Vercel
    ```bash
@@ -57,10 +34,11 @@ The database will be automatically seeded during deployment:
    vercel --prod
    ```
 
-2. **Automatic seeding happens via:**
+2. **Automatic initialization happens via:**
    - The `postbuild` script runs `node scripts/init-db.js`
-   - This checks if the database is empty and seeds it with athletes from `athletes.json`
-   - If seeding fails during build, the `/api/athletes` endpoint will auto-seed on first request
+   - This script automatically creates the database schema if it doesn't exist
+   - Then it seeds the database with athletes from `athletes.json`
+   - If build-time initialization fails, the `/api/athletes` endpoint will auto-create schema and seed on first request
 
 3. **Verify the setup:**
    ```bash
@@ -71,7 +49,10 @@ The database will be automatically seeded during deployment:
    curl https://your-app.vercel.app/api/athletes
    ```
 
-**Note:** The database is now the single source of truth. The application will not fall back to static JSON files.
+**Important Notes:**
+- ✅ Schema is automatically created - no manual SQL execution needed
+- ✅ Data persists across deployments - your games won't be lost
+- ✅ Only athletes data is seeded automatically - game data is created as users play
 
 ## Local Development Setup
 
