@@ -47,19 +47,30 @@ export default async function handler(req, res) {
           const schemaSQL = readFileSync(schemaPath, 'utf-8');
           
           // Execute the schema SQL - split into individual statements
-          const statements = schemaSQL
+          // Remove comments first, then split by semicolons that end statements
+          const cleanedSQL = schemaSQL
+            .split('\n')
+            .filter(line => !line.trim().startsWith('--'))
+            .join('\n');
+          
+          const statements = cleanedSQL
             .split(';')
             .map(s => s.trim())
-            .filter(s => s.length > 0 && !s.startsWith('--'));
+            .filter(s => s.length > 0);
           
-          for (const statement of statements) {
+          console.log(`Executing ${statements.length} SQL statements...`);
+          
+          for (let i = 0; i < statements.length; i++) {
+            const statement = statements[i];
             if (statement.trim()) {
               try {
+                console.log(`Executing statement ${i + 1}/${statements.length}...`);
                 await sql(statement);
               } catch (error) {
                 // Ignore "already exists" errors
                 if (!error.message.includes('already exists')) {
-                  console.error('Schema execution error:', error.message);
+                  console.error(`Schema execution error on statement ${i + 1}:`, error.message);
+                  console.error('Failed statement:', statement.substring(0, 100) + '...');
                   throw error;
                 }
               }
@@ -71,7 +82,8 @@ export default async function handler(req, res) {
           console.error('Schema creation error:', schemaError);
           return res.status(500).json({ 
             error: 'Database schema does not exist and auto-creation failed',
-            details: schemaError.message 
+            details: schemaError.message,
+            stack: schemaError.stack
           });
         }
       }

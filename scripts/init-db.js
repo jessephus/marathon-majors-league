@@ -19,10 +19,13 @@ async function initializeDatabase() {
   const DATABASE_URL = process.env.DATABASE_URL;
   
   if (!DATABASE_URL) {
-    console.error('❌ DATABASE_URL environment variable is not set');
-    console.log('ℹ️  Database initialization skipped (this is normal for local builds)');
+    console.log('ℹ️  DATABASE_URL environment variable is not set');
+    console.log('ℹ️  This is expected during build - database will be initialized at runtime');
+    console.log('✅ Skipping build-time initialization');
     return;
   }
+
+  console.log('✅ DATABASE_URL found, proceeding with initialization...');
 
   try {
     const sql = neon(DATABASE_URL);
@@ -31,9 +34,11 @@ async function initializeDatabase() {
     let tableExists = true;
     try {
       await sql`SELECT 1 FROM athletes LIMIT 1`;
+      console.log('✅ Athletes table exists');
     } catch (error) {
       if (error.message.includes('does not exist')) {
         tableExists = false;
+        console.log('ℹ️  Athletes table does not exist');
       } else {
         throw error;
       }
@@ -48,19 +53,28 @@ async function initializeDatabase() {
       const schemaSQL = readFileSync(schemaPath, 'utf-8');
       
       // Execute the schema SQL - split into individual statements
-      const statements = schemaSQL
+      // Remove comments first, then split by semicolons
+      const cleanedSQL = schemaSQL
+        .split('\n')
+        .filter(line => !line.trim().startsWith('--'))
+        .join('\n');
+      
+      const statements = cleanedSQL
         .split(';')
         .map(s => s.trim())
-        .filter(s => s.length > 0 && !s.startsWith('--'));
+        .filter(s => s.length > 0);
       
-      for (const statement of statements) {
+      console.log(`Executing ${statements.length} SQL statements...`);
+      
+      for (let i = 0; i < statements.length; i++) {
+        const statement = statements[i];
         if (statement.trim()) {
           try {
             await sql(statement);
           } catch (error) {
             // Ignore "already exists" errors
             if (!error.message.includes('already exists')) {
-              console.error('Schema execution error:', error.message);
+              console.error(`Schema execution error on statement ${i + 1}:`, error.message);
               throw error;
             }
           }
