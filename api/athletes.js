@@ -65,7 +65,8 @@ export default async function handler(req, res) {
             if (statement.trim()) {
               try {
                 console.log(`Executing statement ${i + 1}/${statements.length}...`);
-                await sql(statement);
+                // Use sql.query() for raw SQL strings
+                await sql.query(statement);
               } catch (error) {
                 // Ignore "already exists" errors
                 if (!error.message.includes('already exists')) {

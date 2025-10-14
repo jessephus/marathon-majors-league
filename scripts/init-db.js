@@ -70,7 +70,8 @@ async function initializeDatabase() {
         const statement = statements[i];
         if (statement.trim()) {
           try {
-            await sql(statement);
+            // Use sql.query() for raw SQL strings
+            await sql.query(statement);
           } catch (error) {
             // Ignore "already exists" errors
             if (!error.message.includes('already exists')) {
