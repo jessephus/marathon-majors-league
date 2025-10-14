@@ -1,4 +1,4 @@
-import { getData, saveData, getDefaultRankings } from './storage.js';
+import { getPlayerRankings, savePlayerRankings, clearAllRankings } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -15,11 +15,11 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get rankings for a player or all players
-      const rankings = await getData(gameId, 'rankings') || getDefaultRankings();
+      const rankings = await getPlayerRankings(gameId, playerCode);
 
       if (playerCode) {
-        if (rankings[playerCode]) {
-          res.status(200).json(rankings[playerCode]);
+        if (rankings && Object.keys(rankings).length > 0) {
+          res.status(200).json(rankings);
         } else {
           res.status(404).json({ error: 'Rankings not found' });
         }
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       // Check if this is a reset operation
       if (resetRankings !== undefined) {
         // Reset all rankings
-        await saveData(gameId, 'rankings', resetRankings);
+        await clearAllRankings(gameId);
         return res.status(200).json({ message: 'Rankings reset successfully' });
       }
 
@@ -43,18 +43,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Player code is required' });
       }
 
-      // Get existing rankings or create new
-      let rankings = await getData(gameId, 'rankings') || getDefaultRankings();
-
-      // Update player rankings
-      rankings[code] = {
-        men: men,
-        women: women,
-        submitted_at: new Date().toISOString()
-      };
-
-      // Save updated rankings
-      await saveData(gameId, 'rankings', rankings);
+      // Save player rankings
+      await savePlayerRankings(gameId, code, men || [], women || []);
 
       res.status(200).json({ message: 'Rankings saved successfully' });
     } else {
