@@ -15,26 +15,31 @@
 - Import your GitHub repository
 - Vercel will automatically detect the configuration
 
-### 3. Add Blob Storage
-- In your project dashboard, go to the **Storage** tab
-- Click "Create Database"
-- Select **Blob**
-- Choose a name for your storage (e.g., "fantasy-marathon-storage")
-- Click "Create"
+### 3. Add Neon Postgres Database
+- In your project dashboard, go to the **Integrations** tab
+- Search for and add the **Neon** integration
+- Follow prompts to create/connect a Neon Postgres database
+- Vercel automatically sets the `DATABASE_URL` environment variable
 
-The blob storage will be automatically connected to your project with the `BLOB_READ_WRITE_TOKEN` environment variable.
+### 4. Initialize Database Schema
+- Go to [console.neon.tech](https://console.neon.tech)
+- Select your database and open the **SQL Editor**
+- Copy contents of `schema.sql` from the repository root
+- Paste and execute the SQL to create tables and indexes
 
-### 4. Deploy
-- Click "Deploy" 
+See [NEON_SETUP.md](../NEON_SETUP.md) for detailed database setup instructions.
+
+### 5. Deploy
+- Click "Deploy" in Vercel dashboard
 - Wait for the build to complete
 - Your site will be live at `https://your-project.vercel.app`
 
-### 5. Initialize Storage
+### 6. Seed Athletes Data
 - Visit `https://your-project.vercel.app/api/init-db`
-- You should see a success message
-- Storage is ready to use (no setup required)
+- Athletes will be automatically seeded from `athletes.json`
+- You should see a success message with athlete count
 
-### 6. Share with Friends
+### 7. Share with Friends
 - Give your friends the URL: `https://your-project.vercel.app`
 - As commissioner, generate player codes in the app
 - Share the codes with your players
@@ -52,7 +57,7 @@ npm install
 # Link to your Vercel project
 vercel link
 
-# Pull environment variables (including blob storage token)
+# Pull environment variables (including DATABASE_URL)
 vercel env pull
 
 # Start development server
@@ -61,38 +66,56 @@ vercel dev
 
 ### Access Locally
 - Open `http://localhost:3000` in your browser
-- The app will use your production blob storage
-- Visit `http://localhost:3000/api/init-db` to verify storage setup if needed
+- The app will use your production Neon Postgres database
+- Visit `http://localhost:3000/api/init-db` to verify database connection
 
-## Storage Management
+## Database Management
 
-### View Blob Storage
-1. Go to your Vercel project dashboard
-2. Click on "Storage" tab
-3. Click on your Blob store
-4. Browse stored files and data
+### View Database
+1. Go to [console.neon.tech](https://console.neon.tech)
+2. Select your database
+3. Use SQL Editor to query data or browse tables
 
 ### Backup Data
-```bash
-# Export data using Vercel dashboard
-# Or use the blob storage API to download JSON files
+```sql
+-- Export game data
+COPY (SELECT * FROM games) TO STDOUT WITH CSV HEADER;
+
+-- Export results
+COPY (SELECT * FROM race_results) TO STDOUT WITH CSV HEADER;
 ```
 
+Or use the Neon dashboard to create snapshots.
+
 ### Reset Game Data
-- Use the "Reset Game" button in Commissioner Mode, or
-- Manually delete blob files from the storage dashboard
+- Use the "Reset Game" button in Commissioner Mode
+- Or manually delete data from specific tables via SQL:
+```sql
+DELETE FROM race_results WHERE game_id = 'your-game-id';
+DELETE FROM draft_teams WHERE game_id = 'your-game-id';
+DELETE FROM player_rankings WHERE game_id = 'your-game-id';
+DELETE FROM games WHERE game_id = 'your-game-id';
+```
 
 ## Troubleshooting
 
-### Storage Connection Errors
-- Ensure Blob storage is created and linked
-- Check that `BLOB_READ_WRITE_TOKEN` environment variable is set
+### Database Connection Errors
+- Ensure Neon integration is added and DATABASE_URL is set
+- Check that database is active in Neon console
+- Verify schema has been initialized (run schema.sql)
 - Redeploy the project to refresh environment variables
 
 ### API Errors
 - Check function logs in Vercel dashboard under "Deployments"
-- Ensure storage is accessible (visit `/api/init-db`)
+- Ensure database is accessible (visit `/api/init-db`)
 - Verify API routes are accessible (e.g., `/api/game-state`)
+- Check Neon console for query errors
+
+### Athletes Not Loading
+- Visit `/api/init-db` to seed athletes data
+- Check that athletes.json exists in repository root
+- Verify `/api/athletes` endpoint returns data
+- Check browser console for errors
 
 ### CORS Issues
 - API endpoints include CORS headers for all origins
@@ -116,14 +139,20 @@ vercel dev
 
 - Vercel Hobby plan: Free for personal projects
   - Includes serverless functions
-  - Includes Blob storage (limited storage)
-- For higher traffic or storage, upgrade to Pro plan
+  - Neon integration included
+- Neon Free Tier: 
+  - 3 GB storage
+  - Unlimited queries
+  - Auto-suspend when idle
+- For higher traffic or storage, upgrade to Pro plans
 
 ## Support
 
 For deployment issues and questions:
+- **[Neon Setup Guide](../NEON_SETUP.md)** - Database configuration and initialization
 - **[User Guide](USER_GUIDE.md)** - End-user setup and gameplay instructions
 - **[Development Guide](DEVELOPMENT.md)** - Local development and contribution setup
 - **[Architecture Guide](ARCHITECTURE.md)** - Technical architecture and data models
 - **[Vercel Documentation](https://vercel.com/docs)** - Platform-specific help
+- **[Neon Documentation](https://neon.tech/docs)** - Database-specific help
 - **[Vercel Support](https://vercel.com/support)** - Direct platform support

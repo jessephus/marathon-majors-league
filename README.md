@@ -16,7 +16,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 - 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
 - ⚡ **Live Results Updates**: Real-time standings throughout the race with split times
 - � **Commissioner Dashboard**: Complete game management and result entry tools
-- 💾 **Cloud Storage**: Reliable game state persistence with Vercel Blob storage
+- 💾 **Cloud Storage**: Reliable game state persistence with Neon Postgres database
 - 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
 
 ## 🎯 How to Play
@@ -72,11 +72,18 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 1. **Fork this repository** to your GitHub account
 2. **Create a Vercel account** at [vercel.com](https://vercel.com) (free tier available)
 3. **Import your repository** in the Vercel dashboard
-4. **Add Blob storage**:
-   - Navigate to your project's **Storage** tab
-   - Create a new **Blob** store (this enables game data persistence)
-   - Vercel automatically configures the required environment variables
-5. **Deploy** and share your game URL with friends!
+4. **Add Neon Postgres database**:
+   - Navigate to your project's **Integrations** tab
+   - Search for and add the **Neon** integration
+   - Follow prompts to create/connect a Neon Postgres database
+   - Vercel automatically configures the `DATABASE_URL` environment variable
+5. **Deploy** - Database schema and athletes data are automatically initialized
+   - The build process creates database tables and seeds athletes
+   - If build fails, the app will auto-initialize on first access
+   - **Your game data persists across deployments** - no data loss!
+6. **Share** your game URL with friends!
+
+**Note:** The database schema is automatically created - no manual SQL execution needed!
 
 ### Local Development
 
@@ -91,7 +98,7 @@ npm install
 # Link to your Vercel project (one-time setup)
 vercel link
 
-# Pull environment variables from Vercel
+# Pull environment variables from Vercel (includes DATABASE_URL)
 vercel env pull
 
 # Start local development server
@@ -114,25 +121,28 @@ vercel dev
 ### Stack Overview
 - **Frontend**: Vanilla HTML, CSS, and JavaScript (no build step needed!)
 - **Backend**: Vercel Serverless Functions (Node.js)
-- **Database**: Vercel Blob Storage (JSON-based)
+- **Database**: Neon Postgres (serverless PostgreSQL)
 - **Hosting**: Vercel Edge Network
 - **Real-time Updates**: Server-sent events for live result tracking
 
 ### API Endpoints
 | Endpoint | Purpose |
 |----------|---------|
+| `/api/athletes` | Retrieve elite athlete database |
 | `/api/game-state` | Game configuration and player management |
 | `/api/rankings` | Store and retrieve player athlete rankings |
 | `/api/draft` | Execute snake draft and save team assignments |
 | `/api/results` | Race result entry and live updates |
-| `/api/init-db` | Initialize blob storage (auto-configured) |
+| `/api/init-db` | Initialize database and seed athletes |
 
 ### Data Structure
-The application uses Vercel Blob storage with these key files:
-- **`game-state.json`** - Game settings, player list, and draft status
-- **`rankings.json`** - Each player's ranked athlete preferences
-- **`teams.json`** - Post-draft team assignments
-- **`results.json`** - Live and final athlete finish times
+The application uses Neon Postgres with these key tables:
+- **`athletes`** - Elite runner profiles with personal bests
+- **`games`** - Game settings, player list, and draft status
+- **`player_rankings`** - Each player's ranked athlete preferences
+- **`draft_teams`** - Post-draft team assignments
+- **`race_results`** - Live and final athlete finish times
+- **`users`** - Future user account support (not yet implemented)
 
 Each game instance maintains isolated data through unique game IDs.
 
@@ -153,9 +163,9 @@ All athlete data includes:
 ## 🔧 Configuration
 
 ### Environment Variables
-Required for deployment (automatically configured when using Vercel Blob storage):
+Required for deployment (automatically configured when using Neon integration):
 ```
-BLOB_READ_WRITE_TOKEN=your_blob_token_here
+DATABASE_URL=postgresql://username:password@host.neon.tech/dbname
 ```
 
 ### Game Settings
@@ -167,6 +177,7 @@ Customizable options in the application:
 
 ## 📚 Additional Documentation
 
+- **[Neon Setup Guide](NEON_SETUP.md)** - Database setup and initialization instructions
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed technical architecture and system design
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
 - **[Development Guide](docs/DEVELOPMENT.md)** - Development environment and code standards
