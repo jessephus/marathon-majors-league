@@ -46,8 +46,25 @@ export default async function handler(req, res) {
           const schemaPath = join(process.cwd(), 'schema.sql');
           const schemaSQL = readFileSync(schemaPath, 'utf-8');
           
-          // Execute the schema SQL
-          await sql.unsafe(schemaSQL);
+          // Execute the schema SQL - split into individual statements
+          const statements = schemaSQL
+            .split(';')
+            .map(s => s.trim())
+            .filter(s => s.length > 0 && !s.startsWith('--'));
+          
+          for (const statement of statements) {
+            if (statement.trim()) {
+              try {
+                await sql(statement);
+              } catch (error) {
+                // Ignore "already exists" errors
+                if (!error.message.includes('already exists')) {
+                  console.error('Schema execution error:', error.message);
+                  throw error;
+                }
+              }
+            }
+          }
           
           console.log('Database schema created successfully');
         } catch (schemaError) {
