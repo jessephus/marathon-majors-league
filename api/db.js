@@ -109,50 +109,54 @@ export async function updateGameState(gameId, updates) {
   let game = await getGameState(gameId);
   if (!game) {
     game = await createGame(gameId, players || []);
-  }
-  
-  // Build dynamic update query
-  const setClauses = [];
-  const values = [];
-  
-  if (players !== undefined) {
-    setClauses.push(`players = $${values.length + 1}`);
-    values.push(players);
-  }
-  
-  if (draft_complete !== undefined) {
-    setClauses.push(`draft_complete = $${values.length + 1}`);
-    values.push(draft_complete);
-  }
-  
-  if (results_finalized !== undefined) {
-    setClauses.push(`results_finalized = $${values.length + 1}`);
-    values.push(results_finalized);
-  }
-  
-  if (setClauses.length === 0) {
     return game;
   }
   
-  setClauses.push(`updated_at = CURRENT_TIMESTAMP`);
-  values.push(gameId);
+  // Build the UPDATE query parts
+  const updateParts = [];
   
-  const query = `
-    UPDATE games
-    SET ${setClauses.join(', ')}
-    WHERE game_id = $${values.length}
-    RETURNING game_id, players, draft_complete, results_finalized, created_at, updated_at
-  `;
+  if (players !== undefined) {
+    updateParts.push({ field: 'players', value: players });
+  }
   
-  const [updatedGame] = await sql(query, values);
+  if (draft_complete !== undefined) {
+    updateParts.push({ field: 'draft_complete', value: draft_complete });
+  }
   
-  return {
-    players: updatedGame.players || [],
-    draft_complete: updatedGame.draft_complete,
-    results_finalized: updatedGame.results_finalized,
-    created_at: updatedGame.created_at,
-    updated_at: updatedGame.updated_at
-  };
+  if (results_finalized !== undefined) {
+    updateParts.push({ field: 'results_finalized', value: results_finalized });
+  }
+  
+  if (updateParts.length === 0) {
+    return game;
+  }
+  
+  // Execute updates one at a time using tagged templates
+  for (const part of updateParts) {
+    if (part.field === 'players') {
+      await sql`
+        UPDATE games
+        SET players = ${part.value}, updated_at = CURRENT_TIMESTAMP
+        WHERE game_id = ${gameId}
+      `;
+    } else if (part.field === 'draft_complete') {
+      await sql`
+        UPDATE games
+        SET draft_complete = ${part.value}, updated_at = CURRENT_TIMESTAMP
+        WHERE game_id = ${gameId}
+      `;
+    } else if (part.field === 'results_finalized') {
+      await sql`
+        UPDATE games
+        SET results_finalized = ${part.value}, updated_at = CURRENT_TIMESTAMP
+        WHERE game_id = ${gameId}
+      `;
+    }
+  }
+  
+  // Fetch and return updated game state
+  const updatedGame = await getGameState(gameId);
+  return updatedGame;
 }
 
 // ============================================================================
