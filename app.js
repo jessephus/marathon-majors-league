@@ -52,7 +52,7 @@ async function saveGameState() {
 // Load athletes data
 async function loadAthletes() {
     try {
-        const response = await fetch('athletes.json');
+        const response = await fetch(`${API_BASE}/api/athletes`);
         gameState.athletes = await response.json();
     } catch (error) {
         console.error('Error loading athletes:', error);

@@ -9,12 +9,13 @@ Fantasy NY Marathon is built as a serverless web application optimized for simpl
 ### High-Level Architecture
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Static Files  │    │  Serverless API │    │  Blob Storage   │
+│   Static Files  │    │  Serverless API │    │ Neon Postgres   │
 │                 │    │                 │    │                 │
-│  • index.html   │◄──►│  • game-state   │◄──►│  • JSON Files   │
-│  • app.js       │    │  • rankings     │    │  • Game Data    │
-│  • style.css    │    │  • draft        │    │  • Results      │
-│  • athletes.json│    │  • results      │    │                 │
+│  • index.html   │◄──►│  • athletes     │◄──►│  • athletes     │
+│  • app.js       │    │  • game-state   │    │  • games        │
+│  • style.css    │    │  • rankings     │    │  • rankings     │
+│  • athletes.json│    │  • draft        │    │  • teams        │
+│                 │    │  • results      │    │  • results      │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
         │                        │                        │
         └────────────────────────┼────────────────────────┘
@@ -38,7 +39,7 @@ Fantasy NY Marathon is built as a serverless web application optimized for simpl
 
 ### Backend Stack
 - **Vercel Serverless Functions**: Node.js runtime with ES modules
-- **Vercel Blob Storage**: JSON file-based data persistence
+- **Neon Postgres**: Serverless PostgreSQL database
 - **RESTful API Design**: Simple HTTP endpoints with JSON responses
 
 ### Infrastructure
@@ -49,71 +50,91 @@ Fantasy NY Marathon is built as a serverless web application optimized for simpl
 ## Data Architecture
 
 ### Storage Strategy
-The application uses Vercel Blob Storage with a file-per-game-type pattern:
+The application uses Neon Postgres, a serverless PostgreSQL database, with a relational table structure:
 
 ```
-Blob Storage Structure:
-fantasy-marathon/
-└── {gameId}/
-    ├── game-state.json     # Game configuration and player list
-    ├── rankings.json       # Player athlete preferences
-    ├── teams.json         # Post-draft team assignments
-    └── results.json       # Race results and live updates
+Neon Postgres Database:
+├── athletes          (elite runner profiles)
+├── games            (game configuration and state)
+├── player_rankings  (player athlete preferences)
+├── draft_teams      (post-draft team assignments)
+├── race_results     (race results and live updates)
+├── users            (future: user accounts)
+└── user_games       (future: user-game associations)
 ```
 
 ### Data Models
 
-#### Game State (`game-state.json`)
-```json
-{
-  "players": ["RUNNER", "SPRINTER", "PACER"],
-  "draft_complete": false,
-  "results_finalized": false,
-  "created_at": "2025-10-13T10:00:00Z",
-  "updated_at": "2025-10-13T10:30:00Z"
-}
+#### Athletes Table
+```sql
+CREATE TABLE athletes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    country CHAR(3) NOT NULL,
+    gender VARCHAR(10) NOT NULL,
+    personal_best VARCHAR(10) NOT NULL,
+    headshot_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
-#### Rankings (`rankings.json`)
-```json
-{
-  "RUNNER": {
-    "men": [
-      {"id": 1, "name": "Eliud Kipchoge", "country": "KEN", "pb": "2:01:09"},
-      // ... up to 10 athletes
-    ],
-    "women": [
-      {"id": 101, "name": "Sifan Hassan", "country": "NED", "pb": "2:13:44"},
-      // ... up to 10 athletes
-    ],
-    "submitted_at": "2025-10-13T10:15:00Z"
-  }
-}
+#### Games Table
+```sql
+CREATE TABLE games (
+    id SERIAL PRIMARY KEY,
+    game_id VARCHAR(255) UNIQUE NOT NULL,
+    players TEXT[] NOT NULL DEFAULT '{}',
+    draft_complete BOOLEAN DEFAULT FALSE,
+    results_finalized BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
-#### Teams (`teams.json`)
-```json
-{
-  "RUNNER": {
-    "men": [
-      {"id": 1, "name": "Eliud Kipchoge", "country": "KEN", "pb": "2:01:09"},
-      // ... 3 total
-    ],
-    "women": [
-      {"id": 101, "name": "Sifan Hassan", "country": "NED", "pb": "2:13:44"},
-      // ... 3 total
-    ]
-  }
-}
+#### Player Rankings Table
+```sql
+CREATE TABLE player_rankings (
+    id SERIAL PRIMARY KEY,
+    game_id VARCHAR(255) NOT NULL,
+    player_code VARCHAR(255) NOT NULL,
+    gender VARCHAR(10) NOT NULL,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id),
+    rank_order INTEGER NOT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(game_id, player_code, gender, rank_order)
+);
 ```
 
-#### Results (`results.json`)
-```json
-{
-  "1": "2:05:30",      // Athlete ID -> Finish Time (HH:MM:SS)
-  "101": "2:18:45",
-  // ... all athlete results
-}
+#### Draft Teams Table
+```sql
+CREATE TABLE draft_teams (
+    id SERIAL PRIMARY KEY,
+    game_id VARCHAR(255) NOT NULL,
+    player_code VARCHAR(255) NOT NULL,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id),
+    drafted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(game_id, athlete_id)
+);
+```
+
+#### Race Results Table
+```sql
+CREATE TABLE race_results (
+    id SERIAL PRIMARY KEY,
+    game_id VARCHAR(255) NOT NULL,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id),
+    finish_time VARCHAR(10),
+    split_5k VARCHAR(10),
+    split_10k VARCHAR(10),
+    split_half VARCHAR(10),
+    split_30k VARCHAR(10),
+    split_35k VARCHAR(10),
+    split_40k VARCHAR(10),
+    is_final BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(game_id, athlete_id)
+);
 ```
 
 ## API Architecture
@@ -123,11 +144,12 @@ All API endpoints follow RESTful conventions with game isolation via query param
 
 | Endpoint | Methods | Purpose | Parameters |
 |----------|---------|---------|------------|
+| `/api/athletes` | GET | Retrieve elite athlete database | None |
 | `/api/game-state` | GET, POST | Game configuration management | `gameId` |
 | `/api/rankings` | GET, POST | Player rankings storage | `gameId`, `playerCode` |
 | `/api/draft` | GET, POST | Snake draft execution | `gameId` |
 | `/api/results` | GET, POST | Race results management | `gameId` |
-| `/api/init-db` | GET | Storage health check | None |
+| `/api/init-db` | GET, POST | Database initialization & seeding | None |
 
 ### Request/Response Patterns
 
@@ -223,7 +245,8 @@ The application prioritizes simplicity over security for several reasons:
 ### Backend Optimization
 - **Serverless functions**: Automatic scaling and cold start optimization
 - **Edge deployment**: Global distribution via Vercel Edge Network
-- **JSON storage**: Simple read/write operations without query overhead
+- **PostgreSQL indexing**: Optimized queries with strategic indexes
+- **Connection pooling**: Efficient database connections via Neon
 - **Stateless design**: Each function call is independent
 
 ### Caching Strategy
@@ -238,7 +261,8 @@ The application requires no build step:
 1. **Static files**: Served directly from repository root
 2. **Serverless functions**: Auto-deployed from `/api/` directory
 3. **Environment variables**: Managed via Vercel dashboard
-4. **Storage provisioning**: Blob storage created through Vercel UI
+4. **Database provisioning**: Neon Postgres via Vercel integration
+5. **Schema initialization**: Run `schema.sql` via Neon console or CLI
 
 ### Environment Configuration
 - **Development**: `vercel dev` for local development
@@ -249,7 +273,7 @@ The application requires no build step:
 - **Function logs**: Available in Vercel dashboard
 - **Error tracking**: Console.error() outputs to Vercel logs
 - **Performance metrics**: Built-in Vercel analytics
-- **Storage metrics**: Blob storage usage tracking
+- **Database metrics**: Neon console for query performance and storage
 
 ## Scalability Considerations
 
@@ -260,10 +284,11 @@ The application requires no build step:
 
 ### Scaling Strategies
 If the application needs to scale:
-1. **Multi-tenant architecture**: Enhanced gameId management
-2. **Database migration**: Move to Vercel Postgres for complex queries
+1. **Multi-tenant architecture**: Enhanced gameId management with better indexing
+2. **Database optimization**: Query optimization, materialized views for leaderboards
 3. **Real-time updates**: WebSocket integration for live updates
 4. **CDN optimization**: Asset optimization and compression
+5. **Read replicas**: Neon read replicas for high-traffic scenarios
 
 ## Network Architecture
 
@@ -291,18 +316,24 @@ Project Root
 │   ├── index.html          # Main application entry
 │   ├── app.js             # Core application logic
 │   ├── style.css          # Complete styling
-│   └── athletes.json      # Static athlete database
+│   └── athletes.json      # Athletes backup (seeded into DB)
 ├── API Functions
-│   ├── storage.js         # Centralized storage helpers
+│   ├── db.js              # PostgreSQL database helpers
+│   ├── athletes.js        # Athlete data endpoint
 │   ├── game-state.js      # Game management
 │   ├── rankings.js        # Player rankings
 │   ├── draft.js          # Snake draft logic
 │   ├── results.js        # Race results
-│   └── init-db.js        # Health check endpoint
-└── Configuration
-    ├── package.json       # Dependencies and scripts
-    ├── vercel.json       # Deployment configuration
-    └── .vercelignore     # Deployment exclusions
+│   └── init-db.js        # Database initialization
+├── Configuration
+│   ├── package.json       # Dependencies and scripts
+│   ├── vercel.json       # Deployment configuration
+│   ├── schema.sql        # Database schema
+│   └── .vercelignore     # Deployment exclusions
+└── Documentation
+    ├── README.md          # Project overview
+    ├── NEON_SETUP.md     # Database setup guide
+    └── docs/             # Additional documentation
 ```
 
 ### Testing Strategy
