@@ -52,12 +52,32 @@ async function saveGameState() {
 // Load athletes data
 async function loadAthletes() {
     try {
+        // Try to load from database first
         const response = await fetch(`${API_BASE}/api/athletes`);
-        gameState.athletes = await response.json();
+        const athletes = await response.json();
+        
+        // Check if we got valid data (not empty)
+        if (athletes && athletes.men && athletes.men.length > 0) {
+            gameState.athletes = athletes;
+            return;
+        }
+        
+        // If database is empty, fall back to static JSON file
+        console.log('Database empty, falling back to athletes.json');
+        const fallbackResponse = await fetch('athletes.json');
+        gameState.athletes = await fallbackResponse.json();
     } catch (error) {
-        console.error('Error loading athletes:', error);
-        // Fallback to empty arrays
-        gameState.athletes = { men: [], women: [] };
+        console.error('Error loading athletes from API:', error);
+        
+        // Final fallback: try to load from static JSON file
+        try {
+            const fallbackResponse = await fetch('athletes.json');
+            gameState.athletes = await fallbackResponse.json();
+        } catch (fallbackError) {
+            console.error('Error loading athletes from JSON:', fallbackError);
+            // Ultimate fallback to empty arrays
+            gameState.athletes = { men: [], women: [] };
+        }
     }
 }
 
