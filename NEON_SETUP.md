@@ -46,33 +46,32 @@ vercel env pull
 psql $DATABASE_URL < schema.sql
 ```
 
-### Step 3: Seed Athletes Data
+### Step 3: Deploy and Auto-Initialize
 
-The athletes data will be automatically seeded when you first access the application:
+The database will be automatically seeded during deployment:
 
-1. Deploy your updated application to Vercel
-2. Visit `https://your-app.vercel.app/api/init-db`
-3. You should see a success message indicating athletes have been seeded
+1. **Deploy your application** to Vercel
+   ```bash
+   git push origin main  # Triggers automatic deployment
+   # OR
+   vercel --prod
+   ```
 
-Alternatively, you can make a POST request:
-```bash
-curl -X POST https://your-app.vercel.app/api/init-db
-```
+2. **Automatic seeding happens via:**
+   - The `postbuild` script runs `node scripts/init-db.js`
+   - This checks if the database is empty and seeds it with athletes from `athletes.json`
+   - If seeding fails during build, the `/api/athletes` endpoint will auto-seed on first request
 
-### Step 4: Verify Setup
+3. **Verify the setup:**
+   ```bash
+   # Check database status
+   curl https://your-app.vercel.app/api/init-db
+   
+   # Get athletes from API
+   curl https://your-app.vercel.app/api/athletes
+   ```
 
-Test that everything is working:
-
-```bash
-# Check database connection and athletes count
-curl https://your-app.vercel.app/api/init-db
-
-# Get athletes from API
-curl https://your-app.vercel.app/api/athletes
-
-# Test game state
-curl https://your-app.vercel.app/api/game-state?gameId=default
-```
+**Note:** The database is now the single source of truth. The application will not fall back to static JSON files.
 
 ## Local Development Setup
 

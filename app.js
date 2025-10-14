@@ -52,32 +52,52 @@ async function saveGameState() {
 // Load athletes data
 async function loadAthletes() {
     try {
-        // Try to load from database first
+        // Load from database API (will auto-seed if empty)
         const response = await fetch(`${API_BASE}/api/athletes`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
+        }
+        
         const athletes = await response.json();
         
-        // Check if we got valid data (not empty)
-        if (athletes && athletes.men && athletes.men.length > 0) {
-            gameState.athletes = athletes;
-            return;
+        // Validate we got data
+        if (!athletes || !athletes.men || !athletes.women) {
+            throw new Error('Invalid athletes data structure received from API');
         }
         
-        // If database is empty, fall back to static JSON file
-        console.log('Database empty, falling back to athletes.json');
-        const fallbackResponse = await fetch('athletes.json');
-        gameState.athletes = await fallbackResponse.json();
+        if (athletes.men.length === 0 && athletes.women.length === 0) {
+            throw new Error('No athletes data available - database may not be initialized');
+        }
+        
+        gameState.athletes = athletes;
+        console.log(`Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes from database`);
+        
     } catch (error) {
-        console.error('Error loading athletes from API:', error);
+        console.error('Error loading athletes:', error);
         
-        // Final fallback: try to load from static JSON file
-        try {
-            const fallbackResponse = await fetch('athletes.json');
-            gameState.athletes = await fallbackResponse.json();
-        } catch (fallbackError) {
-            console.error('Error loading athletes from JSON:', fallbackError);
-            // Ultimate fallback to empty arrays
-            gameState.athletes = { men: [], women: [] };
-        }
+        // Show user-friendly error message
+        const errorMessage = `
+            <div style="padding: 20px; background: #fee; border: 2px solid #c33; border-radius: 8px; margin: 20px;">
+                <h3 style="color: #c33; margin-top: 0;">⚠️ Unable to Load Athletes</h3>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <p>The database may not be initialized yet. Please try one of the following:</p>
+                <ol>
+                    <li>Wait a few moments and refresh the page</li>
+                    <li>Contact the commissioner to initialize the database</li>
+                    <li>Visit <code>/api/init-db</code> to manually initialize</li>
+                </ol>
+            </div>
+        `;
+        
+        // Display error in the UI
+        const mainContent = document.querySelector('main') || document.body;
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = errorMessage;
+        mainContent.insertBefore(errorDiv, mainContent.firstChild);
+        
+        // Set empty arrays to prevent further errors
+        gameState.athletes = { men: [], women: [] };
     }
 }
 

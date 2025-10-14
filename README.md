@@ -80,8 +80,12 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 5. **Initialize database schema**:
    - See [NEON_SETUP.md](NEON_SETUP.md) for detailed instructions
    - Run the `schema.sql` file in your Neon database
-6. **Deploy** and visit `/api/init-db` to seed athletes data
+6. **Deploy** - Athletes data will be automatically seeded during deployment
+   - The build process runs `npm run postbuild` which seeds the database
+   - If that fails, the app will auto-seed on first API request
 7. **Share** your game URL with friends!
+
+**Note:** The database is the single source of truth - no fallback to static files.
 
 ### Local Development
 
