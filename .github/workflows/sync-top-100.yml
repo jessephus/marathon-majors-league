@@ -61,8 +61,11 @@ jobs:
           pip install -r scripts/requirements.txt
           # Verify installations
           python -c "import psycopg2; print('✓ psycopg2 installed')"
-          python -c "import worldathletics; print('✓ worldathletics installed')"
+          python -c "import worldathletics; print('✓ worldathletics installed'); print('worldathletics location:', worldathletics.__file__)"
           python -c "import requests; print('✓ requests installed')"
+          # Debug: Check if WA class exists
+          python -c "from worldathletics import WA; print('✓ WA class imported successfully')" || echo "⚠️  WA class not found in worldathletics package"
+          python -c "import worldathletics; print('Available in worldathletics:', dir(worldathletics))"
       
       - name: Run migration (add sync tracking fields)
         env:
