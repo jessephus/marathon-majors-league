@@ -40,6 +40,37 @@ export default async function handler(req, res) {
       }
     }
     
+    // If table exists, check for World Athletics columns and add them if missing
+    if (tableExists) {
+      console.log('Checking for World Athletics columns...');
+      try {
+        // Try to select the new columns
+        await sql`SELECT world_athletics_id FROM athletes LIMIT 1`;
+        console.log('World Athletics columns already exist');
+      } catch (error) {
+        if (error.message.includes('does not exist') || error.message.includes('column')) {
+          console.log('Adding World Athletics columns...');
+          try {
+            // Add the new columns
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS world_athletics_id VARCHAR(50)`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS world_athletics_profile_url TEXT`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS marathon_rank INTEGER`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS road_running_rank INTEGER`;
+            
+            // Add index
+            await sql`CREATE INDEX IF NOT EXISTS idx_athletes_wa_id ON athletes(world_athletics_id)`;
+            
+            console.log('World Athletics columns added successfully');
+          } catch (alterError) {
+            console.error('Error adding columns:', alterError);
+            // Don't fail - table still works without these columns
+          }
+        } else {
+          throw error;
+        }
+      }
+    }
+    
     // If table doesn't exist, create schema
     if (!tableExists) {
       console.log('Creating database schema...');
