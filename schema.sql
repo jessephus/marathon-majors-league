@@ -13,12 +13,50 @@ CREATE TABLE IF NOT EXISTS athletes (
     world_athletics_profile_url TEXT,
     marathon_rank INTEGER,
     road_running_rank INTEGER,
+    overall_rank INTEGER,
+    age INTEGER,
+    date_of_birth DATE,
+    sponsor VARCHAR(255),
+    season_best VARCHAR(10),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_athletes_gender ON athletes(gender);
 CREATE INDEX idx_athletes_wa_id ON athletes(world_athletics_id);
+CREATE INDEX idx_athletes_marathon_rank ON athletes(marathon_rank);
+CREATE INDEX idx_athletes_overall_rank ON athletes(overall_rank);
+
+-- Races table (tracks different marathon events)
+CREATE TABLE IF NOT EXISTS races (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    distance VARCHAR(50) DEFAULT 'Marathon (42.195 km)',
+    event_type VARCHAR(100) DEFAULT 'Marathon Majors',
+    world_athletics_event_id VARCHAR(50),
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_races_date ON races(date);
+CREATE INDEX idx_races_is_active ON races(is_active);
+
+-- Athlete-Race junction table (links athletes to races they're competing in)
+CREATE TABLE IF NOT EXISTS athlete_races (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+    bib_number VARCHAR(20),
+    confirmed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, race_id)
+);
+
+CREATE INDEX idx_athlete_races_athlete ON athlete_races(athlete_id);
+CREATE INDEX idx_athlete_races_race ON athlete_races(race_id);
 
 -- Games table (replacing game-state.json)
 CREATE TABLE IF NOT EXISTS games (
@@ -135,4 +173,7 @@ CREATE TRIGGER update_results_updated_at BEFORE UPDATE ON race_results
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_races_updated_at BEFORE UPDATE ON races
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

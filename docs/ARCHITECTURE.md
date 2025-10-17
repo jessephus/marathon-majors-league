@@ -54,13 +54,15 @@ The application uses Neon Postgres, a serverless PostgreSQL database, with a rel
 
 ```
 Neon Postgres Database:
-├── athletes          (elite runner profiles)
-├── games            (game configuration and state)
-├── player_rankings  (player athlete preferences)
-├── draft_teams      (post-draft team assignments)
-├── race_results     (race results and live updates)
-├── users            (future: user accounts)
-└── user_games       (future: user-game associations)
+├── athletes          (elite runner profiles with extended data)
+├── races             (marathon events and competitions)
+├── athlete_races     (athlete-race confirmations)
+├── games             (game configuration and state)
+├── player_rankings   (player athlete preferences)
+├── draft_teams       (post-draft team assignments)
+├── race_results      (race results and live updates)
+├── users             (future: user accounts)
+└── user_games        (future: user-game associations)
 ```
 
 ### Data Models
@@ -74,8 +76,46 @@ CREATE TABLE athletes (
     gender VARCHAR(10) NOT NULL,
     personal_best VARCHAR(10) NOT NULL,
     headshot_url TEXT,
+    world_athletics_id VARCHAR(50),
+    world_athletics_profile_url TEXT,
+    marathon_rank INTEGER,
+    road_running_rank INTEGER,
+    overall_rank INTEGER,
+    age INTEGER,
+    date_of_birth DATE,
+    sponsor VARCHAR(255),
+    season_best VARCHAR(10),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Races Table
+```sql
+CREATE TABLE races (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    distance VARCHAR(50) DEFAULT 'Marathon (42.195 km)',
+    event_type VARCHAR(100) DEFAULT 'Marathon Majors',
+    world_athletics_event_id VARCHAR(50),
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Athlete-Race Junction Table
+```sql
+CREATE TABLE athlete_races (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id),
+    race_id INTEGER NOT NULL REFERENCES races(id),
+    bib_number VARCHAR(20),
+    confirmed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, race_id)
 );
 ```
 
@@ -144,7 +184,8 @@ All API endpoints follow RESTful conventions with game isolation via query param
 
 | Endpoint | Methods | Purpose | Parameters |
 |----------|---------|---------|------------|
-| `/api/athletes` | GET | Retrieve elite athlete database | None |
+| `/api/athletes` | GET | Retrieve elite athlete database with extended fields | None |
+| `/api/races` | GET, POST | Race event management | `id`, `active`, `includeAthletes` |
 | `/api/game-state` | GET, POST | Game configuration management | `gameId` |
 | `/api/rankings` | GET, POST | Player rankings storage | `gameId`, `playerCode` |
 | `/api/draft` | GET, POST | Snake draft execution | `gameId` |

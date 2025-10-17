@@ -19,7 +19,12 @@ export async function getAllAthletes() {
       world_athletics_id as "worldAthleticsId",
       world_athletics_profile_url as "worldAthleticsProfileUrl",
       marathon_rank as "marathonRank",
-      road_running_rank as "roadRunningRank"
+      road_running_rank as "roadRunningRank",
+      overall_rank as "overallRank",
+      age,
+      date_of_birth as "dateOfBirth",
+      sponsor,
+      season_best as "seasonBest"
     FROM athletes
     ORDER BY gender, personal_best
   `;
@@ -45,7 +50,12 @@ export async function getAthleteById(id) {
       world_athletics_id as "worldAthleticsId",
       world_athletics_profile_url as "worldAthleticsProfileUrl",
       marathon_rank as "marathonRank",
-      road_running_rank as "roadRunningRank"
+      road_running_rank as "roadRunningRank",
+      overall_rank as "overallRank",
+      age,
+      date_of_birth as "dateOfBirth",
+      sponsor,
+      season_best as "seasonBest"
     FROM athletes
     WHERE id = ${id}
   `;
@@ -59,10 +69,15 @@ export async function seedAthletes(athletesData) {
     const waProfileUrl = athlete.worldAthletics?.profileUrl || null;
     const marathonRank = athlete.worldAthletics?.marathonRank || null;
     const roadRunningRank = athlete.worldAthletics?.roadRunningRank || null;
+    const overallRank = athlete.worldAthletics?.overallRank || null;
+    const age = athlete.age || null;
+    const dateOfBirth = athlete.dateOfBirth || null;
+    const sponsor = athlete.sponsor || null;
+    const seasonBest = athlete.seasonBest || athlete.pb || null;
     
     await sql`
-      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url, world_athletics_id, world_athletics_profile_url, marathon_rank, road_running_rank)
-      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'men', ${athlete.pb}, ${athlete.headshotUrl}, ${waId}, ${waProfileUrl}, ${marathonRank}, ${roadRunningRank})
+      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url, world_athletics_id, world_athletics_profile_url, marathon_rank, road_running_rank, overall_rank, age, date_of_birth, sponsor, season_best)
+      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'men', ${athlete.pb}, ${athlete.headshotUrl}, ${waId}, ${waProfileUrl}, ${marathonRank}, ${roadRunningRank}, ${overallRank}, ${age}, ${dateOfBirth}, ${sponsor}, ${seasonBest})
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         country = EXCLUDED.country,
@@ -72,6 +87,11 @@ export async function seedAthletes(athletesData) {
         world_athletics_profile_url = EXCLUDED.world_athletics_profile_url,
         marathon_rank = EXCLUDED.marathon_rank,
         road_running_rank = EXCLUDED.road_running_rank,
+        overall_rank = EXCLUDED.overall_rank,
+        age = EXCLUDED.age,
+        date_of_birth = EXCLUDED.date_of_birth,
+        sponsor = EXCLUDED.sponsor,
+        season_best = EXCLUDED.season_best,
         updated_at = CURRENT_TIMESTAMP
     `;
   }
@@ -82,10 +102,15 @@ export async function seedAthletes(athletesData) {
     const waProfileUrl = athlete.worldAthletics?.profileUrl || null;
     const marathonRank = athlete.worldAthletics?.marathonRank || null;
     const roadRunningRank = athlete.worldAthletics?.roadRunningRank || null;
+    const overallRank = athlete.worldAthletics?.overallRank || null;
+    const age = athlete.age || null;
+    const dateOfBirth = athlete.dateOfBirth || null;
+    const sponsor = athlete.sponsor || null;
+    const seasonBest = athlete.seasonBest || athlete.pb || null;
     
     await sql`
-      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url, world_athletics_id, world_athletics_profile_url, marathon_rank, road_running_rank)
-      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'women', ${athlete.pb}, ${athlete.headshotUrl}, ${waId}, ${waProfileUrl}, ${marathonRank}, ${roadRunningRank})
+      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url, world_athletics_id, world_athletics_profile_url, marathon_rank, road_running_rank, overall_rank, age, date_of_birth, sponsor, season_best)
+      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'women', ${athlete.pb}, ${athlete.headshotUrl}, ${waId}, ${waProfileUrl}, ${marathonRank}, ${roadRunningRank}, ${overallRank}, ${age}, ${dateOfBirth}, ${sponsor}, ${seasonBest})
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         country = EXCLUDED.country,
@@ -95,6 +120,11 @@ export async function seedAthletes(athletesData) {
         world_athletics_profile_url = EXCLUDED.world_athletics_profile_url,
         marathon_rank = EXCLUDED.marathon_rank,
         road_running_rank = EXCLUDED.road_running_rank,
+        overall_rank = EXCLUDED.overall_rank,
+        age = EXCLUDED.age,
+        date_of_birth = EXCLUDED.date_of_birth,
+        sponsor = EXCLUDED.sponsor,
+        season_best = EXCLUDED.season_best,
         updated_at = CURRENT_TIMESTAMP
     `;
   }
@@ -403,4 +433,262 @@ export async function resetGame(gameId) {
   await sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
   await sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
   await sql`DELETE FROM games WHERE game_id = ${gameId}`;
+}
+
+// ============================================================================
+// RACES
+// ============================================================================
+
+export async function getAllRaces() {
+  const races = await sql`
+    SELECT 
+      id, 
+      name, 
+      date, 
+      location, 
+      distance, 
+      event_type as "eventType",
+      world_athletics_event_id as "worldAthleticsEventId",
+      description,
+      is_active as "isActive",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM races
+    ORDER BY date DESC
+  `;
+  return races;
+}
+
+export async function getActiveRaces() {
+  const races = await sql`
+    SELECT 
+      id, 
+      name, 
+      date, 
+      location, 
+      distance, 
+      event_type as "eventType",
+      world_athletics_event_id as "worldAthleticsEventId",
+      description,
+      is_active as "isActive",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM races
+    WHERE is_active = true
+    ORDER BY date DESC
+  `;
+  return races;
+}
+
+export async function getRaceById(id) {
+  const [race] = await sql`
+    SELECT 
+      id, 
+      name, 
+      date, 
+      location, 
+      distance, 
+      event_type as "eventType",
+      world_athletics_event_id as "worldAthleticsEventId",
+      description,
+      is_active as "isActive",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM races
+    WHERE id = ${id}
+  `;
+  return race;
+}
+
+export async function createRace(raceData) {
+  const { name, date, location, distance, eventType, worldAthleticsEventId, description, isActive } = raceData;
+  
+  const [race] = await sql`
+    INSERT INTO races (name, date, location, distance, event_type, world_athletics_event_id, description, is_active)
+    VALUES (
+      ${name}, 
+      ${date}, 
+      ${location}, 
+      ${distance || 'Marathon (42.195 km)'}, 
+      ${eventType || 'Marathon Majors'}, 
+      ${worldAthleticsEventId || null}, 
+      ${description || null}, 
+      ${isActive !== undefined ? isActive : true}
+    )
+    RETURNING id, name, date, location, distance, event_type as "eventType", world_athletics_event_id as "worldAthleticsEventId", description, is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
+  `;
+  
+  return race;
+}
+
+export async function updateRace(id, updates) {
+  const { name, date, location, distance, eventType, worldAthleticsEventId, description, isActive } = updates;
+  
+  // Build update query dynamically
+  const setParts = [];
+  const values = [];
+  
+  if (name !== undefined) {
+    setParts.push('name = $' + (values.length + 1));
+    values.push(name);
+  }
+  if (date !== undefined) {
+    setParts.push('date = $' + (values.length + 1));
+    values.push(date);
+  }
+  if (location !== undefined) {
+    setParts.push('location = $' + (values.length + 1));
+    values.push(location);
+  }
+  if (distance !== undefined) {
+    setParts.push('distance = $' + (values.length + 1));
+    values.push(distance);
+  }
+  if (eventType !== undefined) {
+    setParts.push('event_type = $' + (values.length + 1));
+    values.push(eventType);
+  }
+  if (worldAthleticsEventId !== undefined) {
+    setParts.push('world_athletics_event_id = $' + (values.length + 1));
+    values.push(worldAthleticsEventId);
+  }
+  if (description !== undefined) {
+    setParts.push('description = $' + (values.length + 1));
+    values.push(description);
+  }
+  if (isActive !== undefined) {
+    setParts.push('is_active = $' + (values.length + 1));
+    values.push(isActive);
+  }
+  
+  if (setParts.length === 0) {
+    return await getRaceById(id);
+  }
+  
+  // Execute update one field at a time using tagged templates
+  if (name !== undefined) {
+    await sql`UPDATE races SET name = ${name}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (date !== undefined) {
+    await sql`UPDATE races SET date = ${date}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (location !== undefined) {
+    await sql`UPDATE races SET location = ${location}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (distance !== undefined) {
+    await sql`UPDATE races SET distance = ${distance}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (eventType !== undefined) {
+    await sql`UPDATE races SET event_type = ${eventType}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (worldAthleticsEventId !== undefined) {
+    await sql`UPDATE races SET world_athletics_event_id = ${worldAthleticsEventId}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (description !== undefined) {
+    await sql`UPDATE races SET description = ${description}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (isActive !== undefined) {
+    await sql`UPDATE races SET is_active = ${isActive}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  
+  return await getRaceById(id);
+}
+
+// ============================================================================
+// ATHLETE-RACE LINKS
+// ============================================================================
+
+export async function linkAthleteToRace(athleteId, raceId, bibNumber = null) {
+  const [link] = await sql`
+    INSERT INTO athlete_races (athlete_id, race_id, bib_number)
+    VALUES (${athleteId}, ${raceId}, ${bibNumber})
+    ON CONFLICT (athlete_id, race_id) DO UPDATE SET
+      bib_number = EXCLUDED.bib_number
+    RETURNING id, athlete_id as "athleteId", race_id as "raceId", bib_number as "bibNumber", confirmed_at as "confirmedAt"
+  `;
+  return link;
+}
+
+export async function unlinkAthleteFromRace(athleteId, raceId) {
+  await sql`
+    DELETE FROM athlete_races
+    WHERE athlete_id = ${athleteId} AND race_id = ${raceId}
+  `;
+}
+
+export async function getAthletesForRace(raceId) {
+  const athletes = await sql`
+    SELECT 
+      a.id,
+      a.name,
+      a.country,
+      a.gender,
+      a.personal_best as pb,
+      a.headshot_url as "headshotUrl",
+      a.world_athletics_id as "worldAthleticsId",
+      a.marathon_rank as "marathonRank",
+      ar.bib_number as "bibNumber",
+      ar.confirmed_at as "confirmedAt"
+    FROM athletes a
+    JOIN athlete_races ar ON a.id = ar.athlete_id
+    WHERE ar.race_id = ${raceId}
+    ORDER BY a.gender, a.personal_best
+  `;
+  
+  // Group by gender
+  const grouped = {
+    men: athletes.filter(a => a.gender === 'men'),
+    women: athletes.filter(a => a.gender === 'women')
+  };
+  
+  return grouped;
+}
+
+export async function getRacesForAthlete(athleteId) {
+  const races = await sql`
+    SELECT 
+      r.id,
+      r.name,
+      r.date,
+      r.location,
+      r.distance,
+      r.event_type as "eventType",
+      ar.bib_number as "bibNumber",
+      ar.confirmed_at as "confirmedAt"
+    FROM races r
+    JOIN athlete_races ar ON r.id = ar.race_id
+    WHERE ar.athlete_id = ${athleteId}
+    ORDER BY r.date DESC
+  `;
+  return races;
+}
+
+export async function seedNYMarathon2025() {
+  // Check if race already exists
+  const existing = await sql`
+    SELECT id FROM races WHERE name = 'NYC Marathon' AND date = '2025-11-02'
+  `;
+  
+  if (existing.length > 0) {
+    return existing[0];
+  }
+  
+  // Create the 2025 NY Marathon race
+  const race = await createRace({
+    name: 'NYC Marathon',
+    date: '2025-11-02',
+    location: 'New York City, NY, USA',
+    distance: 'Marathon (42.195 km)',
+    eventType: 'Marathon Majors',
+    description: 'The 2025 TCS New York City Marathon',
+    isActive: true
+  });
+  
+  // Link all current athletes to this race (since they are confirmed for it)
+  const athletes = await sql`SELECT id FROM athletes`;
+  for (const athlete of athletes) {
+    await linkAthleteToRace(athlete.id, race.id);
+  }
+  
+  return race;
 }

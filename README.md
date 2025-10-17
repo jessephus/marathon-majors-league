@@ -129,6 +129,7 @@ vercel dev
 | Endpoint | Purpose |
 |----------|---------|
 | `/api/athletes` | Retrieve elite athlete database |
+| `/api/races` | Manage marathon events and competitions |
 | `/api/game-state` | Game configuration and player management |
 | `/api/rankings` | Store and retrieve player athlete rankings |
 | `/api/draft` | Execute snake draft and save team assignments |
@@ -137,7 +138,9 @@ vercel dev
 
 ### Data Structure
 The application uses Neon Postgres with these key tables:
-- **`athletes`** - Elite runner profiles with personal bests
+- **`athletes`** - Elite runner profiles with personal bests, rankings, and extended data
+- **`races`** - Marathon events and competitions (currently 2025 NYC Marathon)
+- **`athlete_races`** - Links athletes to specific races they're competing in
 - **`games`** - Game settings, player list, and draft status
 - **`player_rankings`** - Each player's ranked athlete preferences
 - **`draft_teams`** - Post-draft team assignments
@@ -152,6 +155,7 @@ The game features the official New York City Marathon elite field:
 - **33 men's elite runners** with confirmed personal bests
 - **25 women's elite runners** with official time records
 - **Complete athlete profiles** including country representation and headshot photos
+- **Extended athlete data** including World Athletics rankings and IDs
 - **Real-time updates** as race results come in
 
 All athlete data includes:
@@ -159,6 +163,8 @@ All athlete data includes:
 - Personal best marathon time
 - Official headshot (when available)
 - Unique athlete ID for tracking
+- World Athletics profile and rankings (marathon, road running, overall)
+- Extended fields for age, sponsor, and season best (to be populated)
 
 ## 🔧 Configuration
 
