@@ -718,7 +718,8 @@ function formatAthleteDetails(athlete, includePersonalBest = false) {
     if (athlete.marathonRank) {
         detailsParts.push(`Marathon #${athlete.marathonRank}`);
     }
-    if (athlete.roadRunningRank && !athlete.marathonRank) {
+    // Show road running rank if available (even if marathon rank exists)
+    if (athlete.roadRunningRank) {
         detailsParts.push(`Road #${athlete.roadRunningRank}`);
     }
     
