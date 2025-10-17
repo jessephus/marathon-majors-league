@@ -1,0 +1,185 @@
+name: Sync World Athletics Top 100
+
+on:
+  # Run every other day at 2:00 AM UTC
+  schedule:
+    - cron: '0 2 */2 * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run in dry-run mode (no DB writes)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      verbose:
+        description: 'Enable verbose logging'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+  issues: write  # Allow creating issues on failure
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install psycopg2-binary worldathletics requests
+      
+      - name: Run migration (add sync tracking fields)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python -c "
+          import psycopg2
+          import os
+          conn = psycopg2.connect(os.environ['DATABASE_URL'])
+          cur = conn.cursor()
+          
+          # Read and execute migration SQL
+          with open('migrations/add_sync_tracking_fields.sql', 'r') as f:
+              migration_sql = f.read()
+          
+          # Execute migration (split by semicolons)
+          for statement in migration_sql.split(';'):
+              if statement.strip():
+                  try:
+                      cur.execute(statement)
+                  except Exception as e:
+                      print(f'Warning: {e}')
+          
+          conn.commit()
+          cur.close()
+          conn.close()
+          print('Migration completed successfully')
+          "
+      
+      - name: Run sync script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          DRY_RUN_FLAG=""
+          VERBOSE_FLAG=""
+          
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_RUN_FLAG="--dry-run"
+          fi
+          
+          if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
+            VERBOSE_FLAG="--verbose"
+          fi
+          
+          python scripts/sync_top_100.py $DRY_RUN_FLAG $VERBOSE_FLAG
+      
+      - name: Upload sync statistics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sync-stats-${{ github.run_number }}
+          path: sync_stats.json
+          retention-days: 30
+      
+      - name: Comment on commit (if scheduled)
+        if: github.event_name == 'schedule' && success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const stats = JSON.parse(fs.readFileSync('sync_stats.json', 'utf8'));
+            
+            const body = `
+            ## ✅ World Athletics Sync Successful
+            
+            **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            **Duration:** ${stats.duration_seconds.toFixed(1)}s
+            
+            ### Statistics
+            - 🆕 New athletes: ${stats.new_athletes}
+            - 🔄 Updated athletes: ${stats.updated_athletes}
+            - ✓ Unchanged athletes: ${stats.unchanged_athletes}
+            - 📉 Dropped from top-100: ${stats.dropped_athletes}
+            
+            ${stats.fetch_errors > 0 ? `⚠️ Fetch errors: ${stats.fetch_errors}` : ''}
+            ${stats.db_errors > 0 ? `⚠️ Database errors: ${stats.db_errors}` : ''}
+            `;
+            
+            // Create a comment on the latest commit
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: body
+            });
+      
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let stats = { duration_seconds: 0, fetch_errors: 0, db_errors: 0 };
+            
+            try {
+              stats = JSON.parse(fs.readFileSync('sync_stats.json', 'utf8'));
+            } catch (e) {
+              console.log('Could not read stats file');
+            }
+            
+            const body = `
+            ## 🚨 World Athletics Sync Failed
+            
+            **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            **Workflow:** \`${{ github.workflow }}\`
+            **Triggered by:** ${{ github.event_name }}
+            **Duration:** ${stats.duration_seconds.toFixed(1)}s
+            
+            ### Partial Statistics
+            - Fetch errors: ${stats.fetch_errors}
+            - Database errors: ${stats.db_errors}
+            
+            ### Action Required
+            1. Check the [workflow run logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            2. Investigate the error cause
+            3. Fix any issues with the sync script or database
+            4. Re-run the workflow manually if needed
+            
+            ### Debug Info
+            - Branch: ${{ github.ref }}
+            - Commit: ${{ github.sha }}
+            - Actor: ${{ github.actor }}
+            
+            This issue was automatically created by the sync workflow.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 World Athletics Sync Failed - Run #${{ github.run_number }}`,
+              body: body,
+              labels: ['sync-failure', 'automated', 'bug']
+            });

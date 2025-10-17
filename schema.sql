@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS athletes (
     gender VARCHAR(10) NOT NULL CHECK (gender IN ('men', 'women')),
     personal_best VARCHAR(10) NOT NULL,
     headshot_url TEXT,
-    world_athletics_id VARCHAR(50),
+    world_athletics_id VARCHAR(50) UNIQUE,
     world_athletics_profile_url TEXT,
     marathon_rank INTEGER,
     road_running_rank INTEGER,
@@ -18,6 +18,11 @@ CREATE TABLE IF NOT EXISTS athletes (
     date_of_birth DATE,
     sponsor VARCHAR(255),
     season_best VARCHAR(10),
+    ranking_source VARCHAR(50) DEFAULT 'world_marathon',
+    last_fetched_at TIMESTAMP WITH TIME ZONE,
+    last_seen_at TIMESTAMP WITH TIME ZONE,
+    data_hash TEXT,
+    raw_json JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -26,6 +31,9 @@ CREATE INDEX idx_athletes_gender ON athletes(gender);
 CREATE INDEX idx_athletes_wa_id ON athletes(world_athletics_id);
 CREATE INDEX idx_athletes_marathon_rank ON athletes(marathon_rank);
 CREATE INDEX idx_athletes_overall_rank ON athletes(overall_rank);
+CREATE INDEX idx_athletes_data_hash ON athletes(data_hash);
+CREATE INDEX idx_athletes_last_seen ON athletes(last_seen_at);
+CREATE INDEX idx_athletes_ranking_source ON athletes(ranking_source);
 
 -- Races table (tracks different marathon events)
 CREATE TABLE IF NOT EXISTS races (
