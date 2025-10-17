@@ -32,7 +32,7 @@ vercel dev
 
 ### Environment Variables
 Required for local development:
-- `BLOB_READ_WRITE_TOKEN` - Automatically set when linking Vercel project
+- `DATABASE_URL` - Neon Postgres connection string (automatically set when linking Vercel project)
 
 ## Project Architecture
 
@@ -46,18 +46,21 @@ marathon-majors-league/
 │   └── athletes.json          # Elite athlete database
 ├── Backend (API Functions)
 │   ├── api/
-│   │   ├── storage.js         # Centralized Blob storage helpers
-│   │   ├── game-state.js      # Game configuration management
-│   │   ├── rankings.js        # Player rankings storage
-│   │   ├── draft.js          # Snake draft execution
-│   │   ├── results.js        # Race results management
-│   │   └── init-db.js        # Storage health check
+│   │   ├── db.js               # PostgreSQL database helpers
+│   │   ├── athletes.js         # Athlete data endpoint
+│   │   ├── game-state.js       # Game configuration management
+│   │   ├── rankings.js         # Player rankings storage
+│   │   ├── draft.js            # Snake draft execution
+│   │   ├── results.js          # Race results management
+│   │   └── init-db.js          # Database initialization & seeding
 ├── Configuration
 │   ├── package.json          # Dependencies and scripts
 │   ├── vercel.json          # Deployment configuration
+│   ├── schema.sql           # Database schema
 │   └── .vercelignore        # Deployment exclusions
 └── Documentation
     ├── README.md             # Project overview and features
+    ├── NEON_SETUP.md        # Database setup guide
     ├── ARCHITECTURE.md       # Technical architecture details
     ├── DEPLOYMENT.md         # Deployment instructions
     ├── USER_GUIDE.md        # End-user documentation
@@ -69,7 +72,7 @@ marathon-majors-league/
 ### Technology Stack
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+ (no frameworks)
 - **Backend**: Vercel Serverless Functions (Node.js ES modules)
-- **Storage**: Vercel Blob Storage (JSON files)
+- **Storage**: Neon Postgres (serverless PostgreSQL)
 - **Deployment**: Vercel Edge Network
 
 ## Development Workflow
@@ -103,10 +106,11 @@ open http://localhost:3000
 6. **Update documentation**: Reflect changes in relevant docs
 
 #### Modifying API Endpoints
-1. **Check existing patterns**: Follow conventions in `api/storage.js`
+1. **Check existing patterns**: Follow conventions in `api/db.js`
 2. **Handle CORS**: Include proper headers in all endpoints
 3. **Error handling**: Use try/catch and return appropriate HTTP codes
-4. **Use storage helpers**: Leverage `getData()` and `saveData()` functions
+4. **Use database helpers**: Leverage functions in `db.js` for data access
+5. **SQL injection prevention**: Always use parameterized queries
 
 #### Frontend State Management
 ```javascript
@@ -172,7 +176,7 @@ const message = `Player ${playerCode} has ${rankings.length} rankings`;
 
 ### API Function Template
 ```javascript
-import { getData, saveData, getDefault } from './storage.js';
+import { getGameState, updateGameState } from './db.js';
 
 export default async function handler(req, res) {
     // CORS headers (required for all endpoints)
@@ -189,12 +193,12 @@ export default async function handler(req, res) {
     try {
         if (req.method === 'GET') {
             // Handle GET request
-            const data = await getData(gameId, 'type') || getDefault();
-            res.status(200).json(data);
+            const data = await getGameState(gameId);
+            res.status(200).json(data || {});
         } else if (req.method === 'POST') {
             // Handle POST request
             const { body } = req;
-            await saveData(gameId, 'type', body);
+            await updateGameState(gameId, body);
             res.status(200).json({ message: 'Success' });
         } else {
             res.status(405).json({ error: 'Method not allowed' });
@@ -265,8 +269,11 @@ console.log('Retrieved data:', data);
 vercel env pull
 cat .env.local
 
-# Test storage endpoint
+# Test database endpoint
 curl http://localhost:3000/api/init-db
+
+# Check Neon console for database status
+# Visit https://console.neon.tech
 ```
 
 #### CORS Issues
@@ -316,11 +323,15 @@ vercel env pull
 
 ### Database Management
 ```bash
-# Check storage health
+# Check database health
 curl https://your-app.vercel.app/api/init-db
 
-# View storage in Vercel dashboard
-# Go to project -> Storage tab -> Browse files
+# View database in Neon console
+# Go to https://console.neon.tech -> Select your database -> SQL Editor
+
+# Run SQL queries
+# Use Neon console SQL Editor or connect via psql
+psql $DATABASE_URL
 ```
 
 ## Contributing
@@ -437,9 +448,10 @@ trackEvent('draft_completed', { playerCount: 3, gameId: 'default' });
 - **Advanced analytics**: Detailed performance breakdowns
 
 ### Scalability Improvements
-- **Database optimization**: Move to Postgres for complex queries
+- **Database optimization**: Optimize queries, add materialized views
 - **Caching layer**: Redis for frequently accessed data
 - **CDN optimization**: Image optimization and compression
 - **Multi-region deployment**: Global performance optimization
+- **Read replicas**: Neon read replicas for high traffic
 
 This development guide provides comprehensive information for maintaining and enhancing the Fantasy NY Marathon application while preserving its core simplicity and ease of use.

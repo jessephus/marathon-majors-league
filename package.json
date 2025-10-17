@@ -7,13 +7,19 @@
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'No build step required'",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "postbuild": "node scripts/init-db.js",
+    "seed": "node scripts/init-db.js"
   },
   "dependencies": {
-    "@vercel/blob": "^0.23.0"
+    "@neondatabase/serverless": "^1.0.2"
   },
-  "devDependencies": {},
-  "keywords": ["fantasy", "marathon", "ny", "new-york"],
+  "keywords": [
+    "fantasy",
+    "marathon",
+    "ny",
+    "new-york"
+  ],
   "author": "Jesse Geraci",
   "license": "MIT"
 }

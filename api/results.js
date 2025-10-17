@@ -1,4 +1,4 @@
-import { getData, saveData, getDefaultResults } from './storage.js';
+import { getRaceResults, saveRaceResults } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get all race results
-      const results = await getData(gameId, 'results') || getDefaultResults();
+      const results = await getRaceResults(gameId);
       res.status(200).json(results);
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
@@ -25,16 +25,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Results data is required' });
       }
 
-      // Get existing results or create new
-      let existingResults = await getData(gameId, 'results') || getDefaultResults();
-
-      // Update results
-      for (const [athleteId, finishTime] of Object.entries(results)) {
-        existingResults[athleteId] = finishTime;
-      }
-
-      // Save updated results
-      await saveData(gameId, 'results', existingResults);
+      // Save results
+      await saveRaceResults(gameId, results);
 
       res.status(200).json({ message: 'Results saved successfully' });
     } else {

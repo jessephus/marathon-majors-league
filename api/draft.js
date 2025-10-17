@@ -1,4 +1,4 @@
-import { getData, saveData, getDefaultTeams, getDefaultGameState } from './storage.js';
+import { getDraftTeams, saveDraftTeams, updateGameState } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get draft results
-      const teams = await getData(gameId, 'teams') || getDefaultTeams();
+      const teams = await getDraftTeams(gameId);
       res.status(200).json(teams);
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
@@ -26,15 +26,12 @@ export default async function handler(req, res) {
       }
 
       // Save teams
-      await saveData(gameId, 'teams', teams);
+      await saveDraftTeams(gameId, teams);
 
       // Mark draft as complete in game state only if teams is not empty (not a reset)
       const isReset = Object.keys(teams).length === 0;
       if (!isReset) {
-        let gameState = await getData(gameId, 'game-state') || getDefaultGameState();
-        gameState.draft_complete = true;
-        gameState.updated_at = new Date().toISOString();
-        await saveData(gameId, 'game-state', gameState);
+        await updateGameState(gameId, { draft_complete: true });
       }
 
       res.status(200).json({ message: 'Draft results saved successfully' });

@@ -1,4 +1,4 @@
-import { getData, saveData, getDefaultGameState, getDefaultRankings, getDefaultTeams, getDefaultResults } from './storage.js';
+import { getGameState, updateGameState, getPlayerRankings, getDraftTeams, getRaceResults } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,16 +13,16 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get game state from blob storage
-      const gameState = await getData(gameId, 'game-state') || getDefaultGameState();
-      const rankings = await getData(gameId, 'rankings') || getDefaultRankings();
-      const teams = await getData(gameId, 'teams') || getDefaultTeams();
-      const results = await getData(gameId, 'results') || getDefaultResults();
+      // Get game state from Postgres
+      const gameState = await getGameState(gameId);
+      const rankings = await getPlayerRankings(gameId);
+      const teams = await getDraftTeams(gameId);
+      const results = await getRaceResults(gameId);
 
       res.status(200).json({
-        players: gameState.players,
-        draftComplete: gameState.draft_complete,
-        resultsFinalized: gameState.results_finalized,
+        players: gameState?.players || [],
+        draftComplete: gameState?.draft_complete || false,
+        resultsFinalized: gameState?.results_finalized || false,
         rankings,
         teams,
         results
@@ -32,23 +32,11 @@ export default async function handler(req, res) {
       // Update game state
       const { players, draftComplete, resultsFinalized } = req.body;
 
-      // Get existing game state or create new
-      let gameState = await getData(gameId, 'game-state') || getDefaultGameState();
-
-      // Update fields
-      if (players !== undefined) {
-        gameState.players = players;
-      }
-      if (draftComplete !== undefined) {
-        gameState.draft_complete = draftComplete;
-      }
-      if (resultsFinalized !== undefined) {
-        gameState.results_finalized = resultsFinalized;
-      }
-      gameState.updated_at = new Date().toISOString();
-
-      // Save updated game state
-      await saveData(gameId, 'game-state', gameState);
+      await updateGameState(gameId, {
+        players,
+        draft_complete: draftComplete,
+        results_finalized: resultsFinalized
+      });
 
       res.status(200).json({ message: 'Game state updated successfully' });
     } else {

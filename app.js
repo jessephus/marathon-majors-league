@@ -52,11 +52,51 @@ async function saveGameState() {
 // Load athletes data
 async function loadAthletes() {
     try {
-        const response = await fetch('athletes.json');
-        gameState.athletes = await response.json();
+        // Load from database API (will auto-seed if empty)
+        const response = await fetch(`${API_BASE}/api/athletes`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
+        }
+        
+        const athletes = await response.json();
+        
+        // Validate we got data
+        if (!athletes || !athletes.men || !athletes.women) {
+            throw new Error('Invalid athletes data structure received from API');
+        }
+        
+        if (athletes.men.length === 0 && athletes.women.length === 0) {
+            throw new Error('No athletes data available - database may not be initialized');
+        }
+        
+        gameState.athletes = athletes;
+        console.log(`Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes from database`);
+        
     } catch (error) {
         console.error('Error loading athletes:', error);
-        // Fallback to empty arrays
+        
+        // Show user-friendly error message
+        const errorMessage = `
+            <div style="padding: 20px; background: #fee; border: 2px solid #c33; border-radius: 8px; margin: 20px;">
+                <h3 style="color: #c33; margin-top: 0;">⚠️ Unable to Load Athletes</h3>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <p>The database may not be initialized yet. Please try one of the following:</p>
+                <ol>
+                    <li>Wait a few moments and refresh the page</li>
+                    <li>Contact the commissioner to initialize the database</li>
+                    <li>Visit <code>/api/init-db</code> to manually initialize</li>
+                </ol>
+            </div>
+        `;
+        
+        // Display error in the UI
+        const mainContent = document.querySelector('main') || document.body;
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = errorMessage;
+        mainContent.insertBefore(errorDiv, mainContent.firstChild);
+        
+        // Set empty arrays to prevent further errors
         gameState.athletes = { men: [], women: [] };
     }
 }
