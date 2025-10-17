@@ -3,8 +3,8 @@
 # Database connection
 psycopg2-binary==2.9.9
 
-# World Athletics API wrapper
-worldathletics==2.0.0
+# World Athletics API wrapper (use latest stable version)
+worldathletics>=1.2.4
 
 # HTTP requests (for GitHub API)
 requests==2.31.0

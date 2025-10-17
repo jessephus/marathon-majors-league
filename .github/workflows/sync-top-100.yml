@@ -101,7 +101,12 @@ jobs:
           DRY_RUN_FLAG=""
           VERBOSE_FLAG=""
           
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+          # Default to dry-run for push events (testing), real run for schedule/manual
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "📋 Push event detected - running in DRY RUN mode by default"
+            DRY_RUN_FLAG="--dry-run"
+            VERBOSE_FLAG="--verbose"
+          elif [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             DRY_RUN_FLAG="--dry-run"
           fi
           
