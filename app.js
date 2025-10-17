@@ -648,16 +648,35 @@ function displayTeams() {
 
 // Helper function to get country flag emoji
 function getCountryFlag(countryCode) {
-    const flagMap = {
-        'AUS': '🇦🇺', 'CAN': '��', 'ERI': '�🇪🇷', 'ETH': '🇪🇹',
-        'FRA': '🇫🇷', 'GBR': '🇬🇧', 'IRE': '�🇪', 'ITA': '��',
-        'JPN': '��', 'KEN': '��', 'MEX': '🇲�', 'NED': '��',
-        'NOR': '🇳🇴', 'SUI': '🇨🇭', 'TAN': '�🇿', 'USA': '🇺🇸',
-        // Legacy codes (if any remain in old data)
-        'BEL': '��', 'UGA': '��', 'MAR': '🇲🇦', 'CHN': '🇨�',
-        'ARG': '🇦🇷', 'ESP': '🇪🇸'
+    // Generate flag emoji from country code using Unicode Regional Indicator symbols
+    // Regional Indicators: A = U+1F1E6, B = U+1F1E7, ... Z = U+1F1FF
+    const getFlag = (code) => {
+        if (!code || code.length < 2) return '\u{1F3C1}'; // checkered flag
+        
+        // Map country codes to ISO 3166-1 alpha-2 codes
+        const isoMap = {
+            'AUS': 'AU', 'CAN': 'CA', 'ERI': 'ER', 'ETH': 'ET',
+            'FRA': 'FR', 'GBR': 'GB', 'IRE': 'IE', 'ITA': 'IT',
+            'JPN': 'JP', 'KEN': 'KE', 'MEX': 'MX', 'NED': 'NL',
+            'NOR': 'NO', 'SUI': 'CH', 'TAN': 'TZ', 'USA': 'US',
+            // Legacy codes
+            'BEL': 'BE', 'UGA': 'UG', 'MAR': 'MA', 'CHN': 'CN',
+            'ARG': 'AR', 'ESP': 'ES'
+        };
+        
+        const iso = isoMap[code];
+        if (!iso) return '\u{1F3C1}'; // checkered flag
+        
+        // Convert ISO code to Regional Indicator symbols
+        // A = U+1F1E6, B = U+1F1E7, etc.
+        const codePoints = iso.split('').map(char => 
+            0x1F1E6 + char.charCodeAt(0) - 65
+        );
+        
+        return String.fromCodePoint(...codePoints);
     };
-    return flagMap[countryCode] || '🏁';
+    
+    return getFlag(countryCode);
 }
 
 // Helper function to enrich athlete data with current information from athletes.json
