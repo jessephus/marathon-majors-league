@@ -667,7 +667,12 @@ function enrichAthleteData(athlete, gender) {
 
 // Helper function to create headshot element
 function createHeadshotElement(athlete, className) {
-    if (!athlete.headshotUrl) return null;
+    // Don't create headshot for missing URLs or default placeholders
+    if (!athlete.headshotUrl || 
+        athlete.headshotUrl.includes('default.jpg') || 
+        athlete.headshotUrl.includes('placeholder')) {
+        return null;
+    }
     
     const headshotDiv = document.createElement('div');
     headshotDiv.className = className;

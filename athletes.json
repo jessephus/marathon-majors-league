@@ -49,7 +49,7 @@
       "name": "Alexander Mutiso",
       "country": "KEN",
       "pb": "2:03:11",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 6,
@@ -155,7 +155,7 @@
       "name": "Emmanuel Levisse",
       "country": "FRA",
       "pb": "2:07:41",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 16,
@@ -195,7 +195,7 @@
       "name": "Jonny Mellor",
       "country": "GBR",
       "pb": "2:09:09",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 20,
@@ -301,35 +301,35 @@
       "name": "Hillary Bor",
       "country": "USA",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 30,
       "name": "Patrick Dever",
       "country": "GBR",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 31,
       "name": "Charles Hicks",
       "country": "USA",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 32,
       "name": "Joe Klecker",
       "country": "USA",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 33,
       "name": "Charles Philibert-Thiboutot",
       "country": "CAN",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     }
   ],
   "women": [
@@ -580,21 +580,21 @@
       "name": "Karoline Bjerkeli Grøvdal",
       "country": "NOR",
       "pb": "N/A",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 124,
       "name": "Jessica Warner-Judd",
       "country": "GBR",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     },
     {
       "id": 125,
       "name": "Amanda Vestri",
       "country": "USA",
       "pb": "Debut",
-      "headshotUrl": "https://worldathletics.org/assets/images/athletes/default.jpg"
+      "headshotUrl": null
     }
   ]
 }
