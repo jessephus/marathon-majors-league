@@ -649,10 +649,13 @@ function displayTeams() {
 // Helper function to get country flag emoji
 function getCountryFlag(countryCode) {
     const flagMap = {
-        'KEN': '🇰🇪', 'ETH': '🇪🇹', 'BEL': '🇧🇪', 'UGA': '🇺🇬', 
-        'USA': '🇺🇸', 'JPN': '🇯🇵', 'MAR': '🇲🇦', 'CAN': '🇨🇦',
-        'CHN': '🇨🇳', 'FRA': '🇫🇷', 'GBR': '🇬🇧', 'ARG': '🇦🇷',
-        'ESP': '🇪🇸'
+        'AUS': '🇦🇺', 'CAN': '��', 'ERI': '�🇪🇷', 'ETH': '🇪🇹',
+        'FRA': '🇫🇷', 'GBR': '🇬🇧', 'IRE': '�🇪', 'ITA': '��',
+        'JPN': '��', 'KEN': '��', 'MEX': '🇲�', 'NED': '��',
+        'NOR': '🇳🇴', 'SUI': '🇨🇭', 'TAN': '�🇿', 'USA': '🇺🇸',
+        // Legacy codes (if any remain in old data)
+        'BEL': '��', 'UGA': '��', 'MAR': '🇲🇦', 'CHN': '🇨�',
+        'ARG': '🇦🇷', 'ESP': '🇪🇸'
     };
     return flagMap[countryCode] || '🏁';
 }
