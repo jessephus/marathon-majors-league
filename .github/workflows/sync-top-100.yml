@@ -1,11 +1,11 @@
 name: Sync World Athletics Top 100
 
 on:
-  # Run every other day at 2:00 AM UTC
+  # Run every other day at 2:00 AM UTC (only on main branch)
   schedule:
     - cron: '0 2 */2 * *'
   
-  # Allow manual triggering
+  # Allow manual triggering from any branch
   workflow_dispatch:
     inputs:
       dry_run:
@@ -24,6 +24,16 @@ on:
         options:
           - 'true'
           - 'false'
+  
+  # Allow triggering on push to feature branches (for testing)
+  push:
+    branches:
+      - 'copilot/**'
+      - 'feature/**'
+    paths:
+      - '.github/workflows/sync-top-100.yml'
+      - 'scripts/sync_top_100.py'
+      - 'migrations/add_sync_tracking_fields.sql'
 
 permissions:
   contents: read
