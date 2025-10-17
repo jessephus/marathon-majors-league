@@ -9,7 +9,17 @@ const sql = neon(process.env.DATABASE_URL);
 
 export async function getAllAthletes() {
   const athletes = await sql`
-    SELECT id, name, country, gender, personal_best as pb, headshot_url as "headshotUrl"
+    SELECT 
+      id, 
+      name, 
+      country, 
+      gender, 
+      personal_best as pb, 
+      headshot_url as "headshotUrl",
+      world_athletics_id as "worldAthleticsId",
+      world_athletics_profile_url as "worldAthleticsProfileUrl",
+      marathon_rank as "marathonRank",
+      road_running_rank as "roadRunningRank"
     FROM athletes
     ORDER BY gender, personal_best
   `;
@@ -25,7 +35,17 @@ export async function getAllAthletes() {
 
 export async function getAthleteById(id) {
   const [athlete] = await sql`
-    SELECT id, name, country, gender, personal_best as pb, headshot_url as "headshotUrl"
+    SELECT 
+      id, 
+      name, 
+      country, 
+      gender, 
+      personal_best as pb, 
+      headshot_url as "headshotUrl",
+      world_athletics_id as "worldAthleticsId",
+      world_athletics_profile_url as "worldAthleticsProfileUrl",
+      marathon_rank as "marathonRank",
+      road_running_rank as "roadRunningRank"
     FROM athletes
     WHERE id = ${id}
   `;
@@ -35,28 +55,46 @@ export async function getAthleteById(id) {
 export async function seedAthletes(athletesData) {
   // Insert men athletes
   for (const athlete of athletesData.men) {
+    const waId = athlete.worldAthletics?.id || null;
+    const waProfileUrl = athlete.worldAthletics?.profileUrl || null;
+    const marathonRank = athlete.worldAthletics?.marathonRank || null;
+    const roadRunningRank = athlete.worldAthletics?.roadRunningRank || null;
+    
     await sql`
-      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url)
-      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'men', ${athlete.pb}, ${athlete.headshotUrl})
+      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url, world_athletics_id, world_athletics_profile_url, marathon_rank, road_running_rank)
+      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'men', ${athlete.pb}, ${athlete.headshotUrl}, ${waId}, ${waProfileUrl}, ${marathonRank}, ${roadRunningRank})
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         country = EXCLUDED.country,
         personal_best = EXCLUDED.personal_best,
         headshot_url = EXCLUDED.headshot_url,
+        world_athletics_id = EXCLUDED.world_athletics_id,
+        world_athletics_profile_url = EXCLUDED.world_athletics_profile_url,
+        marathon_rank = EXCLUDED.marathon_rank,
+        road_running_rank = EXCLUDED.road_running_rank,
         updated_at = CURRENT_TIMESTAMP
     `;
   }
   
   // Insert women athletes
   for (const athlete of athletesData.women) {
+    const waId = athlete.worldAthletics?.id || null;
+    const waProfileUrl = athlete.worldAthletics?.profileUrl || null;
+    const marathonRank = athlete.worldAthletics?.marathonRank || null;
+    const roadRunningRank = athlete.worldAthletics?.roadRunningRank || null;
+    
     await sql`
-      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url)
-      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'women', ${athlete.pb}, ${athlete.headshotUrl})
+      INSERT INTO athletes (id, name, country, gender, personal_best, headshot_url, world_athletics_id, world_athletics_profile_url, marathon_rank, road_running_rank)
+      VALUES (${athlete.id}, ${athlete.name}, ${athlete.country}, 'women', ${athlete.pb}, ${athlete.headshotUrl}, ${waId}, ${waProfileUrl}, ${marathonRank}, ${roadRunningRank})
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
         country = EXCLUDED.country,
         personal_best = EXCLUDED.personal_best,
         headshot_url = EXCLUDED.headshot_url,
+        world_athletics_id = EXCLUDED.world_athletics_id,
+        world_athletics_profile_url = EXCLUDED.world_athletics_profile_url,
+        marathon_rank = EXCLUDED.marathon_rank,
+        road_running_rank = EXCLUDED.road_running_rank,
         updated_at = CURRENT_TIMESTAMP
     `;
   }

@@ -324,7 +324,22 @@ function updateRankingDisplay(gender) {
         
         const nameSpan = document.createElement('span');
         nameSpan.className = 'name';
-        nameSpan.textContent = athlete.name;
+        
+        // Add World Athletics link if available
+        if (athlete.worldAthleticsProfileUrl) {
+            const link = document.createElement('a');
+            link.href = athlete.worldAthleticsProfileUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = athlete.name;
+            link.style.color = 'inherit';
+            link.style.textDecoration = 'none';
+            link.title = 'View World Athletics profile';
+            link.addEventListener('click', (e) => e.stopPropagation());
+            nameSpan.appendChild(link);
+        } else {
+            nameSpan.textContent = athlete.name;
+        }
         
         const countrySpan = document.createElement('span');
         countrySpan.className = 'country';
@@ -671,9 +686,20 @@ function createHeadshotElement(athlete, className) {
 function formatAthleteDetails(athlete, includePersonalBest = false) {
     let detailsParts = [];
     if (includePersonalBest) detailsParts.push(`PB: ${athlete.pb}`);
+    
+    // Add World Athletics rankings if available
+    if (athlete.marathonRank) {
+        detailsParts.push(`Marathon #${athlete.marathonRank}`);
+    }
+    if (athlete.roadRunningRank && !athlete.marathonRank) {
+        detailsParts.push(`Road #${athlete.roadRunningRank}`);
+    }
+    
+    // Legacy fields (for backward compatibility)
     if (athlete.age) detailsParts.push(`Age: ${athlete.age}`);
     if (athlete.sponsor) detailsParts.push(athlete.sponsor);
     if (athlete.worldRanking) detailsParts.push(`${includePersonalBest ? '#' : 'Rank: #'}${athlete.worldRanking}`);
+    
     return detailsParts.join(' • ');
 }
 
@@ -739,7 +765,20 @@ function createTeamCard(player, team, showScore = false) {
         
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
-        nameDiv.textContent = enrichedAthlete.name;
+        
+        // Add World Athletics link if available
+        if (enrichedAthlete.worldAthleticsProfileUrl) {
+            const link = document.createElement('a');
+            link.href = enrichedAthlete.worldAthleticsProfileUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = enrichedAthlete.name;
+            link.style.color = 'inherit';
+            link.title = 'View World Athletics profile';
+            nameDiv.appendChild(link);
+        } else {
+            nameDiv.textContent = enrichedAthlete.name;
+        }
         
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';
@@ -792,7 +831,20 @@ function createTeamCard(player, team, showScore = false) {
         
         const nameDiv = document.createElement('div');
         nameDiv.className = 'name';
-        nameDiv.textContent = enrichedAthlete.name;
+        
+        // Add World Athletics link if available
+        if (enrichedAthlete.worldAthleticsProfileUrl) {
+            const link = document.createElement('a');
+            link.href = enrichedAthlete.worldAthleticsProfileUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = enrichedAthlete.name;
+            link.style.color = 'inherit';
+            link.title = 'View World Athletics profile';
+            nameDiv.appendChild(link);
+        } else {
+            nameDiv.textContent = enrichedAthlete.name;
+        }
         
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';

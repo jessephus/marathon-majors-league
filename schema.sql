@@ -9,11 +9,16 @@ CREATE TABLE IF NOT EXISTS athletes (
     gender VARCHAR(10) NOT NULL CHECK (gender IN ('men', 'women')),
     personal_best VARCHAR(10) NOT NULL,
     headshot_url TEXT,
+    world_athletics_id VARCHAR(50),
+    world_athletics_profile_url TEXT,
+    marathon_rank INTEGER,
+    road_running_rank INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_athletes_gender ON athletes(gender);
+CREATE INDEX idx_athletes_wa_id ON athletes(world_athletics_id);
 
 -- Games table (replacing game-state.json)
 CREATE TABLE IF NOT EXISTS games (
