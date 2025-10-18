@@ -805,6 +805,10 @@ footer .btn {
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    z-index: 10;
 }
 
 .athlete-table td {
@@ -906,6 +910,25 @@ footer .btn {
 .btn-small:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: var(--primary-blue);
+    margin-left: 4px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #1f2a7a;
+}
+
+.actions-cell {
+    white-space: nowrap;
+    padding: 8px !important;
+}
+
+.actions-cell .btn-small {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .info-message {

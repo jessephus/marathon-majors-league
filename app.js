@@ -1412,12 +1412,20 @@ async function handleViewAthletes() {
                             />
                         </td>
                         <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
-                        <td>
+                        <td class="actions-cell">
                             <button 
                                 class="btn-save-wa-id btn-small" 
                                 data-athlete-id="${athlete.id}"
                                 title="Save World Athletics ID"
                             >Save</button>
+                            <button 
+                                class="btn-sync-athlete btn-small btn-secondary" 
+                                data-athlete-id="${athlete.id}"
+                                data-athlete-name="${athlete.name}"
+                                data-wa-id="${athlete.worldAthleticsId || ''}"
+                                title="Sync athlete data from World Athletics"
+                                ${!athlete.worldAthleticsId ? 'disabled' : ''}
+                            >Sync</button>
                         </td>
                     </tr>
                 `).join('')}
@@ -1426,7 +1434,6 @@ async function handleViewAthletes() {
         
         container.innerHTML = `
             <p><strong>${allAthletes.length} athlete(s) found</strong></p>
-            <p class="info-message">💡 <strong>Tip:</strong> Athletes without a World Athletics ID cannot be tracked when they drop out of the top 100 rankings. Use the "Show only missing World Athletics ID" filter to find them quickly and add their IDs.</p>
             <div class="table-scroll">
                 ${table.outerHTML}
             </div>
@@ -1435,6 +1442,11 @@ async function handleViewAthletes() {
         // Add event listeners to save buttons
         document.querySelectorAll('.btn-save-wa-id').forEach(button => {
             button.addEventListener('click', handleSaveWorldAthleticsId);
+        });
+        
+        // Add event listeners to sync buttons
+        document.querySelectorAll('.btn-sync-athlete').forEach(button => {
+            button.addEventListener('click', handleSyncAthlete);
         });
         
     } catch (error) {
@@ -1494,6 +1506,72 @@ async function handleSaveWorldAthleticsId(event) {
         console.error('Error saving World Athletics ID:', error);
         alert('Failed to save World Athletics ID: ' + error.message);
         button.textContent = 'Save';
+        button.disabled = false;
+    }
+}
+
+// Handle syncing individual athlete
+async function handleSyncAthlete(event) {
+    const button = event.target;
+    const athleteId = button.getAttribute('data-athlete-id');
+    const athleteName = button.getAttribute('data-athlete-name');
+    const worldAthleticsId = button.getAttribute('data-wa-id');
+    
+    if (!worldAthleticsId) {
+        alert('Cannot sync athlete without a World Athletics ID. Please add the ID first.');
+        return;
+    }
+    
+    if (!confirm(`Sync data for ${athleteName}?\n\nThis will fetch the latest information from World Athletics including personal best, rankings, age, and other profile data.\n\nNote: This runs a full sync which may take 1-2 minutes.`)) {
+        return;
+    }
+    
+    try {
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = 'Syncing...';
+        button.style.opacity = '0.6';
+        
+        const response = await fetch(`${API_BASE}/api/sync-athlete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: parseInt(athleteId),
+                worldAthleticsId: worldAthleticsId
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to sync athlete');
+        }
+        
+        const result = await response.json();
+        
+        // Show success feedback
+        button.textContent = 'Synced!';
+        button.style.backgroundColor = '#4CAF50';
+        button.style.opacity = '1';
+        
+        // Reload the athlete table to show updated data
+        setTimeout(async () => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+            button.disabled = false;
+            
+            // Refresh the table
+            await handleViewAthletes();
+            
+            alert(`✓ Successfully synced ${athleteName}!\n\nUpdated data:\n- Personal Best: ${result.athlete.pb || 'N/A'}\n- Marathon Rank: ${result.athlete.marathonRank ? '#' + result.athlete.marathonRank : 'N/A'}\n- Age: ${result.athlete.age || 'N/A'}`);
+        }, 2000);
+        
+        console.log('Synced athlete:', result.athlete);
+        
+    } catch (error) {
+        console.error('Error syncing athlete:', error);
+        alert('Failed to sync athlete: ' + error.message + '\n\nThis may be because:\n- The World Athletics ID is incorrect\n- The athlete is not in the current rankings\n- Network or server error');
+        button.textContent = 'Sync';
+        button.style.opacity = '1';
         button.disabled = false;
     }
 }
