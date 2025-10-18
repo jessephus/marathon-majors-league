@@ -1522,10 +1522,6 @@ async function handleSyncAthlete(event) {
         return;
     }
     
-    if (!confirm(`Sync data for ${athleteName}?\n\nThis will fetch the latest information from World Athletics including personal best, rankings, age, and other profile data.\n\nNote: This runs a full sync which may take 1-2 minutes.`)) {
-        return;
-    }
-    
     try {
         button.disabled = true;
         const originalText = button.textContent;
@@ -1561,8 +1557,6 @@ async function handleSyncAthlete(event) {
             
             // Refresh the table
             await handleViewAthletes();
-            
-            alert(`✓ Successfully synced ${athleteName}!\n\nUpdated data:\n- Personal Best: ${result.athlete.pb || 'N/A'}\n- Marathon Rank: ${result.athlete.marathonRank ? '#' + result.athlete.marathonRank : 'N/A'}\n- Age: ${result.athlete.age || 'N/A'}`);
         }, 2000);
         
         console.log('Synced athlete:', result.athlete);

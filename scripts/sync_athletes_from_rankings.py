@@ -757,6 +757,105 @@ def sync_to_database(new_athletes: List[Dict], changed_athletes: List[Dict], dry
 
 
 # ============================================================================
+# SINGLE ATHLETE SYNC
+# ============================================================================
+
+def sync_single_athlete(athlete_id: str, dry_run: bool = False):
+    """
+    Sync a single athlete by their World Athletics ID.
+    Fetches profile data and updates the database.
+    """
+    print(f"\n🔍 Looking up athlete with WA_ID: {athlete_id}")
+    
+    # Get athlete from database
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    try:
+        cursor.execute("""
+            SELECT id, name, country, gender, world_athletics_id, world_athletics_profile_url
+            FROM athletes
+            WHERE world_athletics_id = %s
+        """, (athlete_id,))
+        
+        athlete = cursor.fetchone()
+        
+        if not athlete:
+            print(f"❌ Athlete with WA_ID {athlete_id} not found in database")
+            print("   Make sure the athlete exists in the database first")
+            return
+        
+        print(f"✓ Found athlete: {athlete['name']} (DB ID: {athlete['id']})")
+        
+        # Construct profile URL if not available
+        profile_url = athlete['world_athletics_profile_url']
+        if not profile_url:
+            # We need to construct it - but we need the country code
+            # Try to get it from the athlete's record
+            cursor.execute("SELECT country FROM athletes WHERE id = %s", (athlete['id'],))
+            country_result = cursor.fetchone()
+            if country_result and country_result['country']:
+                country = country_result['country'].lower()
+                name_slug = athlete['name'].lower().replace(' ', '-')
+                profile_url = f"{BASE_URL}/athletes/{country}/{name_slug}-{athlete_id}"
+                print(f"  Constructed profile URL: {profile_url}")
+            else:
+                print(f"❌ No profile URL available and cannot construct one (missing country)")
+                return
+        
+        # Fetch profile data
+        print(f"\n📥 Fetching profile data...")
+        profile_data = fetch_athlete_profile(athlete_id, profile_url, athlete['name'])
+        
+        if not profile_data:
+            print(f"❌ Failed to fetch profile data for {athlete['name']}")
+            return
+        
+        # Update database
+        print(f"\n💾 Updating database...")
+        
+        if dry_run:
+            print(f"🔍 DRY RUN - Would update {athlete['name']} with:")
+            for key, value in profile_data.items():
+                if key not in ['world_athletics_id', 'profile_url']:
+                    print(f"     {key}: {value}")
+        else:
+            # Prepare update data - preserve existing country and gender
+            update_data = {
+                'db_id': athlete['id'],
+                'name': athlete['name'],
+                'country': athlete['country'],  # Preserve existing
+                'gender': athlete['gender'],    # Preserve existing
+                'world_athletics_id': athlete_id,
+                **profile_data
+            }
+            
+            upsert_athlete(conn, update_data, is_update=True)
+            conn.commit()
+            
+            print(f"✓ Successfully updated {athlete['name']}")
+            
+            # Fetch and display updated data
+            cursor.execute("""
+                SELECT personal_best, marathon_rank, road_running_rank, age, season_best
+                FROM athletes
+                WHERE id = %s
+            """, (athlete['id'],))
+            updated_athlete = cursor.fetchone()
+            
+            print(f"\n📊 Updated data:")
+            print(f"   Personal Best: {updated_athlete['personal_best'] or 'N/A'}")
+            print(f"   Marathon Rank: #{updated_athlete['marathon_rank']}" if updated_athlete['marathon_rank'] else "   Marathon Rank: N/A")
+            print(f"   Road Running Rank: #{updated_athlete['road_running_rank']}" if updated_athlete['road_running_rank'] else "   Road Running Rank: N/A")
+            print(f"   Age: {updated_athlete['age'] or 'N/A'}")
+            print(f"   Season Best: {updated_athlete['season_best'] or 'N/A'}")
+        
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# ============================================================================
 # MAIN ORCHESTRATION
 # ============================================================================
 
@@ -785,8 +884,25 @@ def main():
         action='store_true',
         help='Also sync athletes who dropped out of top 100 (searches beyond top 100)'
     )
+    parser.add_argument(
+        '--athlete-id',
+        type=str,
+        help='Sync a single athlete by their World Athletics ID (e.g., 14816982)'
+    )
     
     args = parser.parse_args()
+    
+    # Special mode: sync single athlete
+    if args.athlete_id:
+        print("=" * 70)
+        print("WORLD ATHLETICS SINGLE ATHLETE SYNC")
+        print("=" * 70)
+        print(f"Athlete ID: {args.athlete_id}")
+        print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE UPDATE'}")
+        print("=" * 70)
+        
+        sync_single_athlete(args.athlete_id, dry_run=args.dry_run)
+        return
     
     print("=" * 70)
     print("WORLD ATHLETICS TOP 100 MARATHON SYNC")
