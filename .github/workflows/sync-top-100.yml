@@ -1,9 +1,9 @@
 name: Sync World Athletics Top 100
 
 on:
-  # Run every other day at 2:00 AM UTC (only on main branch)
-  schedule:
-    - cron: '0 2 */2 * *'
+  # Run every other day at 2:00 AM UTC
+  #schedule:
+  #  - cron: '0 2 */2 * *'
   
   # Allow manual triggering from any branch
   workflow_dispatch:
@@ -24,6 +24,11 @@ on:
         options:
           - 'true'
           - 'false'
+      limit:
+        description: 'Limit number of athletes to sync (for testing)'
+        required: false
+        default: '0'
+        type: string
 
 permissions:
   contents: read
@@ -106,7 +111,14 @@ jobs:
             SYNC_DROPPED_FLAG="--sync-dropped"
           fi
           
-          python scripts/sync_athletes_from_rankings.py $DRY_RUN_FLAG $SYNC_DROPPED_FLAG
+          # Add limit flag if provided
+          LIMIT_FLAG=""
+          if [ -n "${{ github.event.inputs.limit }}" ] && [ "${{ github.event.inputs.limit }}" != "0" ]; then
+            echo "🔢 Limiting sync to ${{ github.event.inputs.limit }} athletes"
+            LIMIT_FLAG="--limit ${{ github.event.inputs.limit }}"
+          fi
+          
+          python scripts/sync_athletes_from_rankings.py $DRY_RUN_FLAG $SYNC_DROPPED_FLAG $LIMIT_FLAG
       
       - name: Upload sync statistics
         if: always()
