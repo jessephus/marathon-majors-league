@@ -805,10 +805,6 @@ footer .btn {
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
-    position: sticky;
-    top: 0;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
-    z-index: 10;
 }
 
 .athlete-table td {

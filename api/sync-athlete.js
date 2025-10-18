@@ -1,4 +1,30 @@
 import { neon } from '@neondatabase/serverless';
+import https from 'https';
+
+function fetchHtml(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+      }
+    }, (response) => {
+      if (response.statusCode !== 200) {
+        reject(new Error(`Failed to fetch profile: ${response.statusCode}`));
+        return;
+      }
+
+      let data = '';
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+      response.on('end', () => {
+        resolve(data);
+      });
+    }).on('error', (error) => {
+      reject(error);
+    });
+  });
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,17 +72,7 @@ export default async function handler(req, res) {
       const profileUrl = `https://worldathletics.org/athletes/_/${waId}`;
       
       try {
-        const response = await fetch(profileUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch profile: ${response.status}`);
-        }
-
-        const html = await response.text();
+        const html = await fetchHtml(profileUrl);
 
         // Extract data from profile page using regex (same logic as Python script)
         const enrichedData = {};
