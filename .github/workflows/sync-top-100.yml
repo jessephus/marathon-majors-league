@@ -24,16 +24,6 @@ on:
         options:
           - 'true'
           - 'false'
-  
-  # Allow triggering on push to feature branches (for testing)
-  push:
-    branches:
-      - 'copilot/**'
-      - 'feature/**'
-    paths:
-      - '.github/workflows/sync-top-100.yml'
-      - 'scripts/sync_athletes_from_rankings.py'
-      - 'migrations/add_sync_tracking_fields.sql'
 
 permissions:
   contents: read
