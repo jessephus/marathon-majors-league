@@ -59,10 +59,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r scripts/requirements.txt
+          # Temporarily install worldathletics for testing
+          pip install worldathletics
           # Verify installations
           python -c "import psycopg2; print('✓ psycopg2 installed')"
           python -c "import requests; print('✓ requests installed')"
+          python -c "import worldathletics; print('✓ worldathletics installed (for testing)')"
           echo "✓ All dependencies installed successfully"
+      
+      - name: Test World Athletics API connectivity
+        run: |
+          python scripts/test_wa_connection.py || echo "⚠️ Connection test failed, but continuing..."
       
       - name: Run migration (add sync tracking fields)
         env:
