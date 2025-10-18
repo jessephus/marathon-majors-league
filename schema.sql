@@ -130,6 +130,52 @@ CREATE TABLE IF NOT EXISTS race_results (
 CREATE INDEX idx_results_game_id ON race_results(game_id);
 CREATE INDEX idx_results_athlete_id ON race_results(athlete_id);
 
+-- Athlete progression table (year-by-year season's bests)
+CREATE TABLE IF NOT EXISTS athlete_progression (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    discipline VARCHAR(100) NOT NULL,
+    discipline_code VARCHAR(50),
+    discipline_url_slug VARCHAR(100),
+    event_type VARCHAR(50),
+    season VARCHAR(10) NOT NULL,
+    mark VARCHAR(20) NOT NULL,
+    venue TEXT,
+    competition_date VARCHAR(20),
+    competition_name TEXT,
+    competition_id VARCHAR(50),
+    result_score INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, discipline, season)
+);
+
+CREATE INDEX idx_progression_athlete_id ON athlete_progression(athlete_id);
+CREATE INDEX idx_progression_discipline ON athlete_progression(discipline);
+CREATE INDEX idx_progression_season ON athlete_progression(season);
+
+-- Athlete race results table (detailed race results by year)
+CREATE TABLE IF NOT EXISTS athlete_race_results (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    year VARCHAR(10) NOT NULL,
+    competition_date VARCHAR(20),
+    competition_name TEXT,
+    competition_id VARCHAR(50),
+    venue TEXT,
+    discipline VARCHAR(100),
+    position VARCHAR(20),
+    finish_time VARCHAR(20),
+    race_points INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, year, competition_date, competition_name, discipline)
+);
+
+CREATE INDEX idx_race_results_athlete_id ON athlete_race_results(athlete_id);
+CREATE INDEX idx_race_results_year ON athlete_race_results(year);
+CREATE INDEX idx_race_results_discipline ON athlete_race_results(discipline);
+
 -- User accounts table (for future authentication - not implemented yet)
 -- Placeholder for future feature
 CREATE TABLE IF NOT EXISTS users (
@@ -178,6 +224,12 @@ CREATE TRIGGER update_games_updated_at BEFORE UPDATE ON games
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_results_updated_at BEFORE UPDATE ON race_results
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_athlete_progression_updated_at BEFORE UPDATE ON athlete_progression
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_athlete_race_results_updated_at BEFORE UPDATE ON athlete_race_results
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users

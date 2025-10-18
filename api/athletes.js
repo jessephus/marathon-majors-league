@@ -1,4 +1,4 @@
-import { getAllAthletes, seedAthletes } from './db.js';
+import { getAllAthletes, seedAthletes, getAthleteProfile } from './db.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
@@ -92,7 +92,31 @@ export default async function handler(req, res) {
       // Check if confirmedOnly parameter is set (defaults to true for game pages)
       const confirmedOnly = req.query.confirmedOnly !== 'false';
       
-      // Get all athletes from database
+      // Check if requesting a specific athlete by ID
+      const athleteId = req.query.id ? parseInt(req.query.id, 10) : null;
+      
+      // If requesting specific athlete, return profile with optional progression/results
+      if (athleteId) {
+        const includeProgression = req.query.include?.includes('progression') || req.query.progression === 'true';
+        const includeResults = req.query.include?.includes('results') || req.query.results === 'true';
+        const discipline = req.query.discipline || null;
+        const year = req.query.year ? parseInt(req.query.year, 10) : null;
+        
+        const profile = await getAthleteProfile(athleteId, {
+          includeProgression,
+          includeResults,
+          discipline,
+          year
+        });
+        
+        if (!profile) {
+          return res.status(404).json({ error: 'Athlete not found' });
+        }
+        
+        return res.status(200).json(profile);
+      }
+      
+      // Otherwise, get all athletes from database
       let athletes = await getAllAthletes(confirmedOnly);
       
       // If database is empty, auto-seed it

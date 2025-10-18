@@ -40,6 +40,15 @@ except ImportError:
     print("Error: psycopg2 not installed. Run: pip install psycopg2-binary")
     sys.exit(1)
 
+# Import progression extraction functions
+try:
+    from extract_athlete_progression import fetch_and_save_progression_data
+    PROGRESSION_AVAILABLE = True
+except ImportError:
+    PROGRESSION_AVAILABLE = False
+    print("⚠️  Warning: Could not import progression extraction functions")
+    print("   Progression data will not be collected during sync")
+
 # Load environment variables from .env file if it exists (for local development)
 def load_env_file():
     env_path = Path(__file__).parent.parent / '.env'
@@ -485,7 +494,75 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
     print(f"   Total processed: {len(enriched)}")
     
     return enriched
-    return enriched
+
+
+def enrich_with_progression_data(
+    athletes: List[Dict],
+    fetch_progression: bool = True
+) -> Tuple[int, int]:
+    """
+    Fetch and save progression data for newly added or changed athletes.
+    
+    This function enriches athlete records with progression and race results data
+    by fetching from their World Athletics profile pages and saving to the database.
+    
+    Args:
+        athletes: List of athlete dictionaries (must have 'db_id' and 'world_athletics_id')
+        fetch_progression: Whether to fetch progression data (default: True)
+        
+    Returns:
+        Tuple of (total_progression_saved, total_results_saved)
+    """
+    if not PROGRESSION_AVAILABLE or not fetch_progression:
+        return 0, 0
+    
+    print("\n" + "=" * 70)
+    print("FETCHING PROGRESSION DATA")
+    print("=" * 70)
+    
+    total_progression = 0
+    total_results = 0
+    successful_count = 0
+    failed_count = 0
+    
+    for i, athlete in enumerate(athletes, 1):
+        wa_id = athlete.get('world_athletics_id')
+        db_id = athlete.get('db_id')
+        name = athlete.get('name', 'Unknown')
+        
+        if not wa_id or not db_id:
+            print(f"\n[{i}/{len(athletes)}] ⏭️  Skipping {name} - missing ID")
+            continue
+        
+        print(f"\n[{i}/{len(athletes)}] Fetching progression for {name} (WA_ID: {wa_id})...")
+        
+        try:
+            _, _, prog_saved, results_saved = fetch_and_save_progression_data(
+                athlete_id=wa_id,
+                athlete_db_id=db_id,
+                disciplines_filter=["Marathon", "Half Marathon"],
+                save_to_db=True
+            )
+            
+            total_progression += prog_saved
+            total_results += results_saved
+            successful_count += 1
+            
+        except Exception as e:
+            print(f"  ❌ Error: {e}")
+            failed_count += 1
+        
+        # Be polite - delay before next fetch
+        if i < len(athletes):
+            time.sleep(2)
+    
+    print(f"\n✅ Progression enrichment complete:")
+    print(f"   Successful: {successful_count}")
+    print(f"   Failed: {failed_count}")
+    print(f"   Total progression records: {total_progression}")
+    print(f"   Total race results: {total_results}")
+    
+    return total_progression, total_results
 
 
 # ============================================================================
@@ -619,9 +696,12 @@ def detect_changes(extracted_athletes: List[Dict], existing_athletes: Dict[str, 
     return new_athletes, changed_athletes, unchanged_athletes
 
 
-def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
+def upsert_athlete(conn, athlete: Dict, is_update: bool = False) -> int:
     """
     Insert or update athlete in database.
+    
+    Returns:
+        Database ID of the athlete
     """
     with conn.cursor() as cur:
         if is_update:
@@ -646,6 +726,7 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                     ranking_source = 'world_rankings',
                     updated_at = NOW()
                 WHERE id = %s
+                RETURNING id
             """, (
                 athlete.get('name'),
                 athlete.get('country'),
@@ -663,6 +744,7 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                 athlete.get('data_hash'),
                 athlete.get('db_id')
             ))
+            return cur.fetchone()[0]
         else:
             # Insert new athlete
             cur.execute("""
@@ -675,6 +757,7 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                 ) VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'world_rankings'
                 )
+                RETURNING id
             """, (
                 athlete.get('name'),
                 athlete.get('country'),
@@ -692,11 +775,23 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                 athlete.get('world_athletics_marathon_ranking_score'),
                 athlete.get('data_hash')
             ))
+            return cur.fetchone()[0]
 
 
-def sync_to_database(new_athletes: List[Dict], changed_athletes: List[Dict], dry_run: bool = False):
+def sync_to_database(
+    new_athletes: List[Dict],
+    changed_athletes: List[Dict],
+    dry_run: bool = False,
+    fetch_progression: bool = True
+):
     """
-    Sync athletes to database.
+    Sync athletes to database and optionally fetch progression data.
+    
+    Args:
+        new_athletes: List of new athletes to insert
+        changed_athletes: List of existing athletes to update
+        dry_run: If True, don't make changes
+        fetch_progression: If True, fetch progression data for new/changed athletes
     """
     print("\n" + "=" * 70)
     print("DATABASE SYNC")
@@ -732,18 +827,24 @@ def sync_to_database(new_athletes: List[Dict], changed_athletes: List[Dict], dry
     
     # Actual database updates
     conn = get_db_connection()
+    athletes_to_enrich = []  # Collect athletes that need progression data
+    
     try:
         print("\n💾 Applying changes to database...")
         
-        # Insert new athletes
+        # Insert new athletes and collect their IDs
         for i, athlete in enumerate(new_athletes, 1):
             print(f"   [{i}/{len(new_athletes)}] Adding {athlete['name']}")
-            upsert_athlete(conn, athlete, is_update=False)
+            db_id = upsert_athlete(conn, athlete, is_update=False)
+            athlete['db_id'] = db_id  # Store for progression fetch
+            athletes_to_enrich.append(athlete)
         
         # Update changed athletes
         for i, athlete in enumerate(changed_athletes, 1):
             print(f"   [{i}/{len(changed_athletes)}] Updating {athlete['name']}")
-            upsert_athlete(conn, athlete, is_update=True)
+            db_id = upsert_athlete(conn, athlete, is_update=True)
+            athlete['db_id'] = db_id  # Store for progression fetch
+            athletes_to_enrich.append(athlete)
         
         conn.commit()
         print("\n✅ Database sync complete!")
@@ -753,6 +854,13 @@ def sync_to_database(new_athletes: List[Dict], changed_athletes: List[Dict], dry
         print(f"\n❌ Database error: {e}")
         raise
     finally:
+        conn.close()
+    
+    # Fetch progression data for new and changed athletes (if enabled)
+    if fetch_progression and athletes_to_enrich and PROGRESSION_AVAILABLE:
+        enrich_with_progression_data(athletes_to_enrich, fetch_progression=True)
+    elif not PROGRESSION_AVAILABLE and fetch_progression:
+        print("\n⚠️  Progression data fetching skipped - import not available")
         conn.close()
 
 
@@ -889,6 +997,11 @@ def main():
         type=str,
         help='Sync a single athlete by their World Athletics ID (e.g., 14816982)'
     )
+    parser.add_argument(
+        '--skip-progression',
+        action='store_true',
+        help='Skip fetching progression and race results data (faster)'
+    )
     
     args = parser.parse_args()
     
@@ -987,7 +1100,12 @@ def main():
     print(f"   Unchanged: {len(unchanged_athletes)}")
     
     # Step 5: Sync to database
-    sync_to_database(new_athletes, changed_athletes, dry_run=args.dry_run)
+    sync_to_database(
+        new_athletes,
+        changed_athletes,
+        dry_run=args.dry_run,
+        fetch_progression=not args.skip_progression
+    )
     
     # Summary
     print("\n" + "=" * 70)

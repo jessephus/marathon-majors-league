@@ -168,6 +168,192 @@ export async function seedAthletes(athletesData) {
   }
 }
 
+/**
+ * Get progression data for an athlete (year-by-year season's bests)
+ * @param {number} athleteId - Database ID of the athlete
+ * @param {string} discipline - Optional discipline filter (e.g., 'Marathon Road')
+ * @returns {Promise<Array>} Array of progression records
+ */
+export async function getAthleteProgression(athleteId, discipline = null) {
+  let progression;
+  
+  if (discipline) {
+    progression = await sql`
+      SELECT 
+        id,
+        athlete_id as "athleteId",
+        discipline,
+        season,
+        mark,
+        venue,
+        competition_date as "competitionDate",
+        competition_name as "competitionName",
+        result_score as "resultScore",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM athlete_progression
+      WHERE athlete_id = ${athleteId} 
+        AND discipline = ${discipline}
+      ORDER BY season DESC, mark ASC
+    `;
+  } else {
+    progression = await sql`
+      SELECT 
+        id,
+        athlete_id as "athleteId",
+        discipline,
+        season,
+        mark,
+        venue,
+        competition_date as "competitionDate",
+        competition_name as "competitionName",
+        result_score as "resultScore",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM athlete_progression
+      WHERE athlete_id = ${athleteId}
+      ORDER BY season DESC, mark ASC
+    `;
+  }
+  
+  return progression;
+}
+
+/**
+ * Get race results for an athlete
+ * @param {number} athleteId - Database ID of the athlete
+ * @param {number} year - Optional year filter
+ * @param {string} discipline - Optional discipline filter (e.g., 'Marathon')
+ * @returns {Promise<Array>} Array of race result records
+ */
+export async function getAthleteRaceResults(athleteId, year = null, discipline = null) {
+  let results;
+  
+  if (year && discipline) {
+    results = await sql`
+      SELECT 
+        id,
+        athlete_id as "athleteId",
+        year,
+        competition_date as "competitionDate",
+        competition_name as "competitionName",
+        venue,
+        discipline,
+        position,
+        finish_time as "finishTime",
+        race_points as "racePoints",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM athlete_race_results
+      WHERE athlete_id = ${athleteId}
+        AND year = ${year}
+        AND discipline = ${discipline}
+      ORDER BY competition_date DESC
+    `;
+  } else if (year) {
+    results = await sql`
+      SELECT 
+        id,
+        athlete_id as "athleteId",
+        year,
+        competition_date as "competitionDate",
+        competition_name as "competitionName",
+        venue,
+        discipline,
+        position,
+        finish_time as "finishTime",
+        race_points as "racePoints",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM athlete_race_results
+      WHERE athlete_id = ${athleteId}
+        AND year = ${year}
+      ORDER BY competition_date DESC
+    `;
+  } else if (discipline) {
+    results = await sql`
+      SELECT 
+        id,
+        athlete_id as "athleteId",
+        year,
+        competition_date as "competitionDate",
+        competition_name as "competitionName",
+        venue,
+        discipline,
+        position,
+        finish_time as "finishTime",
+        race_points as "racePoints",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM athlete_race_results
+      WHERE athlete_id = ${athleteId}
+        AND discipline = ${discipline}
+      ORDER BY competition_date DESC, year DESC
+    `;
+  } else {
+    results = await sql`
+      SELECT 
+        id,
+        athlete_id as "athleteId",
+        year,
+        competition_date as "competitionDate",
+        competition_name as "competitionName",
+        venue,
+        discipline,
+        position,
+        finish_time as "finishTime",
+        race_points as "racePoints",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM athlete_race_results
+      WHERE athlete_id = ${athleteId}
+      ORDER BY competition_date DESC, year DESC
+    `;
+  }
+  
+  return results;
+}
+
+/**
+ * Get complete athlete profile with progression and race results
+ * @param {number} athleteId - Database ID of the athlete
+ * @param {Object} options - Options for what data to include
+ * @param {boolean} options.includeProgression - Include progression data
+ * @param {boolean} options.includeResults - Include race results data
+ * @param {string} options.discipline - Filter by discipline
+ * @param {number} options.year - Filter results by year
+ * @returns {Promise<Object>} Complete athlete profile object
+ */
+export async function getAthleteProfile(athleteId, options = {}) {
+  const {
+    includeProgression = false,
+    includeResults = false,
+    discipline = null,
+    year = null
+  } = options;
+  
+  // Get base athlete data
+  const athlete = await getAthleteById(athleteId);
+  
+  if (!athlete) {
+    return null;
+  }
+  
+  const profile = { ...athlete };
+  
+  // Add progression data if requested
+  if (includeProgression) {
+    profile.progression = await getAthleteProgression(athleteId, discipline);
+  }
+  
+  // Add race results if requested
+  if (includeResults) {
+    profile.raceResults = await getAthleteRaceResults(athleteId, year, discipline);
+  }
+  
+  return profile;
+}
+
 // ============================================================================
 // GAMES
 // ============================================================================
