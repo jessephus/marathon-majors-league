@@ -94,35 +94,89 @@ export default async function handler(req, res) {
         const html = await fetchHtml(profileUrl);
         console.log(`Successfully fetched HTML (length: ${html.length} bytes)`);
 
-        // Extract data from profile page using regex (same logic as Python script)
+        // Extract data from __NEXT_DATA__ JSON embedded in the page (same as Python script)
         const enrichedData = {};
-
-        // Personal Best
-        const pbMatch = html.match(/Personal Best.*?(\d{1}:\d{2}:\d{2})/s);
-        if (pbMatch) enrichedData.personal_best = pbMatch[1];
-
-        // Age
-        const ageMatch = html.match(/(\d{2})\s+yrs/i);
-        if (ageMatch) enrichedData.age = parseInt(ageMatch[1]);
-
-        // Date of Birth
-        const dobMatch = html.match(/(\d{1,2}\s+\w+\s+\d{4})/);
-        if (dobMatch) {
-          // Convert to ISO date format
-          enrichedData.date_of_birth = new Date(dobMatch[1]).toISOString().split('T')[0];
+        
+        const jsonMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([^<]+)<\/script>/);
+        
+        if (!jsonMatch) {
+          console.log('No __NEXT_DATA__ found, trying fallback regex extraction');
+          // Fallback to regex patterns if JSON not found
+          return extractDataViaRegex(html, enrichedData);
         }
 
-        // Marathon Rank
-        const marathonRankMatch = html.match(/#(\d+)\s+(?:Man'?s|Woman'?s)\s+marathon/i);
-        if (marathonRankMatch) enrichedData.marathon_rank = parseInt(marathonRankMatch[1]);
+        try {
+          const nextData = JSON.parse(jsonMatch[1]);
+          const competitor = nextData?.props?.pageProps?.competitor;
 
-        // Road Running Rank
-        const roadRankMatch = html.match(/#(\d+)\s+(?:Man'?s|Woman'?s)\s+road\s+running/i);
-        if (roadRankMatch) enrichedData.road_running_rank = parseInt(roadRankMatch[1]);
+          if (!competitor) {
+            console.log('No competitor data in __NEXT_DATA__, trying fallback');
+            return extractDataViaRegex(html, enrichedData);
+          }
 
-        // Season Best
-        const sbMatch = html.match(/Season Best.*?(\d{1}:\d{2}:\d{2})/s);
-        if (sbMatch) enrichedData.season_best = sbMatch[1];
+          console.log('Successfully parsed __NEXT_DATA__');
+
+          // Extract World Rankings
+          const worldRankings = competitor.worldRankings?.current || [];
+          for (const ranking of worldRankings) {
+            const eventGroup = (ranking.eventGroup || '').toLowerCase();
+            const place = ranking.place;
+
+            if (place) {
+              if (eventGroup.includes('marathon')) {
+                enrichedData.marathon_rank = place;
+                console.log(`  ✓ Marathon rank: #${place}`);
+              } else if (eventGroup.includes('road running')) {
+                enrichedData.road_running_rank = place;
+                console.log(`  ✓ Road Running rank: #${place}`);
+              } else if (eventGroup.includes('overall')) {
+                enrichedData.overall_rank = place;
+                console.log(`  ✓ Overall rank: #${place}`);
+              }
+            }
+          }
+
+          // Extract Personal Best
+          const personalBests = competitor.personalBests?.results || [];
+          for (const pb of personalBests) {
+            if (pb.discipline === 'Marathon') {
+              enrichedData.personal_best = pb.mark;
+              console.log(`  ✓ Personal best: ${pb.mark}`);
+              break;
+            }
+          }
+
+          // Extract Season Best
+          const seasonBests = competitor.seasonsBests?.results || [];
+          for (const sb of seasonBests) {
+            if (sb.discipline === 'Marathon') {
+              enrichedData.season_best = sb.mark;
+              console.log(`  ✓ Season best: ${sb.mark}`);
+              break;
+            }
+          }
+
+          // Extract basic info
+          const basicInfo = competitor.basicData || {};
+          if (basicInfo.birthDate) {
+            enrichedData.date_of_birth = basicInfo.birthDate;
+            
+            // Calculate age
+            const birthDate = new Date(basicInfo.birthDate);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+              age--;
+            }
+            enrichedData.age = age;
+            console.log(`  ✓ Age: ${age}`);
+          }
+
+        } catch (parseError) {
+          console.error('Error parsing __NEXT_DATA__:', parseError);
+          // Fall through to regex extraction below
+        }
 
         console.log('Enriched data extracted:', enrichedData);
 
