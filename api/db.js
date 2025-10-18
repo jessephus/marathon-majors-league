@@ -8,25 +8,29 @@ const sql = neon(process.env.DATABASE_URL);
 // ============================================================================
 
 export async function getAllAthletes() {
+  // Only return athletes confirmed for active races
   const athletes = await sql`
-    SELECT 
-      id, 
-      name, 
-      country, 
-      gender, 
-      personal_best as pb, 
-      headshot_url as "headshotUrl",
-      world_athletics_id as "worldAthleticsId",
-      world_athletics_profile_url as "worldAthleticsProfileUrl",
-      marathon_rank as "marathonRank",
-      road_running_rank as "roadRunningRank",
-      overall_rank as "overallRank",
-      age,
-      date_of_birth as "dateOfBirth",
-      sponsor,
-      season_best as "seasonBest"
-    FROM athletes
-    ORDER BY gender, personal_best
+    SELECT DISTINCT
+      a.id, 
+      a.name, 
+      a.country, 
+      a.gender, 
+      a.personal_best as pb, 
+      a.headshot_url as "headshotUrl",
+      a.world_athletics_id as "worldAthleticsId",
+      a.world_athletics_profile_url as "worldAthleticsProfileUrl",
+      a.marathon_rank as "marathonRank",
+      a.road_running_rank as "roadRunningRank",
+      a.overall_rank as "overallRank",
+      a.age,
+      a.date_of_birth as "dateOfBirth",
+      a.sponsor,
+      a.season_best as "seasonBest"
+    FROM athletes a
+    INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+    INNER JOIN races r ON ar.race_id = r.id
+    WHERE r.is_active = true
+    ORDER BY a.gender, a.personal_best
   `;
   
   // Group by gender for frontend compatibility

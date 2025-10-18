@@ -151,7 +151,7 @@ def scrape_rankings_page(gender: str, page: int, rank_date: str) -> List[Dict]:
                     'world_athletics_marathon_ranking_score': wa_score,
                     'world_athletics_id': athlete_id,
                     'profile_url': full_profile_url,
-                    'gender': 'M' if gender == 'men' else 'F'
+                    'gender': gender  # Store as 'men' or 'women' to match database constraint
                 }
                 
                 athletes.append(athlete_data)
