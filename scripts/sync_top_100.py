@@ -46,22 +46,17 @@ except ImportError:
     sys.exit(1)
 
 try:
-    from worldathletics import WA
-except ImportError:
-    print("ERROR: worldathletics package not installed. Run: pip install worldathletics")
-    sys.exit(1)
-
-try:
     import requests
 except ImportError:
     print("ERROR: requests not installed. Run: pip install requests")
     sys.exit(1)
 
 # Configuration
+GRAPHQL_URL = "https://graphql-prod-4d0a7c6.production.worldathletics.org/graphql"
 BATCH_SIZE = 25  # Number of athletes to fetch details for in one batch
 MAX_RETRIES = 5
 INITIAL_BACKOFF = 2  # seconds
-MAX_CONCURRENT_BATCHES = 4
+REQUEST_DELAY = 0.2  # 200ms between requests = 5 req/sec max
 TOP_N = 100  # Top 100 athletes per gender
 
 # Setup logging
@@ -151,63 +146,104 @@ def retry_with_backoff(func, max_retries=MAX_RETRIES, initial_backoff=INITIAL_BA
             time.sleep(backoff)
 
 
-def fetch_ranking_list(wa_client: WA, gender: str, limit: int = TOP_N) -> List[Dict]:
+def fetch_ranking_list(gender: str, limit: int = TOP_N) -> List[Dict]:
     """
-    Fetch minimal ranking list from World Athletics.
+    Fetch minimal ranking list from World Athletics GraphQL API.
     
     Args:
-        wa_client: World Athletics client instance
-        gender: 'M' or 'F'
+        gender: 'M' or 'F'  
         limit: Number of top athletes to fetch
         
     Returns:
-        List of athlete summaries with id, rank, name, country
+        List of athlete summaries with id, rank, name, country, pb
     """
-    logger.info(f"Fetching top {limit} {gender} marathon rankings...")
+    logger.info(f"Fetching top {limit} {gender} marathon rankings via GraphQL...")
+    
+    query = """
+    query GetWorldRankings($gender: String!, $limit: Int!) {
+      getWorldRankings(
+        eventGroup: "MAR"
+        gender: $gender
+        limit: $limit
+        regionType: "world"
+      ) {
+        rankings {
+          rank
+          competitor {
+            id
+            name
+            iaafId
+            country
+          }
+          pb
+          sb
+        }
+      }
+    }
+    """
     
     try:
-        # Use the worldathletics package to fetch rankings
-        # The package may have different method names - adjust as needed
-        rankings = retry_with_backoff(
-            lambda: wa_client.get_rankings('MAR', gender, limit=limit)
+        response = retry_with_backoff(
+            lambda: requests.post(
+                GRAPHQL_URL,
+                json={
+                    "query": query,
+                    "variables": {"gender": gender, "limit": limit}
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
         )
         
-        logger.info(f"Fetched {len(rankings)} {gender} athletes from rankings")
-        return rankings
+        response.raise_for_status()
+        data = response.json()
+        
+        if 'errors' in data:
+            logger.error(f"GraphQL errors: {data['errors']}")
+            raise ValueError(f"GraphQL query failed: {data['errors']}")
+        
+        rankings = data.get('data', {}).get('getWorldRankings', {}).get('rankings', [])
+        
+        # Transform to consistent format
+        result = []
+        for r in rankings:
+            competitor = r.get('competitor', {})
+            result.append({
+                'id': competitor.get('id') or competitor.get('iaafId'),
+                'world_athletics_id': str(competitor.get('id') or competitor.get('iaafId')),
+                'name': competitor.get('name', ''),
+                'country': competitor.get('country', ''),
+                'rank': r.get('rank'),
+                'pb': r.get('pb', ''),
+                'sb': r.get('sb', '')
+            })
+        
+        logger.info(f"Fetched {len(result)} {gender} athletes from rankings")
+        time.sleep(REQUEST_DELAY)  # Rate limiting
+        return result
         
     except Exception as e:
         logger.error(f"Failed to fetch {gender} rankings: {e}")
         raise
 
 
-def fetch_athlete_details(wa_client: WA, athlete_ids: List[str]) -> Dict[str, Dict]:
+def fetch_athlete_details(athlete_ids: List[str]) -> Dict[str, Dict]:
     """
-    Fetch detailed athlete information in batch.
+    Fetch detailed athlete information in batch via GraphQL.
+    
+    NOTE: For now, we rely on rankings data which includes the key fields.
+    This function can be extended later to fetch additional details if needed.
     
     Args:
-        wa_client: World Athletics client instance
         athlete_ids: List of athlete IDs to fetch
         
     Returns:
         Dictionary mapping athlete_id to full athlete data
     """
-    results = {}
-    
-    for athlete_id in athlete_ids:
-        try:
-            details = retry_with_backoff(
-                lambda: wa_client.get_athlete(athlete_id)
-            )
-            results[athlete_id] = details
-            
-            # Rate limiting - be respectful
-            time.sleep(0.2)  # 200ms between requests = 5 req/sec
-            
-        except Exception as e:
-            logger.warning(f"Failed to fetch details for athlete {athlete_id}: {e}")
-            continue
-    
-    return results
+    # For Phase 1, rankings data is sufficient
+    # We can implement detailed fetching in Phase 2 if needed
+    logger.info(f"Skipping detailed fetch for {len(athlete_ids)} athletes (using rankings data)")
+    return {}
 
 
 def load_db_snapshot(conn, athlete_ids: List[str]) -> Dict[str, Dict]:
@@ -480,19 +516,16 @@ def sync_top_100(dry_run: bool = False, verbose: bool = False) -> SyncStats:
     conn.autocommit = False if not dry_run else True
     
     try:
-        # Initialize World Athletics client
-        wa = WA()
-        
         # Process both genders
         for gender, gender_name in [('M', 'men'), ('F', 'women')]:
             logger.info(f"\n{'='*60}")
             logger.info(f"Processing {gender_name.upper()} athletes")
             logger.info(f"{'='*60}")
             
-            # Step 1: Fetch ranking list (minimal data)
-            ranking_nodes = fetch_ranking_list(wa, gender, TOP_N)
-            athlete_ids = [str(n.get('id') or n.get('worldAthleticsId')) for n in ranking_nodes]
-            rank_map = {str(n.get('id') or n.get('worldAthleticsId')): n.get('rank') for n in ranking_nodes}
+            # Step 1: Fetch ranking list (includes key athlete data)
+            ranking_nodes = fetch_ranking_list(gender, TOP_N)
+            athlete_ids = [str(n.get('world_athletics_id')) for n in ranking_nodes if n.get('world_athletics_id')]
+            rank_map = {str(n.get('world_athletics_id')): n.get('rank') for n in ranking_nodes if n.get('world_athletics_id')}
             
             logger.info(f"Fetched {len(athlete_ids)} athlete IDs from rankings")
             
@@ -520,11 +553,13 @@ def sync_top_100(dry_run: bool = False, verbose: bool = False) -> SyncStats:
                 candidates_list = list(all_candidates)
                 for i in range(0, len(candidates_list), BATCH_SIZE):
                     batch = candidates_list[i:i+BATCH_SIZE]
-                    logger.info(f"Fetching batch {i//BATCH_SIZE + 1} ({len(batch)} athletes)...")
+                    logger.info(f"Processing batch {i//BATCH_SIZE + 1} ({len(batch)} athletes)...")
                     
                     try:
-                        athlete_details = fetch_athlete_details(wa, batch)
-                        logger.info(f"Fetched details for {len(athlete_details)} athletes")
+                        # For now, we use the ranking data directly (no additional fetch needed)
+                        # Build athlete_details from ranking_nodes
+                        athlete_details = {n['world_athletics_id']: n for n in ranking_nodes if n['world_athletics_id'] in batch}
+                        logger.info(f"Processing {len(athlete_details)} athletes from rankings data")
                         
                         # Step 5: Process each athlete
                         cur = conn.cursor()
