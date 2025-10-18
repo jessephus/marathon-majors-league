@@ -106,6 +106,7 @@ async function init() {
     await loadAthletes();
     await loadGameState();
     setupEventListeners();
+    setupAthleteModal();
     showPage('landing-page');
 }
 
@@ -1395,7 +1396,11 @@ async function handleViewAthletes() {
                 ${allAthletes.map(athlete => `
                     <tr data-athlete-id="${athlete.id}">
                         <td>${athlete.id}</td>
-                        <td>${athlete.name}</td>
+                        <td>
+                            <a href="#" class="athlete-name-link" data-athlete-id="${athlete.id}" title="View athlete details">
+                                ${athlete.name}
+                            </a>
+                        </td>
                         <td>${athlete.country}</td>
                         <td>${athlete.gender === 'men' ? 'M' : 'W'}</td>
                         <td>${athlete.pb || 'N/A'}</td>
@@ -1438,6 +1443,18 @@ async function handleViewAthletes() {
                 ${table.outerHTML}
             </div>
         `;
+        
+        // Add event listeners to athlete name links
+        document.querySelectorAll('.athlete-name-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const athleteId = parseInt(e.target.dataset.athleteId, 10);
+                const athlete = allAthletes.find(a => a.id === athleteId);
+                if (athlete) {
+                    openAthleteModal(athlete);
+                }
+            });
+        });
         
         // Add event listeners to save buttons
         document.querySelectorAll('.btn-save-wa-id').forEach(button => {
@@ -1568,6 +1585,276 @@ async function handleSyncAthlete(event) {
         button.style.opacity = '1';
         button.disabled = false;
     }
+}
+
+// ============================================================================
+// ATHLETE CARD MODAL
+// ============================================================================
+
+/**
+ * Open athlete detail modal with progression and race results
+ * @param {number|object} athleteIdOrData - Athlete ID or full athlete object
+ */
+async function openAthleteModal(athleteIdOrData) {
+    const modal = document.getElementById('athlete-modal');
+    let athleteId, athleteData;
+    
+    // Handle both ID and full object
+    if (typeof athleteIdOrData === 'object') {
+        athleteData = athleteIdOrData;
+        athleteId = athleteData.id;
+    } else {
+        athleteId = athleteIdOrData;
+        // Find athlete in current data
+        athleteData = [...gameState.athletes.men, ...gameState.athletes.women]
+            .find(a => a.id === athleteId);
+    }
+    
+    if (!athleteData) {
+        console.error('Athlete not found:', athleteId);
+        return;
+    }
+    
+    // Populate basic info
+    populateAthleteBasicInfo(athleteData);
+    
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Load progression and results data
+    await loadAthleteDetailedData(athleteId);
+}
+
+/**
+ * Populate basic athlete information in the modal
+ */
+function populateAthleteBasicInfo(athlete) {
+    // Photo
+    const photo = document.getElementById('modal-athlete-photo');
+    if (athlete.headshotUrl) {
+        photo.src = athlete.headshotUrl;
+        photo.alt = athlete.name;
+    } else {
+        photo.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect fill="%23ddd" width="120" height="120"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="40">?</text></svg>';
+        photo.alt = 'No photo';
+    }
+    
+    // Basic info
+    document.getElementById('modal-athlete-name').textContent = athlete.name;
+    document.getElementById('modal-athlete-country').textContent = athlete.country;
+    document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? '👨 Men' : '👩 Women';
+    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age} years` : 'Age N/A';
+    
+    // Stats
+    document.getElementById('modal-athlete-pb').textContent = athlete.pb || 'N/A';
+    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
+    document.getElementById('modal-athlete-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
+    document.getElementById('modal-athlete-overall-rank').textContent = athlete.overallRank ? `#${athlete.overallRank}` : 'N/A';
+    
+    // Sponsor
+    const sponsorSection = document.getElementById('modal-athlete-sponsor-section');
+    if (athlete.sponsor) {
+        document.getElementById('modal-athlete-sponsor').textContent = athlete.sponsor;
+        sponsorSection.style.display = 'block';
+    } else {
+        sponsorSection.style.display = 'none';
+    }
+    
+    // Profile tab
+    document.getElementById('modal-athlete-dob').textContent = athlete.dateOfBirth ? 
+        new Date(athlete.dateOfBirth).toLocaleDateString() : 'N/A';
+    document.getElementById('modal-athlete-wa-id').textContent = athlete.worldAthleticsId || 'N/A';
+    document.getElementById('modal-athlete-road-rank').textContent = athlete.roadRunningRank ? 
+        `#${athlete.roadRunningRank}` : 'N/A';
+    
+    // World Athletics link
+    const waLink = document.getElementById('modal-wa-link');
+    if (athlete.worldAthleticsProfileUrl) {
+        waLink.href = athlete.worldAthleticsProfileUrl;
+        waLink.style.display = 'flex';
+    } else if (athlete.worldAthleticsId) {
+        waLink.href = `https://worldathletics.org/athletes/_/${athlete.worldAthleticsId}`;
+        waLink.style.display = 'flex';
+    } else {
+        waLink.style.display = 'none';
+    }
+}
+
+/**
+ * Load progression and race results from API
+ */
+async function loadAthleteDetailedData(athleteId) {
+    const progressionDiv = document.getElementById('progression-chart');
+    const resultsDiv = document.getElementById('results-list');
+    const progressionLoading = document.getElementById('progression-loading');
+    const resultsLoading = document.getElementById('results-loading');
+    const progressionEmpty = document.getElementById('progression-empty');
+    const resultsEmpty = document.getElementById('results-empty');
+    
+    // Show loading states
+    progressionLoading.style.display = 'block';
+    resultsLoading.style.display = 'block';
+    progressionDiv.innerHTML = '';
+    resultsDiv.innerHTML = '';
+    progressionEmpty.style.display = 'none';
+    resultsEmpty.style.display = 'none';
+    
+    try {
+        // Fetch athlete profile with progression and results
+        const response = await fetch(`${API_BASE}/api/athletes?id=${athleteId}&include=progression,results&year=2025`);
+        if (!response.ok) throw new Error('Failed to load athlete data');
+        
+        const data = await response.json();
+        
+        // Hide loading spinners
+        progressionLoading.style.display = 'none';
+        resultsLoading.style.display = 'none';
+        
+        // Display progression data
+        if (data.progression && data.progression.length > 0) {
+            displayProgression(data.progression);
+        } else {
+            progressionEmpty.style.display = 'block';
+        }
+        
+        // Display race results
+        if (data.raceResults && data.raceResults.length > 0) {
+            displayRaceResults(data.raceResults);
+        } else {
+            resultsEmpty.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Error loading athlete details:', error);
+        progressionLoading.textContent = 'Error loading data';
+        resultsLoading.textContent = 'Error loading data';
+    }
+}
+
+/**
+ * Display progression data in the modal
+ */
+function displayProgression(progression) {
+    const container = document.getElementById('progression-chart');
+    
+    // Group by season and discipline, keep best mark per combination
+    const grouped = progression.reduce((acc, item) => {
+        const key = `${item.season}-${item.discipline}`;
+        if (!acc[key] || item.mark < acc[key].mark) {
+            acc[key] = item;
+        }
+        return acc;
+    }, {});
+    
+    // Sort by season (most recent first)
+    const sorted = Object.values(grouped).sort((a, b) => 
+        parseInt(b.season) - parseInt(a.season)
+    );
+    
+    container.innerHTML = sorted.map(item => `
+        <div class="progression-item">
+            <div class="progression-year">${item.season}</div>
+            <div class="progression-details">
+                <div class="progression-mark">${item.mark}</div>
+                <div class="progression-venue">${item.venue || 'Unknown venue'}</div>
+                <div class="progression-discipline">${item.discipline}</div>
+            </div>
+            <div class="progression-badge">SB</div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Display race results in the modal
+ */
+function displayRaceResults(results) {
+    const container = document.getElementById('results-list');
+    
+    // Sort by date (most recent first)
+    const sorted = results.sort((a, b) => 
+        new Date(b.competitionDate) - new Date(a.competitionDate)
+    );
+    
+    container.innerHTML = sorted.map(result => {
+        const date = new Date(result.competitionDate);
+        const formattedDate = date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        return `
+            <div class="result-item">
+                <div class="result-header">
+                    <div class="result-competition">${result.competitionName}</div>
+                    <div class="result-position">${result.position || 'N/A'}</div>
+                </div>
+                <div class="result-details">
+                    <div class="result-time">⏱️ ${result.finishTime || 'N/A'}</div>
+                    <div class="result-venue">📍 ${result.venue}</div>
+                    <div class="result-date">📅 ${formattedDate}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Close the athlete modal
+ */
+function closeAthleteModal() {
+    const modal = document.getElementById('athlete-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // Reset to first tab
+    switchModalTab('progression');
+}
+
+/**
+ * Switch between tabs in the modal
+ */
+function switchModalTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.card-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update tab panels
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+}
+
+/**
+ * Setup modal event listeners
+ */
+function setupAthleteModal() {
+    const modal = document.getElementById('athlete-modal');
+    const closeBtn = modal.querySelector('.modal-close');
+    const overlay = modal.querySelector('.modal-overlay');
+    
+    // Close button
+    closeBtn.addEventListener('click', closeAthleteModal);
+    
+    // Click outside to close
+    overlay.addEventListener('click', closeAthleteModal);
+    
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeAthleteModal();
+        }
+    });
+    
+    // Tab switching
+    document.querySelectorAll('.card-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchModalTab(tab.dataset.tab);
+        });
+    });
 }
 
 // Initialize when DOM is loaded

@@ -151,6 +151,116 @@
             </div>
         </main>
 
+        <!-- Athlete Card Modal -->
+        <div id="athlete-modal" class="modal">
+            <div class="modal-overlay"></div>
+            <div class="athlete-card">
+                <button class="modal-close" aria-label="Close">&times;</button>
+                
+                <!-- Card Header with Photo -->
+                <div class="card-header">
+                    <div class="card-photo">
+                        <img id="modal-athlete-photo" src="" alt="Athlete photo">
+                        <div class="card-photo-overlay">
+                            <span id="modal-athlete-country" class="country-badge"></span>
+                        </div>
+                    </div>
+                    <div class="card-title">
+                        <h2 id="modal-athlete-name"></h2>
+                        <div class="card-subtitle">
+                            <span id="modal-athlete-gender" class="gender-badge"></span>
+                            <span id="modal-athlete-age" class="age-badge"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Stats Grid -->
+                <div class="card-stats">
+                    <div class="stat-item stat-primary">
+                        <div class="stat-label">Personal Best</div>
+                        <div class="stat-value" id="modal-athlete-pb"></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Season Best</div>
+                        <div class="stat-value" id="modal-athlete-sb"></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Marathon Rank</div>
+                        <div class="stat-value" id="modal-athlete-marathon-rank"></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">Overall Rank</div>
+                        <div class="stat-value" id="modal-athlete-overall-rank"></div>
+                    </div>
+                </div>
+
+                <!-- Sponsor Badge -->
+                <div id="modal-athlete-sponsor-section" class="sponsor-section">
+                    <span class="sponsor-label">Sponsored by</span>
+                    <span id="modal-athlete-sponsor" class="sponsor-name"></span>
+                </div>
+
+                <!-- Tabs for Data Sections -->
+                <div class="card-tabs">
+                    <button class="card-tab active" data-tab="progression">📈 Progression</button>
+                    <button class="card-tab" data-tab="results">🏆 2025 Results</button>
+                    <button class="card-tab" data-tab="profile">👤 Profile</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="card-content">
+                    <!-- Progression Tab -->
+                    <div id="tab-progression" class="tab-panel active">
+                        <div class="progression-header">
+                            <h3>Season's Best Progression</h3>
+                            <div id="progression-loading" class="loading-spinner">Loading...</div>
+                        </div>
+                        <div id="progression-chart" class="progression-list"></div>
+                        <div id="progression-empty" class="empty-state" style="display: none;">
+                            <p>No progression data available</p>
+                        </div>
+                    </div>
+
+                    <!-- Results Tab -->
+                    <div id="tab-results" class="tab-panel">
+                        <div class="results-header">
+                            <h3>2025 Race Results</h3>
+                            <div id="results-loading" class="loading-spinner">Loading...</div>
+                        </div>
+                        <div id="results-list" class="results-list"></div>
+                        <div id="results-empty" class="empty-state" style="display: none;">
+                            <p>No 2025 race results available</p>
+                        </div>
+                    </div>
+
+                    <!-- Profile Tab -->
+                    <div id="tab-profile" class="tab-panel">
+                        <div class="profile-info">
+                            <div class="profile-item">
+                                <span class="profile-label">Date of Birth</span>
+                                <span id="modal-athlete-dob" class="profile-value"></span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">World Athletics ID</span>
+                                <span id="modal-athlete-wa-id" class="profile-value"></span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">Road Running Rank</span>
+                                <span id="modal-athlete-road-rank" class="profile-value"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer with Action -->
+                <div class="card-footer">
+                    <a id="modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        View Full World Athletics Profile →
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p>Marathon Majors League &copy; 2025</p>
             <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
