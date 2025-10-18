@@ -1379,12 +1379,14 @@ async function handleViewAthletes() {
                     <th>Personal Best</th>
                     <th>Marathon Rank</th>
                     <th>Age</th>
+                    <th>World Athletics ID</th>
                     <th>NYC Confirmed</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 ${allAthletes.map(athlete => `
-                    <tr>
+                    <tr data-athlete-id="${athlete.id}">
                         <td>${athlete.id}</td>
                         <td>${athlete.name}</td>
                         <td>${athlete.country}</td>
@@ -1392,7 +1394,24 @@ async function handleViewAthletes() {
                         <td>${athlete.pb || 'N/A'}</td>
                         <td>${athlete.marathonRank ? '#' + athlete.marathonRank : 'N/A'}</td>
                         <td>${athlete.age || 'N/A'}</td>
+                        <td class="wa-id-cell">
+                            <input 
+                                type="text" 
+                                class="wa-id-input" 
+                                data-athlete-id="${athlete.id}"
+                                value="${athlete.worldAthleticsId || ''}" 
+                                placeholder="Enter WA ID"
+                                title="World Athletics ID (e.g., 14208500)"
+                            />
+                        </td>
                         <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
+                        <td>
+                            <button 
+                                class="btn-save-wa-id btn-small" 
+                                data-athlete-id="${athlete.id}"
+                                title="Save World Athletics ID"
+                            >💾 Save</button>
+                        </td>
                     </tr>
                 `).join('')}
             </tbody>
@@ -1400,14 +1419,75 @@ async function handleViewAthletes() {
         
         container.innerHTML = `
             <p><strong>${allAthletes.length} athlete(s) found</strong></p>
+            <p class="info-message">💡 <strong>Tip:</strong> Athletes without a World Athletics ID cannot be tracked when they drop out of the top 100 rankings. Add the ID to enable automatic sync updates.</p>
             <div class="table-scroll">
                 ${table.outerHTML}
             </div>
         `;
         
+        // Add event listeners to save buttons
+        document.querySelectorAll('.btn-save-wa-id').forEach(button => {
+            button.addEventListener('click', handleSaveWorldAthleticsId);
+        });
+        
     } catch (error) {
         console.error('Error loading athletes:', error);
         container.innerHTML = '<p style="color: red;">Error loading athletes. Please try again.</p>';
+    }
+}
+
+// Handle saving World Athletics ID
+async function handleSaveWorldAthleticsId(event) {
+    const button = event.target;
+    const athleteId = button.getAttribute('data-athlete-id');
+    const input = document.querySelector(`.wa-id-input[data-athlete-id="${athleteId}"]`);
+    const worldAthleticsId = input.value.trim();
+    
+    // Confirm if removing ID
+    if (!worldAthleticsId) {
+        if (!confirm('Are you sure you want to remove the World Athletics ID for this athlete?')) {
+            return;
+        }
+    }
+    
+    try {
+        button.disabled = true;
+        button.textContent = '💾 Saving...';
+        
+        const response = await fetch(`${API_BASE}/api/update-athlete`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: parseInt(athleteId),
+                worldAthleticsId: worldAthleticsId
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update');
+        }
+        
+        const result = await response.json();
+        
+        // Show success feedback
+        button.textContent = '✓ Saved!';
+        button.style.backgroundColor = '#4CAF50';
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            button.textContent = '💾 Save';
+            button.style.backgroundColor = '';
+            button.disabled = false;
+        }, 2000);
+        
+        console.log('Updated athlete:', result.athlete);
+        
+    } catch (error) {
+        console.error('Error saving World Athletics ID:', error);
+        alert('Failed to save World Athletics ID: ' + error.message);
+        button.textContent = '💾 Save';
+        button.disabled = false;
     }
 }
 
