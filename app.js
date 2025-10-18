@@ -140,6 +140,10 @@ function setupEventListeners() {
     document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
     document.getElementById('export-data').addEventListener('click', handleExportData);
+    document.getElementById('view-athletes').addEventListener('click', handleViewAthletes);
+    document.getElementById('filter-confirmed').addEventListener('change', handleViewAthletes);
+    document.getElementById('filter-gender').addEventListener('change', handleViewAthletes);
+    document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
 }
 
@@ -1306,6 +1310,107 @@ function handleExportData() {
     a.href = url;
     a.download = 'fantasy-ny-marathon-data.json';
     a.click();
+}
+
+// Handle view athletes
+async function handleViewAthletes() {
+    const display = document.getElementById('athlete-management-display');
+    const container = document.getElementById('athlete-table-container');
+    
+    // Toggle display
+    if (display.style.display === 'none') {
+        display.style.display = 'block';
+    }
+    
+    // Get filter values
+    const confirmedOnly = document.getElementById('filter-confirmed').checked;
+    const genderFilter = document.getElementById('filter-gender').value;
+    const sortBy = document.getElementById('sort-athletes').value;
+    
+    try {
+        container.innerHTML = '<p>Loading athletes...</p>';
+        
+        // Fetch all athletes from API
+        const response = await fetch(`${API_BASE}/api/athletes`);
+        if (!response.ok) throw new Error('Failed to load athletes');
+        const athletesData = await response.json();
+        
+        // Combine men and women
+        let allAthletes = [
+            ...athletesData.men.map(a => ({...a, gender: 'men'})),
+            ...athletesData.women.map(a => ({...a, gender: 'women'}))
+        ];
+        
+        // Apply gender filter
+        if (genderFilter !== 'all') {
+            allAthletes = allAthletes.filter(a => a.gender === genderFilter);
+        }
+        
+        // Sort athletes
+        allAthletes.sort((a, b) => {
+            if (sortBy === 'id') return a.id - b.id;
+            if (sortBy === 'name') return a.name.localeCompare(b.name);
+            if (sortBy === 'marathon_rank') {
+                const rankA = a.marathonRank || 9999;
+                const rankB = b.marathonRank || 9999;
+                return rankA - rankB;
+            }
+            if (sortBy === 'pb') {
+                const pbA = a.pb || '9:99:99';
+                const pbB = b.pb || '9:99:99';
+                return pbA.localeCompare(pbB);
+            }
+            return 0;
+        });
+        
+        // Display table
+        if (allAthletes.length === 0) {
+            container.innerHTML = '<p>No athletes found.</p>';
+            return;
+        }
+        
+        const table = document.createElement('table');
+        table.className = 'athlete-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Country</th>
+                    <th>Gender</th>
+                    <th>Personal Best</th>
+                    <th>Marathon Rank</th>
+                    <th>Age</th>
+                    <th>NYC Confirmed</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${allAthletes.map(athlete => `
+                    <tr>
+                        <td>${athlete.id}</td>
+                        <td>${athlete.name}</td>
+                        <td>${athlete.country}</td>
+                        <td>${athlete.gender === 'men' ? 'M' : 'W'}</td>
+                        <td>${athlete.pb || 'N/A'}</td>
+                        <td>${athlete.marathonRank ? '#' + athlete.marathonRank : 'N/A'}</td>
+                        <td>${athlete.age || 'N/A'}</td>
+                        <td>${confirmedOnly ? '✓' : '?'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+        
+        container.innerHTML = `
+            <p><strong>${allAthletes.length} athlete(s) found</strong></p>
+            <div class="table-scroll">
+                ${table.outerHTML}
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading athletes:', error);
+        container.innerHTML = '<p style="color: red;">Error loading athletes. Please try again.</p>';
+    }
 }
 
 // Initialize when DOM is loaded

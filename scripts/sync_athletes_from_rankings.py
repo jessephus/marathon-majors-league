@@ -530,6 +530,15 @@ def compute_hash(athlete: Dict) -> str:
     
     Only includes fields that matter for updates (not rank or points).
     """
+    # Convert date objects to strings for JSON serialization
+    dob = athlete.get('dob')
+    if dob and not isinstance(dob, str):
+        dob = str(dob)
+    
+    date_of_birth = athlete.get('date_of_birth')
+    if date_of_birth and not isinstance(date_of_birth, str):
+        date_of_birth = str(date_of_birth)
+    
     relevant_fields = {
         'name': athlete.get('name'),
         'country': athlete.get('country'),
@@ -540,8 +549,8 @@ def compute_hash(athlete: Dict) -> str:
         'road_running_rank': athlete.get('road_running_rank'),
         'overall_rank': athlete.get('overall_rank'),
         'age': athlete.get('age'),
-        'dob': athlete.get('dob'),
-        'date_of_birth': athlete.get('date_of_birth'),
+        'dob': dob,
+        'date_of_birth': date_of_birth,
     }
     
     # Sort keys for consistency
