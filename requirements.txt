@@ -1,0 +1,11 @@
+# Python dependencies for athlete data extraction scripts
+
+# Core dependencies
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+
+# HTML parsing and data manipulation
+lxml>=4.9.0
+
+# Optional: Progress bars for batch processing
+tqdm>=4.66.0
