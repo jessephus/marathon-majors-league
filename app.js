@@ -1627,6 +1627,31 @@ async function openAthleteModal(athleteIdOrData) {
 }
 
 /**
+ * Convert ISO 3166-1 alpha-3 country code to flag emoji
+ */
+function getCountryFlagEmoji(countryCode) {
+    if (!countryCode || countryCode.length < 2) return '🏁';
+    
+    // Map of common alpha-3 to alpha-2 codes for marathon countries
+    const alpha3ToAlpha2 = {
+        'KEN': 'KE', 'ETH': 'ET', 'USA': 'US', 'GBR': 'GB', 'JPN': 'JP',
+        'FRA': 'FR', 'GER': 'DE', 'ITA': 'IT', 'ESP': 'ES', 'NED': 'NL',
+        'BEL': 'BE', 'SUI': 'CH', 'AUT': 'AT', 'CAN': 'CA', 'AUS': 'AU',
+        'NZL': 'NZ', 'UGA': 'UG', 'TAN': 'TZ', 'ERI': 'ER', 'BRN': 'BH',
+        'MAR': 'MA', 'ALG': 'DZ', 'RSA': 'ZA', 'MEX': 'MX', 'BRA': 'BR',
+        'CHN': 'CN', 'KOR': 'KR', 'PRK': 'KP', 'IND': 'IN', 'ISR': 'IL',
+        'POL': 'PL', 'UKR': 'UA', 'RUS': 'RU', 'BLR': 'BY', 'CZE': 'CZ',
+        'SVK': 'SK', 'HUN': 'HU', 'ROU': 'RO', 'BUL': 'BG', 'SRB': 'RS',
+        'CRO': 'HR', 'SLO': 'SI', 'SWE': 'SE', 'NOR': 'NO', 'DEN': 'DK',
+        'FIN': 'FI', 'ISL': 'IS', 'IRL': 'IE', 'POR': 'PT', 'TUR': 'TR'
+    };
+    
+    const alpha2 = alpha3ToAlpha2[countryCode.toUpperCase()] || countryCode.slice(0, 2).toUpperCase();
+    const codePoints = alpha2.split('').map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+}
+
+/**
  * Populate basic athlete information in the modal
  */
 function populateAthleteBasicInfo(athlete) {
@@ -1642,8 +1667,8 @@ function populateAthleteBasicInfo(athlete) {
     
     // Basic info
     document.getElementById('modal-athlete-name').textContent = athlete.name;
-    document.getElementById('modal-athlete-country').textContent = athlete.country;
-    document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? '👨 Men' : '👩 Women';
+    document.getElementById('modal-athlete-country').textContent = getCountryFlagEmoji(athlete.country);
+    document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? 'Men' : 'Women';
     document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age} years` : 'Age N/A';
     
     // Stats
@@ -1790,9 +1815,9 @@ function displayRaceResults(results) {
                     <div class="result-position">${result.position || 'N/A'}</div>
                 </div>
                 <div class="result-details">
-                    <div class="result-time">⏱️ ${result.finishTime || 'N/A'}</div>
-                    <div class="result-venue">📍 ${result.venue}</div>
-                    <div class="result-date">📅 ${formattedDate}</div>
+                    <div class="result-time">${result.finishTime || 'N/A'}</div>
+                    <div class="result-venue">${result.venue}</div>
+                    <div class="result-date">${formattedDate}</div>
                 </div>
             </div>
         `;
