@@ -211,7 +211,7 @@ def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str) -> Optio
         html = response.text
         
         # Extract data from __NEXT_DATA__ JSON embedded in page
-        json_match = html.match = re.search(r'<script[^>]*id="__NEXT_DATA__"[^>]*>([^<]+)</script>', html)
+        json_match = re.search(r'<script[^>]*id="__NEXT_DATA__"[^>]*>([^<]+)</script>', html)
         
         if not json_match:
             print(f"    ⚠️  No __NEXT_DATA__ found, trying fallback methods")
