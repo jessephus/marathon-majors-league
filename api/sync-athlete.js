@@ -3,25 +3,43 @@ import https from 'https';
 
 function fetchHtml(url) {
   return new Promise((resolve, reject) => {
-    https.get(url, {
+    const request = https.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
       }
     }, (response) => {
+      // Handle redirects
+      if (response.statusCode === 301 || response.statusCode === 302) {
+        const redirectUrl = response.headers.location;
+        console.log(`Redirecting to: ${redirectUrl}`);
+        return fetchHtml(redirectUrl).then(resolve).catch(reject);
+      }
+
       if (response.statusCode !== 200) {
-        reject(new Error(`Failed to fetch profile: ${response.statusCode}`));
+        reject(new Error(`Failed to fetch profile: HTTP ${response.statusCode}`));
         return;
       }
 
       let data = '';
+      response.setEncoding('utf8');
       response.on('data', (chunk) => {
         data += chunk;
       });
       response.on('end', () => {
         resolve(data);
       });
-    }).on('error', (error) => {
+    });
+
+    request.on('error', (error) => {
+      console.error('HTTPS request error:', error);
       reject(error);
+    });
+
+    request.setTimeout(15000, () => {
+      request.destroy();
+      reject(new Error('Request timeout after 15 seconds'));
     });
   });
 }
@@ -70,9 +88,11 @@ export default async function handler(req, res) {
 
       // Fetch athlete profile from World Athletics
       const profileUrl = `https://worldathletics.org/athletes/_/${waId}`;
+      console.log(`Fetching profile from: ${profileUrl}`);
       
       try {
         const html = await fetchHtml(profileUrl);
+        console.log(`Successfully fetched HTML (length: ${html.length} bytes)`);
 
         // Extract data from profile page using regex (same logic as Python script)
         const enrichedData = {};
@@ -104,83 +124,76 @@ export default async function handler(req, res) {
         const sbMatch = html.match(/Season Best.*?(\d{1}:\d{2}:\d{2})/s);
         if (sbMatch) enrichedData.season_best = sbMatch[1];
 
-        // Update athlete in database
-        const updateFields = [];
-        const updateValues = [];
-        let paramIndex = 1;
+        console.log('Enriched data extracted:', enrichedData);
+
+        // Update athlete in database using individual SQL queries
+        let updatedAthlete = athleteData;
 
         if (enrichedData.personal_best) {
-          updateFields.push(`personal_best = $${paramIndex++}`);
-          updateValues.push(enrichedData.personal_best);
+          await sql`UPDATE athletes SET personal_best = ${enrichedData.personal_best}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
-        if (enrichedData.age) {
-          updateFields.push(`age = $${paramIndex++}`);
-          updateValues.push(enrichedData.age);
+        if (enrichedData.age !== undefined) {
+          await sql`UPDATE athletes SET age = ${enrichedData.age}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
         if (enrichedData.date_of_birth) {
-          updateFields.push(`date_of_birth = $${paramIndex++}`);
-          updateValues.push(enrichedData.date_of_birth);
+          await sql`UPDATE athletes SET date_of_birth = ${enrichedData.date_of_birth}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
-        if (enrichedData.marathon_rank) {
-          updateFields.push(`marathon_rank = $${paramIndex++}`);
-          updateValues.push(enrichedData.marathon_rank);
+        if (enrichedData.marathon_rank !== undefined) {
+          await sql`UPDATE athletes SET marathon_rank = ${enrichedData.marathon_rank}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
-        if (enrichedData.road_running_rank) {
-          updateFields.push(`road_running_rank = $${paramIndex++}`);
-          updateValues.push(enrichedData.road_running_rank);
+        if (enrichedData.road_running_rank !== undefined) {
+          await sql`UPDATE athletes SET road_running_rank = ${enrichedData.road_running_rank}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
         if (enrichedData.season_best) {
-          updateFields.push(`season_best = $${paramIndex++}`);
-          updateValues.push(enrichedData.season_best);
+          await sql`UPDATE athletes SET season_best = ${enrichedData.season_best}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
 
-        // Always update these fields
-        updateFields.push(`world_athletics_profile_url = $${paramIndex++}`);
-        updateValues.push(profileUrl);
-        updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+        // Always update profile URL
+        await sql`UPDATE athletes SET world_athletics_profile_url = ${profileUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
 
-        if (updateFields.length > 1) { // More than just updated_at
-          // Build and execute update query
-          const updateQuery = `
-            UPDATE athletes 
-            SET ${updateFields.join(', ')}
-            WHERE id = $${paramIndex}
-            RETURNING *
-          `;
-          updateValues.push(athleteId);
+        // Fetch the updated athlete data
+        const result = await sql`
+          SELECT 
+            id, 
+            name, 
+            personal_best,
+            marathon_rank,
+            road_running_rank,
+            age,
+            date_of_birth,
+            season_best,
+            updated_at
+          FROM athletes
+          WHERE id = ${athleteId}
+        `;
+        updatedAthlete = result[0];
 
-          const result = await sql(updateQuery, updateValues);
-          const updatedAthlete = result[0];
+        console.log(`Successfully synced athlete ${athleteData.name}:`, enrichedData);
 
-          console.log(`Successfully synced athlete ${athleteData.name}:`, enrichedData);
+        res.status(200).json({
+          message: 'Athlete synced successfully',
+          athlete: {
+            id: updatedAthlete.id,
+            name: updatedAthlete.name,
+            pb: updatedAthlete.personal_best,
+            marathonRank: updatedAthlete.marathon_rank,
+            roadRunningRank: updatedAthlete.road_running_rank,
+            age: updatedAthlete.age,
+            dateOfBirth: updatedAthlete.date_of_birth,
+            seasonBest: updatedAthlete.season_best,
+            updatedAt: updatedAthlete.updated_at
+          },
+          enrichedFields: Object.keys(enrichedData)
+        });
 
-          res.status(200).json({
-            message: 'Athlete synced successfully',
-            athlete: {
-              id: updatedAthlete.id,
-              name: updatedAthlete.name,
-              pb: updatedAthlete.personal_best,
-              marathonRank: updatedAthlete.marathon_rank,
-              roadRunningRank: updatedAthlete.road_running_rank,
-              age: updatedAthlete.age,
-              dateOfBirth: updatedAthlete.date_of_birth,
-              seasonBest: updatedAthlete.season_best,
-              updatedAt: updatedAthlete.updated_at
-            },
-            enrichedFields: Object.keys(enrichedData)
-          });
-        } else {
-          return res.status(200).json({
-            message: 'No new data found to update',
-            athlete: athleteData
-          });
-        }
 
       } catch (fetchError) {
         console.error('Profile fetch error:', fetchError);
+        console.error('Error stack:', fetchError.stack);
         return res.status(500).json({ 
           error: 'Failed to fetch athlete profile from World Athletics',
-          details: fetchError.message
+          details: fetchError.message,
+          url: profileUrl
         });
       }
     } else {
