@@ -1328,8 +1328,8 @@ async function handleViewAthletes() {
     try {
         container.innerHTML = '<p>Loading athletes...</p>';
         
-        // Fetch all athletes from API
-        const response = await fetch(`${API_BASE}/api/athletes`);
+        // Fetch all athletes from API with confirmedOnly parameter
+        const response = await fetch(`${API_BASE}/api/athletes?confirmedOnly=${confirmedOnly}`);
         if (!response.ok) throw new Error('Failed to load athletes');
         const athletesData = await response.json();
         
@@ -1392,7 +1392,7 @@ async function handleViewAthletes() {
                         <td>${athlete.pb || 'N/A'}</td>
                         <td>${athlete.marathonRank ? '#' + athlete.marathonRank : 'N/A'}</td>
                         <td>${athlete.age || 'N/A'}</td>
-                        <td>${confirmedOnly ? '✓' : '?'}</td>
+                        <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
                     </tr>
                 `).join('')}
             </tbody>

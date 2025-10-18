@@ -7,31 +7,65 @@ const sql = neon(process.env.DATABASE_URL);
 // ATHLETES
 // ============================================================================
 
-export async function getAllAthletes() {
-  // Only return athletes confirmed for active races
-  const athletes = await sql`
-    SELECT DISTINCT
-      a.id, 
-      a.name, 
-      a.country, 
-      a.gender, 
-      a.personal_best as pb, 
-      a.headshot_url as "headshotUrl",
-      a.world_athletics_id as "worldAthleticsId",
-      a.world_athletics_profile_url as "worldAthleticsProfileUrl",
-      a.marathon_rank as "marathonRank",
-      a.road_running_rank as "roadRunningRank",
-      a.overall_rank as "overallRank",
-      a.age,
-      a.date_of_birth as "dateOfBirth",
-      a.sponsor,
-      a.season_best as "seasonBest"
-    FROM athletes a
-    INNER JOIN athlete_races ar ON a.id = ar.athlete_id
-    INNER JOIN races r ON ar.race_id = r.id
-    WHERE r.is_active = true
-    ORDER BY a.gender, a.personal_best
-  `;
+export async function getAllAthletes(confirmedOnly = true) {
+  let athletes;
+  
+  if (confirmedOnly) {
+    // Only return athletes confirmed for active races
+    athletes = await sql`
+      SELECT DISTINCT
+        a.id, 
+        a.name, 
+        a.country, 
+        a.gender, 
+        a.personal_best as pb, 
+        a.headshot_url as "headshotUrl",
+        a.world_athletics_id as "worldAthleticsId",
+        a.world_athletics_profile_url as "worldAthleticsProfileUrl",
+        a.marathon_rank as "marathonRank",
+        a.road_running_rank as "roadRunningRank",
+        a.overall_rank as "overallRank",
+        a.age,
+        a.date_of_birth as "dateOfBirth",
+        a.sponsor,
+        a.season_best as "seasonBest",
+        true as "nycConfirmed"
+      FROM athletes a
+      INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+      INNER JOIN races r ON ar.race_id = r.id
+      WHERE r.is_active = true
+      ORDER BY a.gender, a.personal_best
+    `;
+  } else {
+    // Return all athletes with confirmation status
+    athletes = await sql`
+      SELECT DISTINCT
+        a.id, 
+        a.name, 
+        a.country, 
+        a.gender, 
+        a.personal_best as pb, 
+        a.headshot_url as "headshotUrl",
+        a.world_athletics_id as "worldAthleticsId",
+        a.world_athletics_profile_url as "worldAthleticsProfileUrl",
+        a.marathon_rank as "marathonRank",
+        a.road_running_rank as "roadRunningRank",
+        a.overall_rank as "overallRank",
+        a.age,
+        a.date_of_birth as "dateOfBirth",
+        a.sponsor,
+        a.season_best as "seasonBest",
+        CASE 
+          WHEN ar.id IS NOT NULL THEN true 
+          ELSE false 
+        END as "nycConfirmed"
+      FROM athletes a
+      LEFT JOIN athlete_races ar ON a.id = ar.athlete_id AND ar.race_id = (
+        SELECT id FROM races WHERE is_active = true LIMIT 1
+      )
+      ORDER BY a.gender, a.personal_best
+    `;
+  }
   
   // Group by gender for frontend compatibility
   const grouped = {
