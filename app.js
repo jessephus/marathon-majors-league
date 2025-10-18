@@ -145,6 +145,7 @@ function setupEventListeners() {
         handleViewAthletes();
     });
     document.getElementById('filter-confirmed').addEventListener('change', handleViewAthletes);
+    document.getElementById('filter-missing-wa-id').addEventListener('change', handleViewAthletes);
     document.getElementById('filter-gender').addEventListener('change', handleViewAthletes);
     document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
@@ -1322,6 +1323,7 @@ async function handleViewAthletes() {
     
     // Get filter values
     const confirmedOnly = document.getElementById('filter-confirmed').checked;
+    const missingWaIdOnly = document.getElementById('filter-missing-wa-id').checked;
     const genderFilter = document.getElementById('filter-gender').value;
     const sortBy = document.getElementById('sort-athletes').value;
     
@@ -1342,6 +1344,11 @@ async function handleViewAthletes() {
         // Apply gender filter
         if (genderFilter !== 'all') {
             allAthletes = allAthletes.filter(a => a.gender === genderFilter);
+        }
+        
+        // Apply missing WA ID filter
+        if (missingWaIdOnly) {
+            allAthletes = allAthletes.filter(a => !a.worldAthleticsId || a.worldAthleticsId.trim() === '');
         }
         
         // Sort athletes
@@ -1410,7 +1417,7 @@ async function handleViewAthletes() {
                                 class="btn-save-wa-id btn-small" 
                                 data-athlete-id="${athlete.id}"
                                 title="Save World Athletics ID"
-                            >💾 Save</button>
+                            >Save</button>
                         </td>
                     </tr>
                 `).join('')}
@@ -1419,7 +1426,7 @@ async function handleViewAthletes() {
         
         container.innerHTML = `
             <p><strong>${allAthletes.length} athlete(s) found</strong></p>
-            <p class="info-message">💡 <strong>Tip:</strong> Athletes without a World Athletics ID cannot be tracked when they drop out of the top 100 rankings. Add the ID to enable automatic sync updates.</p>
+            <p class="info-message">💡 <strong>Tip:</strong> Athletes without a World Athletics ID cannot be tracked when they drop out of the top 100 rankings. Use the "Show only missing World Athletics ID" filter to find them quickly and add their IDs.</p>
             <div class="table-scroll">
                 ${table.outerHTML}
             </div>
@@ -1452,7 +1459,7 @@ async function handleSaveWorldAthleticsId(event) {
     
     try {
         button.disabled = true;
-        button.textContent = '💾 Saving...';
+        button.textContent = 'Saving...';
         
         const response = await fetch(`${API_BASE}/api/update-athlete`, {
             method: 'PUT',
@@ -1471,12 +1478,12 @@ async function handleSaveWorldAthleticsId(event) {
         const result = await response.json();
         
         // Show success feedback
-        button.textContent = '✓ Saved!';
+        button.textContent = 'Saved!';
         button.style.backgroundColor = '#4CAF50';
         
         // Reset button after 2 seconds
         setTimeout(() => {
-            button.textContent = '💾 Save';
+            button.textContent = 'Save';
             button.style.backgroundColor = '';
             button.disabled = false;
         }, 2000);
@@ -1486,7 +1493,7 @@ async function handleSaveWorldAthleticsId(event) {
     } catch (error) {
         console.error('Error saving World Athletics ID:', error);
         alert('Failed to save World Athletics ID: ' + error.message);
-        button.textContent = '💾 Save';
+        button.textContent = 'Save';
         button.disabled = false;
     }
 }
