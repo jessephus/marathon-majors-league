@@ -41,17 +41,19 @@ From **Athlete Profile Page**:
 
 ### ✅ Intelligent Change Detection
 
-The script uses SHA256 hashing to detect if an athlete's data has actually changed:
+The script uses SHA256 hashing and World Athletics marathon ranking scores to detect if an athlete's data has actually changed:
 - **New athletes**: Added to database (top 100 ranking improved)
 - **Changed athletes**: Updated in database (PB improved, rank changed, etc.)
 - **Unchanged athletes**: Skipped (no database write)
-- **Dropped athletes**: Remain in database but with older `last_seen_at` timestamp
+- **Dropped athletes** (with `--sync-dropped`): Searches beyond top 100 to keep them synced
+- **Score-based skip**: If World Athletics marathon ranking score unchanged, skip expensive profile fetch
 
 This means:
 - ✅ Minimal database writes (only real changes)
 - ✅ No unnecessary API calls
-- ✅ Fast execution (skip enrichment for unchanged athletes)
-- ✅ Historical data preserved (athletes who drop out of top 100 remain)
+- ✅ Fast execution (skip enrichment for unchanged athletes via score comparison)
+- ✅ Historical data preserved (athletes who drop out of top 100 can still be synced)
+- ✅ Performance optimization (typical sync reduced from 6-8 min to under 1 min)
 
 ## Usage
 
@@ -67,12 +69,24 @@ python3 scripts/sync_athletes_from_rankings.py --dry-run --limit 20
 # Skip profile enrichment (much faster, basic data only)
 python3 scripts/sync_athletes_from_rankings.py --dry-run --skip-enrichment
 
+# Sync athletes who dropped out of top 100 (searches beyond top 100)
+python3 scripts/sync_athletes_from_rankings.py --sync-dropped
+
 # Production run (actually updates database)
 python3 scripts/sync_athletes_from_rankings.py
 
-# Full top 100 sync with enrichment
-python3 scripts/sync_athletes_from_rankings.py --limit 100
+# Full top 100 sync with enrichment + dropped athletes
+python3 scripts/sync_athletes_from_rankings.py --limit 100 --sync-dropped
 ```
+
+### Command Line Options
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Preview changes without updating database |
+| `--limit N` | Number of athletes to fetch per gender (default: 100) |
+| `--skip-enrichment` | Skip profile fetching (faster, basic data only) |
+| `--sync-dropped` | Also sync athletes who dropped out of top 100 |
 
 ### GitHub Actions
 
@@ -114,7 +128,8 @@ sync_athletes_from_rankings.py
 ├── PART 1: SCRAPING RANKINGS
 │   ├── get_recent_tuesday()         # Calculate most recent Tuesday
 │   ├── scrape_rankings_page()       # Scrape single page
-│   └── scrape_all_rankings()        # Scrape all pages needed
+│   ├── scrape_all_rankings()        # Scrape all pages needed
+│   └── find_dropped_athletes()      # Find athletes beyond top 100
 │
 ├── PART 2: ENRICHING ATHLETE PROFILES
 │   ├── fetch_athlete_profile()      # Fetch detailed profile data
@@ -137,11 +152,19 @@ sync_athletes_from_rankings.py
 ```
 World Athletics Rankings Page
         ↓
-   [Scrape Table]
+   [Scrape Table - Top 100]
         ↓
-   Basic Athlete Data (name, country, rank, ID)
+   Basic Athlete Data (name, country, rank, score, ID)
         ↓
-   [Fetch Profile Pages] ← Optional (--skip-enrichment)
+   [Find Dropped Athletes] ← Optional (--sync-dropped)
+        ↓                      Pages through rankings beyond top 100
+   All Athletes to Process    to find athletes who previously ranked
+        ↓
+   [Fetch Existing from DB]
+        ↓
+   [Compare Scores] ← Smart skip: if score unchanged, skip profile fetch
+        ↓
+   [Fetch Profile Pages] ← Only for new/changed athletes
         ↓
    Enriched Data (headshot, PB, ranks)
         ↓
@@ -156,6 +179,37 @@ World Athletics Rankings Page
    Updated Neon Postgres Database
 ```
 
+### Dropped Athlete Sync Feature
+
+When `--sync-dropped` is enabled, the script:
+
+1. **Identifies dropped athletes**: Compares database IDs with current top 100
+2. **Searches beyond top 100**: Pages through rankings (pages 3+) up to top 1000
+3. **Finds and syncs**: Updates data for athletes who dropped but still rank
+4. **Smart skipping**: Uses score comparison to avoid unnecessary profile fetches
+5. **Ignores truly dropped**: Athletes not found in top 1000 are left unchanged
+
+**Example workflow:**
+```
+Database has: Athletes A, B, C, D, E (5 total)
+Top 100 now:  Athletes A, B, C (3 still ranking)
+Dropped:      Athletes D, E (2 dropped from top 100)
+
+With --sync-dropped:
+  → Search pages 3+ for athletes D and E
+  → Found D at rank 145, E at rank 203
+  → Compare their scores with database
+  → If score unchanged, use cached data (fast)
+  → If score changed, fetch fresh profile (slow)
+  → Update database with current rankings
+```
+
+**When to use:**
+- ✅ **Scheduled runs**: Keeps all existing athletes current
+- ✅ **Historical tracking**: Maintains complete athlete history
+- ❌ **Initial sync**: Not needed when database is empty
+- ❌ **Quick tests**: Adds significant time for testing
+
 ## Performance
 
 ### Timing Estimates
@@ -165,13 +219,22 @@ World Athletics Rankings Page
 | Top 10, skip enrichment | ~10 seconds | Fast testing |
 | Top 10, with enrichment | ~45 seconds | Profile fetches slow |
 | Top 100, skip enrichment | ~30 seconds | Basic data only |
-| Top 100, with enrichment | ~6-8 minutes | Full sync with all data |
+| Top 100, with enrichment (first run) | ~6-8 minutes | Full sync with all data |
+| Top 100, with enrichment (subsequent) | ~1 minute | Score-based skip optimization |
+| Top 100 + dropped (5 athletes) | ~2-3 minutes | Extra pages + enrichment |
+| Top 100 + dropped (20 athletes) | ~4-5 minutes | More search pages needed |
 
 **Why Enrichment is Slow:**
 - Each profile fetch takes 2-3 seconds (network latency)
 - Deliberate 3-second delay between requests (politeness)
 - 100 athletes × 3 seconds = ~5 minutes minimum
 - Plus parsing and processing time
+
+**Score-Based Optimization:**
+- First run: Fetches all profiles (~6-8 minutes for 100 athletes)
+- Subsequent runs: Only fetches changed athletes (~1 minute typical)
+- Most top-100 athletes stable week-to-week (80-90% unchanged)
+- World Athletics marathon ranking score indicates performance changes
 
 ### Rate Limiting
 

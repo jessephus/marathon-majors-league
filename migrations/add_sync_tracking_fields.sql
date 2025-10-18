@@ -7,7 +7,8 @@ ALTER TABLE athletes
   ADD COLUMN IF NOT EXISTS last_fetched_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP WITH TIME ZONE,
   ADD COLUMN IF NOT EXISTS data_hash TEXT,
-  ADD COLUMN IF NOT EXISTS raw_json JSONB;
+  ADD COLUMN IF NOT EXISTS raw_json JSONB,
+  ADD COLUMN IF NOT EXISTS world_athletics_marathon_ranking_score INTEGER;
 
 -- Add UNIQUE constraint to world_athletics_id if not already present
 DO $$
@@ -37,3 +38,4 @@ COMMENT ON COLUMN athletes.last_fetched_at IS 'Last time full athlete details we
 COMMENT ON COLUMN athletes.last_seen_at IS 'Last time athlete appeared in top-100 rankings';
 COMMENT ON COLUMN athletes.data_hash IS 'SHA256 hash of canonical athlete JSON for change detection';
 COMMENT ON COLUMN athletes.raw_json IS 'Complete athlete data from World Athletics API for debugging';
+COMMENT ON COLUMN athletes.world_athletics_marathon_ranking_score IS 'World Athletics marathon ranking score (rolling 18-month average for marathon category)';

@@ -109,7 +109,14 @@ jobs:
             DRY_RUN_FLAG="--dry-run"
           fi
           
-          python scripts/sync_athletes_from_rankings.py $DRY_RUN_FLAG
+          # Enable dropped athlete sync for scheduled runs and manual triggers
+          SYNC_DROPPED_FLAG=""
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "🔄 Enabling dropped athlete sync (searches beyond top 100)"
+            SYNC_DROPPED_FLAG="--sync-dropped"
+          fi
+          
+          python scripts/sync_athletes_from_rankings.py $DRY_RUN_FLAG $SYNC_DROPPED_FLAG
       
       - name: Upload sync statistics
         if: always()

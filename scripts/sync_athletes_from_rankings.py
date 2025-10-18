@@ -67,7 +67,7 @@ DELAY_BETWEEN_REQUESTS = 2  # Be polite to the server
 DELAY_BETWEEN_PROFILES = 3  # Even more polite for profile fetches
 
 # ============================================================================
-# PART 1: SCRAPING RANKINGS
+# PART 1: EXTRACTING RANKINGS
 # ============================================================================
 
 def get_recent_tuesday() -> str:
@@ -135,15 +135,20 @@ def scrape_rankings_page(gender: str, page: int, rank_date: str) -> List[Dict]:
                 if country:
                     country = country.split()[0]  # Take first code if multiple
                 
-                # Ranking points
-                points = cells[4].get_text(strip=True) if len(cells) > 4 else None
+                # World Athletics Score (column 4) - their rolling 18-month score
+                wa_score = cells[4].get_text(strip=True) if len(cells) > 4 else None
+                # Convert to integer if present
+                try:
+                    wa_score = int(wa_score) if wa_score else None
+                except ValueError:
+                    wa_score = None
                 
                 athlete_data = {
                     'rank': rank,
                     'name': name,
                     'country': country,
                     'dob': dob,
-                    'ranking_points': points,
+                    'world_athletics_marathon_ranking_score': wa_score,
                     'world_athletics_id': athlete_id,
                     'profile_url': full_profile_url,
                     'gender': 'M' if gender == 'men' else 'F'
@@ -156,7 +161,7 @@ def scrape_rankings_page(gender: str, page: int, rank_date: str) -> List[Dict]:
                 print(f"    Warning: Error parsing row: {e}")
                 continue
         
-        print(f"  Scraped {len(athletes)} athletes from page {page}")
+        print(f"  Extracted {len(athletes)} athletes from page {page}")
         return athletes
         
     except requests.RequestException as e:
@@ -171,7 +176,7 @@ def scrape_all_rankings(gender: str, limit: int = 100) -> List[Dict]:
     Returns complete list of athletes with basic ranking data.
     """
     rank_date = get_recent_tuesday()
-    print(f"\nScraping {gender}'s marathon world rankings (limit: {limit})...")
+    print(f"\nExtracting {gender}'s marathon world rankings (limit: {limit})...")
     print(f"Using rank date: {rank_date}")
     
     all_athletes = []
@@ -195,8 +200,73 @@ def scrape_all_rankings(gender: str, limit: int = 100) -> List[Dict]:
         time.sleep(DELAY_BETWEEN_REQUESTS)
         page += 1
     
-    print(f"Total scraped: {len(all_athletes)} {gender}")
+    print(f"Total extracted: {len(all_athletes)} {gender}")
     return all_athletes
+
+
+def find_dropped_athletes(gender: str, existing_athlete_ids: set, top_100_ids: set, rank_date: str) -> List[Dict]:
+    """
+    Search beyond top 100 to find athletes who dropped out of rankings.
+    
+    Pages through rankings starting at page 3 (after top 100) until all
+    existing athletes are found or we reach a reasonable limit.
+    
+    Args:
+        gender: 'men' or 'women'
+        existing_athlete_ids: Set of all WA IDs in database for this gender
+        top_100_ids: Set of WA IDs currently in top 100
+        rank_date: Recent Tuesday date string
+    
+    Returns:
+        List of athlete dicts for those who dropped out but still rank
+    """
+    # Find which athletes we need to look for (in DB but not in top 100)
+    dropped_ids = existing_athlete_ids - top_100_ids
+    
+    if not dropped_ids:
+        print(f"  No dropped {gender} athletes to search for")
+        return []
+    
+    print(f"\n🔍 Searching for {len(dropped_ids)} {gender} athletes who dropped out of top 100...")
+    print(f"  Athletes to find: {sorted(list(dropped_ids)[:10])}{'...' if len(dropped_ids) > 10 else ''}")
+    
+    found_athletes = []
+    found_ids = set()
+    page = 3  # Start after top 100 (pages 1-2 cover top 100)
+    max_page = 20  # Reasonable limit (top 1000 athletes)
+    
+    while found_ids < dropped_ids and page <= max_page:
+        print(f"  Checking page {page}...")
+        page_athletes = scrape_rankings_page(gender, page, rank_date)
+        
+        if not page_athletes:
+            print(f"  No more athletes found on page {page}, stopping search")
+            break
+        
+        # Check which athletes on this page are in our dropped list
+        for athlete in page_athletes:
+            athlete_id = athlete.get('world_athletics_id')
+            if athlete_id and athlete_id in dropped_ids and athlete_id not in found_ids:
+                found_athletes.append(athlete)
+                found_ids.add(athlete_id)
+                print(f"    ✓ Found: {athlete['name']} (rank {athlete.get('rank', 'N/A')})")
+        
+        # Stop if we found everyone
+        if found_ids == dropped_ids:
+            print(f"  ✓ Found all {len(dropped_ids)} dropped athletes!")
+            break
+        
+        # Be polite to the server
+        time.sleep(DELAY_BETWEEN_REQUESTS)
+        page += 1
+    
+    still_missing = dropped_ids - found_ids
+    if still_missing:
+        print(f"  ⚠️  Could not find {len(still_missing)} athletes (may have dropped out of top 1000)")
+        print(f"      Missing IDs: {sorted(list(still_missing)[:5])}{'...' if len(still_missing) > 5 else ''}")
+    
+    print(f"  Total found: {len(found_athletes)} dropped {gender} athletes")
+    return found_athletes
 
 
 # ============================================================================
@@ -339,9 +409,13 @@ def fetch_profile_fallback(athlete_id: str, html: str, name: str) -> Dict:
     return result
 
 
-def enrich_athletes(athletes: List[Dict]) -> List[Dict]:
+def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = None) -> List[Dict]:
     """
     Enrich athlete data by fetching their profile pages.
+    
+    Uses World Athletics score for efficient change detection:
+    - If athlete exists and score is unchanged, skip enrichment (fast)
+    - If athlete is new or score changed, fetch full profile (slow)
     
     Returns updated list with additional fields from profiles.
     """
@@ -349,7 +423,12 @@ def enrich_athletes(athletes: List[Dict]) -> List[Dict]:
     print("ENRICHING ATHLETE PROFILES")
     print("=" * 70)
     
+    if existing_athletes is None:
+        existing_athletes = {}
+    
     enriched = []
+    skipped_count = 0
+    enriched_count = 0
     
     for i, athlete in enumerate(athletes, 1):
         print(f"\n[{i}/{len(athletes)}] Processing {athlete['name']}...")
@@ -358,6 +437,30 @@ def enrich_athletes(athletes: List[Dict]) -> List[Dict]:
             print(f"  ⚠️  Skipping - no profile URL")
             enriched.append(athlete)
             continue
+        
+        # Check if we can skip enrichment (athlete exists with same score)
+        wa_id = athlete.get('world_athletics_id')
+        existing = existing_athletes.get(wa_id)
+        
+        if existing:
+            existing_score = existing.get('world_athletics_marathon_ranking_score')
+            current_score = athlete.get('world_athletics_marathon_ranking_score')
+            
+            if existing_score and current_score and existing_score == current_score:
+                print(f"  ⏭️  Score unchanged ({current_score}) - using cached data")
+                # Copy enrichment data from existing record
+                athlete['headshot_url'] = existing.get('headshot_url')
+                athlete['marathon_rank'] = existing.get('marathon_rank')
+                athlete['road_running_rank'] = existing.get('road_running_rank')
+                athlete['overall_rank'] = existing.get('overall_rank')
+                athlete['personal_best'] = existing.get('personal_best')
+                athlete['season_best'] = existing.get('season_best')
+                athlete['age'] = existing.get('age')
+                athlete['date_of_birth'] = existing.get('date_of_birth')
+                athlete['sponsor'] = existing.get('sponsor')
+                enriched.append(athlete)
+                skipped_count += 1
+                continue
         
         profile_data = fetch_athlete_profile(
             athlete['world_athletics_id'],
@@ -368,6 +471,7 @@ def enrich_athletes(athletes: List[Dict]) -> List[Dict]:
         if profile_data:
             # Merge profile data into athlete data
             athlete.update(profile_data)
+            enriched_count += 1
         
         enriched.append(athlete)
         
@@ -375,6 +479,12 @@ def enrich_athletes(athletes: List[Dict]) -> List[Dict]:
         if i < len(athletes):
             time.sleep(DELAY_BETWEEN_PROFILES)
     
+    print(f"\n✅ Enrichment complete:")
+    print(f"   Fetched profiles: {enriched_count}")
+    print(f"   Used cached data: {skipped_count}")
+    print(f"   Total processed: {len(enriched)}")
+    
+    return enriched
     return enriched
 
 
@@ -452,7 +562,7 @@ def fetch_existing_athletes(conn) -> Dict[str, Dict]:
                 personal_best, season_best, headshot_url,
                 marathon_rank, road_running_rank, overall_rank,
                 age, date_of_birth, sponsor, data_hash,
-                last_fetched_at, ranking_source
+                last_fetched_at, ranking_source, world_athletics_marathon_ranking_score
             FROM athletes
             WHERE world_athletics_id IS NOT NULL
         """)
@@ -464,7 +574,7 @@ def fetch_existing_athletes(conn) -> Dict[str, Dict]:
         return athletes
 
 
-def detect_changes(scraped_athletes: List[Dict], existing_athletes: Dict[str, Dict]) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+def detect_changes(extracted_athletes: List[Dict], existing_athletes: Dict[str, Dict]) -> Tuple[List[Dict], List[Dict], List[Dict]]:
     """
     Detect which athletes are new, changed, or unchanged.
     
@@ -474,7 +584,7 @@ def detect_changes(scraped_athletes: List[Dict], existing_athletes: Dict[str, Di
     changed_athletes = []
     unchanged_athletes = []
     
-    for athlete in scraped_athletes:
+    for athlete in extracted_athletes:
         wa_id = athlete.get('world_athletics_id')
         
         if not wa_id:
@@ -521,6 +631,7 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                     overall_rank = %s,
                     age = %s,
                     date_of_birth = %s,
+                    world_athletics_marathon_ranking_score = %s,
                     data_hash = %s,
                     last_fetched_at = NOW(),
                     ranking_source = 'world_rankings',
@@ -539,6 +650,7 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                 athlete.get('overall_rank'),
                 athlete.get('age'),
                 athlete.get('date_of_birth'),
+                athlete.get('world_athletics_marathon_ranking_score'),
                 athlete.get('data_hash'),
                 athlete.get('db_id')
             ))
@@ -549,10 +661,10 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                     name, country, gender, personal_best, season_best,
                     headshot_url, world_athletics_id, world_athletics_profile_url,
                     marathon_rank, road_running_rank, overall_rank,
-                    age, date_of_birth, data_hash,
+                    age, date_of_birth, world_athletics_marathon_ranking_score, data_hash,
                     last_fetched_at, ranking_source
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'world_rankings'
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), 'world_rankings'
                 )
             """, (
                 athlete.get('name'),
@@ -568,6 +680,7 @@ def upsert_athlete(conn, athlete: Dict, is_update: bool = False):
                 athlete.get('overall_rank'),
                 athlete.get('age'),
                 athlete.get('date_of_birth'),
+                athlete.get('world_athletics_marathon_ranking_score'),
                 athlete.get('data_hash')
             ))
 
@@ -658,6 +771,11 @@ def main():
         action='store_true',
         help='Skip fetching profile pages (faster but less data)'
     )
+    parser.add_argument(
+        '--sync-dropped',
+        action='store_true',
+        help='Also sync athletes who dropped out of top 100 (searches beyond top 100)'
+    )
     
     args = parser.parse_args()
     
@@ -667,10 +785,11 @@ def main():
     print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE UPDATE'}")
     print(f"Limit: Top {args.limit} per gender")
     print(f"Enrichment: {'Disabled' if args.skip_enrichment else 'Enabled'}")
+    print(f"Sync Dropped Athletes: {'Yes' if args.sync_dropped else 'No'}")
     print("=" * 70)
     
     # Step 1: Scrape rankings
-    print("\n📥 STEP 1: SCRAPING RANKINGS")
+    print("\n📥 STEP 1: EXTRACTING RANKINGS")
     print("=" * 70)
     
     men = scrape_all_rankings('men', limit=args.limit)
@@ -678,16 +797,10 @@ def main():
     women = scrape_all_rankings('women', limit=args.limit)
     
     all_athletes = men + women
-    print(f"\n✓ Scraped {len(all_athletes)} total athletes ({len(men)} men, {len(women)} women)")
+    print(f"\n✓ Extracted {len(all_athletes)} total athletes ({len(men)} men, {len(women)} women)")
     
-    # Step 2: Enrich with profile data (unless skipped)
-    if not args.skip_enrichment:
-        all_athletes = enrich_athletes(all_athletes)
-    else:
-        print("\n⏭️  Skipping profile enrichment (--skip-enrichment flag)")
-    
-    # Step 3: Run migration and detect changes
-    print("\n🔍 STEP 2: DETECTING CHANGES")
+    # Step 2: Fetch existing athletes for score comparison
+    print("\n🔍 STEP 2: FETCHING EXISTING DATA")
     print("=" * 70)
     
     conn = get_db_connection()
@@ -700,6 +813,47 @@ def main():
     finally:
         conn.close()
     
+    # Step 2b: Find athletes who dropped out of top 100 (if enabled)
+    if args.sync_dropped and existing_athletes:
+        print("\n🔍 STEP 2b: FINDING DROPPED ATHLETES")
+        print("=" * 70)
+        
+        rank_date = get_recent_tuesday()
+        
+        # Get IDs from top 100
+        top_100_men_ids = {a['world_athletics_id'] for a in men if a.get('world_athletics_id')}
+        top_100_women_ids = {a['world_athletics_id'] for a in women if a.get('world_athletics_id')}
+        
+        # Get IDs of existing athletes by gender
+        existing_men_ids = {wa_id for wa_id, data in existing_athletes.items() 
+                           if data.get('gender') == 'M'}
+        existing_women_ids = {wa_id for wa_id, data in existing_athletes.items() 
+                             if data.get('gender') == 'F'}
+        
+        # Find dropped athletes beyond top 100
+        dropped_men = find_dropped_athletes('men', existing_men_ids, top_100_men_ids, rank_date)
+        time.sleep(DELAY_BETWEEN_REQUESTS)
+        dropped_women = find_dropped_athletes('women', existing_women_ids, top_100_women_ids, rank_date)
+        
+        # Add dropped athletes to the processing list
+        if dropped_men or dropped_women:
+            all_athletes.extend(dropped_men)
+            all_athletes.extend(dropped_women)
+            print(f"\n✓ Added {len(dropped_men)} men and {len(dropped_women)} women who dropped from top 100")
+            print(f"✓ Total athletes to process: {len(all_athletes)}")
+    
+    # Step 3: Enrich with profile data (unless skipped)
+    if not args.skip_enrichment:
+        print("\n📥 STEP 3: ENRICHING PROFILES")
+        print("=" * 70)
+        all_athletes = enrich_athletes(all_athletes, existing_athletes)
+    else:
+        print("\n⏭️  Skipping profile enrichment (--skip-enrichment flag)")
+    
+    # Step 4: Detect changes
+    print("\n🔍 STEP 4: DETECTING CHANGES")
+    print("=" * 70)
+    
     new_athletes, changed_athletes, unchanged_athletes = detect_changes(all_athletes, existing_athletes)
     
     print(f"\n📊 Change Detection Results:")
@@ -707,7 +861,7 @@ def main():
     print(f"   Changed: {len(changed_athletes)}")
     print(f"   Unchanged: {len(unchanged_athletes)}")
     
-    # Step 4: Sync to database
+    # Step 5: Sync to database
     sync_to_database(new_athletes, changed_athletes, dry_run=args.dry_run)
     
     # Summary

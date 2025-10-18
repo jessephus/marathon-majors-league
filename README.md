@@ -197,15 +197,17 @@ Customizable options in the application:
 
 ## 📚 Additional Documentation
 
-- **[Neon Setup Guide](NEON_SETUP.md)** - Database setup and initialization instructions
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed technical architecture and system design
+**[📖 Complete Documentation Index](docs/README.md)** - Find all documentation organized by topic and role
+
+### Quick Links
+
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
-- **[Development Guide](docs/DEVELOPMENT.md)** - Development environment and code standards
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed setup instructions
-- **[Sync Top 100 Guide](docs/SYNC_TOP_100.md)** - Automated World Athletics data sync system
-- **[Live Results Feature](docs/LIVE_RESULTS_FEATURE.md)** - Real-time update system documentation
-- **[Migration Guide](docs/MIGRATION.md)** - Database migration history and decisions
-- **[Changelog](docs/CHANGELOG.md)** - Project evolution and version history
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy your own instance to Vercel
+- **[Development Guide](docs/DEVELOPMENT.md)** - Local development and code standards
+- **[Database Guide](docs/DATABASE.md)** - Schema, initialization, and troubleshooting
+- **[Sync Top 100 Guide](docs/SYNC_TOP_100.md)** - Automated World Athletics data sync
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Technical architecture and design
+- **[Changelog](docs/CHANGELOG.md)** - Version history and updates
 
 ## 🤝 Contributing
 
