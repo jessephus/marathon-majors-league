@@ -27,6 +27,7 @@ import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 from urllib.parse import urljoin
+from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
@@ -39,10 +40,24 @@ except ImportError:
     print("Error: psycopg2 not installed. Run: pip install psycopg2-binary")
     sys.exit(1)
 
+# Load environment variables from .env file if it exists (for local development)
+def load_env_file():
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ.setdefault(key.strip(), value.strip())
+
+load_env_file()
+
 # Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     print("Error: DATABASE_URL environment variable not set")
+    print("Create a .env file in the project root with: DATABASE_URL=postgresql://...")
     sys.exit(1)
 
 BASE_URL = "https://worldathletics.org"
@@ -372,6 +387,33 @@ def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
 
+def run_migration(conn):
+    """
+    Run database migration to add sync tracking fields if they don't exist.
+    This is idempotent and safe to run multiple times.
+    """
+    migration_path = Path(__file__).parent.parent / 'migrations' / 'add_sync_tracking_fields.sql'
+    
+    if not migration_path.exists():
+        print("⚠️  Migration file not found, skipping migration")
+        return
+    
+    print("🔄 Running database migration...")
+    
+    with conn.cursor() as cur:
+        with open(migration_path) as f:
+            migration_sql = f.read()
+        
+        try:
+            # Execute the entire migration
+            cur.execute(migration_sql)
+            conn.commit()
+            print("✅ Migration completed successfully")
+        except Exception as e:
+            conn.rollback()
+            print(f"⚠️  Migration error (may already be applied): {e}")
+
+
 def compute_hash(athlete: Dict) -> str:
     """
     Compute SHA256 hash of athlete data for change detection.
@@ -644,12 +686,15 @@ def main():
     else:
         print("\n⏭️  Skipping profile enrichment (--skip-enrichment flag)")
     
-    # Step 3: Detect changes
+    # Step 3: Run migration and detect changes
     print("\n🔍 STEP 2: DETECTING CHANGES")
     print("=" * 70)
     
     conn = get_db_connection()
     try:
+        # Run migration first to ensure columns exist
+        run_migration(conn)
+        
         existing_athletes = fetch_existing_athletes(conn)
         print(f"Found {len(existing_athletes)} existing athletes in database")
     finally:
