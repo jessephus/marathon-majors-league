@@ -52,7 +52,12 @@ except ImportError:
     sys.exit(1)
 
 # Configuration
-GRAPHQL_URL = "https://graphql-prod-4d0a7c6.production.worldathletics.org/graphql"
+GRAPHQL_URL = "https://graphql-prod-4746.prod.aws.worldathletics.org/graphql"
+GRAPHQL_HEADERS = {
+    "Content-Type": "application/json",
+    "x-api-key": "da2-fcprvsdozzce5dx2baifenjwpu",
+    "x-amz-user-agent": "aws-amplify/3.0.2"
+}
 BATCH_SIZE = 25  # Number of athletes to fetch details for in one batch
 MAX_RETRIES = 5
 INITIAL_BACKOFF = 2  # seconds
@@ -190,7 +195,7 @@ def fetch_ranking_list(gender: str, limit: int = TOP_N) -> List[Dict]:
                     "query": query,
                     "variables": {"gender": gender, "limit": limit}
                 },
-                headers={"Content-Type": "application/json"},
+                headers=GRAPHQL_HEADERS,
                 timeout=30
             )
         )
