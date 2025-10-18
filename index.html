@@ -103,31 +103,6 @@
                     <div class="action-card">
                         <h3>Athlete Management</h3>
                         <button id="view-athletes" class="btn btn-primary">View All Athletes</button>
-                        <div id="athlete-management-display" style="display: none;">
-                            <div class="athlete-filters">
-                                <label>
-                                    <input type="checkbox" id="filter-confirmed" checked> Show only confirmed for NYC Marathon
-                                </label>
-                                <label>
-                                    Gender:
-                                    <select id="filter-gender">
-                                        <option value="all">All</option>
-                                        <option value="men">Men</option>
-                                        <option value="women">Women</option>
-                                    </select>
-                                </label>
-                                <label>
-                                    Sort by:
-                                    <select id="sort-athletes">
-                                        <option value="id">ID</option>
-                                        <option value="name">Name</option>
-                                        <option value="marathon_rank">Marathon Rank</option>
-                                        <option value="pb">Personal Best</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <div id="athlete-table-container"></div>
-                        </div>
                     </div>
 
                     <div class="action-card">
@@ -137,6 +112,39 @@
                     </div>
                 </div>
                 <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
+            </div>
+
+            <!-- Athlete Management Page -->
+            <div id="athlete-management-page" class="page">
+                <h2>Athlete Management</h2>
+                <p class="page-description">View and manage all athletes in the database</p>
+                
+                <div class="athlete-filters">
+                    <label>
+                        <input type="checkbox" id="filter-confirmed" checked> Show only confirmed for NYC Marathon
+                    </label>
+                    <label>
+                        Gender:
+                        <select id="filter-gender">
+                            <option value="all">All</option>
+                            <option value="men">Men</option>
+                            <option value="women">Women</option>
+                        </select>
+                    </label>
+                    <label>
+                        Sort by:
+                        <select id="sort-athletes">
+                            <option value="id">ID</option>
+                            <option value="name">Name</option>
+                            <option value="marathon_rank">Marathon Rank</option>
+                            <option value="pb">Personal Best</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <div id="athlete-table-container"></div>
+                
+                <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
             </div>
         </main>
 

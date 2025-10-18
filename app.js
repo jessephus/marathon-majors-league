@@ -140,11 +140,15 @@ function setupEventListeners() {
     document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
     document.getElementById('export-data').addEventListener('click', handleExportData);
-    document.getElementById('view-athletes').addEventListener('click', handleViewAthletes);
+    document.getElementById('view-athletes').addEventListener('click', () => {
+        showPage('athlete-management-page');
+        handleViewAthletes();
+    });
     document.getElementById('filter-confirmed').addEventListener('change', handleViewAthletes);
     document.getElementById('filter-gender').addEventListener('change', handleViewAthletes);
     document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
 }
 
 // Show page
@@ -1314,13 +1318,7 @@ function handleExportData() {
 
 // Handle view athletes
 async function handleViewAthletes() {
-    const display = document.getElementById('athlete-management-display');
     const container = document.getElementById('athlete-table-container');
-    
-    // Toggle display
-    if (display.style.display === 'none') {
-        display.style.display = 'block';
-    }
     
     // Get filter values
     const confirmedOnly = document.getElementById('filter-confirmed').checked;

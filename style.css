@@ -825,3 +825,36 @@ footer .btn {
     max-height: 600px;
     overflow-y: auto;
 }
+
+/* Athlete Management Page */
+#athlete-management-page {
+    padding: 20px;
+}
+
+#athlete-management-page .page-description {
+    text-align: center;
+    color: var(--dark-gray);
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+#athlete-management-page .athlete-filters {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#athlete-management-page #athlete-table-container {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+#athlete-management-page #back-to-commissioner {
+    margin-top: 20px;
+}
+
