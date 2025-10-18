@@ -2,488 +2,344 @@
 
 ## Overview
 
-This system automatically syncs the top 100 men and top 100 women marathon runners from World Athletics to the Postgres database. It uses intelligent delta detection to minimize API calls and database writes.
+The **sync_athletes_from_rankings.py** script is a unified solution that automates the process of:
+1. Scraping the top 100 marathon athletes (men and women) from World Athletics World Rankings
+2. Enriching athlete data by fetching their profile pages
+3. Detecting changes using SHA256 hashing
+4. Updating the Neon Postgres database with only changed records
 
-## Architecture
+This system runs automatically every 2 days via GitHub Actions and can also be triggered manually.
 
-### Components
+## Features
 
-1. **sync_top_100.py** - Main Python script that orchestrates the sync
-2. **GitHub Actions Workflow** - Automated scheduling and execution
-3. **Database Migration** - Adds sync tracking fields to the athletes table
-4. **World Athletics API** - Data source via the `worldathletics` Python package
+### ✅ Complete End-to-End Automation
+- **Scraping**: Extracts data from World Athletics World Rankings pages (not the API)
+- **Profile Fetching**: Visits each athlete's profile to get detailed information
+- **Delta Detection**: Only updates records that have actually changed
+- **Database Sync**: Efficient updates with hash-based change detection
+- **Dry-Run Mode**: Preview changes without making database modifications
 
-### How It Works
+### ✅ Data Extracted
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     GitHub Actions Cron                      │
-│                  (Every 2 days at 2:00 AM)                   │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│               Run Database Migration (if needed)             │
-│          Add: data_hash, last_fetched_at, etc.              │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│          Step 1: Fetch Rankings List (Minimal Data)         │
-│   - Top 100 men from World Athletics marathon rankings      │
-│   - Top 100 women from World Athletics marathon rankings    │
-│   - Only fetch: ID, rank, name, country                     │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│          Step 2: Load Database Snapshot                      │
-│   - Query existing athlete records for these 200 IDs        │
-│   - Retrieve: data_hash, marathon_rank, last_fetched_at     │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│          Step 3: Detect Candidates for Update                │
-│   - NEW: Not in database                                    │
-│   - RANK CHANGED: Rank differs from DB                      │
-│   - STALE: Last fetched > 7 days ago                        │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│       Step 4: Fetch Full Details (Batched, 25 at a time)    │
-│   - Only fetch details for candidates                       │
-│   - Use worldathletics package to get complete data         │
-│   - Rate limiting: 200ms between requests (5 req/sec)       │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│     Step 5: Canonicalize JSON & Compute Hash                │
-│   - Normalize athlete data structure                        │
-│   - Sort keys deterministically                             │
-│   - Compute SHA256 hash of canonical JSON                   │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│          Step 6: Upsert to Database (Hash-Guarded)           │
-│   - UPSERT with WHERE clause: only write if changed         │
-│   - Compare data_hash and marathon_rank                     │
-│   - Update last_fetched_at and last_seen_at                 │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│        Step 7: Mark Dropped Athletes                         │
-│   - Athletes no longer in top-100                           │
-│   - Set last_seen_at = NULL                                 │
-│   - Keep their data for historical purposes                 │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│              Step 8: Log Statistics & Results                │
-│   - Write sync_stats.json                                   │
-│   - Upload as GitHub Actions artifact                       │
-│   - Create issue on catastrophic failure                    │
-└─────────────────────────────────────────────────────────────┘
-```
+From **World Rankings Page**:
+- Athlete name and country
+- World ranking (current position)
+- Ranking points
+- Date of birth
+- World Athletics ID (from profile URL)
+- Profile URL
 
-## Database Schema Changes
+From **Athlete Profile Page**:
+- Official headshot URL
+- Marathon world rank (#1-#10000+)
+- Road running world rank
+- Overall world rank
+- Personal best time
+- Season best time
+- Age and date of birth
+- Sponsor information (when available)
 
-### New Fields in `athletes` Table
+### ✅ Intelligent Change Detection
 
-```sql
--- Unique constraint for World Athletics ID
-world_athletics_id VARCHAR(50) UNIQUE
+The script uses SHA256 hashing to detect if an athlete's data has actually changed:
+- **New athletes**: Added to database (top 100 ranking improved)
+- **Changed athletes**: Updated in database (PB improved, rank changed, etc.)
+- **Unchanged athletes**: Skipped (no database write)
+- **Dropped athletes**: Remain in database but with older `last_seen_at` timestamp
 
--- Sync tracking fields
-ranking_source VARCHAR(50) DEFAULT 'world_marathon'  -- Source of ranking data
-last_fetched_at TIMESTAMP WITH TIME ZONE            -- Last detail fetch time
-last_seen_at TIMESTAMP WITH TIME ZONE               -- Last time in top-100
-data_hash TEXT                                      -- SHA256 of canonical JSON
-raw_json JSONB                                      -- Complete athlete data
-
--- New indexes
-CREATE INDEX idx_athletes_data_hash ON athletes(data_hash);
-CREATE INDEX idx_athletes_last_seen ON athletes(last_seen_at);
-CREATE INDEX idx_athletes_ranking_source ON athletes(ranking_source);
-```
-
-### Migration
-
-The migration is automatically run by GitHub Actions before each sync. It can also be run manually:
-
-```bash
-psql $DATABASE_URL < migrations/add_sync_tracking_fields.sql
-```
+This means:
+- ✅ Minimal database writes (only real changes)
+- ✅ No unnecessary API calls
+- ✅ Fast execution (skip enrichment for unchanged athletes)
+- ✅ Historical data preserved (athletes who drop out of top 100 remain)
 
 ## Usage
 
-### Automated (Recommended)
-
-The sync runs automatically every 2 days at 2:00 AM UTC via GitHub Actions.
-
-**Schedule**: `0 2 */2 * *` (Every other day at 2 AM)
-
-### Manual Trigger
-
-You can manually trigger the sync from GitHub:
-
-1. Go to **Actions** tab
-2. Select **"Sync World Athletics Top 100"** workflow
-3. Click **"Run workflow"**
-4. Choose options:
-   - **Dry run**: Test mode, no database writes
-   - **Verbose**: Enable detailed logging
-
-### Local Execution
+### Command Line
 
 ```bash
-# Install dependencies
-cd scripts
-pip install -r requirements.txt
+# Dry-run mode (preview changes without updating database)
+python3 scripts/sync_athletes_from_rankings.py --dry-run
 
-# Set environment variables
-export DATABASE_URL="postgresql://..."
-export GITHUB_TOKEN="ghp_..." # Optional, for issue creation
-export GITHUB_REPO="owner/repo" # Optional, for issue creation
+# Limit to top 20 per gender (faster for testing)
+python3 scripts/sync_athletes_from_rankings.py --dry-run --limit 20
 
-# Run sync
-python sync_top_100.py
+# Skip profile enrichment (much faster, basic data only)
+python3 scripts/sync_athletes_from_rankings.py --dry-run --skip-enrichment
 
-# Dry run (no DB writes)
-python sync_top_100.py --dry-run
+# Production run (actually updates database)
+python3 scripts/sync_athletes_from_rankings.py
 
-# Verbose logging
-python sync_top_100.py --verbose
-
-# Both
-python sync_top_100.py --dry-run --verbose
+# Full top 100 sync with enrichment
+python3 scripts/sync_athletes_from_rankings.py --limit 100
 ```
 
-## Configuration
+### GitHub Actions
+
+The script runs automatically via the `.github/workflows/sync-top-100.yml` workflow:
+
+**Scheduled**: Every 2 days at 2:00 AM UTC (Tuesday/Thursday/Saturday)
+```yaml
+schedule:
+  - cron: '0 2 */2 * *'
+```
+
+**Manual Trigger**: Via Actions tab with options:
+- ✅ Dry-run mode toggle
+- ✅ Can be run from any branch
+
+**Push Trigger** (for testing):
+- Runs automatically on push to `copilot/**` or `feature/**` branches
+- Always runs in dry-run mode for safety
+- Only triggers if sync script or workflow file changes
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `GITHUB_TOKEN` | No | GitHub PAT for creating issues on failure |
-| `GITHUB_REPO` | No | Repository in format "owner/repo" |
-
-### Script Constants
-
-Edit `scripts/sync_top_100.py` to change:
-
-```python
-BATCH_SIZE = 25              # Athletes per batch detail fetch
-MAX_RETRIES = 5              # Retry attempts for failed requests
-INITIAL_BACKOFF = 2          # Initial retry backoff in seconds
-TOP_N = 100                  # Number of top athletes to sync per gender
+Required:
+```bash
+DATABASE_URL=postgresql://user:password@host:5432/dbname
 ```
 
-### Workflow Schedule
-
-Edit `.github/workflows/sync-top-100.yml`:
-
-```yaml
-schedule:
-  - cron: '0 2 */2 * *'  # Every 2 days at 2 AM UTC
+Optional:
+```bash
+DEBUG=true  # Enable verbose profile fetching debug output
 ```
 
-Common schedules:
-- Daily: `'0 2 * * *'`
-- Every 3 days: `'0 2 */3 * *'`
-- Weekly: `'0 2 * * 0'` (Sunday)
-- Monthly: `'0 2 1 * *'` (1st of month)
+## Architecture
 
-## Performance & Efficiency
+### Script Structure
 
-### Delta Detection Strategy
+```
+sync_athletes_from_rankings.py
+├── PART 1: SCRAPING RANKINGS
+│   ├── get_recent_tuesday()         # Calculate most recent Tuesday
+│   ├── scrape_rankings_page()       # Scrape single page
+│   └── scrape_all_rankings()        # Scrape all pages needed
+│
+├── PART 2: ENRICHING ATHLETE PROFILES
+│   ├── fetch_athlete_profile()      # Fetch detailed profile data
+│   ├── fetch_profile_fallback()     # Fallback HTML parsing
+│   └── enrich_athletes()            # Batch enrich all athletes
+│
+├── PART 3: DATABASE SYNC
+│   ├── compute_hash()               # SHA256 hash for change detection
+│   ├── fetch_existing_athletes()    # Get current database state
+│   ├── detect_changes()             # Compare scraped vs existing
+│   ├── upsert_athlete()             # Insert or update record
+│   └── sync_to_database()           # Batch database operations
+│
+└── MAIN ORCHESTRATION
+    └── main()                       # Coordinate all steps
+```
 
-The system uses multiple strategies to avoid unnecessary work:
+### Data Flow
 
-1. **Rank Changes**: Immediate detection of rank movements
-2. **Content Hashing**: SHA256 hash comparison detects any data changes
-3. **Staleness**: Refresh athletes not updated in 7+ days
-4. **Hash-Guarded Writes**: `WHERE data_hash IS DISTINCT FROM` prevents no-op writes
+```
+World Athletics Rankings Page
+        ↓
+   [Scrape Table]
+        ↓
+   Basic Athlete Data (name, country, rank, ID)
+        ↓
+   [Fetch Profile Pages] ← Optional (--skip-enrichment)
+        ↓
+   Enriched Data (headshot, PB, ranks)
+        ↓
+   [Compute Hashes]
+        ↓
+   [Compare with Database]
+        ↓
+   New, Changed, Unchanged Lists
+        ↓
+   [Database Sync] ← Optional (--dry-run)
+        ↓
+   Updated Neon Postgres Database
+```
 
-### Typical Performance
+## Performance
 
-| Scenario | API Calls | DB Writes | Duration |
-|----------|-----------|-----------|----------|
-| First run (200 new athletes) | 202 | 200 | ~60s |
-| No changes (all current) | 2 | 0 | ~5s |
-| 10 rank changes | 12 | 10 | ~10s |
-| 50 stale athletes | 52 | 50 | ~30s |
+### Timing Estimates
+
+| Configuration | Duration | Notes |
+|--------------|----------|-------|
+| Top 10, skip enrichment | ~10 seconds | Fast testing |
+| Top 10, with enrichment | ~45 seconds | Profile fetches slow |
+| Top 100, skip enrichment | ~30 seconds | Basic data only |
+| Top 100, with enrichment | ~6-8 minutes | Full sync with all data |
+
+**Why Enrichment is Slow:**
+- Each profile fetch takes 2-3 seconds (network latency)
+- Deliberate 3-second delay between requests (politeness)
+- 100 athletes × 3 seconds = ~5 minutes minimum
+- Plus parsing and processing time
 
 ### Rate Limiting
 
-- **200ms delay** between athlete detail requests
-- **Maximum 5 requests/second** to World Athletics
-- **25 athletes per batch** to reduce HTTP overhead
-- **Exponential backoff** on retry (2s, 4s, 8s, 16s, 32s)
+The script is intentionally polite to World Athletics servers:
 
-## Monitoring & Logging
-
-### GitHub Actions Artifacts
-
-Every run uploads `sync_stats.json`:
-
-```json
-{
-  "start_time": "2025-10-17T02:00:00Z",
-  "duration_seconds": 45.2,
-  "candidates_found": 20,
-  "new_athletes": 5,
-  "updated_athletes": 10,
-  "unchanged_athletes": 5,
-  "dropped_athletes": 2,
-  "fetch_errors": 0,
-  "db_errors": 0,
-  "success": true
-}
+```python
+DELAY_BETWEEN_REQUESTS = 2   # Rankings pages
+DELAY_BETWEEN_PROFILES = 3   # Profile pages (slower)
 ```
 
-Access artifacts:
-1. Go to **Actions** → **Workflow run**
-2. Scroll to **Artifacts** section
-3. Download `sync-stats-{run_number}`
-
-### Automatic Issue Creation
-
-On catastrophic failure, an issue is automatically created with:
-- Error message and stack trace
-- Partial statistics
-- Link to failed workflow run
-- Debug information (branch, commit, actor)
-- Labels: `sync-failure`, `automated`, `bug`
-
-### Manual Monitoring
-
-Query the database to monitor sync health:
-
-```sql
--- Recent sync activity
-SELECT 
-  gender,
-  COUNT(*) as total_athletes,
-  COUNT(*) FILTER (WHERE last_seen_at IS NOT NULL) as in_top_100,
-  MAX(last_fetched_at) as last_sync,
-  MIN(last_fetched_at) as oldest_data
-FROM athletes
-WHERE ranking_source = 'world_marathon'
-GROUP BY gender;
-
--- Athletes with stale data (>7 days)
-SELECT name, gender, marathon_rank, last_fetched_at
-FROM athletes
-WHERE ranking_source = 'world_marathon'
-  AND last_fetched_at < NOW() - INTERVAL '7 days'
-  AND last_seen_at IS NOT NULL
-ORDER BY last_fetched_at ASC;
-
--- Recent changes (within 24 hours)
-SELECT name, gender, marathon_rank, updated_at
-FROM athletes
-WHERE updated_at > NOW() - INTERVAL '24 hours'
-ORDER BY updated_at DESC;
-```
+This ensures we don't overwhelm their servers and reduces chance of being blocked.
 
 ## Error Handling
 
-### Retry Logic
+### Graceful Degradation
 
-- **Network errors**: Exponential backoff (5 attempts)
-- **Rate limiting (429)**: Automatic backoff
-- **Server errors (5xx)**: Retry with backoff
-- **Individual athlete failures**: Log warning, continue with others
+- **Missing athlete ID**: Athlete skipped, warning logged
+- **Profile fetch fails**: Uses fallback HTML parsing
+- **Network timeout**: Continues with next athlete
+- **Database error**: Transaction rolled back, error reported
+- **Parse error**: Row skipped, processing continues
 
 ### Failure Modes
 
-| Error Type | Handling | Impact |
-|------------|----------|--------|
-| Database connection | Fatal, create issue | Run fails |
-| Ranking fetch failure | Fatal, create issue | Run fails |
-| Single athlete fetch failure | Log warning, skip | Continue run |
-| Hash computation error | Log error, skip | Continue run |
-| Database write error | Log error, rollback batch | Retry next run |
+1. **No athletes found**: Script exits with error
+2. **Database connection fails**: Script exits immediately
+3. **Profile enrichment fails**: Continues with basic data only
+4. **Partial sync failure**: Creates GitHub issue with details
 
-### Recovery
+## GitHub Actions Integration
 
-Most errors are transient and will resolve on the next scheduled run. For persistent failures:
+### Workflow Features
 
-1. Check GitHub issue for details
-2. Review workflow run logs
-3. Test locally with `--dry-run --verbose`
-4. Fix underlying issue (network, API changes, schema)
-5. Manually trigger workflow to retry
+✅ **Automatic scheduling** every 2 days
+✅ **Manual trigger** with dry-run option
+✅ **Automatic migration** of database schema
+✅ **Artifact uploads** with sync statistics
+✅ **Issue creation** on failure
+✅ **Commit comments** on success (scheduled runs only)
+
+### Outputs
+
+**Artifacts** (retained for 30 days):
+- `sync_stats.json` - Detailed statistics about the sync
+- `sync_output.log` - Full console output
+
+**GitHub Issues** (on failure):
+- Automatic issue creation with:
+  - Link to failed workflow run
+  - Partial statistics
+  - Debug information
+  - Action items for fixing
+
+## Database Schema
+
+The script uses and maintains these database fields:
+
+```sql
+-- Core athlete fields
+id                           SERIAL PRIMARY KEY
+name                         VARCHAR(255)
+country                      CHAR(3)
+gender                       VARCHAR(10)
+personal_best                VARCHAR(10)
+season_best                  VARCHAR(10)
+headshot_url                 TEXT
+world_athletics_id           VARCHAR(50)
+world_athletics_profile_url  TEXT
+marathon_rank                INTEGER
+road_running_rank            INTEGER
+overall_rank                 INTEGER
+age                          INTEGER
+date_of_birth                DATE
+
+-- Sync tracking fields
+ranking_source               VARCHAR(50)   -- 'world_rankings'
+last_fetched_at              TIMESTAMP     -- Last successful fetch
+data_hash                    VARCHAR(64)   -- SHA256 for change detection
+created_at                   TIMESTAMP
+updated_at                   TIMESTAMP
+```
+
+### Indexes
+
+For performance, these indexes exist:
+- `idx_athletes_wa_id` on `world_athletics_id`
+- `idx_athletes_data_hash` on `data_hash`
+- `idx_athletes_ranking_source` on `ranking_source`
+
+## Comparison with Previous Approaches
+
+### ❌ GraphQL API Approach (Failed)
+- Used `worldathletics` Python package
+- **Problem**: API endpoints don't exist (DNS resolution fails)
+- **Status**: Abandoned
+
+### ❌ Direct GraphQL Calls (Failed)
+- Attempted to call World Athletics GraphQL directly
+- **Problem**: Endpoints hardcoded in package don't resolve
+- **Status**: Abandoned
+
+### ✅ Web Scraping Approach (Current)
+- Scrapes public World Rankings pages
+- **Advantages**:
+  - ✅ Actually works (public pages are accessible)
+  - ✅ No API authentication needed
+  - ✅ Stable HTML structure
+  - ✅ All needed data available
+- **Disadvantages**:
+  - ⚠️ Slower than API would be
+  - ⚠️ Subject to HTML structure changes
+  - ⚠️ Need to be polite with rate limiting
 
 ## Troubleshooting
 
-### Issue: No athletes being updated
+### "No athletes found on page"
+- Rankings page structure may have changed
+- Check URL is correct: `https://worldathletics.org/world-rankings/marathon/men`
+- Inspect page source for `<tr data-athlete-url>` elements
 
-**Cause**: Data hasn't changed, hash matches
+### "No __NEXT_DATA__ found"
+- Profile page structure changed
+- Script falls back to HTML parsing automatically
+- May get less data but should still work
 
-**Solution**: This is expected behavior. Check:
-```bash
-python sync_top_100.py --dry-run --verbose
-```
+### "Database connection failed"
+- Check `DATABASE_URL` environment variable is set
+- Verify Neon database is active (not paused)
+- Check network connectivity
 
-### Issue: All athletes marked as candidates
+### "Hash collision" or "Duplicate athletes"
+- Rare, but possible if two athletes have identical data
+- Check `world_athletics_id` uniqueness constraint
 
-**Cause**: `data_hash` field is NULL in database
+## Future Improvements
 
-**Solution**: Run migration:
-```bash
-psql $DATABASE_URL < migrations/add_sync_tracking_fields.sql
-```
+### Potential Enhancements
+- [ ] Parallel profile fetching (with rate limiting)
+- [ ] Caching profile HTML to avoid re-fetching unchanged athletes
+- [ ] Support for other distances (half marathon, 10K, etc.)
+- [ ] Email notifications on sync failure
+- [ ] Slack/Discord webhook integration
+- [ ] Historical ranking tracking over time
+- [ ] Performance analytics and trends
 
-### Issue: worldathletics package errors
+### If World Athletics API Becomes Available
+If a working API is discovered or released:
+1. Keep web scraping as fallback
+2. Add API integration as primary method
+3. Compare both sources for accuracy
+4. Gradually phase out scraping if API is reliable
 
-**Cause**: API schema changes or package updates
+## Related Documentation
 
-**Solution**: 
-1. Check package documentation
-2. Update package: `pip install --upgrade worldathletics`
-3. Modify script to match new API
-
-### Issue: Rate limiting (429 errors)
-
-**Cause**: Too many requests to World Athletics
-
-**Solution**: Increase delay in script:
-```python
-time.sleep(0.5)  # Change from 0.2 to 0.5 (2 req/sec)
-```
-
-### Issue: Database connection timeout
-
-**Cause**: Neon database suspended or network issues
-
-**Solution**:
-1. Check Neon console for database status
-2. Verify `DATABASE_URL` secret in GitHub
-3. Test connection locally
-
-## Testing
-
-### Dry Run Mode
-
-Always test changes with dry-run first:
-
-```bash
-python sync_top_100.py --dry-run --verbose
-```
-
-This will:
-- ✅ Fetch rankings and athlete details
-- ✅ Compute hashes and detect changes
-- ✅ Show what would be written
-- ❌ NOT write to database
-- ❌ NOT commit transactions
-
-### Unit Testing
-
-Test individual components:
-
-```python
-from sync_top_100 import canonical_hash, canonicalize_athlete
-
-# Test canonicalization
-athlete = {'id': '123', 'name': 'Test', 'dob': '1990-01-01'}
-canonical = canonicalize_athlete(athlete)
-hash1 = canonical_hash(canonical)
-hash2 = canonical_hash(canonical)  # Should be identical
-
-assert hash1 == hash2, "Hashing is not deterministic!"
-```
-
-### Integration Testing
-
-1. Run against test database first
-2. Use `--dry-run` to preview changes
-3. Check `sync_stats.json` output
-4. Verify database state with SQL queries
-
-## Future Enhancements
-
-### Possible Improvements
-
-1. **Parallel Fetching**: Use `asyncio` and `aiohttp` for concurrent requests
-2. **WebSocket Updates**: Real-time ranking changes
-3. **Historical Tracking**: Store rank change history
-4. **Athlete Comparison**: Track performance trends
-5. **Smart Refresh**: Use World Athletics' `lastModified` field if available
-6. **Sponsor Data**: Find reliable source for sponsor information
-7. **Result Integration**: Sync recent race results automatically
-8. **Cache Layer**: Redis for frequently accessed athlete data
-
-### Sponsor Data
-
-The `sponsor` field is included in the schema but not currently populated. Potential sources:
-
-- Athlete bio/description parsing
-- Manual curation via CSV import
-- Third-party athletics databases
-- Social media scraping (with consent)
-
-To add sponsor data manually:
-
-```sql
-UPDATE athletes
-SET sponsor = 'Nike'
-WHERE world_athletics_id = '14208194';
-```
-
-## Security Considerations
-
-### Secrets Management
-
-- `DATABASE_URL` stored as GitHub secret
-- `GITHUB_TOKEN` uses built-in Actions token (read/write permissions)
-- No API keys needed (World Athletics API is public)
-
-### Data Privacy
-
-- Only public World Athletics data is collected
-- No personal information beyond public profiles
-- GDPR compliance: Data subject to athlete's public profile settings
-
-### Rate Limiting Respect
-
-- Maximum 5 requests/second (well below typical limits)
-- Exponential backoff on errors
-- Batch requests to minimize load
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Overall system architecture
+- **[NEON_SETUP.md](../NEON_SETUP.md)** - Database setup guide
+- **[MIGRATION.md](MIGRATION.md)** - Migration history from Blob Storage
+- **[WORLDATHLETICS_API_DECISION.md](WORLDATHLETICS_API_DECISION.md)** - Why GraphQL failed
 
 ## Support
 
-### Documentation
-
-- This file: `docs/SYNC_TOP_100.md`
-- Script docstrings: `scripts/sync_top_100.py`
-- GitHub Actions: `.github/workflows/sync-top-100.yml`
-
-### Getting Help
-
-1. Check troubleshooting section above
-2. Review GitHub Actions logs
-3. Run locally with `--verbose` flag
-4. Open issue with sync-failure details
-
-### Contributing
-
-To improve the sync system:
-
-1. Test changes locally with `--dry-run`
-2. Update this documentation
-3. Add unit tests for new functionality
-4. Submit PR with clear description
+For issues or questions:
+1. Check GitHub Actions workflow logs
+2. Review automatically created issues
+3. Test locally with `--dry-run --limit 10`
+4. Open a new issue with full output
 
 ---
 
 **Last Updated**: October 17, 2025
-**Version**: 1.0.0
+**Script Version**: 1.0.0 (Unified Web Scraping Approach)

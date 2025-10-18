@@ -32,7 +32,7 @@ on:
       - 'feature/**'
     paths:
       - '.github/workflows/sync-top-100.yml'
-      - 'scripts/sync_top_100.py'
+      - 'scripts/sync_athletes_from_rankings.py'
       - 'migrations/add_sync_tracking_fields.sql'
 
 permissions:
@@ -58,18 +58,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r scripts/requirements.txt
-          # Temporarily install worldathletics for testing
-          pip install worldathletics
+          pip install requests beautifulsoup4 psycopg2-binary
           # Verify installations
           python -c "import psycopg2; print('✓ psycopg2 installed')"
           python -c "import requests; print('✓ requests installed')"
-          python -c "import worldathletics; print('✓ worldathletics installed (for testing)')"
+          python -c "from bs4 import BeautifulSoup; print('✓ beautifulsoup4 installed')"
           echo "✓ All dependencies installed successfully"
-      
-      - name: Test World Athletics API connectivity
-        run: |
-          python scripts/test_wa_connection.py || echo "⚠️ Connection test failed, but continuing..."
       
       - name: Run migration (add sync tracking fields)
         env:
@@ -106,30 +100,27 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
         run: |
           DRY_RUN_FLAG=""
-          VERBOSE_FLAG=""
           
           # Default to dry-run for push events (testing), real run for schedule/manual
           if [ "${{ github.event_name }}" = "push" ]; then
             echo "📋 Push event detected - running in DRY RUN mode by default"
             DRY_RUN_FLAG="--dry-run"
-            VERBOSE_FLAG="--verbose"
           elif [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
             DRY_RUN_FLAG="--dry-run"
           fi
           
-          if [ "${{ github.event.inputs.verbose }}" = "true" ]; then
-            VERBOSE_FLAG="--verbose"
-          fi
-          
-          python scripts/sync_top_100.py $DRY_RUN_FLAG $VERBOSE_FLAG
+          python scripts/sync_athletes_from_rankings.py $DRY_RUN_FLAG
       
       - name: Upload sync statistics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sync-stats-${{ github.run_number }}
-          path: sync_stats.json
+          path: |
+            sync_stats.json
+            sync_output.log
           retention-days: 30
+          if-no-files-found: ignore
       
       - name: Comment on commit (if scheduled)
         if: github.event_name == 'schedule' && success()
