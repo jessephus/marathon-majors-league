@@ -835,9 +835,9 @@ def main():
         
         # Get IDs of existing athletes by gender
         existing_men_ids = {wa_id for wa_id, data in existing_athletes.items() 
-                           if data.get('gender') == 'M'}
+                           if data.get('gender') == 'men'}
         existing_women_ids = {wa_id for wa_id, data in existing_athletes.items() 
-                             if data.get('gender') == 'F'}
+                             if data.get('gender') == 'women'}
         
         # Find dropped athletes beyond top 100
         dropped_men = find_dropped_athletes('men', existing_men_ids, top_100_men_ids, rank_date)
