@@ -268,12 +268,24 @@ def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str) -> Optio
             # Basic info
             basic_info = competitor.get('basicData', {})
             if basic_info.get('birthDate'):
-                # Calculate age
-                birth_date = datetime.strptime(basic_info['birthDate'], '%Y-%m-%d')
-                age = (datetime.now() - birth_date).days // 365
-                result['age'] = age
-                result['date_of_birth'] = basic_info['birthDate']
-                print(f"    ✓ Age: {age}")
+                # Calculate age - handle multiple date formats
+                birth_date_str = basic_info['birthDate']
+                try:
+                    # Try ISO format first (YYYY-MM-DD)
+                    birth_date = datetime.strptime(birth_date_str, '%Y-%m-%d')
+                except ValueError:
+                    try:
+                        # Try World Athletics format (DD MMM YYYY)
+                        birth_date = datetime.strptime(birth_date_str, '%d %b %Y')
+                    except ValueError:
+                        print(f"    ⚠️  Could not parse birth date: {birth_date_str}")
+                        birth_date = None
+                
+                if birth_date:
+                    age = (datetime.now() - birth_date).days // 365
+                    result['age'] = age
+                    result['date_of_birth'] = birth_date.strftime('%Y-%m-%d')
+                    print(f"    ✓ Age: {age}")
             
             # Sponsor (may not always be available)
             # This might be in different places depending on the page structure
