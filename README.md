@@ -15,9 +15,10 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 - 📱 **Mobile-First Design**: Optimized for watching and managing on your phone
 - 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
 - ⚡ **Live Results Updates**: Real-time standings throughout the race with split times
-- � **Commissioner Dashboard**: Complete game management and result entry tools
+- 👑 **Commissioner Dashboard**: Complete game management and result entry tools
 - 💾 **Cloud Storage**: Reliable game state persistence with Neon Postgres database
 - 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
+- 🔄 **Automated Data Sync**: Top 100 marathon athletes automatically synced from World Athletics every 2 days
 
 ## 🎯 How to Play
 
@@ -129,6 +130,7 @@ vercel dev
 | Endpoint | Purpose |
 |----------|---------|
 | `/api/athletes` | Retrieve elite athlete database |
+| `/api/races` | Manage marathon events and competitions |
 | `/api/game-state` | Game configuration and player management |
 | `/api/rankings` | Store and retrieve player athlete rankings |
 | `/api/draft` | Execute snake draft and save team assignments |
@@ -137,7 +139,9 @@ vercel dev
 
 ### Data Structure
 The application uses Neon Postgres with these key tables:
-- **`athletes`** - Elite runner profiles with personal bests
+- **`athletes`** - Elite runner profiles with personal bests, rankings, and extended data
+- **`races`** - Marathon events and competitions (currently 2025 NYC Marathon)
+- **`athlete_races`** - Links athletes to specific races they're competing in
 - **`games`** - Game settings, player list, and draft status
 - **`player_rankings`** - Each player's ranked athlete preferences
 - **`draft_teams`** - Post-draft team assignments
@@ -148,17 +152,33 @@ Each game instance maintains isolated data through unique game IDs.
 
 ## 🏃‍♀️ Elite Athletes Database
 
-The game features the official New York City Marathon elite field:
-- **33 men's elite runners** with confirmed personal bests
-- **25 women's elite runners** with official time records
+The game features automatically synchronized athlete data from World Athletics:
+- **Top 100 men** marathon runners from official World Athletics rankings
+- **Top 100 women** marathon runners from official World Athletics rankings  
+- **Automatic sync every 2 days** via GitHub Actions
 - **Complete athlete profiles** including country representation and headshot photos
+- **Extended athlete data** including World Athletics rankings and IDs
 - **Real-time updates** as race results come in
 
 All athlete data includes:
 - Full name and country code
 - Personal best marathon time
 - Official headshot (when available)
-- Unique athlete ID for tracking
+- Unique World Athletics ID for tracking
+- World Athletics profile and rankings (marathon, road running, overall)
+- Extended fields for age, sponsor, and season best
+
+### Automated Sync System
+
+The athlete database is kept current through an automated GitHub Actions workflow that:
+- Runs every 2 days at 2:00 AM UTC
+- Fetches the top 100 men and women from World Athletics marathon rankings
+- Uses intelligent delta detection to minimize API calls
+- Only updates records when data actually changes (via SHA256 hash comparison)
+- Can be manually triggered anytime from the Actions tab
+- Automatically creates GitHub issues on sync failures
+
+For more details, see the **[Sync Top 100 Guide](docs/SYNC_TOP_100.md)**.
 
 ## 🔧 Configuration
 
@@ -177,14 +197,17 @@ Customizable options in the application:
 
 ## 📚 Additional Documentation
 
-- **[Neon Setup Guide](NEON_SETUP.md)** - Database setup and initialization instructions
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed technical architecture and system design
+**[📖 Complete Documentation Index](docs/README.md)** - Find all documentation organized by topic and role
+
+### Quick Links
+
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
-- **[Development Guide](docs/DEVELOPMENT.md)** - Development environment and code standards
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - Detailed setup instructions
-- **[Live Results Feature](docs/LIVE_RESULTS_FEATURE.md)** - Real-time update system documentation
-- **[Migration Guide](docs/MIGRATION.md)** - Database migration history and decisions
-- **[Changelog](docs/CHANGELOG.md)** - Project evolution and version history
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy your own instance to Vercel
+- **[Development Guide](docs/DEVELOPMENT.md)** - Local development and code standards
+- **[Database Guide](docs/DATABASE.md)** - Schema, initialization, and troubleshooting
+- **[Sync Top 100 Guide](docs/SYNC_TOP_100.md)** - Automated World Athletics data sync
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Technical architecture and design
+- **[Changelog](docs/CHANGELOG.md)** - Version history and updates
 
 ## 🤝 Contributing
 

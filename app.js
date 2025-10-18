@@ -140,7 +140,16 @@ function setupEventListeners() {
     document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
     document.getElementById('export-data').addEventListener('click', handleExportData);
+    document.getElementById('view-athletes').addEventListener('click', () => {
+        showPage('athlete-management-page');
+        handleViewAthletes();
+    });
+    document.getElementById('filter-confirmed').addEventListener('change', handleViewAthletes);
+    document.getElementById('filter-missing-wa-id').addEventListener('change', handleViewAthletes);
+    document.getElementById('filter-gender').addEventListener('change', handleViewAthletes);
+    document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
 }
 
 // Show page
@@ -1306,6 +1315,259 @@ function handleExportData() {
     a.href = url;
     a.download = 'fantasy-ny-marathon-data.json';
     a.click();
+}
+
+// Handle view athletes
+async function handleViewAthletes() {
+    const container = document.getElementById('athlete-table-container');
+    
+    // Get filter values
+    const confirmedOnly = document.getElementById('filter-confirmed').checked;
+    const missingWaIdOnly = document.getElementById('filter-missing-wa-id').checked;
+    const genderFilter = document.getElementById('filter-gender').value;
+    const sortBy = document.getElementById('sort-athletes').value;
+    
+    try {
+        container.innerHTML = '<p>Loading athletes...</p>';
+        
+        // Fetch all athletes from API with confirmedOnly parameter
+        const response = await fetch(`${API_BASE}/api/athletes?confirmedOnly=${confirmedOnly}`);
+        if (!response.ok) throw new Error('Failed to load athletes');
+        const athletesData = await response.json();
+        
+        // Combine men and women
+        let allAthletes = [
+            ...athletesData.men.map(a => ({...a, gender: 'men'})),
+            ...athletesData.women.map(a => ({...a, gender: 'women'}))
+        ];
+        
+        // Apply gender filter
+        if (genderFilter !== 'all') {
+            allAthletes = allAthletes.filter(a => a.gender === genderFilter);
+        }
+        
+        // Apply missing WA ID filter
+        if (missingWaIdOnly) {
+            allAthletes = allAthletes.filter(a => !a.worldAthleticsId || a.worldAthleticsId.trim() === '');
+        }
+        
+        // Sort athletes
+        allAthletes.sort((a, b) => {
+            if (sortBy === 'id') return a.id - b.id;
+            if (sortBy === 'name') return a.name.localeCompare(b.name);
+            if (sortBy === 'marathon_rank') {
+                const rankA = a.marathonRank || 9999;
+                const rankB = b.marathonRank || 9999;
+                return rankA - rankB;
+            }
+            if (sortBy === 'pb') {
+                const pbA = a.pb || '9:99:99';
+                const pbB = b.pb || '9:99:99';
+                return pbA.localeCompare(pbB);
+            }
+            return 0;
+        });
+        
+        // Display table
+        if (allAthletes.length === 0) {
+            container.innerHTML = '<p>No athletes found.</p>';
+            return;
+        }
+        
+        const table = document.createElement('table');
+        table.className = 'athlete-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Country</th>
+                    <th>Gender</th>
+                    <th>Personal Best</th>
+                    <th>Marathon Rank</th>
+                    <th>Age</th>
+                    <th>World Athletics ID</th>
+                    <th>NYC Confirmed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${allAthletes.map(athlete => `
+                    <tr data-athlete-id="${athlete.id}">
+                        <td>${athlete.id}</td>
+                        <td>${athlete.name}</td>
+                        <td>${athlete.country}</td>
+                        <td>${athlete.gender === 'men' ? 'M' : 'W'}</td>
+                        <td>${athlete.pb || 'N/A'}</td>
+                        <td>${athlete.marathonRank ? '#' + athlete.marathonRank : 'N/A'}</td>
+                        <td>${athlete.age || 'N/A'}</td>
+                        <td class="wa-id-cell">
+                            <input 
+                                type="text" 
+                                class="wa-id-input" 
+                                data-athlete-id="${athlete.id}"
+                                value="${athlete.worldAthleticsId || ''}" 
+                                placeholder="Enter WA ID"
+                                title="World Athletics ID (e.g., 14208500)"
+                            />
+                        </td>
+                        <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
+                        <td class="actions-cell">
+                            <button 
+                                class="btn-save-wa-id btn-small" 
+                                data-athlete-id="${athlete.id}"
+                                title="Save World Athletics ID"
+                            >Save</button>
+                            <button 
+                                class="btn-sync-athlete btn-small btn-secondary" 
+                                data-athlete-id="${athlete.id}"
+                                data-athlete-name="${athlete.name}"
+                                data-wa-id="${athlete.worldAthleticsId || ''}"
+                                title="Sync athlete data from World Athletics"
+                                ${!athlete.worldAthleticsId ? 'disabled' : ''}
+                            >Sync</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+        
+        container.innerHTML = `
+            <p><strong>${allAthletes.length} athlete(s) found</strong></p>
+            <div class="table-scroll">
+                ${table.outerHTML}
+            </div>
+        `;
+        
+        // Add event listeners to save buttons
+        document.querySelectorAll('.btn-save-wa-id').forEach(button => {
+            button.addEventListener('click', handleSaveWorldAthleticsId);
+        });
+        
+        // Add event listeners to sync buttons
+        document.querySelectorAll('.btn-sync-athlete').forEach(button => {
+            button.addEventListener('click', handleSyncAthlete);
+        });
+        
+    } catch (error) {
+        console.error('Error loading athletes:', error);
+        container.innerHTML = '<p style="color: red;">Error loading athletes. Please try again.</p>';
+    }
+}
+
+// Handle saving World Athletics ID
+async function handleSaveWorldAthleticsId(event) {
+    const button = event.target;
+    const athleteId = button.getAttribute('data-athlete-id');
+    const input = document.querySelector(`.wa-id-input[data-athlete-id="${athleteId}"]`);
+    const worldAthleticsId = input.value.trim();
+    
+    // Confirm if removing ID
+    if (!worldAthleticsId) {
+        if (!confirm('Are you sure you want to remove the World Athletics ID for this athlete?')) {
+            return;
+        }
+    }
+    
+    try {
+        button.disabled = true;
+        button.textContent = 'Saving...';
+        
+        const response = await fetch(`${API_BASE}/api/update-athlete`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: parseInt(athleteId),
+                worldAthleticsId: worldAthleticsId
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update');
+        }
+        
+        const result = await response.json();
+        
+        // Show success feedback
+        button.textContent = 'Saved!';
+        button.style.backgroundColor = '#4CAF50';
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            button.textContent = 'Save';
+            button.style.backgroundColor = '';
+            button.disabled = false;
+        }, 2000);
+        
+        console.log('Updated athlete:', result.athlete);
+        
+    } catch (error) {
+        console.error('Error saving World Athletics ID:', error);
+        alert('Failed to save World Athletics ID: ' + error.message);
+        button.textContent = 'Save';
+        button.disabled = false;
+    }
+}
+
+// Handle syncing individual athlete
+async function handleSyncAthlete(event) {
+    const button = event.target;
+    const athleteId = button.getAttribute('data-athlete-id');
+    const athleteName = button.getAttribute('data-athlete-name');
+    const worldAthleticsId = button.getAttribute('data-wa-id');
+    
+    if (!worldAthleticsId) {
+        alert('Cannot sync athlete without a World Athletics ID. Please add the ID first.');
+        return;
+    }
+    
+    try {
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = 'Syncing...';
+        button.style.opacity = '0.6';
+        
+        const response = await fetch(`${API_BASE}/api/sync-athlete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: parseInt(athleteId),
+                worldAthleticsId: worldAthleticsId
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to sync athlete');
+        }
+        
+        const result = await response.json();
+        
+        // Show success feedback
+        button.textContent = 'Synced!';
+        button.style.backgroundColor = '#4CAF50';
+        button.style.opacity = '1';
+        
+        // Reload the athlete table to show updated data
+        setTimeout(async () => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+            button.disabled = false;
+            
+            // Refresh the table
+            await handleViewAthletes();
+        }, 2000);
+        
+        console.log('Synced athlete:', result.athlete);
+        
+    } catch (error) {
+        console.error('Error syncing athlete:', error);
+        alert('Failed to sync athlete: ' + error.message + '\n\nThis may be because:\n- The World Athletics ID is incorrect\n- The athlete is not in the current rankings\n- Network or server error');
+        button.textContent = 'Sync';
+        button.style.opacity = '1';
+        button.disabled = false;
+    }
 }
 
 // Initialize when DOM is loaded

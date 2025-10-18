@@ -1,4 +1,4 @@
-import { initializeDatabase, seedAthletes, getAllAthletes } from './db.js';
+import { initializeDatabase, seedAthletes, getAllAthletes, seedNYMarathon2025 } from './db.js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
@@ -45,22 +45,31 @@ export default async function handler(req, res) {
       console.log('Checking for World Athletics columns...');
       try {
         // Try to select the new columns
-        await sql`SELECT world_athletics_id FROM athletes LIMIT 1`;
-        console.log('World Athletics columns already exist');
+        await sql`SELECT world_athletics_id, overall_rank, age, sponsor, season_best FROM athletes LIMIT 1`;
+        console.log('All extended columns already exist');
       } catch (error) {
         if (error.message.includes('does not exist') || error.message.includes('column')) {
-          console.log('Adding World Athletics columns...');
+          console.log('Adding missing columns...');
           try {
-            // Add the new columns
+            // Add the World Athletics columns if missing
             await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS world_athletics_id VARCHAR(50)`;
             await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS world_athletics_profile_url TEXT`;
             await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS marathon_rank INTEGER`;
             await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS road_running_rank INTEGER`;
             
-            // Add index
-            await sql`CREATE INDEX IF NOT EXISTS idx_athletes_wa_id ON athletes(world_athletics_id)`;
+            // Add new extended columns
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS overall_rank INTEGER`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS age INTEGER`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS date_of_birth DATE`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS sponsor VARCHAR(255)`;
+            await sql`ALTER TABLE athletes ADD COLUMN IF NOT EXISTS season_best VARCHAR(10)`;
             
-            console.log('World Athletics columns added successfully');
+            // Add indexes
+            await sql`CREATE INDEX IF NOT EXISTS idx_athletes_wa_id ON athletes(world_athletics_id)`;
+            await sql`CREATE INDEX IF NOT EXISTS idx_athletes_marathon_rank ON athletes(marathon_rank)`;
+            await sql`CREATE INDEX IF NOT EXISTS idx_athletes_overall_rank ON athletes(overall_rank)`;
+            
+            console.log('Extended columns added successfully');
           } catch (alterError) {
             console.error('Error adding columns:', alterError);
             // Don't fail - table still works without these columns
@@ -143,7 +152,10 @@ export default async function handler(req, res) {
         // Seed athletes into database
         await seedAthletes(athletesData);
         
-        message = 'Database initialized and athletes seeded successfully';
+        // Seed the 2025 NY Marathon race
+        await seedNYMarathon2025();
+        
+        message = 'Database initialized, athletes seeded, and NY Marathon 2025 race created successfully';
       } catch (seedError) {
         console.error('Seeding error:', seedError);
         // Continue - database is connected even if seeding fails

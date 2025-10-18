@@ -89,8 +89,11 @@ export default async function handler(req, res) {
         }
       }
       
+      // Check if confirmedOnly parameter is set (defaults to true for game pages)
+      const confirmedOnly = req.query.confirmedOnly !== 'false';
+      
       // Get all athletes from database
-      let athletes = await getAllAthletes();
+      let athletes = await getAllAthletes(confirmedOnly);
       
       // If database is empty, auto-seed it
       if ((!athletes.men || athletes.men.length === 0) && (!athletes.women || athletes.women.length === 0)) {
@@ -105,7 +108,7 @@ export default async function handler(req, res) {
           await seedAthletes(athletesData);
           
           // Get athletes again after seeding
-          athletes = await getAllAthletes();
+          athletes = await getAllAthletes(confirmedOnly);
           console.log('Auto-seeding successful');
         } catch (seedError) {
           console.error('Auto-seeding failed:', seedError);

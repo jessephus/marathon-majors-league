@@ -1,0 +1,7 @@
+# Python dependencies for World Athletics sync script
+
+# Database connection
+psycopg2-binary==2.9.9
+
+# HTTP requests (for GraphQL API calls)
+requests==2.31.0
