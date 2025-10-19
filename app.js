@@ -270,21 +270,42 @@ function displayAthleteTable(gender) {
     rankings.forEach((athlete, index) => {
         const row = document.createElement('tr');
         row.className = 'ranked-row';
-        row.draggable = true;
+        row.draggable = false; // Only enable when handle is grabbed
         row.dataset.athleteId = athlete.id;
         row.dataset.gender = gender;
         row.dataset.rankIndex = index;
         
-        // Add drag event listeners (desktop)
+        // Drag handle cell (first column)
+        const dragHandleCell = document.createElement('td');
+        dragHandleCell.className = 'drag-handle-cell';
+        dragHandleCell.innerHTML = `
+            <div class="drag-handle" title="Drag to reorder">
+                <span class="drag-grip">⋮⋮</span>
+            </div>
+        `;
+        
+        const dragHandle = dragHandleCell.querySelector('.drag-handle');
+        
+        // Desktop: Enable dragging only when handle is clicked
+        dragHandle.addEventListener('mousedown', (e) => {
+            row.draggable = true;
+        });
+        
+        // Desktop drag event listeners (on the row)
         row.addEventListener('dragstart', handleTableRowDragStart);
         row.addEventListener('dragover', handleTableRowDragOver);
         row.addEventListener('drop', handleTableRowDrop);
-        row.addEventListener('dragend', handleTableRowDragEnd);
+        row.addEventListener('dragend', (e) => {
+            handleTableRowDragEnd.call(row, e);
+            row.draggable = false; // Disable after drag
+        });
         
-        // Add touch event listeners (mobile)
-        row.addEventListener('touchstart', handleTableRowTouchStart, { passive: false });
-        row.addEventListener('touchmove', handleTableRowTouchMove, { passive: false });
-        row.addEventListener('touchend', handleTableRowTouchEnd, { passive: false });
+        // Mobile: Touch event listeners on the handle only
+        dragHandle.addEventListener('touchstart', handleTableRowTouchStart.bind(row), { passive: false });
+        dragHandle.addEventListener('touchmove', handleTableRowTouchMove.bind(row), { passive: false });
+        dragHandle.addEventListener('touchend', handleTableRowTouchEnd.bind(row), { passive: false });
+        
+        row.appendChild(dragHandleCell);
         
         // Rank cell (editable)
         const rankCell = document.createElement('td');
@@ -438,54 +459,28 @@ function handleTableRowDragEnd(e) {
     draggedTableRow = null;
 }
 
-// Mobile touch handlers for table rows
-let touchTimeout = null;
-let dragCancelled = false;
-let initialTouchY = 0;
-
+// Mobile touch handlers for drag handle
 function handleTableRowTouchStart(e) {
-    // Don't interfere if touching an input field
-    if (e.target.tagName === 'INPUT') {
-        return;
-    }
+    // Start dragging immediately when handle is touched (this is bound to the row)
+    const row = this;
     
-    // Store initial touch for later comparison
-    initialTouchY = e.touches[0].clientY;
-    draggedTableRow = this;
+    isDragging = true;
+    draggedTableRow = row;
     touchStartY = e.touches[0].clientY;
-    isDragging = false;
-    dragCancelled = false;
+    touchCurrentY = touchStartY;
     
-    // Wait 400ms - if finger hasn't moved much, activate drag mode
-    touchTimeout = setTimeout(() => {
-        if (draggedTableRow === this && !dragCancelled) {
-            isDragging = true;
-            this.style.opacity = '0.8';
-            this.style.zIndex = '1000';
-            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
-            this.style.backgroundColor = '#90caf9';
-        }
-    }, 400);
+    row.style.opacity = '0.8';
+    row.style.zIndex = '1000';
+    row.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+    row.style.backgroundColor = '#90caf9';
+    
+    e.preventDefault(); // Prevent default touch behavior on handle
 }
 
 function handleTableRowTouchMove(e) {
-    if (!draggedTableRow) return;
+    if (!isDragging || !draggedTableRow) return;
     
-    touchCurrentY = e.touches[0].clientY;
-    const totalDeltaY = touchCurrentY - initialTouchY;
-    
-    // If user moves finger more than 15px before timeout, they're scrolling
-    if (!isDragging && Math.abs(totalDeltaY) > 15) {
-        clearTimeout(touchTimeout);
-        dragCancelled = true;
-        draggedTableRow = null;
-        return; // Let browser handle scroll
-    }
-    
-    // Only handle drag if we're in drag mode
-    if (!isDragging) return;
-    
-    // Now we're dragging - prevent scrolling
+    // Prevent scrolling while dragging
     e.preventDefault();
     
     const deltaY = touchCurrentY - touchStartY;
@@ -525,18 +520,7 @@ function handleTableRowTouchMove(e) {
 }
 
 function handleTableRowTouchEnd(e) {
-    // Clean up timeout if touch ended before drag started
-    if (touchTimeout) {
-        clearTimeout(touchTimeout);
-        touchTimeout = null;
-    }
-    
-    if (!draggedTableRow) {
-        // Reset flags even if no dragged row
-        dragCancelled = false;
-        isDragging = false;
-        return;
-    }
+    if (!draggedTableRow) return;
     
     if (isDragging) {
         // Prevent click events from firing
