@@ -440,6 +440,7 @@ function handleTableRowDragEnd(e) {
 
 // Mobile touch handlers for table rows
 let touchTimeout = null;
+let dragCancelled = false;
 
 function handleTableRowTouchStart(e) {
     // Don't interfere if touching an input field
@@ -450,10 +451,11 @@ function handleTableRowTouchStart(e) {
     draggedTableRow = this;
     touchStartY = e.touches[0].clientY;
     isDragging = false;
+    dragCancelled = false;
     
     // Add a longer delay (500ms) to allow scrolling - only drag if held still
     touchTimeout = setTimeout(() => {
-        if (draggedTableRow === this) {
+        if (draggedTableRow === this && !dragCancelled) {
             isDragging = true;
             this.style.opacity = '0.8';
             this.style.zIndex = '1000';
@@ -469,11 +471,13 @@ function handleTableRowTouchMove(e) {
     touchCurrentY = e.touches[0].clientY;
     const deltaY = touchCurrentY - touchStartY;
     
-    // If user moves finger before timeout, cancel drag and allow scrolling
-    if (!isDragging && Math.abs(deltaY) > 5) {
+    // If user moves finger quickly before timeout, cancel drag and allow scrolling
+    if (!isDragging && !dragCancelled && Math.abs(deltaY) > 10) {
         clearTimeout(touchTimeout);
+        dragCancelled = true;
         draggedTableRow = null;
-        return;
+        touchTimeout = null;
+        return; // Allow normal scrolling
     }
     
     // Only prevent default and handle drag if we're actually dragging
@@ -523,7 +527,12 @@ function handleTableRowTouchEnd(e) {
         touchTimeout = null;
     }
     
-    if (!draggedTableRow) return;
+    if (!draggedTableRow) {
+        // Reset flags even if no dragged row
+        dragCancelled = false;
+        isDragging = false;
+        return;
+    }
     
     if (isDragging) {
         // Prevent click events from firing
@@ -557,6 +566,7 @@ function handleTableRowTouchEnd(e) {
     }
     draggedTableRow = null;
     isDragging = false;
+    dragCancelled = false;
 }
 
 // Handle rank change from table input
