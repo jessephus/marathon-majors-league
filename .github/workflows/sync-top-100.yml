@@ -139,6 +139,12 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            
+            if (!fs.existsSync('sync_stats.json')) {
+              console.log('Stats file not found - skipping comment');
+              return;
+            }
+            
             const stats = JSON.parse(fs.readFileSync('sync_stats.json', 'utf8'));
             
             const body = `
@@ -174,9 +180,13 @@ jobs:
             let stats = { duration_seconds: 0, fetch_errors: 0, db_errors: 0 };
             
             try {
-              stats = JSON.parse(fs.readFileSync('sync_stats.json', 'utf8'));
+              if (fs.existsSync('sync_stats.json')) {
+                stats = JSON.parse(fs.readFileSync('sync_stats.json', 'utf8'));
+              } else {
+                console.log('Stats file not found - using defaults');
+              }
             } catch (e) {
-              console.log('Could not read stats file');
+              console.log('Could not read stats file:', e.message);
             }
             
             const body = `
