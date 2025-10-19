@@ -483,13 +483,14 @@ function handleTableRowTouchMove(e) {
     // Prevent scrolling while dragging
     e.preventDefault();
     
+    const touch = e.touches[0];
+    touchCurrentY = touch.clientY; // Update current touch position
     const deltaY = touchCurrentY - touchStartY;
     
     // Visual feedback - move the row
     draggedTableRow.style.transform = `translateY(${deltaY}px)`;
     
     // Find which row we're hovering over by temporarily hiding the dragged row
-    const touch = e.touches[0];
     
     // Temporarily hide the dragged row from pointer events to detect what's underneath
     const originalPointerEvents = draggedTableRow.style.pointerEvents;

@@ -1887,6 +1887,11 @@ footer .btn {
 }
 
 /* Drag handle column */
+.drag-handle-header {
+    width: 40px;
+    padding: 8px 4px !important;
+}
+
 .drag-handle-cell {
     width: 40px;
     text-align: center;
