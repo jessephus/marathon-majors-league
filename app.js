@@ -439,6 +439,8 @@ function handleTableRowDragEnd(e) {
 }
 
 // Mobile touch handlers for table rows
+let touchTimeout = null;
+
 function handleTableRowTouchStart(e) {
     // Don't interfere if touching an input field
     if (e.target.tagName === 'INPUT') {
@@ -449,8 +451,8 @@ function handleTableRowTouchStart(e) {
     touchStartY = e.touches[0].clientY;
     isDragging = false;
     
-    // Add a slight delay before considering it a drag
-    setTimeout(() => {
+    // Add a longer delay (500ms) to allow scrolling - only drag if held still
+    touchTimeout = setTimeout(() => {
         if (draggedTableRow === this) {
             isDragging = true;
             this.style.opacity = '0.8';
@@ -458,17 +460,27 @@ function handleTableRowTouchStart(e) {
             this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
             this.style.backgroundColor = '#90caf9';
         }
-    }, 200);
+    }, 500);
 }
 
 function handleTableRowTouchMove(e) {
-    if (!draggedTableRow || !isDragging) return;
-    
-    // Prevent default scrolling while dragging
-    e.preventDefault();
+    if (!draggedTableRow) return;
     
     touchCurrentY = e.touches[0].clientY;
     const deltaY = touchCurrentY - touchStartY;
+    
+    // If user moves finger before timeout, cancel drag and allow scrolling
+    if (!isDragging && Math.abs(deltaY) > 5) {
+        clearTimeout(touchTimeout);
+        draggedTableRow = null;
+        return;
+    }
+    
+    // Only prevent default and handle drag if we're actually dragging
+    if (!isDragging) return;
+    
+    // Prevent default scrolling while dragging
+    e.preventDefault();
     
     // Visual feedback - move the row
     draggedTableRow.style.transform = `translateY(${deltaY}px)`;
@@ -505,6 +517,12 @@ function handleTableRowTouchMove(e) {
 }
 
 function handleTableRowTouchEnd(e) {
+    // Clean up timeout if touch ended before drag started
+    if (touchTimeout) {
+        clearTimeout(touchTimeout);
+        touchTimeout = null;
+    }
+    
     if (!draggedTableRow) return;
     
     if (isDragging) {
