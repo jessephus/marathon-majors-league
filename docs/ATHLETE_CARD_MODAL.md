@@ -1,22 +1,38 @@
-# Athlete Card Modal Feature
+# Athlete Card Modal Feature - Redesigned
 
 ## Overview
 
-The athlete card modal is an engaging, digital trading card-style interface that displays comprehensive athlete information including:
+The athlete card modal is a modern, engaging interface inspired by the issue mockup that displays comprehensive athlete information including:
+- Dynamic masthead with country flag gradient backgrounds
 - Basic profile data (name, country, age, photo)
 - Performance statistics (PB, season best, rankings)
 - Year-by-year progression data
 - 2025 race results
 - Link to full World Athletics profile
 
-## Design
+## Design Philosophy
 
-The modal is designed to look like a premium digital sports trading card with:
-- **Gradient header** with athlete photo
-- **Stats grid** highlighting key performance metrics
-- **Tabbed interface** for different data sections
-- **Responsive design** that works on mobile and desktop
-- **Smooth animations** for a polished feel
+The redesigned modal follows modern design principles:
+- **Visual Hierarchy**: Clear masthead section draws attention to athlete identity
+- **Layout & Spacing**: Structured sections with breathing room
+- **Color Theory**: Dynamic gradients based on country flag colors
+- **Typography**: Distinct styles for headings, subheadings, and body text
+- **Interactive Navigation**: Tabbed interface for organized content
+- **Modern Aesthetics**: Clean, polished card-based design
+
+## Key Features
+
+### Masthead Section
+- **Dynamic gradient background** using country flag colors (40+ countries supported)
+- **Left side**: Circular athlete headshot with country flag overlay
+- **Right side**: Name, gender, age, marathon rank, and personal best
+- **Responsive layout**: Stacks vertically on mobile devices
+
+### Tabbed Interface
+- **Overview**: Key statistics and profile information
+- **Race Log**: 2025 race results with competition details
+- **Progression**: Year-by-year season's best progression
+- **News**: Placeholder for future news feed integration
 
 ## Usage
 
@@ -64,54 +80,63 @@ This returns:
 
 ## Modal Sections
 
-### 1. Header
-- Athlete photo with country badge
-- Name, gender, and age
-- Gradient background
+### 1. Masthead
+- **Background**: Dynamic gradient based on athlete's country flag colors
+- **Photo**: Circular headshot with country flag badge overlay
+- **Info**: Name, gender, age displayed with icons
+- **Stats**: Marathon rank and personal best in card format
+- **Responsive**: Switches to vertical layout on mobile
 
-### 2. Stats Grid
-- **Personal Best** (highlighted)
-- Season Best
-- Marathon Rank
-- Overall Rank
+### 2. Tab Navigation
+- **Overview**: Default tab showing comprehensive statistics
+- **Race Log**: 2025 race results
+- **Progression**: Historical season's best progression
+- **News**: Placeholder for future features
 
-### 3. Sponsor Badge
-- Displayed if athlete has a sponsor
+### 3. Overview Tab
+- **Key Statistics Grid**: PB, Season Best, Marathon Rank, Overall Rank in card format
+- **Profile Information**: Date of birth, World Athletics ID, Road Running Rank, Sponsor
+- **World Athletics Link**: Direct link to full athlete profile
 
-### 4. Progression Tab (📈)
-- Year-by-year season's best performances
-- Shows discipline, mark, and venue
-- Sorted by most recent first
-- Groups multiple disciplines by season
+### 4. Race Log Tab
+- **2025 Results**: Competition name, position, time, venue, date
+- **Card Layout**: Each result in a bordered card with hover effects
+- **Sorted**: Most recent races first
 
-### 5. 2025 Results Tab (🏆)
-- All race results from 2025
-- Shows competition name, position, time, venue, and date
-- Sorted by most recent first
+### 5. Progression Tab
+- **Year-by-year**: Season's best performances by year
+- **Details**: Mark, venue, discipline for each year
+- **Badges**: "SB" (Season Best) or "PB" (Personal Best) indicators
+- **Sorted**: Most recent years first
 
-### 6. Profile Tab (👤)
-- Date of birth
-- World Athletics ID
-- Road running rank
-
-### 7. Footer
-- Button linking to full World Athletics profile
+### 6. News Tab
+- **Placeholder**: Future integration point for athlete news and updates
 
 ## Styling Classes
 
 ### Main Classes
 - `.modal` - Modal container
-- `.modal-overlay` - Background overlay
-- `.athlete-card` - Card container
-- `.card-header` - Top section with photo
-- `.card-stats` - Statistics grid
-- `.card-tabs` - Tab navigation
-- `.card-content` - Tab content area
+- `.modal-overlay` - Background overlay with blur effect
+- `.athlete-card-container` - Main card container
+- `.card-masthead` - Gradient header section
+- `.masthead-photo-wrapper` - Photo container with flag overlay
+- `.masthead-bio-section` - Biographical data section
+- `.tabs-container` - Tab navigation wrapper
+- `.tab-button` - Individual tab buttons
+- `.tab-content-container` - Scrollable content area
+- `.tab-panel` - Individual tab content panels
 
 ### State Classes
 - `.active` - For active modal, tabs, and panels
-- `.selected` - For selected items
-- `.disabled` - For disabled states
+- `.country-gradient` - Applied via inline style for dynamic gradients
+
+### Component Classes
+- `.stat-card` - Statistic display cards with hover effects
+- `.profile-row` - Profile information rows
+- `.progression-item` - Progression list items
+- `.result-item` - Race result items
+- `.empty-state` - Empty state displays
+- `.loading-indicator` - Loading animations
 
 ## JavaScript API
 
@@ -125,7 +150,10 @@ openAthleteModal(athleteIdOrData)
 closeAthleteModal()
 
 // Switch tabs
-switchModalTab(tabName) // 'progression', 'results', or 'profile'
+switchModalTab(tabName) // 'overview', 'results', 'progression', or 'news'
+
+// Get country gradient
+getCountryGradient(countryCode) // Returns CSS gradient string
 
 // Load detailed data
 loadAthleteDetailedData(athleteId)
@@ -135,7 +163,20 @@ displayProgression(progressionArray)
 
 // Display race results
 displayRaceResults(resultsArray)
+
+// Populate basic info with dynamic gradient
+populateAthleteBasicInfo(athlete)
 ```
+
+### Country Gradient Colors
+
+The modal supports dynamic gradients for 40+ countries including:
+- **KEN** (Kenya): Red, Green, Black
+- **ETH** (Ethiopia): Green, Yellow, Red
+- **USA**: Red, White, Blue
+- **GBR** (UK): Blue, White, Red
+- **JPN** (Japan): Red, White
+- And many more...
 
 ### Event Listeners
 
@@ -156,9 +197,9 @@ The modal uses CSS custom properties from the main theme:
 
 ### Layout
 Responsive breakpoints:
-- **Desktop**: Full-width modal (max 600px)
-- **Tablet** (≤768px): Adjusted padding and font sizes
-- **Mobile** (≤480px): Compact layout with smaller photos
+- **Desktop**: Full-width modal (max 640px) with side padding
+- **Tablet** (≤768px): Adjusted spacing, smaller photos, optimized grid layouts
+- **Mobile** (≤480px): Full-screen modal, vertical masthead layout, single-column grids, compact typography
 
 ## Data Requirements
 
@@ -209,8 +250,21 @@ document.querySelectorAll('.athlete-name-link').forEach(link => {
 - **Focus management**: Modal takes focus when opened
 - **Screen reader friendly**: Semantic HTML structure
 
+## Recent Updates (2025)
+
+### Redesign Highlights
+- ✅ **Dynamic masthead** with country flag color gradients
+- ✅ **Improved visual hierarchy** with clear section separation
+- ✅ **Modern tabbed interface** (Overview, Race Log, Progression, News)
+- ✅ **Enhanced typography** with distinct heading styles
+- ✅ **Card-based layout** with proper spacing and hover effects
+- ✅ **Mobile-first responsive design** with optimized breakpoints
+- ✅ **Tailwind CSS integration** via CDN for utility classes
+- ✅ **40+ country flag gradients** for personalized backgrounds
+
 ## Future Enhancements
 
+- [ ] Implement News tab with actual news feed
 - [ ] Add charts/graphs for progression visualization
 - [ ] Cache fetched data to reduce API calls
 - [ ] Add comparison mode (compare two athletes)
@@ -218,5 +272,4 @@ document.querySelectorAll('.athlete-name-link').forEach(link => {
 - [ ] Add favorite/bookmark functionality
 - [ ] Show more detailed statistics
 - [ ] Add historical race results (multiple years)
-- [ ] Animate stat changes
-- [ ] Add athlete news/updates feed
+- [ ] Animate stat changes and transitions
