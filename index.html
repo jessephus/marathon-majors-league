@@ -30,44 +30,18 @@
             <div id="ranking-page" class="page">
                 <div class="player-info">
                     <h2>Welcome, <span id="player-name"></span>!</h2>
-                    <p>Rank your top 10 athletes in each category. You can:</p>
-                    <ul style="list-style: none; padding-left: 20px; margin-top: 10px;">
-                        <li>📋 <strong>Drag and drop</strong> to reorder your rankings</li>
-                        <li>🔢 <strong>Edit rank numbers</strong> directly (press Enter to apply)</li>
-                        <li>📊 Toggle to <strong>table view</strong> to see detailed athlete stats</li>
-                    </ul>
-                </div>
-
-                <div class="ranking-container">
-                    <div class="ranking-section">
-                        <h3>Top 10 Men</h3>
-                        <div id="men-ranking" class="ranking-list"></div>
-                    </div>
-
-                    <div class="ranking-section">
-                        <h3>Top 10 Women</h3>
-                        <div id="women-ranking" class="ranking-list"></div>
-                    </div>
+                    <p>Rank all athletes by dragging rows or editing rank numbers. Your top 10 will be selected for the draft.</p>
                 </div>
 
                 <div class="athlete-selection">
                     <div class="athlete-selection-header">
-                        <h3>Available Athletes</h3>
-                        <div class="view-controls">
-                            <button id="view-toggle-cards" class="view-toggle-btn active" title="Card View">
-                                <span>📋</span>
-                            </button>
-                            <button id="view-toggle-table" class="view-toggle-btn" title="Table View">
-                                <span>📊</span>
-                            </button>
-                        </div>
+                        <h3>Rank Athletes</h3>
                     </div>
                     <div class="tabs">
                         <button class="tab active" data-gender="men">Men</button>
                         <button class="tab" data-gender="women">Women</button>
                     </div>
-                    <div id="athlete-pool" class="athlete-list"></div>
-                    <div id="athlete-table-container" class="athlete-table-container" style="display: none;">
+                    <div id="athlete-table-container" class="athlete-table-container">
                         <table id="athlete-table" class="athlete-table">
                             <thead>
                                 <tr>
