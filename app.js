@@ -441,6 +441,7 @@ function handleTableRowDragEnd(e) {
 // Mobile touch handlers for table rows
 let touchTimeout = null;
 let dragCancelled = false;
+let initialTouchY = 0;
 
 function handleTableRowTouchStart(e) {
     // Don't interfere if touching an input field
@@ -448,12 +449,14 @@ function handleTableRowTouchStart(e) {
         return;
     }
     
+    // Store initial touch for later comparison
+    initialTouchY = e.touches[0].clientY;
     draggedTableRow = this;
     touchStartY = e.touches[0].clientY;
     isDragging = false;
     dragCancelled = false;
     
-    // Add a longer delay (500ms) to allow scrolling - only drag if held still
+    // Wait 400ms - if finger hasn't moved much, activate drag mode
     touchTimeout = setTimeout(() => {
         if (draggedTableRow === this && !dragCancelled) {
             isDragging = true;
@@ -462,29 +465,30 @@ function handleTableRowTouchStart(e) {
             this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
             this.style.backgroundColor = '#90caf9';
         }
-    }, 500);
+    }, 400);
 }
 
 function handleTableRowTouchMove(e) {
     if (!draggedTableRow) return;
     
     touchCurrentY = e.touches[0].clientY;
-    const deltaY = touchCurrentY - touchStartY;
+    const totalDeltaY = touchCurrentY - initialTouchY;
     
-    // If user moves finger quickly before timeout, cancel drag and allow scrolling
-    if (!isDragging && !dragCancelled && Math.abs(deltaY) > 10) {
+    // If user moves finger more than 15px before timeout, they're scrolling
+    if (!isDragging && Math.abs(totalDeltaY) > 15) {
         clearTimeout(touchTimeout);
         dragCancelled = true;
         draggedTableRow = null;
-        touchTimeout = null;
-        return; // Allow normal scrolling
+        return; // Let browser handle scroll
     }
     
-    // Only prevent default and handle drag if we're actually dragging
+    // Only handle drag if we're in drag mode
     if (!isDragging) return;
     
-    // Prevent default scrolling while dragging
+    // Now we're dragging - prevent scrolling
     e.preventDefault();
+    
+    const deltaY = touchCurrentY - touchStartY;
     
     // Visual feedback - move the row
     draggedTableRow.style.transform = `translateY(${deltaY}px)`;
