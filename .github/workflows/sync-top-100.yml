@@ -133,44 +133,6 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
       
-      - name: Comment on commit (if scheduled)
-        if: github.event_name == 'schedule' && success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            
-            if (!fs.existsSync('sync_stats.json')) {
-              console.log('Stats file not found - skipping comment');
-              return;
-            }
-            
-            const stats = JSON.parse(fs.readFileSync('sync_stats.json', 'utf8'));
-            
-            const body = `
-            ## ✅ World Athletics Sync Successful
-            
-            **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            **Duration:** ${stats.duration_seconds.toFixed(1)}s
-            
-            ### Statistics
-            - 🆕 New athletes: ${stats.new_athletes}
-            - 🔄 Updated athletes: ${stats.updated_athletes}
-            - ✓ Unchanged athletes: ${stats.unchanged_athletes}
-            - 📉 Dropped from top-100: ${stats.dropped_athletes}
-            
-            ${stats.fetch_errors > 0 ? `⚠️ Fetch errors: ${stats.fetch_errors}` : ''}
-            ${stats.db_errors > 0 ? `⚠️ Database errors: ${stats.db_errors}` : ''}
-            `;
-            
-            // Create a comment on the latest commit
-            await github.rest.repos.createCommitComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              commit_sha: context.sha,
-              body: body
-            });
-      
       - name: Create issue on failure
         if: failure()
         uses: actions/github-script@v7
