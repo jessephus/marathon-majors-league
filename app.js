@@ -332,17 +332,64 @@ function displayAthleteTable(gender) {
     const tbody = document.getElementById('athlete-table-body');
     tbody.innerHTML = '';
     
-    let athletes = [...(gameState.athletes[gender] || [])];
-    const currentRankings = gameState.currentPlayer ? 
-        (gameState.rankings[gameState.currentPlayer]?.[gender] || []) : [];
+    if (!gameState.currentPlayer) return;
     
-    // Sort by personal best (fastest first) - default order
-    athletes = sortAthletesByPB(athletes);
+    // Get or initialize rankings for this gender
+    if (!gameState.rankings[gameState.currentPlayer]) {
+        gameState.rankings[gameState.currentPlayer] = { men: [], women: [] };
+    }
     
-    athletes.forEach(athlete => {
-        const isSelected = currentRankings.some(r => r.id === athlete.id);
+    let rankings = gameState.rankings[gameState.currentPlayer][gender];
+    
+    // If no rankings yet, initialize with all athletes sorted by PB
+    if (rankings.length === 0) {
+        rankings = sortAthletesByPB([...(gameState.athletes[gender] || [])]);
+        gameState.rankings[gameState.currentPlayer][gender] = rankings;
+    }
+    
+    // Display all athletes in their current rank order
+    rankings.forEach((athlete, index) => {
         const row = document.createElement('tr');
-        row.className = isSelected ? 'selected-row' : '';
+        row.className = 'ranked-row';
+        row.draggable = true;
+        row.dataset.athleteId = athlete.id;
+        row.dataset.gender = gender;
+        row.dataset.rankIndex = index;
+        
+        // Add drag event listeners
+        row.addEventListener('dragstart', handleTableRowDragStart);
+        row.addEventListener('dragover', handleTableRowDragOver);
+        row.addEventListener('drop', handleTableRowDrop);
+        row.addEventListener('dragend', handleTableRowDragEnd);
+        
+        // Rank cell (editable)
+        const rankCell = document.createElement('td');
+        rankCell.className = 'rank-cell-input';
+        
+        const rankInput = document.createElement('input');
+        rankInput.type = 'number';
+        rankInput.className = 'table-rank-input';
+        rankInput.min = '1';
+        rankInput.max = rankings.length.toString();
+        rankInput.value = index + 1;
+        rankInput.title = 'Edit rank and press Enter';
+        rankInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleTableRankChange(gender, athlete.id, parseInt(rankInput.value));
+                rankInput.blur();
+            }
+        });
+        rankInput.addEventListener('blur', () => {
+            // Revert to current rank if invalid
+            const updatedRank = gameState.rankings[gameState.currentPlayer][gender].findIndex(r => r.id === athlete.id);
+            rankInput.value = updatedRank + 1;
+        });
+        rankInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            rankInput.select();
+        });
+        rankCell.appendChild(rankInput);
+        row.appendChild(rankCell);
         
         // Name cell (clickable to open modal)
         const nameCell = document.createElement('td');
@@ -371,7 +418,7 @@ function displayAthleteTable(gender) {
         
         // Marathon Rank cell
         const marathonRankCell = document.createElement('td');
-        marathonRankCell.className = 'rank-cell';
+        marathonRankCell.className = 'rank-display-cell';
         if (athlete.marathonRank) {
             marathonRankCell.textContent = `#${athlete.marathonRank}`;
             if (athlete.marathonRank <= 10) {
@@ -384,7 +431,7 @@ function displayAthleteTable(gender) {
         
         // Overall Rank cell
         const overallRankCell = document.createElement('td');
-        overallRankCell.className = 'rank-cell';
+        overallRankCell.className = 'rank-display-cell';
         if (athlete.overallRank) {
             overallRankCell.textContent = `#${athlete.overallRank}`;
             if (athlete.overallRank <= 10) {
@@ -400,27 +447,118 @@ function displayAthleteTable(gender) {
         ageCell.textContent = athlete.age || '-';
         row.appendChild(ageCell);
         
-        // Action cell
-        const actionCell = document.createElement('td');
-        actionCell.className = 'action-column';
-        
-        if (isSelected) {
-            const badge = document.createElement('span');
-            badge.className = 'selected-badge';
-            badge.textContent = '✓ Added';
-            actionCell.appendChild(badge);
-        } else {
-            const addBtn = document.createElement('button');
-            addBtn.className = 'add-btn';
-            addBtn.textContent = '+ Add';
-            addBtn.disabled = currentRankings.length >= 10;
-            addBtn.addEventListener('click', () => addAthleteToRanking(gender, athlete));
-            actionCell.appendChild(addBtn);
-        }
-        
-        row.appendChild(actionCell);
         tbody.appendChild(row);
     });
+    
+    // Update the ranking display to show top 10
+    updateRankingDisplayFromTable(gender);
+}
+
+// Update ranking display to show top 10 from table rankings
+function updateRankingDisplayFromTable(gender) {
+    if (!gameState.rankings[gameState.currentPlayer]) return;
+    
+    const allRankings = gameState.rankings[gameState.currentPlayer][gender] || [];
+    
+    // Only show top 10 in the ranking display
+    const top10 = allRankings.slice(0, 10);
+    
+    // Update the rankings to be top 10
+    gameState.rankings[gameState.currentPlayer][gender] = top10;
+    
+    // Refresh the ranking display
+    updateRankingDisplay(gender);
+}
+
+// Drag and drop for table rows
+let draggedTableRow = null;
+
+function handleTableRowDragStart(e) {
+    draggedTableRow = this;
+    this.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleTableRowDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (draggedTableRow !== this) {
+        const tbody = this.parentElement;
+        const rankedRows = Array.from(tbody.querySelectorAll('.ranked-row'));
+        const draggedIndex = rankedRows.indexOf(draggedTableRow);
+        const targetIndex = rankedRows.indexOf(this);
+        
+        if (draggedIndex < targetIndex) {
+            this.parentElement.insertBefore(draggedTableRow, this.nextSibling);
+        } else {
+            this.parentElement.insertBefore(draggedTableRow, this);
+        }
+    }
+    
+    return false;
+}
+
+function handleTableRowDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    // Update rankings based on new table row order
+    const gender = this.dataset.gender;
+    const tbody = this.parentElement;
+    const rankedRows = Array.from(tbody.querySelectorAll('.ranked-row'));
+    
+    const newOrder = rankedRows.map(row => {
+        const athleteId = parseInt(row.dataset.athleteId);
+        const allAthletes = [...gameState.athletes.men, ...gameState.athletes.women];
+        return allAthletes.find(a => a.id === athleteId);
+    }).filter(Boolean);
+    
+    gameState.rankings[gameState.currentPlayer][gender] = newOrder;
+    
+    // Refresh displays
+    displayAthleteTable(gender);
+    
+    return false;
+}
+
+function handleTableRowDragEnd(e) {
+    this.style.opacity = '1';
+    draggedTableRow = null;
+}
+
+// Handle rank change from table input
+function handleTableRankChange(gender, athleteId, newRank) {
+    const rankings = gameState.rankings[gameState.currentPlayer][gender];
+    
+    // Validate rank
+    if (newRank < 1 || newRank > rankings.length || isNaN(newRank)) {
+        alert(`Please enter a valid rank between 1 and ${rankings.length}`);
+        displayAthleteTable(gender);
+        return;
+    }
+    
+    // Find athlete's current position
+    const currentIndex = rankings.findIndex(a => a.id === athleteId);
+    if (currentIndex === -1) return;
+    
+    // Don't do anything if rank hasn't changed
+    if (currentIndex === newRank - 1) {
+        displayAthleteTable(gender);
+        return;
+    }
+    
+    // Remove athlete from current position
+    const athlete = rankings.splice(currentIndex, 1)[0];
+    
+    // Insert at new position
+    rankings.splice(newRank - 1, 0, athlete);
+    
+    // Refresh display
+    displayAthleteTable(gender);
 }
 
 // Sort athletes by personal best time (fastest first)
@@ -457,7 +595,13 @@ function addAthleteToRanking(gender, athlete) {
 
     rankings.push(athlete);
     updateRankingDisplay(gender);
-    displayAthletePool(gender);
+    
+    // Refresh the appropriate view
+    if (rankingViewState.currentView === 'table') {
+        displayAthleteTable(gender);
+    } else {
+        displayAthletePool(gender);
+    }
 }
 
 // Remove athlete from ranking
@@ -467,7 +611,13 @@ function removeAthleteFromRanking(gender, athleteId) {
     if (index > -1) {
         rankings.splice(index, 1);
         updateRankingDisplay(gender);
-        displayAthletePool(gender);
+        
+        // Refresh the appropriate view
+        if (rankingViewState.currentView === 'table') {
+            displayAthleteTable(gender);
+        } else {
+            displayAthletePool(gender);
+        }
     }
 }
 

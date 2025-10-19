@@ -1863,12 +1863,13 @@ footer .btn {
     background: var(--light-gray);
 }
 
-.athlete-table tbody tr.selected-row {
+.athlete-table tbody tr.ranked-row {
     background: #e3f2fd;
+    cursor: move;
 }
 
-.athlete-table tbody tr.selected-row:hover {
-    background: #bbdefb);
+.athlete-table tbody tr.ranked-row:hover {
+    background: #bbdefb;
 }
 
 .athlete-table td {
@@ -1891,6 +1892,50 @@ footer .btn {
 }
 
 .athlete-table .rank-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-orange);
+}
+
+.athlete-table .rank-cell.top-rank {
+    color: #d4af37;
+}
+
+.athlete-table .rank-column {
+    width: 70px;
+    text-align: center;
+}
+
+.athlete-table .rank-cell-input {
+    text-align: center;
+    width: 70px;
+}
+
+.athlete-table .table-rank-input {
+    width: 50px;
+    padding: 4px 6px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+    background: var(--white);
+    transition: all 0.2s ease;
+}
+
+.athlete-table .table-rank-input:hover {
+    border-color: var(--primary-blue);
+}
+
+.athlete-table .table-rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.athlete-table .rank-display-cell {
     text-align: center;
     font-weight: 600;
     color: var(--primary-orange);
@@ -1930,6 +1975,22 @@ footer .btn {
     background: var(--dark-gray);
     cursor: not-allowed;
     transform: none;
+}
+
+.athlete-table .remove-table-btn {
+    background: #dc3545;
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.athlete-table .remove-table-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
 }
 
 .athlete-table .selected-badge {
