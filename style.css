@@ -268,6 +268,37 @@ footer .btn {
     min-width: 25px;
 }
 
+/* Rank input field in ranking items */
+.ranking-item .rank-input {
+    width: 45px;
+    padding: 4px 6px;
+    margin-right: 10px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+    background: var(--white);
+    transition: all 0.2s ease;
+}
+
+.ranking-item .rank-input:hover {
+    border-color: var(--primary-blue);
+}
+
+.ranking-item .rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.ranking-item .rank-input::-webkit-inner-spin-button,
+.ranking-item .rank-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
 .ranking-item .name {
     flex: 1;
     font-weight: 600;
@@ -748,3 +779,1286 @@ footer .btn {
     border-color: var(--primary-blue);
     background: var(--medium-gray);
 }
+
+/* Athlete Management */
+.athlete-filters {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+    padding: 15px;
+    background: var(--light-gray);
+    border-radius: 5px;
+}
+
+.athlete-filters label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.athlete-filters input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.athlete-filters select {
+    padding: 5px 10px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.athlete-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    box-shadow: var(--shadow);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.athlete-table thead {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    color: var(--white);
+}
+
+.athlete-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.athlete-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--medium-gray);
+    font-size: 0.85rem;
+}
+
+.athlete-table tbody tr:hover {
+    background: var(--light-gray);
+}
+
+.athlete-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#athlete-table-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Athlete Management Page */
+#athlete-management-page {
+    padding: 20px;
+}
+
+#athlete-management-page .page-description {
+    text-align: center;
+    color: var(--dark-gray);
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+#athlete-management-page .athlete-filters {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#athlete-management-page #athlete-table-container {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+#athlete-management-page #back-to-commissioner {
+    margin-top: 20px;
+}
+
+/* World Athletics ID editing */
+.wa-id-cell {
+    padding: 8px !important;
+}
+
+.wa-id-input {
+    width: 120px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: monospace;
+}
+
+.wa-id-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.wa-id-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--primary-orange);
+    color: white;
+    transition: all 0.2s;
+}
+
+.btn-small:hover:not(:disabled) {
+    background-color: #e55f00;
+    transform: translateY(-1px);
+}
+
+.btn-small:active {
+    transform: translateY(0);
+}
+
+.btn-small:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: var(--primary-blue);
+    margin-left: 4px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #1f2a7a;
+}
+
+.actions-cell {
+    white-space: nowrap;
+    padding: 8px !important;
+}
+
+.actions-cell .btn-small {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.info-message {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #1565C0;
+}
+
+.info-message strong {
+    color: #0d47a1;
+}
+
+.athlete-name-link {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.athlete-name-link:hover {
+    color: var(--primary-orange);
+    text-decoration: underline;
+}
+
+/* ============================================================================
+   ATHLETE CARD MODAL - Digital Trading Card Style
+   ============================================================================ */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.athlete-card {
+    position: relative;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 20px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    border: 3px solid var(--primary-orange);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close:hover {
+    background: var(--primary-orange);
+    color: white;
+    transform: rotate(90deg);
+}
+
+/* Minimal Card Header */
+.card-header {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, #1a2470 100%);
+    color: white;
+    padding: 12px 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-30px, -30px); }
+}
+
+/* Compact Header Layout */
+.card-header-content {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.card-photo {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    background-color: #ddd;
+}
+
+.card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.card-photo-overlay {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.country-badge {
+    line-height: 1;
+    display: block;
+}
+
+.card-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-title h2 {
+    font-size: 17px;
+    margin: 0 0 3px 0;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-subtitle {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+
+.card-photo {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    background-color: #ddd;
+}
+
+.card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.card-photo-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.country-badge {
+    line-height: 1;
+    display: block;
+}
+
+.card-title {
+    text-align: center;
+}
+
+/* Duplicate styles removed - see compact version above */
+
+/* Ultra-Compact Stats List - Vertical Layout */
+.card-stats {
+    background: white;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-row:first-child {
+    background: linear-gradient(90deg, #fff5e6 0%, transparent 100%);
+    margin: -4px -8px 4px -8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.stat-label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+}
+
+.stat-row:first-child .stat-label {
+    color: #b35900;
+}
+
+.stat-value {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    text-align: right;
+}
+
+.stat-row:first-child .stat-value {
+    font-size: 16px;
+    color: var(--primary-orange);
+}
+}
+
+/* Sponsor Section - Compact */
+.sponsor-section {
+    padding: 8px 16px;
+    background: linear-gradient(90deg, #f5f5f5 0%, #ebebeb 100%);
+    text-align: center;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.sponsor-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    margin-right: 6px;
+}
+
+.sponsor-name {
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 12px;
+}
+
+/* Compact Tabs */
+.card-tabs {
+    display: flex;
+    background: white;
+    border-bottom: 2px solid #e5e5e5;
+    padding: 0 12px;
+}
+
+.card-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    position: relative;
+    top: 2px;
+}
+
+.card-tab:hover {
+    color: var(--primary-orange);
+}
+
+.card-tab.active {
+    color: var(--primary-orange);
+    border-bottom-color: var(--primary-orange);
+}
+
+/* Compact Tab Content */
+.card-content {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
+    padding: 12px;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.progression-header, .results-header {
+    margin-bottom: 10px;
+}
+
+.progression-header h3, .results-header h3 {
+    font-size: 14px;
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+/* Compact Progression List */
+.progression-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.progression-item {
+    background: #f8f8f8;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: 45px 1fr 70px;
+    gap: 10px;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.progression-item:hover {
+    background: #ebebeb;
+    border-left-color: var(--primary-orange);
+}
+
+.progression-year {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--primary-blue);
+}
+
+.progression-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.progression-mark {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.progression-venue {
+    font-size: 11px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progression-discipline {
+    font-size: 10px;
+    color: #999;
+}
+
+.progression-badge {
+    background: var(--primary-orange);
+    color: white;
+    padding: 3px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Compact Results List */
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.result-item {
+    background: #f8f8f8;
+    border-radius: 6px;
+    padding: 10px 12px;
+    transition: background-color 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.result-item:hover {
+    background: #ebebeb;
+    border-left-color: var(--primary-orange);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.result-competition {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--primary-blue);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 8px;
+}
+
+.result-position {
+    background: var(--primary-orange);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.result-details {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #666;
+}
+
+.result-time {
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.result-venue {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-date {
+    flex-shrink: 0;
+}
+
+/* Compact Profile Info */
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.profile-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: #f8f8f8;
+    border-radius: 6px;
+}
+
+.profile-label {
+    font-size: 11px;
+    color: #666;
+    font-weight: 600;
+}
+
+.profile-value {
+    font-size: 12px;
+    color: var(--text-dark);
+    font-weight: 600;
+}
+
+/* Compact Empty State */
+.empty-state {
+    text-align: center;
+    padding: 30px 16px;
+    color: #999;
+}
+
+.empty-state p {
+    font-size: 12px;
+}
+
+/* Compact Loading Spinner */
+.loading-spinner {
+    text-align: center;
+    padding: 15px;
+    color: var(--primary-orange);
+    font-size: 12px;
+}
+
+.loading-spinner::after {
+    content: '...';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+/* Compact Card Footer */
+.card-footer {
+    padding: 12px;
+    background: white;
+    border-top: 1px solid #e5e5e5;
+}
+
+.card-footer .btn {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    padding: 10px;
+    gap: 8px;
+}
+
+/* Tablet Responsive - Optimized */
+@media (max-width: 768px) {
+    .athlete-card {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: 10px;
+    }
+
+    .card-photo {
+        width: 64px;
+        height: 64px;
+    }
+
+    .card-photo-overlay {
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
+    }
+
+    .card-title h2 {
+        font-size: 18px;
+    }
+
+    .card-subtitle {
+        gap: 6px;
+    }
+
+    .gender-badge, .age-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .card-stats {
+        padding: 8px 14px;
+    }
+
+    .stat-row {
+        padding: 3px 0;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-value {
+        font-size: 12px;
+    }
+
+    .stat-row:first-child .stat-value {
+        font-size: 15px;
+    }
+
+    .card-tab {
+        font-size: 11px;
+        padding: 9px 6px;
+    }
+
+    .progression-item {
+        grid-template-columns: 40px 1fr 60px;
+        gap: 8px;
+        padding: 7px 8px;
+    }
+
+    .progression-year {
+        font-size: 14px;
+    }
+
+    .progression-mark {
+        font-size: 13px;
+    }
+
+    .progression-mark {
+        font-size: 14px;
+    }
+}
+
+/* Mobile Fullscreen - Ultra Compact */
+@media (max-width: 480px) {
+    .modal {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .athlete-card {
+        max-width: 100%;
+        width: 100%;
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+        border: none;
+    }
+
+    .card-header {
+        padding: 12px;
+    }
+
+    .card-photo {
+        width: 52px;
+        height: 52px;
+    }
+
+    .card-photo-overlay {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+        top: 2px;
+        right: 2px;
+    }
+
+    .card-header {
+        padding: 10px 12px;
+    }
+
+    .card-title h2 {
+        font-size: 15px;
+    }
+
+    .gender-badge, .age-badge {
+        font-size: 9px;
+        padding: 2px 5px;
+    }
+
+    .card-stats {
+        padding: 8px 12px;
+    }
+
+    .stat-row {
+        padding: 3px 0;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    .stat-value {
+        font-size: 11px;
+    }
+
+    .stat-row:first-child .stat-value {
+        font-size: 14px;
+    }
+
+    .modal-close {
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        font-size: 18px;
+    }
+
+    .sponsor-section {
+        padding: 6px 12px;
+    }
+
+    .sponsor-label {
+        font-size: 8px;
+    }
+
+    .sponsor-name {
+        font-size: 11px;
+    }
+
+    .card-tabs {
+        padding: 0 8px;
+    }
+
+    .card-tab {
+        font-size: 10px;
+        padding: 8px 4px;
+    }
+
+    .card-content {
+        padding: 10px;
+    }
+
+    .card-footer {
+        padding: 10px;
+    }
+
+    .progression-item {
+        grid-template-columns: 38px 1fr 55px;
+        gap: 6px;
+        padding: 6px 8px;
+    }
+
+    .progression-year {
+        font-size: 13px;
+    }
+
+    .progression-mark {
+        font-size: 12px;
+    }
+
+    .progression-venue {
+        font-size: 10px;
+    }
+
+    .progression-badge {
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+
+    .result-item {
+        padding: 8px 10px;
+    }
+
+    .result-competition {
+        font-size: 12px;
+    }
+
+    .result-position {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .result-details {
+        font-size: 10px;
+        gap: 8px;
+    }
+
+    .profile-item {
+        padding: 6px 8px;
+    }
+
+    .profile-label {
+        font-size: 10px;
+    }
+
+    .profile-value {
+        font-size: 11px;
+    }
+}
+
+/* ========================================
+   SORTABLE TABLE VIEW FOR ATHLETES
+   ======================================== */
+
+.athlete-selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.athlete-selection-header h3 {
+    margin: 0;
+}
+
+.view-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.view-toggle-btn {
+    background: var(--white);
+    border: 2px solid var(--medium-gray);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover {
+    border-color: var(--primary-blue);
+    background: var(--light-gray);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+}
+
+.athlete-table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+.athlete-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.athlete-table thead {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    color: var(--white);
+}
+
+.athlete-table th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.athlete-table tbody tr {
+    border-bottom: 1px solid var(--medium-gray);
+    transition: background 0.2s ease;
+}
+
+.athlete-table tbody tr:hover {
+    background: var(--light-gray);
+}
+
+.athlete-table tbody tr.ranked-row {
+    background: #e3f2fd;
+    cursor: move;
+}
+
+.athlete-table tbody tr.ranked-row:hover {
+    background: #bbdefb;
+}
+
+.athlete-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+}
+
+.athlete-table .name-cell {
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+.athlete-table .name-cell:hover {
+    color: var(--primary-orange);
+    cursor: pointer;
+}
+
+.athlete-table .country-cell {
+    white-space: nowrap;
+}
+
+.athlete-table .rank-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-orange);
+}
+
+.athlete-table .rank-cell.top-rank {
+    color: #d4af37;
+}
+
+.athlete-table .rank-column {
+    width: 70px;
+    text-align: center;
+}
+
+.athlete-table .rank-cell-input {
+    text-align: center;
+    width: 70px;
+}
+
+.athlete-table .table-rank-input {
+    width: 50px;
+    padding: 4px 6px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+    background: var(--white);
+    transition: all 0.2s ease;
+}
+
+.athlete-table .table-rank-input:hover {
+    border-color: var(--primary-blue);
+}
+
+.athlete-table .table-rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.athlete-table .rank-display-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-orange);
+}
+
+.athlete-table .rank-cell.top-rank {
+    color: #d4af37;
+}
+
+.athlete-table .pb-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.athlete-table .action-column {
+    text-align: center;
+    width: 100px;
+}
+
+.athlete-table .add-btn {
+    background: var(--primary-orange);
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.athlete-table .add-btn:hover {
+    background: var(--dark-orange);
+    transform: translateY(-1px);
+}
+
+.athlete-table .add-btn:disabled {
+    background: var(--dark-gray);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.athlete-table .remove-table-btn {
+    background: #dc3545;
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.athlete-table .remove-table-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.athlete-table .selected-badge {
+    background: var(--success-green);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Rank input for manual editing */
+.ranking-item .rank-input {
+    width: 40px;
+    padding: 4px 6px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+}
+
+.ranking-item .rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+}
+
+.ranking-item .rank-input::-webkit-inner-spin-button,
+.ranking-item .rank-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .athlete-table {
+        font-size: 11px;
+    }
+    
+    .athlete-table th,
+    .athlete-table td {
+        padding: 8px 4px;
+    }
+    
+    .athlete-table th {
+        font-size: 11px;
+    }
+    
+    .view-toggle-btn {
+        padding: 6px 10px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .athlete-table {
+        font-size: 10px;
+    }
+    
+    .athlete-table th,
+    .athlete-table td {
+        padding: 6px 2px;
+    }
+    
+    .athlete-table .add-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+

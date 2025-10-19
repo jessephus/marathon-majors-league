@@ -9,16 +9,62 @@ CREATE TABLE IF NOT EXISTS athletes (
     gender VARCHAR(10) NOT NULL CHECK (gender IN ('men', 'women')),
     personal_best VARCHAR(10) NOT NULL,
     headshot_url TEXT,
-    world_athletics_id VARCHAR(50),
+    world_athletics_id VARCHAR(50) UNIQUE,
     world_athletics_profile_url TEXT,
     marathon_rank INTEGER,
     road_running_rank INTEGER,
+    overall_rank INTEGER,
+    age INTEGER,
+    date_of_birth DATE,
+    sponsor VARCHAR(255),
+    season_best VARCHAR(10),
+    ranking_source VARCHAR(50) DEFAULT 'world_marathon',
+    last_fetched_at TIMESTAMP WITH TIME ZONE,
+    last_seen_at TIMESTAMP WITH TIME ZONE,
+    data_hash TEXT,
+    raw_json JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_athletes_gender ON athletes(gender);
 CREATE INDEX idx_athletes_wa_id ON athletes(world_athletics_id);
+CREATE INDEX idx_athletes_marathon_rank ON athletes(marathon_rank);
+CREATE INDEX idx_athletes_overall_rank ON athletes(overall_rank);
+CREATE INDEX idx_athletes_data_hash ON athletes(data_hash);
+CREATE INDEX idx_athletes_last_seen ON athletes(last_seen_at);
+CREATE INDEX idx_athletes_ranking_source ON athletes(ranking_source);
+
+-- Races table (tracks different marathon events)
+CREATE TABLE IF NOT EXISTS races (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    location VARCHAR(255) NOT NULL,
+    distance VARCHAR(50) DEFAULT 'Marathon (42.195 km)',
+    event_type VARCHAR(100) DEFAULT 'Marathon Majors',
+    world_athletics_event_id VARCHAR(50),
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_races_date ON races(date);
+CREATE INDEX idx_races_is_active ON races(is_active);
+
+-- Athlete-Race junction table (links athletes to races they're competing in)
+CREATE TABLE IF NOT EXISTS athlete_races (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+    bib_number VARCHAR(20),
+    confirmed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, race_id)
+);
+
+CREATE INDEX idx_athlete_races_athlete ON athlete_races(athlete_id);
+CREATE INDEX idx_athlete_races_race ON athlete_races(race_id);
 
 -- Games table (replacing game-state.json)
 CREATE TABLE IF NOT EXISTS games (
@@ -84,6 +130,52 @@ CREATE TABLE IF NOT EXISTS race_results (
 CREATE INDEX idx_results_game_id ON race_results(game_id);
 CREATE INDEX idx_results_athlete_id ON race_results(athlete_id);
 
+-- Athlete progression table (year-by-year season's bests)
+CREATE TABLE IF NOT EXISTS athlete_progression (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    discipline VARCHAR(100) NOT NULL,
+    discipline_code VARCHAR(50),
+    discipline_url_slug VARCHAR(100),
+    event_type VARCHAR(50),
+    season VARCHAR(10) NOT NULL,
+    mark VARCHAR(20) NOT NULL,
+    venue TEXT,
+    competition_date VARCHAR(20),
+    competition_name TEXT,
+    competition_id VARCHAR(50),
+    result_score INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, discipline, season)
+);
+
+CREATE INDEX idx_progression_athlete_id ON athlete_progression(athlete_id);
+CREATE INDEX idx_progression_discipline ON athlete_progression(discipline);
+CREATE INDEX idx_progression_season ON athlete_progression(season);
+
+-- Athlete race results table (detailed race results by year)
+CREATE TABLE IF NOT EXISTS athlete_race_results (
+    id SERIAL PRIMARY KEY,
+    athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+    year VARCHAR(10) NOT NULL,
+    competition_date VARCHAR(20),
+    competition_name TEXT,
+    competition_id VARCHAR(50),
+    venue TEXT,
+    discipline VARCHAR(100),
+    position VARCHAR(20),
+    finish_time VARCHAR(20),
+    race_points INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(athlete_id, year, competition_date, competition_name, discipline)
+);
+
+CREATE INDEX idx_race_results_athlete_id ON athlete_race_results(athlete_id);
+CREATE INDEX idx_race_results_year ON athlete_race_results(year);
+CREATE INDEX idx_race_results_discipline ON athlete_race_results(discipline);
+
 -- User accounts table (for future authentication - not implemented yet)
 -- Placeholder for future feature
 CREATE TABLE IF NOT EXISTS users (
@@ -134,5 +226,14 @@ CREATE TRIGGER update_games_updated_at BEFORE UPDATE ON games
 CREATE TRIGGER update_results_updated_at BEFORE UPDATE ON race_results
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_athlete_progression_updated_at BEFORE UPDATE ON athlete_progression
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_athlete_race_results_updated_at BEFORE UPDATE ON athlete_race_results
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_races_updated_at BEFORE UPDATE ON races
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
