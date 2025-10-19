@@ -30,7 +30,12 @@
             <div id="ranking-page" class="page">
                 <div class="player-info">
                     <h2>Welcome, <span id="player-name"></span>!</h2>
-                    <p>Rank your top 10 athletes in each category. Drag to reorder.</p>
+                    <p>Rank your top 10 athletes in each category. You can:</p>
+                    <ul style="list-style: none; padding-left: 20px; margin-top: 10px;">
+                        <li>📋 <strong>Drag and drop</strong> to reorder your rankings</li>
+                        <li>🔢 <strong>Edit rank numbers</strong> directly (press Enter to apply)</li>
+                        <li>📊 Toggle to <strong>table view</strong> to see detailed athlete stats</li>
+                    </ul>
                 </div>
 
                 <div class="ranking-container">
@@ -46,12 +51,40 @@
                 </div>
 
                 <div class="athlete-selection">
-                    <h3>Available Athletes</h3>
+                    <div class="athlete-selection-header">
+                        <h3>Available Athletes</h3>
+                        <div class="view-controls">
+                            <button id="view-toggle-cards" class="view-toggle-btn active" title="Card View">
+                                <span>📋</span>
+                            </button>
+                            <button id="view-toggle-table" class="view-toggle-btn" title="Table View">
+                                <span>📊</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="tabs">
                         <button class="tab active" data-gender="men">Men</button>
                         <button class="tab" data-gender="women">Women</button>
                     </div>
                     <div id="athlete-pool" class="athlete-list"></div>
+                    <div id="athlete-table-container" class="athlete-table-container" style="display: none;">
+                        <table id="athlete-table" class="athlete-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Country</th>
+                                    <th>PB</th>
+                                    <th>Season Best</th>
+                                    <th>Marathon Rank</th>
+                                    <th>Overall Rank</th>
+                                    <th>Age</th>
+                                    <th class="action-column">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="athlete-table-body">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>

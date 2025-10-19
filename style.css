@@ -268,6 +268,37 @@ footer .btn {
     min-width: 25px;
 }
 
+/* Rank input field in ranking items */
+.ranking-item .rank-input {
+    width: 45px;
+    padding: 4px 6px;
+    margin-right: 10px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+    background: var(--white);
+    transition: all 0.2s ease;
+}
+
+.ranking-item .rank-input:hover {
+    border-color: var(--primary-blue);
+}
+
+.ranking-item .rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.ranking-item .rank-input::-webkit-inner-spin-button,
+.ranking-item .rank-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
 .ranking-item .name {
     flex: 1;
     font-weight: 600;
@@ -1754,3 +1785,219 @@ footer .btn {
         font-size: 11px;
     }
 }
+
+/* ========================================
+   SORTABLE TABLE VIEW FOR ATHLETES
+   ======================================== */
+
+.athlete-selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.athlete-selection-header h3 {
+    margin: 0;
+}
+
+.view-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.view-toggle-btn {
+    background: var(--white);
+    border: 2px solid var(--medium-gray);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover {
+    border-color: var(--primary-blue);
+    background: var(--light-gray);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+}
+
+.athlete-table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+.athlete-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.athlete-table thead {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    color: var(--white);
+}
+
+.athlete-table th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.athlete-table tbody tr {
+    border-bottom: 1px solid var(--medium-gray);
+    transition: background 0.2s ease;
+}
+
+.athlete-table tbody tr:hover {
+    background: var(--light-gray);
+}
+
+.athlete-table tbody tr.selected-row {
+    background: #e3f2fd;
+}
+
+.athlete-table tbody tr.selected-row:hover {
+    background: #bbdefb);
+}
+
+.athlete-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+}
+
+.athlete-table .name-cell {
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+.athlete-table .name-cell:hover {
+    color: var(--primary-orange);
+    cursor: pointer;
+}
+
+.athlete-table .country-cell {
+    white-space: nowrap;
+}
+
+.athlete-table .rank-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-orange);
+}
+
+.athlete-table .rank-cell.top-rank {
+    color: #d4af37;
+}
+
+.athlete-table .pb-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.athlete-table .action-column {
+    text-align: center;
+    width: 100px;
+}
+
+.athlete-table .add-btn {
+    background: var(--primary-orange);
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.athlete-table .add-btn:hover {
+    background: var(--dark-orange);
+    transform: translateY(-1px);
+}
+
+.athlete-table .add-btn:disabled {
+    background: var(--dark-gray);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.athlete-table .selected-badge {
+    background: var(--success-green);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Rank input for manual editing */
+.ranking-item .rank-input {
+    width: 40px;
+    padding: 4px 6px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+}
+
+.ranking-item .rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+}
+
+.ranking-item .rank-input::-webkit-inner-spin-button,
+.ranking-item .rank-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .athlete-table {
+        font-size: 11px;
+    }
+    
+    .athlete-table th,
+    .athlete-table td {
+        padding: 8px 4px;
+    }
+    
+    .athlete-table th {
+        font-size: 11px;
+    }
+    
+    .view-toggle-btn {
+        padding: 6px 10px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .athlete-table {
+        font-size: 10px;
+    }
+    
+    .athlete-table th,
+    .athlete-table td {
+        padding: 6px 2px;
+    }
+    
+    .athlete-table .add-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+
