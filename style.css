@@ -1867,7 +1867,8 @@ footer .btn {
     background: #e3f2fd;
     cursor: move;
     touch-action: none; /* Prevent default touch scrolling during drag */
-    transition: transform 0.1s ease, opacity 0.2s ease;
+    transition: transform 0.15s ease, opacity 0.2s ease, background-color 0.2s ease;
+    position: relative;
 }
 
 .athlete-table tbody tr.ranked-row:hover {
@@ -1876,6 +1877,12 @@ footer .btn {
 
 .athlete-table tbody tr.ranked-row:active {
     background: #90caf9;
+}
+
+/* Visual feedback during drag */
+.athlete-table tbody tr.ranked-row[style*="opacity: 0.8"] {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    background: #90caf9 !important;
 }
 
 .athlete-table td {

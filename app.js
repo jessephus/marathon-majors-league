@@ -453,8 +453,10 @@ function handleTableRowTouchStart(e) {
     setTimeout(() => {
         if (draggedTableRow === this) {
             isDragging = true;
-            this.style.opacity = '0.6';
+            this.style.opacity = '0.8';
             this.style.zIndex = '1000';
+            this.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+            this.style.backgroundColor = '#90caf9';
         }
     }, 200);
 }
@@ -471,10 +473,18 @@ function handleTableRowTouchMove(e) {
     // Visual feedback - move the row
     draggedTableRow.style.transform = `translateY(${deltaY}px)`;
     
-    // Find which row we're hovering over
+    // Find which row we're hovering over by temporarily hiding the dragged row
     const touch = e.touches[0];
+    
+    // Temporarily hide the dragged row from pointer events to detect what's underneath
+    const originalPointerEvents = draggedTableRow.style.pointerEvents;
+    draggedTableRow.style.pointerEvents = 'none';
+    
     const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
     const rowBelow = elementBelow ? elementBelow.closest('.ranked-row') : null;
+    
+    // Restore pointer events
+    draggedTableRow.style.pointerEvents = originalPointerEvents;
     
     if (rowBelow && rowBelow !== draggedTableRow) {
         const tbody = draggedTableRow.parentElement;
@@ -488,8 +498,9 @@ function handleTableRowTouchMove(e) {
             tbody.insertBefore(draggedTableRow, rowBelow);
         }
         
-        // Reset touch position after reordering
-        touchStartY = touchCurrentY;
+        // Reset transform and touch position after reordering
+        draggedTableRow.style.transform = '';
+        touchStartY = touch.clientY;
     }
 }
 
@@ -519,9 +530,12 @@ function handleTableRowTouchEnd(e) {
     
     // Reset state
     if (draggedTableRow) {
-        draggedTableRow.style.opacity = '1';
+        draggedTableRow.style.opacity = '';
         draggedTableRow.style.transform = '';
         draggedTableRow.style.zIndex = '';
+        draggedTableRow.style.boxShadow = '';
+        draggedTableRow.style.backgroundColor = '';
+        draggedTableRow.style.pointerEvents = '';
     }
     draggedTableRow = null;
     isDragging = false;
