@@ -30,28 +30,35 @@
             <div id="ranking-page" class="page">
                 <div class="player-info">
                     <h2>Welcome, <span id="player-name"></span>!</h2>
-                    <p>Rank your top 10 athletes in each category. Drag to reorder.</p>
-                </div>
-
-                <div class="ranking-container">
-                    <div class="ranking-section">
-                        <h3>Top 10 Men</h3>
-                        <div id="men-ranking" class="ranking-list"></div>
-                    </div>
-
-                    <div class="ranking-section">
-                        <h3>Top 10 Women</h3>
-                        <div id="women-ranking" class="ranking-list"></div>
-                    </div>
+                    <p>Rank all athletes by dragging rows or editing rank numbers. Your top 10 will be selected for the draft.</p>
                 </div>
 
                 <div class="athlete-selection">
-                    <h3>Available Athletes</h3>
+                    <div class="athlete-selection-header">
+                        <h3>Rank Athletes</h3>
+                    </div>
                     <div class="tabs">
                         <button class="tab active" data-gender="men">Men</button>
                         <button class="tab" data-gender="women">Women</button>
                     </div>
-                    <div id="athlete-pool" class="athlete-list"></div>
+                    <div id="athlete-table-container" class="athlete-table-container">
+                        <table id="athlete-table" class="athlete-table">
+                            <thead>
+                                <tr>
+                                    <th class="rank-column">Rank</th>
+                                    <th>Name</th>
+                                    <th>Country</th>
+                                    <th>PB</th>
+                                    <th>Season Best</th>
+                                    <th>Marathon Rank</th>
+                                    <th>Overall Rank</th>
+                                    <th>Age</th>
+                                </tr>
+                            </thead>
+                            <tbody id="athlete-table-body">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
@@ -101,6 +108,11 @@
                     </div>
 
                     <div class="action-card">
+                        <h3>Athlete Management</h3>
+                        <button id="view-athletes" class="btn btn-primary">View All Athletes</button>
+                    </div>
+
+                    <div class="action-card">
                         <h3>Game State</h3>
                         <button id="reset-game" class="btn btn-danger">Reset Game</button>
                         <button id="export-data" class="btn btn-secondary">Export Data</button>
@@ -108,7 +120,155 @@
                 </div>
                 <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
             </div>
+
+            <!-- Athlete Management Page -->
+            <div id="athlete-management-page" class="page">
+                <h2>Athlete Management</h2>
+                <p class="page-description">View and manage all athletes in the database</p>
+                
+                <div class="athlete-filters">
+                    <label>
+                        <input type="checkbox" id="filter-confirmed" checked> Show only confirmed for NYC Marathon
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-missing-wa-id"> Show only missing World Athletics ID
+                    </label>
+                    <label>
+                        Gender:
+                        <select id="filter-gender">
+                            <option value="all">All</option>
+                            <option value="men">Men</option>
+                            <option value="women">Women</option>
+                        </select>
+                    </label>
+                    <label>
+                        Sort by:
+                        <select id="sort-athletes">
+                            <option value="id">ID</option>
+                            <option value="name">Name</option>
+                            <option value="marathon_rank">Marathon Rank</option>
+                            <option value="pb">Personal Best</option>
+                        </select>
+                    </label>
+                </div>
+                
+                <div id="athlete-table-container"></div>
+                
+                <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
+            </div>
         </main>
+
+        <!-- Athlete Card Modal -->
+        <div id="athlete-modal" class="modal">
+            <div class="modal-overlay"></div>
+            <div class="athlete-card">
+                <button class="modal-close" aria-label="Close">&times;</button>
+                
+                <!-- Compact Card Header with Inline Photo and Name -->
+                <div class="card-header">
+                    <div class="card-header-content">
+                        <div class="card-photo">
+                            <img id="modal-athlete-photo" src="" alt="Athlete photo">
+                            <div class="card-photo-overlay">
+                                <span id="modal-athlete-country" class="country-badge"></span>
+                            </div>
+                        </div>
+                        <div class="card-title">
+                            <h2 id="modal-athlete-name"></h2>
+                            <div class="card-subtitle">
+                                <span id="modal-athlete-gender" class="gender-badge"></span>
+                                <span id="modal-athlete-age" class="age-badge"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ultra-Compact Stats List -->
+                <div class="card-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Personal Best</span>
+                        <span class="stat-value" id="modal-athlete-pb"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Season Best</span>
+                        <span class="stat-value" id="modal-athlete-sb"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Marathon Rank</span>
+                        <span class="stat-value" id="modal-athlete-marathon-rank"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Overall Rank</span>
+                        <span class="stat-value" id="modal-athlete-overall-rank"></span>
+                    </div>
+                </div>
+
+                <!-- Sponsor Badge -->
+                <div id="modal-athlete-sponsor-section" class="sponsor-section">
+                    <span class="sponsor-label">Sponsored by</span>
+                    <span id="modal-athlete-sponsor" class="sponsor-name"></span>
+                </div>
+
+                <!-- Tabs for Data Sections -->
+                <div class="card-tabs">
+                    <button class="card-tab active" data-tab="progression">Progression</button>
+                    <button class="card-tab" data-tab="results">2025 Results</button>
+                    <button class="card-tab" data-tab="profile">Profile</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="card-content">
+                    <!-- Progression Tab -->
+                    <div id="tab-progression" class="tab-panel active">
+                        <div class="progression-header">
+                            <h3>Season's Best Progression</h3>
+                            <div id="progression-loading" class="loading-spinner">Loading...</div>
+                        </div>
+                        <div id="progression-chart" class="progression-list"></div>
+                        <div id="progression-empty" class="empty-state" style="display: none;">
+                            <p>No progression data available</p>
+                        </div>
+                    </div>
+
+                    <!-- Results Tab -->
+                    <div id="tab-results" class="tab-panel">
+                        <div class="results-header">
+                            <h3>2025 Race Results</h3>
+                            <div id="results-loading" class="loading-spinner">Loading...</div>
+                        </div>
+                        <div id="results-list" class="results-list"></div>
+                        <div id="results-empty" class="empty-state" style="display: none;">
+                            <p>No 2025 race results available</p>
+                        </div>
+                    </div>
+
+                    <!-- Profile Tab -->
+                    <div id="tab-profile" class="tab-panel">
+                        <div class="profile-info">
+                            <div class="profile-item">
+                                <span class="profile-label">Date of Birth</span>
+                                <span id="modal-athlete-dob" class="profile-value"></span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">World Athletics ID</span>
+                                <span id="modal-athlete-wa-id" class="profile-value"></span>
+                            </div>
+                            <div class="profile-item">
+                                <span class="profile-label">Road Running Rank</span>
+                                <span id="modal-athlete-road-rank" class="profile-value"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer with Action -->
+                <div class="card-footer">
+                    <a id="modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        View Full World Athletics Profile →
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <footer>
             <p>Marathon Majors League &copy; 2025</p>

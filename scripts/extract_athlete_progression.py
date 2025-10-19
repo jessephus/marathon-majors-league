@@ -23,11 +23,36 @@ Usage:
 
 import argparse
 import json
+import os
 import re
 import sys
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
+
+# Database imports (optional - only needed when saving to DB)
+try:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor, execute_values
+    DB_AVAILABLE = True
+except ImportError:
+    DB_AVAILABLE = False
+    print("⚠️  psycopg2 not installed. Database features disabled.", file=sys.stderr)
+    print("   Install with: pip install psycopg2-binary", file=sys.stderr)
+
+# Load environment variables from .env file if it exists (for local development)
+def load_env_file():
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ.setdefault(key.strip(), value.strip())
+
+load_env_file()
 
 
 def extract_next_data(html: str) -> Optional[Dict]:
@@ -403,6 +428,206 @@ def format_race_results_for_display(results: List[Dict]) -> None:
                 print(f"      💬 {result['remark']}")
     
     print(f"\n{'='*100}\n")
+
+
+# ============================================================================
+# DATABASE STORAGE FUNCTIONS
+# ============================================================================
+
+def get_db_connection():
+    """Get database connection from environment variable."""
+    if not DB_AVAILABLE:
+        raise RuntimeError("Database support not available - install psycopg2-binary")
+    
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise RuntimeError("DATABASE_URL environment variable not set")
+    
+    return psycopg2.connect(database_url)
+
+
+def save_progression_to_db(conn, athlete_db_id: int, progression: List[Dict]) -> int:
+    """
+    Save progression data to database.
+    
+    Uses UPSERT to update existing records or insert new ones.
+    
+    Args:
+        conn: Database connection
+        athlete_db_id: Database ID of the athlete (from athletes table)
+        progression: List of progression dictionaries
+        
+    Returns:
+        Number of progression records saved
+    """
+    if not progression:
+        return 0
+    
+    saved_count = 0
+    
+    with conn.cursor() as cur:
+        for prog in progression:
+            # Get results for this discipline
+            results = prog.get('results', [])
+            discipline = prog.get('discipline', '')
+            discipline_code = prog.get('disciplineCode')
+            discipline_url_slug = prog.get('disciplineNameUrlSlug')
+            event_type = prog.get('typeNameUrlSlug', '')
+            
+            for result in results:
+                try:
+                    # UPSERT progression record
+                    cur.execute("""
+                        INSERT INTO athlete_progression (
+                            athlete_id, discipline, discipline_code, discipline_url_slug,
+                            event_type, season, mark, venue, competition_date,
+                            competition_name, competition_id, result_score
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (athlete_id, discipline, season)
+                        DO UPDATE SET
+                            mark = EXCLUDED.mark,
+                            venue = EXCLUDED.venue,
+                            competition_date = EXCLUDED.competition_date,
+                            competition_name = EXCLUDED.competition_name,
+                            competition_id = EXCLUDED.competition_id,
+                            result_score = EXCLUDED.result_score,
+                            updated_at = CURRENT_TIMESTAMP
+                    """, (
+                        athlete_db_id,
+                        discipline,
+                        discipline_code,
+                        discipline_url_slug,
+                        event_type,
+                        result.get('season'),
+                        result.get('mark'),
+                        result.get('venue'),
+                        result.get('date'),
+                        result.get('competition'),
+                        result.get('competitionId'),
+                        result.get('resultScore')
+                    ))
+                    saved_count += 1
+                except Exception as e:
+                    print(f"    ⚠️  Error saving progression for {discipline} {result.get('season')}: {e}")
+                    continue
+    
+    return saved_count
+
+
+def save_race_results_to_db(conn, athlete_db_id: int, race_results: List[Dict]) -> int:
+    """
+    Save race results to database.
+    
+    Uses UPSERT to update existing records or insert new ones.
+    
+    Args:
+        conn: Database connection
+        athlete_db_id: Database ID of the athlete (from athletes table)
+        race_results: List of race result dictionaries
+        
+    Returns:
+        Number of race results saved
+    """
+    if not race_results:
+        return 0
+    
+    saved_count = 0
+    
+    with conn.cursor() as cur:
+        for result in race_results:
+            try:
+                # UPSERT race result
+                cur.execute("""
+                    INSERT INTO athlete_race_results (
+                        athlete_id, year, competition_date, competition_name,
+                        competition_id, venue, discipline, position,
+                        finish_time, race_points
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (athlete_id, year, competition_date, competition_name, discipline)
+                    DO UPDATE SET
+                        position = EXCLUDED.position,
+                        finish_time = EXCLUDED.finish_time,
+                        race_points = EXCLUDED.race_points,
+                        venue = EXCLUDED.venue,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (
+                    athlete_db_id,
+                    result.get('year'),
+                    result.get('date'),
+                    result.get('competition'),
+                    result.get('competitionId'),
+                    result.get('venue'),
+                    result.get('discipline'),
+                    result.get('place'),
+                    result.get('mark'),
+                    result.get('resultScore')
+                ))
+                saved_count += 1
+            except Exception as e:
+                print(f"    ⚠️  Error saving race result for {result.get('competition')}: {e}")
+                continue
+    
+    return saved_count
+
+
+def fetch_and_save_progression_data(
+    athlete_id: str,
+    athlete_db_id: int,
+    disciplines_filter: Optional[List[str]] = None,
+    save_to_db: bool = True
+) -> Tuple[List[Dict], List[Dict], int, int]:
+    """
+    Fetch progression and race results for an athlete and optionally save to database.
+    
+    This is the main integration function that combines fetching and saving.
+    
+    Args:
+        athlete_id: World Athletics athlete ID
+        athlete_db_id: Database ID from athletes table
+        disciplines_filter: Optional list of disciplines to filter
+        save_to_db: Whether to save to database (default: True)
+        
+    Returns:
+        Tuple of (progression, race_results, progression_saved_count, results_saved_count)
+    """
+    print(f"  📊 Fetching progression data for athlete {athlete_id}...")
+    
+    # Fetch the athlete page
+    html = fetch_athlete_page(athlete_id)
+    if not html:
+        return [], [], 0, 0
+    
+    # Extract __NEXT_DATA__
+    next_data = extract_next_data(html)
+    if not next_data:
+        return [], [], 0, 0
+    
+    # Extract progression
+    progression = extract_progression_data(next_data) or []
+    print(f"    ✓ Extracted {len(progression)} progression events")
+    
+    # Extract current year race results
+    race_results = extract_race_results(next_data, disciplines_filter)
+    print(f"    ✓ Extracted {len(race_results)} race results")
+    
+    progression_saved = 0
+    results_saved = 0
+    
+    # Save to database if requested
+    if save_to_db and DB_AVAILABLE:
+        try:
+            conn = get_db_connection()
+            try:
+                progression_saved = save_progression_to_db(conn, athlete_db_id, progression)
+                results_saved = save_race_results_to_db(conn, athlete_db_id, race_results)
+                conn.commit()
+                print(f"    ✓ Saved {progression_saved} progression records and {results_saved} race results to database")
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"    ❌ Database error: {e}")
+    
+    return progression, race_results, progression_saved, results_saved
 
 
 def save_data_json(

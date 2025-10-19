@@ -10,6 +10,11 @@ let gameState = {
     resultsFinalized: false
 };
 
+// View state for ranking page
+let rankingViewState = {
+    currentGender: 'men'
+};
+
 // API base URL - will be relative in production
 const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
 const GAME_ID = 'default'; // Can be made configurable if multiple games needed
@@ -106,6 +111,7 @@ async function init() {
     await loadAthletes();
     await loadGameState();
     setupEventListeners();
+    setupAthleteModal();
     showPage('landing-page');
 }
 
@@ -140,7 +146,16 @@ function setupEventListeners() {
     document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
     document.getElementById('export-data').addEventListener('click', handleExportData);
+    document.getElementById('view-athletes').addEventListener('click', () => {
+        showPage('athlete-management-page');
+        handleViewAthletes();
+    });
+    document.getElementById('filter-confirmed').addEventListener('change', handleViewAthletes);
+    document.getElementById('filter-missing-wa-id').addEventListener('change', handleViewAthletes);
+    document.getElementById('filter-gender').addEventListener('change', handleViewAthletes);
+    document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
 }
 
 // Show page
@@ -216,238 +231,300 @@ function handleCommissionerMode() {
 
 // Setup ranking page
 function setupRankingPage() {
-    setupDragAndDrop('men');
     switchTab('men');
 }
 
 // Switch tab
 function switchTab(gender) {
+    rankingViewState.currentGender = gender;
     document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.gender === gender);
     });
-    displayAthletePool(gender);
+    
+    // Always display table view
+    displayAthleteTable(gender);
 }
 
-// Display athlete pool
-function displayAthletePool(gender) {
-    const pool = document.getElementById('athlete-pool');
-    pool.innerHTML = '';
 
-    const athletes = gameState.athletes[gender] || [];
-    const currentRankings = gameState.currentPlayer ? 
-        (gameState.rankings[gameState.currentPlayer]?.[gender] || []) : [];
-
-    athletes.forEach(athlete => {
-        const isSelected = currentRankings.some(r => r.id === athlete.id);
-        const card = document.createElement('div');
-        card.className = `athlete-card ${isSelected ? 'selected' : ''}`;
-        
-        // Create headshot container if available
-        const headshot = createHeadshotElement(athlete, 'headshot-small');
-        if (headshot) card.appendChild(headshot);
-        
-        const infoContainer = document.createElement('div');
-        infoContainer.className = 'athlete-card-info';
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'name';
-        nameDiv.textContent = athlete.name;
-        
-        const countryDiv = document.createElement('div');
-        countryDiv.className = 'country';
-        countryDiv.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
-        
-        const detailsDiv = document.createElement('div');
-        detailsDiv.className = 'details';
-        detailsDiv.textContent = formatAthleteDetails(athlete, true);
-        
-        infoContainer.appendChild(nameDiv);
-        infoContainer.appendChild(countryDiv);
-        infoContainer.appendChild(detailsDiv);
-        
-        card.appendChild(infoContainer);
-        
-        if (!isSelected && currentRankings.length < 10) {
-            card.addEventListener('click', () => addAthleteToRanking(gender, athlete));
-        } else if (currentRankings.length >= 10 && !isSelected) {
-            card.classList.add('disabled');
-        }
-        
-        pool.appendChild(card);
-    });
-}
-
-// Add athlete to ranking
-function addAthleteToRanking(gender, athlete) {
+// Display athlete table view
+function displayAthleteTable(gender) {
+    const tbody = document.getElementById('athlete-table-body');
+    tbody.innerHTML = '';
+    
+    if (!gameState.currentPlayer) return;
+    
+    // Get or initialize rankings for this gender
     if (!gameState.rankings[gameState.currentPlayer]) {
         gameState.rankings[gameState.currentPlayer] = { men: [], women: [] };
     }
-
-    const rankings = gameState.rankings[gameState.currentPlayer][gender];
-    if (rankings.length >= 10) {
-        alert('You can only rank 10 athletes per category');
-        return;
-    }
-
-    rankings.push(athlete);
-    updateRankingDisplay(gender);
-    displayAthletePool(gender);
-}
-
-// Remove athlete from ranking
-function removeAthleteFromRanking(gender, athleteId) {
-    const rankings = gameState.rankings[gameState.currentPlayer][gender];
-    const index = rankings.findIndex(a => a.id === athleteId);
-    if (index > -1) {
-        rankings.splice(index, 1);
-        updateRankingDisplay(gender);
-        displayAthletePool(gender);
-    }
-}
-
-// Update ranking display
-function updateRankingDisplay(gender) {
-    const container = document.getElementById(`${gender}-ranking`);
-    const rankings = gameState.rankings[gameState.currentPlayer]?.[gender] || [];
     
-    container.innerHTML = '';
+    let rankings = gameState.rankings[gameState.currentPlayer][gender];
+    
+    // If no rankings yet, initialize with all athletes sorted by PB
+    if (rankings.length === 0) {
+        rankings = sortAthletesByPB([...(gameState.athletes[gender] || [])]);
+        gameState.rankings[gameState.currentPlayer][gender] = rankings;
+    }
+    
+    // Display all athletes in their current rank order
     rankings.forEach((athlete, index) => {
-        const item = document.createElement('div');
-        item.className = 'ranking-item';
-        item.draggable = true;
-        item.dataset.index = index;
-        item.dataset.gender = gender;
+        const row = document.createElement('tr');
+        row.className = 'ranked-row';
+        row.draggable = true;
+        row.dataset.athleteId = athlete.id;
+        row.dataset.gender = gender;
+        row.dataset.rankIndex = index;
         
-        const rankSpan = document.createElement('span');
-        rankSpan.className = 'rank';
-        rankSpan.textContent = `${index + 1}.`;
+        // Add drag event listeners
+        row.addEventListener('dragstart', handleTableRowDragStart);
+        row.addEventListener('dragover', handleTableRowDragOver);
+        row.addEventListener('drop', handleTableRowDrop);
+        row.addEventListener('dragend', handleTableRowDragEnd);
         
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'name';
+        // Rank cell (editable)
+        const rankCell = document.createElement('td');
+        rankCell.className = 'rank-cell-input';
         
-        // Add World Athletics link if available
-        if (athlete.worldAthleticsProfileUrl) {
-            const link = document.createElement('a');
-            link.href = athlete.worldAthleticsProfileUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = athlete.name;
-            link.style.color = 'inherit';
-            link.style.textDecoration = 'none';
-            link.title = 'View World Athletics profile';
-            link.addEventListener('click', (e) => e.stopPropagation());
-            nameSpan.appendChild(link);
+        const rankInput = document.createElement('input');
+        rankInput.type = 'number';
+        rankInput.className = 'table-rank-input';
+        rankInput.min = '1';
+        rankInput.max = rankings.length.toString();
+        rankInput.value = index + 1;
+        rankInput.title = 'Edit rank and press Enter';
+        rankInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleTableRankChange(gender, athlete.id, parseInt(rankInput.value));
+                rankInput.blur();
+            }
+        });
+        rankInput.addEventListener('blur', () => {
+            // Revert to current rank if invalid
+            const updatedRank = gameState.rankings[gameState.currentPlayer][gender].findIndex(r => r.id === athlete.id);
+            rankInput.value = updatedRank + 1;
+        });
+        rankInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            rankInput.select();
+        });
+        rankCell.appendChild(rankInput);
+        row.appendChild(rankCell);
+        
+        // Name cell (clickable to open modal)
+        const nameCell = document.createElement('td');
+        nameCell.className = 'name-cell';
+        nameCell.textContent = athlete.name;
+        nameCell.style.cursor = 'pointer';
+        nameCell.addEventListener('click', () => openAthleteModal(athlete));
+        row.appendChild(nameCell);
+        
+        // Country cell
+        const countryCell = document.createElement('td');
+        countryCell.className = 'country-cell';
+        countryCell.innerHTML = `${getCountryFlag(athlete.country)} ${athlete.country}`;
+        row.appendChild(countryCell);
+        
+        // PB cell
+        const pbCell = document.createElement('td');
+        pbCell.className = 'pb-cell';
+        pbCell.textContent = athlete.pb || '-';
+        row.appendChild(pbCell);
+        
+        // Season Best cell
+        const sbCell = document.createElement('td');
+        sbCell.textContent = athlete.seasonBest || '-';
+        row.appendChild(sbCell);
+        
+        // Marathon Rank cell
+        const marathonRankCell = document.createElement('td');
+        marathonRankCell.className = 'rank-display-cell';
+        if (athlete.marathonRank) {
+            marathonRankCell.textContent = `#${athlete.marathonRank}`;
+            if (athlete.marathonRank <= 10) {
+                marathonRankCell.classList.add('top-rank');
+            }
         } else {
-            nameSpan.textContent = athlete.name;
+            marathonRankCell.textContent = '-';
         }
+        row.appendChild(marathonRankCell);
         
-        const countrySpan = document.createElement('span');
-        countrySpan.className = 'country';
-        countrySpan.textContent = athlete.country;
+        // Overall Rank cell
+        const overallRankCell = document.createElement('td');
+        overallRankCell.className = 'rank-display-cell';
+        if (athlete.overallRank) {
+            overallRankCell.textContent = `#${athlete.overallRank}`;
+            if (athlete.overallRank <= 10) {
+                overallRankCell.classList.add('top-rank');
+            }
+        } else {
+            overallRankCell.textContent = '-';
+        }
+        row.appendChild(overallRankCell);
         
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-btn';
-        removeBtn.textContent = '×';
-        removeBtn.addEventListener('click', () => removeAthleteFromRanking(gender, athlete.id));
+        // Age cell
+        const ageCell = document.createElement('td');
+        ageCell.textContent = athlete.age || '-';
+        row.appendChild(ageCell);
         
-        item.appendChild(rankSpan);
-        item.appendChild(nameSpan);
-        item.appendChild(countrySpan);
-        item.appendChild(removeBtn);
-        
-        // Drag events
-        item.addEventListener('dragstart', handleDragStart);
-        item.addEventListener('dragover', handleDragOver);
-        item.addEventListener('drop', handleDrop);
-        item.addEventListener('dragend', handleDragEnd);
-        
-        container.appendChild(item);
+        tbody.appendChild(row);
     });
 }
 
-// Setup drag and drop
-function setupDragAndDrop(gender) {
-    updateRankingDisplay('men');
-    updateRankingDisplay('women');
-}
+// Drag and drop for table rows
+let draggedTableRow = null;
 
-let draggedItem = null;
-
-function handleDragStart(e) {
-    draggedItem = this;
-    this.classList.add('dragging');
+function handleTableRowDragStart(e) {
+    draggedTableRow = this;
+    this.style.opacity = '0.4';
     e.dataTransfer.effectAllowed = 'move';
 }
 
-function handleDragOver(e) {
+function handleTableRowDragOver(e) {
     if (e.preventDefault) {
         e.preventDefault();
     }
     e.dataTransfer.dropEffect = 'move';
     
-    const afterElement = getDragAfterElement(this.parentElement, e.clientY);
-    if (afterElement == null) {
-        this.parentElement.appendChild(draggedItem);
-    } else {
-        this.parentElement.insertBefore(draggedItem, afterElement);
+    if (draggedTableRow !== this) {
+        const tbody = this.parentElement;
+        const rankedRows = Array.from(tbody.querySelectorAll('.ranked-row'));
+        const draggedIndex = rankedRows.indexOf(draggedTableRow);
+        const targetIndex = rankedRows.indexOf(this);
+        
+        if (draggedIndex < targetIndex) {
+            this.parentElement.insertBefore(draggedTableRow, this.nextSibling);
+        } else {
+            this.parentElement.insertBefore(draggedTableRow, this);
+        }
     }
     
     return false;
 }
 
-function handleDrop(e) {
+function handleTableRowDrop(e) {
     if (e.stopPropagation) {
         e.stopPropagation();
     }
     
-    // Update the rankings array based on new order
+    // Update rankings based on new table row order
     const gender = this.dataset.gender;
-    const container = document.getElementById(`${gender}-ranking`);
-    const items = Array.from(container.querySelectorAll('.ranking-item'));
-    const rankings = gameState.rankings[gameState.currentPlayer][gender];
+    const tbody = this.parentElement;
+    const rankedRows = Array.from(tbody.querySelectorAll('.ranked-row'));
     
-    const newOrder = items.map(item => {
-        const index = parseInt(item.dataset.index);
-        return rankings[index];
-    });
+    const newOrder = rankedRows.map(row => {
+        const athleteId = parseInt(row.dataset.athleteId);
+        const allAthletes = [...gameState.athletes.men, ...gameState.athletes.women];
+        return allAthletes.find(a => a.id === athleteId);
+    }).filter(Boolean);
     
     gameState.rankings[gameState.currentPlayer][gender] = newOrder;
-    updateRankingDisplay(gender);
+    
+    // Refresh displays
+    displayAthleteTable(gender);
     
     return false;
 }
 
-function handleDragEnd(e) {
-    this.classList.remove('dragging');
+function handleTableRowDragEnd(e) {
+    this.style.opacity = '1';
+    draggedTableRow = null;
 }
 
-function getDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.ranking-item:not(.dragging)')];
+// Handle rank change from table input
+function handleTableRankChange(gender, athleteId, newRank) {
+    const rankings = gameState.rankings[gameState.currentPlayer][gender];
     
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
+    // Validate rank
+    if (newRank < 1 || newRank > rankings.length || isNaN(newRank)) {
+        alert(`Please enter a valid rank between 1 and ${rankings.length}`);
+        displayAthleteTable(gender);
+        return;
+    }
+    
+    // Find athlete's current position
+    const currentIndex = rankings.findIndex(a => a.id === athleteId);
+    if (currentIndex === -1) return;
+    
+    // Don't do anything if rank hasn't changed
+    if (currentIndex === newRank - 1) {
+        displayAthleteTable(gender);
+        return;
+    }
+    
+    // Remove athlete from current position
+    const athlete = rankings.splice(currentIndex, 1)[0];
+    
+    // Insert at new position
+    rankings.splice(newRank - 1, 0, athlete);
+    
+    // Refresh display
+    displayAthleteTable(gender);
 }
+
+// Sort athletes by personal best time (fastest first)
+function sortAthletesByPB(athletes) {
+    return athletes.sort((a, b) => {
+        const aTime = timeStringToSeconds(a.pb) || 999999;
+        const bTime = timeStringToSeconds(b.pb) || 999999;
+        return aTime - bTime;
+    });
+}
+
+// Convert time string to seconds for sorting
+function timeStringToSeconds(timeStr) {
+    if (!timeStr || timeStr === '-') return null;
+    const parts = timeStr.split(':');
+    if (parts.length === 3) {
+        const [h, m, s] = parts.map(Number);
+        return h * 3600 + m * 60 + s;
+    }
+    return null;
+}
+
+// Legacy functions - no longer used with table-only view
+function addAthleteToRanking(gender, athlete) {
+    // Not used - table view manages all athletes
+}
+
+function removeAthleteFromRanking(gender, athleteId) {
+    // Not used - table view manages all athletes
+}
+
+function updateRankingDisplay(gender) {
+    // Not used - no separate ranking display boxes
+}
+
+function setupDragAndDrop(gender) {
+    // Not used - table has its own drag and drop
+}
+
+function handleManualRankChange(gender, athleteId, newRank) {
+    // Not used - table has its own rank change handler
+}
+
+// Drag and drop handlers for ranking boxes (legacy - not used)
+function handleDragStart(e) {}
+function handleDragOver(e) { return false; }
+function handleDrop(e) { return false; }
+function handleDragEnd(e) {}
+function getDragAfterElement(container, y) { return null; }
 
 // Handle submit rankings
 async function handleSubmitRankings() {
-    const menRankings = gameState.rankings[gameState.currentPlayer]?.men || [];
-    const womenRankings = gameState.rankings[gameState.currentPlayer]?.women || [];
+    const allMenRankings = gameState.rankings[gameState.currentPlayer]?.men || [];
+    const allWomenRankings = gameState.rankings[gameState.currentPlayer]?.women || [];
+
+    // Extract top 10 from each gender
+    const menRankings = allMenRankings.slice(0, 10);
+    const womenRankings = allWomenRankings.slice(0, 10);
 
     if (menRankings.length !== 10 || womenRankings.length !== 10) {
-        alert('Please rank exactly 10 men and 10 women before submitting.');
+        alert('Please ensure you have ranked at least 10 men and 10 women before submitting.');
         return;
     }
 
     try {
-        // Save rankings to database
+        // Save top 10 rankings to database
         await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1306,6 +1383,570 @@ function handleExportData() {
     a.href = url;
     a.download = 'fantasy-ny-marathon-data.json';
     a.click();
+}
+
+// Handle view athletes
+async function handleViewAthletes() {
+    const container = document.getElementById('athlete-table-container');
+    
+    // Get filter values
+    const confirmedOnly = document.getElementById('filter-confirmed').checked;
+    const missingWaIdOnly = document.getElementById('filter-missing-wa-id').checked;
+    const genderFilter = document.getElementById('filter-gender').value;
+    const sortBy = document.getElementById('sort-athletes').value;
+    
+    try {
+        container.innerHTML = '<p>Loading athletes...</p>';
+        
+        // Fetch all athletes from API with confirmedOnly parameter
+        const response = await fetch(`${API_BASE}/api/athletes?confirmedOnly=${confirmedOnly}`);
+        if (!response.ok) throw new Error('Failed to load athletes');
+        const athletesData = await response.json();
+        
+        // Combine men and women
+        let allAthletes = [
+            ...athletesData.men.map(a => ({...a, gender: 'men'})),
+            ...athletesData.women.map(a => ({...a, gender: 'women'}))
+        ];
+        
+        // Apply gender filter
+        if (genderFilter !== 'all') {
+            allAthletes = allAthletes.filter(a => a.gender === genderFilter);
+        }
+        
+        // Apply missing WA ID filter
+        if (missingWaIdOnly) {
+            allAthletes = allAthletes.filter(a => !a.worldAthleticsId || a.worldAthleticsId.trim() === '');
+        }
+        
+        // Sort athletes
+        allAthletes.sort((a, b) => {
+            if (sortBy === 'id') return a.id - b.id;
+            if (sortBy === 'name') return a.name.localeCompare(b.name);
+            if (sortBy === 'marathon_rank') {
+                const rankA = a.marathonRank || 9999;
+                const rankB = b.marathonRank || 9999;
+                return rankA - rankB;
+            }
+            if (sortBy === 'pb') {
+                const pbA = a.pb || '9:99:99';
+                const pbB = b.pb || '9:99:99';
+                return pbA.localeCompare(pbB);
+            }
+            return 0;
+        });
+        
+        // Display table
+        if (allAthletes.length === 0) {
+            container.innerHTML = '<p>No athletes found.</p>';
+            return;
+        }
+        
+        const table = document.createElement('table');
+        table.className = 'athlete-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Country</th>
+                    <th>Gender</th>
+                    <th>Personal Best</th>
+                    <th>Marathon Rank</th>
+                    <th>Age</th>
+                    <th>World Athletics ID</th>
+                    <th>NYC Confirmed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${allAthletes.map(athlete => `
+                    <tr data-athlete-id="${athlete.id}">
+                        <td>${athlete.id}</td>
+                        <td>
+                            <a href="#" class="athlete-name-link" data-athlete-id="${athlete.id}" title="View athlete details">
+                                ${athlete.name}
+                            </a>
+                        </td>
+                        <td>${athlete.country}</td>
+                        <td>${athlete.gender === 'men' ? 'M' : 'W'}</td>
+                        <td>${athlete.pb || 'N/A'}</td>
+                        <td>${athlete.marathonRank ? '#' + athlete.marathonRank : 'N/A'}</td>
+                        <td>${athlete.age || 'N/A'}</td>
+                        <td class="wa-id-cell">
+                            <input 
+                                type="text" 
+                                class="wa-id-input" 
+                                data-athlete-id="${athlete.id}"
+                                value="${athlete.worldAthleticsId || ''}" 
+                                placeholder="Enter WA ID"
+                                title="World Athletics ID (e.g., 14208500)"
+                            />
+                        </td>
+                        <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
+                        <td class="actions-cell">
+                            <button 
+                                class="btn-save-wa-id btn-small" 
+                                data-athlete-id="${athlete.id}"
+                                title="Save World Athletics ID"
+                            >Save</button>
+                            <button 
+                                class="btn-sync-athlete btn-small btn-secondary" 
+                                data-athlete-id="${athlete.id}"
+                                data-athlete-name="${athlete.name}"
+                                data-wa-id="${athlete.worldAthleticsId || ''}"
+                                title="Sync athlete data from World Athletics"
+                                ${!athlete.worldAthleticsId ? 'disabled' : ''}
+                            >Sync</button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+        
+        container.innerHTML = `
+            <p><strong>${allAthletes.length} athlete(s) found</strong></p>
+            <div class="table-scroll">
+                ${table.outerHTML}
+            </div>
+        `;
+        
+        // Add event listeners to athlete name links
+        document.querySelectorAll('.athlete-name-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const athleteId = parseInt(e.target.dataset.athleteId, 10);
+                const athlete = allAthletes.find(a => a.id === athleteId);
+                if (athlete) {
+                    openAthleteModal(athlete);
+                }
+            });
+        });
+        
+        // Add event listeners to save buttons
+        document.querySelectorAll('.btn-save-wa-id').forEach(button => {
+            button.addEventListener('click', handleSaveWorldAthleticsId);
+        });
+        
+        // Add event listeners to sync buttons
+        document.querySelectorAll('.btn-sync-athlete').forEach(button => {
+            button.addEventListener('click', handleSyncAthlete);
+        });
+        
+    } catch (error) {
+        console.error('Error loading athletes:', error);
+        container.innerHTML = '<p style="color: red;">Error loading athletes. Please try again.</p>';
+    }
+}
+
+// Handle saving World Athletics ID
+async function handleSaveWorldAthleticsId(event) {
+    const button = event.target;
+    const athleteId = button.getAttribute('data-athlete-id');
+    const input = document.querySelector(`.wa-id-input[data-athlete-id="${athleteId}"]`);
+    const worldAthleticsId = input.value.trim();
+    
+    // Confirm if removing ID
+    if (!worldAthleticsId) {
+        if (!confirm('Are you sure you want to remove the World Athletics ID for this athlete?')) {
+            return;
+        }
+    }
+    
+    try {
+        button.disabled = true;
+        button.textContent = 'Saving...';
+        
+        const response = await fetch(`${API_BASE}/api/update-athlete`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: parseInt(athleteId),
+                worldAthleticsId: worldAthleticsId
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update');
+        }
+        
+        const result = await response.json();
+        
+        // Show success feedback
+        button.textContent = 'Saved!';
+        button.style.backgroundColor = '#4CAF50';
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+            button.textContent = 'Save';
+            button.style.backgroundColor = '';
+            button.disabled = false;
+        }, 2000);
+        
+        console.log('Updated athlete:', result.athlete);
+        
+    } catch (error) {
+        console.error('Error saving World Athletics ID:', error);
+        alert('Failed to save World Athletics ID: ' + error.message);
+        button.textContent = 'Save';
+        button.disabled = false;
+    }
+}
+
+// Handle syncing individual athlete
+async function handleSyncAthlete(event) {
+    const button = event.target;
+    const athleteId = button.getAttribute('data-athlete-id');
+    const athleteName = button.getAttribute('data-athlete-name');
+    const worldAthleticsId = button.getAttribute('data-wa-id');
+    
+    if (!worldAthleticsId) {
+        alert('Cannot sync athlete without a World Athletics ID. Please add the ID first.');
+        return;
+    }
+    
+    try {
+        button.disabled = true;
+        const originalText = button.textContent;
+        button.textContent = 'Syncing...';
+        button.style.opacity = '0.6';
+        
+        const response = await fetch(`${API_BASE}/api/sync-athlete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: parseInt(athleteId),
+                worldAthleticsId: worldAthleticsId
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to sync athlete');
+        }
+        
+        const result = await response.json();
+        
+        // Show success feedback
+        button.textContent = 'Synced!';
+        button.style.backgroundColor = '#4CAF50';
+        button.style.opacity = '1';
+        
+        // Reload the athlete table to show updated data
+        setTimeout(async () => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+            button.disabled = false;
+            
+            // Refresh the table
+            await handleViewAthletes();
+        }, 2000);
+        
+        console.log('Synced athlete:', result.athlete);
+        
+    } catch (error) {
+        console.error('Error syncing athlete:', error);
+        alert('Failed to sync athlete: ' + error.message + '\n\nThis may be because:\n- The World Athletics ID is incorrect\n- The athlete is not in the current rankings\n- Network or server error');
+        button.textContent = 'Sync';
+        button.style.opacity = '1';
+        button.disabled = false;
+    }
+}
+
+// ============================================================================
+// ATHLETE CARD MODAL
+// ============================================================================
+
+/**
+ * Open athlete detail modal with progression and race results
+ * @param {number|object} athleteIdOrData - Athlete ID or full athlete object
+ */
+async function openAthleteModal(athleteIdOrData) {
+    const modal = document.getElementById('athlete-modal');
+    let athleteId, athleteData;
+    
+    // Handle both ID and full object
+    if (typeof athleteIdOrData === 'object') {
+        athleteData = athleteIdOrData;
+        athleteId = athleteData.id;
+    } else {
+        athleteId = athleteIdOrData;
+        // Find athlete in current data
+        athleteData = [...gameState.athletes.men, ...gameState.athletes.women]
+            .find(a => a.id === athleteId);
+    }
+    
+    if (!athleteData) {
+        console.error('Athlete not found:', athleteId);
+        return;
+    }
+    
+    // Populate basic info
+    populateAthleteBasicInfo(athleteData);
+    
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Load progression and results data
+    await loadAthleteDetailedData(athleteId);
+}
+
+/**
+ * Convert ISO 3166-1 alpha-3 country code to flag emoji
+ */
+function getCountryFlagEmoji(countryCode) {
+    if (!countryCode || countryCode.length < 2) return '🏁';
+    
+    // Map of common alpha-3 to alpha-2 codes for marathon countries
+    const alpha3ToAlpha2 = {
+        'KEN': 'KE', 'ETH': 'ET', 'USA': 'US', 'GBR': 'GB', 'JPN': 'JP',
+        'FRA': 'FR', 'GER': 'DE', 'ITA': 'IT', 'ESP': 'ES', 'NED': 'NL',
+        'BEL': 'BE', 'SUI': 'CH', 'AUT': 'AT', 'CAN': 'CA', 'AUS': 'AU',
+        'NZL': 'NZ', 'UGA': 'UG', 'TAN': 'TZ', 'ERI': 'ER', 'BRN': 'BH',
+        'MAR': 'MA', 'ALG': 'DZ', 'RSA': 'ZA', 'MEX': 'MX', 'BRA': 'BR',
+        'CHN': 'CN', 'KOR': 'KR', 'PRK': 'KP', 'IND': 'IN', 'ISR': 'IL',
+        'POL': 'PL', 'UKR': 'UA', 'RUS': 'RU', 'BLR': 'BY', 'CZE': 'CZ',
+        'SVK': 'SK', 'HUN': 'HU', 'ROU': 'RO', 'BUL': 'BG', 'SRB': 'RS',
+        'CRO': 'HR', 'SLO': 'SI', 'SWE': 'SE', 'NOR': 'NO', 'DEN': 'DK',
+        'FIN': 'FI', 'ISL': 'IS', 'IRL': 'IE', 'POR': 'PT', 'TUR': 'TR'
+    };
+    
+    const alpha2 = alpha3ToAlpha2[countryCode.toUpperCase()] || countryCode.slice(0, 2).toUpperCase();
+    const codePoints = alpha2.split('').map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
+}
+
+/**
+ * Populate basic athlete information in the modal
+ */
+function populateAthleteBasicInfo(athlete) {
+    // Photo
+    const photo = document.getElementById('modal-athlete-photo');
+    if (athlete.headshotUrl) {
+        photo.src = athlete.headshotUrl;
+        photo.alt = athlete.name;
+    } else {
+        photo.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect fill="%23ddd" width="120" height="120"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="40">?</text></svg>';
+        photo.alt = 'No photo';
+    }
+    
+    // Basic info
+    document.getElementById('modal-athlete-name').textContent = athlete.name;
+    document.getElementById('modal-athlete-country').textContent = getCountryFlagEmoji(athlete.country);
+    document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? 'Men' : 'Women';
+    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age} years` : 'Age N/A';
+    
+    // Stats
+    document.getElementById('modal-athlete-pb').textContent = athlete.pb || 'N/A';
+    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
+    document.getElementById('modal-athlete-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
+    document.getElementById('modal-athlete-overall-rank').textContent = athlete.overallRank ? `#${athlete.overallRank}` : 'N/A';
+    
+    // Sponsor
+    const sponsorSection = document.getElementById('modal-athlete-sponsor-section');
+    if (athlete.sponsor) {
+        document.getElementById('modal-athlete-sponsor').textContent = athlete.sponsor;
+        sponsorSection.style.display = 'block';
+    } else {
+        sponsorSection.style.display = 'none';
+    }
+    
+    // Profile tab
+    document.getElementById('modal-athlete-dob').textContent = athlete.dateOfBirth ? 
+        new Date(athlete.dateOfBirth).toLocaleDateString() : 'N/A';
+    document.getElementById('modal-athlete-wa-id').textContent = athlete.worldAthleticsId || 'N/A';
+    document.getElementById('modal-athlete-road-rank').textContent = athlete.roadRunningRank ? 
+        `#${athlete.roadRunningRank}` : 'N/A';
+    
+    // World Athletics link
+    const waLink = document.getElementById('modal-wa-link');
+    if (athlete.worldAthleticsProfileUrl) {
+        waLink.href = athlete.worldAthleticsProfileUrl;
+        waLink.style.display = 'flex';
+    } else if (athlete.worldAthleticsId) {
+        waLink.href = `https://worldathletics.org/athletes/_/${athlete.worldAthleticsId}`;
+        waLink.style.display = 'flex';
+    } else {
+        waLink.style.display = 'none';
+    }
+}
+
+/**
+ * Load progression and race results from API
+ */
+async function loadAthleteDetailedData(athleteId) {
+    const progressionDiv = document.getElementById('progression-chart');
+    const resultsDiv = document.getElementById('results-list');
+    const progressionLoading = document.getElementById('progression-loading');
+    const resultsLoading = document.getElementById('results-loading');
+    const progressionEmpty = document.getElementById('progression-empty');
+    const resultsEmpty = document.getElementById('results-empty');
+    
+    // Show loading states
+    progressionLoading.style.display = 'block';
+    resultsLoading.style.display = 'block';
+    progressionDiv.innerHTML = '';
+    resultsDiv.innerHTML = '';
+    progressionEmpty.style.display = 'none';
+    resultsEmpty.style.display = 'none';
+    
+    try {
+        // Fetch athlete profile with progression and results
+        const response = await fetch(`${API_BASE}/api/athletes?id=${athleteId}&include=progression,results&year=2025`);
+        if (!response.ok) throw new Error('Failed to load athlete data');
+        
+        const data = await response.json();
+        
+        // Hide loading spinners
+        progressionLoading.style.display = 'none';
+        resultsLoading.style.display = 'none';
+        
+        // Display progression data
+        if (data.progression && data.progression.length > 0) {
+            displayProgression(data.progression);
+        } else {
+            progressionEmpty.style.display = 'block';
+        }
+        
+        // Display race results
+        if (data.raceResults && data.raceResults.length > 0) {
+            displayRaceResults(data.raceResults);
+        } else {
+            resultsEmpty.style.display = 'block';
+        }
+        
+    } catch (error) {
+        console.error('Error loading athlete details:', error);
+        progressionLoading.textContent = 'Error loading data';
+        resultsLoading.textContent = 'Error loading data';
+    }
+}
+
+/**
+ * Display progression data in the modal
+ */
+function displayProgression(progression) {
+    const container = document.getElementById('progression-chart');
+    
+    // Group by season and discipline, keep best mark per combination
+    const grouped = progression.reduce((acc, item) => {
+        const key = `${item.season}-${item.discipline}`;
+        if (!acc[key] || item.mark < acc[key].mark) {
+            acc[key] = item;
+        }
+        return acc;
+    }, {});
+    
+    // Sort by season (most recent first)
+    const sorted = Object.values(grouped).sort((a, b) => 
+        parseInt(b.season) - parseInt(a.season)
+    );
+    
+    container.innerHTML = sorted.map(item => `
+        <div class="progression-item">
+            <div class="progression-year">${item.season}</div>
+            <div class="progression-details">
+                <div class="progression-mark">${item.mark}</div>
+                <div class="progression-venue">${item.venue || 'Unknown venue'}</div>
+                <div class="progression-discipline">${item.discipline}</div>
+            </div>
+            <div class="progression-badge">SB</div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Display race results in the modal
+ */
+function displayRaceResults(results) {
+    const container = document.getElementById('results-list');
+    
+    // Sort by date (most recent first)
+    const sorted = results.sort((a, b) => 
+        new Date(b.competitionDate) - new Date(a.competitionDate)
+    );
+    
+    container.innerHTML = sorted.map(result => {
+        const date = new Date(result.competitionDate);
+        const formattedDate = date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        return `
+            <div class="result-item">
+                <div class="result-header">
+                    <div class="result-competition">${result.competitionName}</div>
+                    <div class="result-position">${result.position || 'N/A'}</div>
+                </div>
+                <div class="result-details">
+                    <div class="result-time">${result.finishTime || 'N/A'}</div>
+                    <div class="result-venue">${result.venue}</div>
+                    <div class="result-date">${formattedDate}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+/**
+ * Close the athlete modal
+ */
+function closeAthleteModal() {
+    const modal = document.getElementById('athlete-modal');
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+    
+    // Reset to first tab
+    switchModalTab('progression');
+}
+
+/**
+ * Switch between tabs in the modal
+ */
+function switchModalTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.card-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // Update tab panels
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+}
+
+/**
+ * Setup modal event listeners
+ */
+function setupAthleteModal() {
+    const modal = document.getElementById('athlete-modal');
+    const closeBtn = modal.querySelector('.modal-close');
+    const overlay = modal.querySelector('.modal-overlay');
+    
+    // Close button
+    closeBtn.addEventListener('click', closeAthleteModal);
+    
+    // Click outside to close
+    overlay.addEventListener('click', closeAthleteModal);
+    
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeAthleteModal();
+        }
+    });
+    
+    // Tab switching
+    document.querySelectorAll('.card-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchModalTab(tab.dataset.tab);
+        });
+    });
 }
 
 // Initialize when DOM is loaded
