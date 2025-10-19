@@ -1515,7 +1515,7 @@ function handleExportData() {
 
 // Handle view athletes
 async function handleViewAthletes() {
-    const container = document.getElementById('athlete-table-container');
+    const container = document.getElementById('athlete-management-container');
     
     // Get filter values
     const confirmedOnly = document.getElementById('filter-confirmed').checked;
