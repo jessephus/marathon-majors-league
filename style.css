@@ -1866,15 +1866,26 @@ footer .btn {
 .athlete-table tbody tr.ranked-row {
     background: #e3f2fd;
     cursor: move;
+    touch-action: none; /* Prevent default touch scrolling during drag */
+    transition: transform 0.1s ease, opacity 0.2s ease;
 }
 
 .athlete-table tbody tr.ranked-row:hover {
     background: #bbdefb;
 }
 
+.athlete-table tbody tr.ranked-row:active {
+    background: #90caf9;
+}
+
 .athlete-table td {
     padding: 10px 8px;
     font-size: 13px;
+    /* Prevent text selection during drag on mobile */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .athlete-table .name-cell {
@@ -1922,6 +1933,13 @@ footer .btn {
     font-size: 14px;
     background: var(--white);
     transition: all 0.2s ease;
+    /* Re-enable text selection for input fields */
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+    /* Don't interfere with drag on mobile */
+    touch-action: auto;
 }
 
 .athlete-table .table-rank-input:hover {

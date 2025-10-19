@@ -275,11 +275,16 @@ function displayAthleteTable(gender) {
         row.dataset.gender = gender;
         row.dataset.rankIndex = index;
         
-        // Add drag event listeners
+        // Add drag event listeners (desktop)
         row.addEventListener('dragstart', handleTableRowDragStart);
         row.addEventListener('dragover', handleTableRowDragOver);
         row.addEventListener('drop', handleTableRowDrop);
         row.addEventListener('dragend', handleTableRowDragEnd);
+        
+        // Add touch event listeners (mobile)
+        row.addEventListener('touchstart', handleTableRowTouchStart, { passive: false });
+        row.addEventListener('touchmove', handleTableRowTouchMove, { passive: false });
+        row.addEventListener('touchend', handleTableRowTouchEnd, { passive: false });
         
         // Rank cell (editable)
         const rankCell = document.createElement('td');
@@ -370,8 +375,11 @@ function displayAthleteTable(gender) {
     });
 }
 
-// Drag and drop for table rows
+// Drag and drop for table rows (desktop + mobile touch)
 let draggedTableRow = null;
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isDragging = false;
 
 function handleTableRowDragStart(e) {
     draggedTableRow = this;
@@ -428,6 +436,95 @@ function handleTableRowDrop(e) {
 function handleTableRowDragEnd(e) {
     this.style.opacity = '1';
     draggedTableRow = null;
+}
+
+// Mobile touch handlers for table rows
+function handleTableRowTouchStart(e) {
+    // Don't interfere if touching an input field
+    if (e.target.tagName === 'INPUT') {
+        return;
+    }
+    
+    draggedTableRow = this;
+    touchStartY = e.touches[0].clientY;
+    isDragging = false;
+    
+    // Add a slight delay before considering it a drag
+    setTimeout(() => {
+        if (draggedTableRow === this) {
+            isDragging = true;
+            this.style.opacity = '0.6';
+            this.style.zIndex = '1000';
+        }
+    }, 200);
+}
+
+function handleTableRowTouchMove(e) {
+    if (!draggedTableRow || !isDragging) return;
+    
+    // Prevent default scrolling while dragging
+    e.preventDefault();
+    
+    touchCurrentY = e.touches[0].clientY;
+    const deltaY = touchCurrentY - touchStartY;
+    
+    // Visual feedback - move the row
+    draggedTableRow.style.transform = `translateY(${deltaY}px)`;
+    
+    // Find which row we're hovering over
+    const touch = e.touches[0];
+    const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+    const rowBelow = elementBelow ? elementBelow.closest('.ranked-row') : null;
+    
+    if (rowBelow && rowBelow !== draggedTableRow) {
+        const tbody = draggedTableRow.parentElement;
+        const rankedRows = Array.from(tbody.querySelectorAll('.ranked-row'));
+        const draggedIndex = rankedRows.indexOf(draggedTableRow);
+        const targetIndex = rankedRows.indexOf(rowBelow);
+        
+        if (draggedIndex < targetIndex) {
+            tbody.insertBefore(draggedTableRow, rowBelow.nextSibling);
+        } else {
+            tbody.insertBefore(draggedTableRow, rowBelow);
+        }
+        
+        // Reset touch position after reordering
+        touchStartY = touchCurrentY;
+    }
+}
+
+function handleTableRowTouchEnd(e) {
+    if (!draggedTableRow) return;
+    
+    if (isDragging) {
+        // Prevent click events from firing
+        e.preventDefault();
+        
+        // Update rankings based on new table row order
+        const gender = draggedTableRow.dataset.gender;
+        const tbody = draggedTableRow.parentElement;
+        const rankedRows = Array.from(tbody.querySelectorAll('.ranked-row'));
+        
+        const newOrder = rankedRows.map(row => {
+            const athleteId = parseInt(row.dataset.athleteId);
+            const allAthletes = [...gameState.athletes.men, ...gameState.athletes.women];
+            return allAthletes.find(a => a.id === athleteId);
+        }).filter(Boolean);
+        
+        gameState.rankings[gameState.currentPlayer][gender] = newOrder;
+        
+        // Refresh displays
+        displayAthleteTable(gender);
+    }
+    
+    // Reset state
+    if (draggedTableRow) {
+        draggedTableRow.style.opacity = '1';
+        draggedTableRow.style.transform = '';
+        draggedTableRow.style.zIndex = '';
+    }
+    draggedTableRow = null;
+    isDragging = false;
 }
 
 // Handle rank change from table input
