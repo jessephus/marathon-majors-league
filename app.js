@@ -1847,9 +1847,68 @@ function getCountryFlagEmoji(countryCode) {
 }
 
 /**
+ * Get gradient colors based on country flag colors
+ */
+function getCountryGradient(countryCode) {
+    const flagColors = {
+        'KEN': ['#BB0000', '#006600', '#000000'], // Kenya - Red, Green, Black
+        'ETH': ['#009543', '#FCDD09', '#DA121A'], // Ethiopia - Green, Yellow, Red
+        'USA': ['#B22234', '#FFFFFF', '#3C3B6E'], // USA - Red, White, Blue
+        'GBR': ['#012169', '#FFFFFF', '#C8102E'], // UK - Blue, White, Red
+        'JPN': ['#BC002D', '#FFFFFF'], // Japan - Red, White
+        'UGA': ['#000000', '#FCDC04', '#D90000'], // Uganda - Black, Yellow, Red
+        'TAN': ['#1EB53A', '#FCD116', '#00A3DD'], // Tanzania - Green, Yellow, Blue
+        'GER': ['#000000', '#DD0000', '#FFCE00'], // Germany - Black, Red, Gold
+        'FRA': ['#002395', '#FFFFFF', '#ED2939'], // France - Blue, White, Red
+        'ESP': ['#AA151B', '#F1BF00'], // Spain - Red, Yellow
+        'ITA': ['#009246', '#FFFFFF', '#CE2B37'], // Italy - Green, White, Red
+        'NED': ['#21468B', '#FFFFFF', '#AE1C28'], // Netherlands - Blue, White, Red
+        'BEL': ['#000000', '#FDDA24', '#EF3340'], // Belgium - Black, Yellow, Red
+        'MAR': ['#C1272D', '#006233'], // Morocco - Red, Green
+        'ERI': ['#12A2DD', '#EA0000', '#4CA64C'], // Eritrea - Blue, Red, Green
+        'BRN': ['#CE1126', '#FFFFFF'], // Bahrain - Red, White
+        'CHN': ['#DE2910', '#FFDE00'], // China - Red, Yellow
+        'MEX': ['#006847', '#FFFFFF', '#CE1126'], // Mexico - Green, White, Red
+        'BRA': ['#009B3A', '#FEDF00', '#002776'], // Brazil - Green, Yellow, Blue
+        'CAN': ['#FF0000', '#FFFFFF'], // Canada - Red, White
+        'AUS': ['#012169', '#FFFFFF', '#E4002B'], // Australia - Blue, White, Red
+        'NOR': ['#BA0C2F', '#FFFFFF', '#00205B'], // Norway - Red, White, Blue
+        'SWE': ['#006AA7', '#FECC00'], // Sweden - Blue, Yellow
+        'FIN': ['#003580', '#FFFFFF'], // Finland - Blue, White
+        'POL': ['#FFFFFF', '#DC143C'], // Poland - White, Red
+        'RUS': ['#FFFFFF', '#0039A6', '#D52B1E'], // Russia - White, Blue, Red
+        'UKR': ['#0057B7', '#FFD700'], // Ukraine - Blue, Yellow
+        'RSA': ['#007A4D', '#FFB612', '#DE3831'], // South Africa - Green, Yellow, Red
+        'POR': ['#006600', '#FF0000'], // Portugal - Green, Red
+        'IRL': ['#169B62', '#FFFFFF', '#FF883E'], // Ireland - Green, White, Orange
+        'BUL': ['#FFFFFF', '#00966E', '#D62612'], // Bulgaria - White, Green, Red
+        'ROU': ['#002B7F', '#FCD116', '#CE1126'], // Romania - Blue, Yellow, Red
+        'CZE': ['#11457E', '#FFFFFF', '#D7141A'], // Czech Republic - Blue, White, Red
+        'HUN': ['#CD2A3E', '#FFFFFF', '#436F4D'], // Hungary - Red, White, Green
+        'CRO': ['#FF0000', '#FFFFFF', '#171796'], // Croatia - Red, White, Blue
+        'TUR': ['#E30A17', '#FFFFFF'], // Turkey - Red, White
+    };
+    
+    const colors = flagColors[countryCode] || ['#2C39A2', '#ff6900']; // Default to app colors
+    
+    // Create gradient with 2-3 colors
+    if (colors.length === 2) {
+        return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)`;
+    } else if (colors.length === 3) {
+        return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+    }
+    
+    return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+}
+
+/**
  * Populate basic athlete information in the modal
  */
 function populateAthleteBasicInfo(athlete) {
+    // Apply country gradient to masthead
+    const masthead = document.getElementById('card-masthead');
+    masthead.style.background = getCountryGradient(athlete.country);
+    
     // Photo
     const photo = document.getElementById('modal-athlete-photo');
     if (athlete.headshotUrl) {
@@ -1864,19 +1923,23 @@ function populateAthleteBasicInfo(athlete) {
     document.getElementById('modal-athlete-name').textContent = athlete.name;
     document.getElementById('modal-athlete-country').textContent = getCountryFlagEmoji(athlete.country);
     document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? 'Men' : 'Women';
-    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age} years` : 'Age N/A';
+    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age}yo` : 'Age N/A';
     
-    // Stats
+    // Masthead stats
     document.getElementById('modal-athlete-pb').textContent = athlete.pb || 'N/A';
-    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
     document.getElementById('modal-athlete-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
+    
+    // Overview tab stats (duplicated for overview section)
+    document.getElementById('overview-pb').textContent = athlete.pb || 'N/A';
+    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
+    document.getElementById('overview-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
     document.getElementById('modal-athlete-overall-rank').textContent = athlete.overallRank ? `#${athlete.overallRank}` : 'N/A';
     
     // Sponsor
     const sponsorSection = document.getElementById('modal-athlete-sponsor-section');
     if (athlete.sponsor) {
         document.getElementById('modal-athlete-sponsor').textContent = athlete.sponsor;
-        sponsorSection.style.display = 'block';
+        sponsorSection.style.display = 'flex';
     } else {
         sponsorSection.style.display = 'none';
     }
@@ -2027,8 +2090,8 @@ function closeAthleteModal() {
     modal.classList.remove('active');
     document.body.style.overflow = '';
     
-    // Reset to first tab
-    switchModalTab('progression');
+    // Reset to overview tab
+    switchModalTab('overview');
 }
 
 /**
@@ -2036,16 +2099,22 @@ function closeAthleteModal() {
  */
 function switchModalTab(tabName) {
     // Update tab buttons
-    document.querySelectorAll('.card-tab').forEach(tab => {
+    document.querySelectorAll('.tab-button').forEach(tab => {
         tab.classList.remove('active');
     });
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    const activeTab = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
     
     // Update tab panels
     document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.remove('active');
     });
-    document.getElementById(`tab-${tabName}`).classList.add('active');
+    const activePanel = document.getElementById(`tab-${tabName}`);
+    if (activePanel) {
+        activePanel.classList.add('active');
+    }
 }
 
 /**
@@ -2070,7 +2139,7 @@ function setupAthleteModal() {
     });
     
     // Tab switching
-    document.querySelectorAll('.card-tab').forEach(tab => {
+    document.querySelectorAll('.tab-button').forEach(tab => {
         tab.addEventListener('click', () => {
             switchModalTab(tab.dataset.tab);
         });
