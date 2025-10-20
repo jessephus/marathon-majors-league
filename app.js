@@ -1847,16 +1847,90 @@ function getCountryFlagEmoji(countryCode) {
 }
 
 /**
+ * Get gradient colors based on country flag colors
+ */
+function getCountryGradient(countryCode) {
+    const flagColors = {
+        'KEN': ['#BB0000', '#006600', '#000000'], // Kenya - Red, Green, Black
+        'ETH': ['#009543', '#FCDD09', '#DA121A'], // Ethiopia - Green, Yellow, Red
+        'USA': ['#B22234', '#FFFFFF', '#3C3B6E'], // USA - Red, White, Blue
+        'GBR': ['#012169', '#FFFFFF', '#C8102E'], // UK - Blue, White, Red
+        'JPN': ['#BC002D', '#FFFFFF'], // Japan - Red, White
+        'UGA': ['#000000', '#FCDC04', '#D90000'], // Uganda - Black, Yellow, Red
+        'TAN': ['#1EB53A', '#FCD116', '#00A3DD'], // Tanzania - Green, Yellow, Blue
+        'GER': ['#000000', '#DD0000', '#FFCE00'], // Germany - Black, Red, Gold
+        'FRA': ['#002395', '#FFFFFF', '#ED2939'], // France - Blue, White, Red
+        'ESP': ['#AA151B', '#F1BF00'], // Spain - Red, Yellow
+        'ITA': ['#009246', '#FFFFFF', '#CE2B37'], // Italy - Green, White, Red
+        'NED': ['#21468B', '#FFFFFF', '#AE1C28'], // Netherlands - Blue, White, Red
+        'BEL': ['#000000', '#FDDA24', '#EF3340'], // Belgium - Black, Yellow, Red
+        'MAR': ['#C1272D', '#006233'], // Morocco - Red, Green
+        'ERI': ['#12A2DD', '#EA0000', '#4CA64C'], // Eritrea - Blue, Red, Green
+        'BRN': ['#CE1126', '#FFFFFF'], // Bahrain - Red, White
+        'CHN': ['#DE2910', '#FFDE00'], // China - Red, Yellow
+        'MEX': ['#006847', '#FFFFFF', '#CE1126'], // Mexico - Green, White, Red
+        'BRA': ['#009B3A', '#FEDF00', '#002776'], // Brazil - Green, Yellow, Blue
+        'CAN': ['#FF0000', '#FFFFFF'], // Canada - Red, White
+        'AUS': ['#012169', '#FFFFFF', '#E4002B'], // Australia - Blue, White, Red
+        'NOR': ['#BA0C2F', '#FFFFFF', '#00205B'], // Norway - Red, White, Blue
+        'SWE': ['#006AA7', '#FECC00'], // Sweden - Blue, Yellow
+        'FIN': ['#003580', '#FFFFFF'], // Finland - Blue, White
+        'POL': ['#FFFFFF', '#DC143C'], // Poland - White, Red
+        'RUS': ['#FFFFFF', '#0039A6', '#D52B1E'], // Russia - White, Blue, Red
+        'UKR': ['#0057B7', '#FFD700'], // Ukraine - Blue, Yellow
+        'RSA': ['#007A4D', '#FFB612', '#DE3831'], // South Africa - Green, Yellow, Red
+        'POR': ['#006600', '#FF0000'], // Portugal - Green, Red
+        'IRL': ['#169B62', '#FFFFFF', '#FF883E'], // Ireland - Green, White, Orange
+        'BUL': ['#FFFFFF', '#00966E', '#D62612'], // Bulgaria - White, Green, Red
+        'ROU': ['#002B7F', '#FCD116', '#CE1126'], // Romania - Blue, Yellow, Red
+        'CZE': ['#11457E', '#FFFFFF', '#D7141A'], // Czech Republic - Blue, White, Red
+        'HUN': ['#CD2A3E', '#FFFFFF', '#436F4D'], // Hungary - Red, White, Green
+        'CRO': ['#FF0000', '#FFFFFF', '#171796'], // Croatia - Red, White, Blue
+        'TUR': ['#E30A17', '#FFFFFF'], // Turkey - Red, White
+    };
+    
+    const colors = flagColors[countryCode] || ['#2C39A2', '#ff6900']; // Default to app colors
+    
+    // Create gradient with 2-3 colors
+    if (colors.length === 2) {
+        return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 100%)`;
+    } else if (colors.length === 3) {
+        return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+    }
+    
+    return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+}
+
+/**
  * Populate basic athlete information in the modal
  */
 function populateAthleteBasicInfo(athlete) {
-    // Photo
+    // Apply country gradient to masthead
+    const masthead = document.getElementById('card-masthead');
+    masthead.style.background = getCountryGradient(athlete.country);
+    
+    // Photo with gender-specific runner fallback
     const photo = document.getElementById('modal-athlete-photo');
+    const isMale = athlete.gender === 'men';
+    
+    // Male runner SVG - running pose
+    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head --%3E%3Ccircle cx="0" cy="-22" r="8" fill="%236c757d"/%3E%3C!-- Body --%3E%3Cpath d="M-2-14 L-2 8" stroke="%236c757d" stroke-width="4" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-2-10 L-12-5 M-2-6 L8 2" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-2 8 L-8 22 M-2 8 L6 18" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    
+    // Female runner SVG - running pose with longer hair
+    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head with hair --%3E%3Cellipse cx="0" cy="-22" rx="9" ry="8" fill="%236c757d"/%3E%3Cpath d="M-9-22 Q-11-18 -9-14 M9-22 Q11-18 9-14" stroke="%236c757d" stroke-width="2" fill="none"/%3E%3C!-- Body --%3E%3Cpath d="M-1-14 L-1 8" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-1-10 L-11-5 M-1-6 L8 2" stroke="%236c757d" stroke-width="2.5" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-1 8 L-7 22 M-1 8 L6 18" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    
+    const defaultRunnerSvg = isMale ? maleRunnerSvg : femaleRunnerSvg;
+    
     if (athlete.headshotUrl) {
         photo.src = athlete.headshotUrl;
         photo.alt = athlete.name;
+        // Handle 404 errors by falling back to gender-specific runner icon
+        photo.onerror = function() {
+            this.onerror = null; // Prevent infinite loop
+            this.src = defaultRunnerSvg;
+        };
     } else {
-        photo.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect fill="%23ddd" width="120" height="120"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="40">?</text></svg>';
+        photo.src = defaultRunnerSvg;
         photo.alt = 'No photo';
     }
     
@@ -1864,19 +1938,23 @@ function populateAthleteBasicInfo(athlete) {
     document.getElementById('modal-athlete-name').textContent = athlete.name;
     document.getElementById('modal-athlete-country').textContent = getCountryFlagEmoji(athlete.country);
     document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? 'Men' : 'Women';
-    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age} years` : 'Age N/A';
+    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age}yo` : 'Age N/A';
     
-    // Stats
+    // Masthead stats
     document.getElementById('modal-athlete-pb').textContent = athlete.pb || 'N/A';
-    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
     document.getElementById('modal-athlete-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
+    
+    // Overview tab stats (duplicated for overview section)
+    document.getElementById('overview-pb').textContent = athlete.pb || 'N/A';
+    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
+    document.getElementById('overview-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
     document.getElementById('modal-athlete-overall-rank').textContent = athlete.overallRank ? `#${athlete.overallRank}` : 'N/A';
     
     // Sponsor
     const sponsorSection = document.getElementById('modal-athlete-sponsor-section');
     if (athlete.sponsor) {
         document.getElementById('modal-athlete-sponsor').textContent = athlete.sponsor;
-        sponsorSection.style.display = 'block';
+        sponsorSection.style.display = 'flex';
     } else {
         sponsorSection.style.display = 'none';
     }
@@ -1905,20 +1983,22 @@ function populateAthleteBasicInfo(athlete) {
  * Load progression and race results from API
  */
 async function loadAthleteDetailedData(athleteId) {
-    const progressionDiv = document.getElementById('progression-chart');
     const resultsDiv = document.getElementById('results-list');
     const progressionLoading = document.getElementById('progression-loading');
     const resultsLoading = document.getElementById('results-loading');
     const progressionEmpty = document.getElementById('progression-empty');
     const resultsEmpty = document.getElementById('results-empty');
+    const chartContainer = document.querySelector('.chart-container');
+    const selectedRaceInfo = document.getElementById('selected-race-info');
     
     // Show loading states
     progressionLoading.style.display = 'block';
     resultsLoading.style.display = 'block';
-    progressionDiv.innerHTML = '';
     resultsDiv.innerHTML = '';
     progressionEmpty.style.display = 'none';
     resultsEmpty.style.display = 'none';
+    if (chartContainer) chartContainer.style.display = 'none';
+    if (selectedRaceInfo) selectedRaceInfo.style.display = 'none';
     
     try {
         // Fetch athlete profile with progression and results
@@ -1947,43 +2027,229 @@ async function loadAthleteDetailedData(athleteId) {
         
     } catch (error) {
         console.error('Error loading athlete details:', error);
-        progressionLoading.textContent = 'Error loading data';
-        resultsLoading.textContent = 'Error loading data';
+        progressionLoading.style.display = 'none';
+        resultsLoading.style.display = 'none';
+        progressionEmpty.textContent = 'Error loading data';
+        progressionEmpty.style.display = 'block';
+        resultsEmpty.textContent = 'Error loading data';
+        resultsEmpty.style.display = 'block';
     }
 }
 
 /**
  * Display progression data in the modal
  */
+let progressionChart = null;
+let currentProgressionData = null;
+
 function displayProgression(progression) {
-    const container = document.getElementById('progression-chart');
+    currentProgressionData = progression;
     
-    // Group by season and discipline, keep best mark per combination
-    const grouped = progression.reduce((acc, item) => {
-        const key = `${item.season}-${item.discipline}`;
-        if (!acc[key] || item.mark < acc[key].mark) {
-            acc[key] = item;
+    // Get unique disciplines
+    const disciplines = [...new Set(progression.map(item => item.discipline))].sort();
+    
+    // Show discipline selector if more than one discipline
+    const disciplineSelector = document.getElementById('discipline-selector');
+    if (disciplines.length > 1) {
+        disciplineSelector.style.display = 'block';
+        disciplineSelector.innerHTML = disciplines.map(d => 
+            `<option value="${d}">${d}</option>`
+        ).join('');
+        
+        // Add change event listener
+        disciplineSelector.onchange = function() {
+            renderProgressionChart(currentProgressionData, this.value);
+        };
+    } else {
+        disciplineSelector.style.display = 'none';
+    }
+    
+    // Render chart with default discipline (Marathon or first available)
+    const defaultDiscipline = disciplines.includes('Marathon') ? 'Marathon' : disciplines[0];
+    if (disciplineSelector) {
+        disciplineSelector.value = defaultDiscipline;
+    }
+    renderProgressionChart(progression, defaultDiscipline);
+}
+
+function renderProgressionChart(progression, discipline = 'Marathon') {
+    const canvas = document.getElementById('progression-chart-canvas');
+    const ctx = canvas.getContext('2d');
+    const progressionTitle = document.getElementById('progression-title');
+    
+    // Update title with current discipline
+    if (progressionTitle) {
+        progressionTitle.textContent = `Season's Best: ${discipline}`;
+    }
+    
+    // Filter by discipline and group by season (best mark per season)
+    const filtered = progression.filter(item => item.discipline === discipline);
+    const grouped = filtered.reduce((acc, item) => {
+        const season = item.season;
+        if (!acc[season] || item.mark < acc[season].mark) {
+            acc[season] = item;
         }
         return acc;
     }, {});
     
-    // Sort by season (most recent first)
+    // Sort by season and limit to last 7 years
     const sorted = Object.values(grouped).sort((a, b) => 
-        parseInt(b.season) - parseInt(a.season)
+        parseInt(a.season) - parseInt(b.season)
     );
+    const limited = sorted.slice(-7);
     
-    container.innerHTML = sorted.map(item => `
-        <div class="progression-item">
-            <div class="progression-year">${item.season}</div>
-            <div class="progression-details">
-                <div class="progression-mark">${item.mark}</div>
-                <div class="progression-venue">${item.venue || 'Unknown venue'}</div>
-                <div class="progression-discipline">${item.discipline}</div>
-            </div>
-            <div class="progression-badge">SB</div>
-        </div>
-    `).join('');
+    if (limited.length === 0) {
+        document.getElementById('progression-empty').style.display = 'block';
+        canvas.parentElement.style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('progression-empty').style.display = 'none';
+    canvas.parentElement.style.display = 'block';
+    
+    // Convert time strings to seconds for plotting
+    const timeToSeconds = (timeStr) => {
+        if (!timeStr) return null;
+        const parts = timeStr.split(':').map(Number);
+        if (parts.length === 3) {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else if (parts.length === 2) {
+            return parts[0] * 60 + parts[1];
+        }
+        return null;
+    };
+    
+    const secondsToTime = (seconds) => {
+        if (!seconds) return 'N/A';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        return `${minutes}:${String(secs).padStart(2, '0')}`;
+    };
+    
+    const chartData = limited.map(item => ({
+        x: item.season,
+        y: timeToSeconds(item.mark),
+        ...item
+    }));
+    
+    // Destroy previous chart if exists
+    if (progressionChart) {
+        progressionChart.destroy();
+    }
+    
+    // Create new chart
+    progressionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: discipline,
+                data: chartData,
+                borderColor: '#ff6900',
+                backgroundColor: 'rgba(255, 105, 0, 0.1)',
+                borderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#ff6900',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                tension: 0.2,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'nearest'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: {
+                        display: true,
+                        text: 'Year',
+                        font: {
+                            weight: 'bold',
+                            size: 13
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return Math.floor(value);
+                        },
+                        stepSize: 1
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    reverse: true, // Lower times are better
+                    title: {
+                        display: true,
+                        text: 'Time',
+                        font: {
+                            weight: 'bold',
+                            size: 13
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return secondsToTime(value);
+                        }
+                    }
+                }
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const data = chartData[index];
+                    displaySelectedRaceInfo(data);
+                }
+            }
+        }
+    });
 }
+
+function displaySelectedRaceInfo(raceData) {
+    const container = document.getElementById('selected-race-info');
+    const content = document.getElementById('race-info-content');
+    
+    content.innerHTML = `
+        <div class="race-info-item">
+            <div class="race-info-label">Year</div>
+            <div class="race-info-value">${raceData.season}</div>
+        </div>
+        <div class="race-info-item">
+            <div class="race-info-label">Time</div>
+            <div class="race-info-value">${raceData.mark}</div>
+        </div>
+        <div class="race-info-item">
+            <div class="race-info-label">Venue</div>
+            <div class="race-info-value">${raceData.venue || 'Unknown'}</div>
+        </div>
+        <div class="race-info-item">
+            <div class="race-info-label">Discipline</div>
+            <div class="race-info-value">${raceData.discipline}</div>
+        </div>
+    `;
+    
+    container.style.display = 'block';
+}
+
 
 /**
  * Display race results in the modal
@@ -2027,8 +2293,8 @@ function closeAthleteModal() {
     modal.classList.remove('active');
     document.body.style.overflow = '';
     
-    // Reset to first tab
-    switchModalTab('progression');
+    // Reset to overview tab
+    switchModalTab('overview');
 }
 
 /**
@@ -2036,16 +2302,22 @@ function closeAthleteModal() {
  */
 function switchModalTab(tabName) {
     // Update tab buttons
-    document.querySelectorAll('.card-tab').forEach(tab => {
+    document.querySelectorAll('.tab-button').forEach(tab => {
         tab.classList.remove('active');
     });
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    const activeTab = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
     
     // Update tab panels
     document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.remove('active');
     });
-    document.getElementById(`tab-${tabName}`).classList.add('active');
+    const activePanel = document.getElementById(`tab-${tabName}`);
+    if (activePanel) {
+        activePanel.classList.add('active');
+    }
 }
 
 /**
@@ -2070,7 +2342,7 @@ function setupAthleteModal() {
     });
     
     // Tab switching
-    document.querySelectorAll('.card-tab').forEach(tab => {
+    document.querySelectorAll('.tab-button').forEach(tab => {
         tab.addEventListener('click', () => {
             switchModalTab(tab.dataset.tab);
         });

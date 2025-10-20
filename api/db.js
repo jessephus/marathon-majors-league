@@ -12,6 +12,7 @@ export async function getAllAthletes(confirmedOnly = true) {
   
   if (confirmedOnly) {
     // Only return athletes confirmed for active races
+    // Calculate season_best from 2025 marathon race results only
     athletes = await sql`
       SELECT DISTINCT
         a.id, 
@@ -28,7 +29,15 @@ export async function getAllAthletes(confirmedOnly = true) {
         a.age,
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
-        a.season_best as "seasonBest",
+        COALESCE(
+          (SELECT MIN(arr.finish_time)
+           FROM athlete_race_results arr
+           WHERE arr.athlete_id = a.id
+           AND arr.year = '2025'
+           AND arr.discipline = 'Marathon'
+           AND arr.finish_time IS NOT NULL),
+          a.season_best
+        ) as "seasonBest",
         true as "nycConfirmed"
       FROM athletes a
       INNER JOIN athlete_races ar ON a.id = ar.athlete_id
@@ -38,6 +47,7 @@ export async function getAllAthletes(confirmedOnly = true) {
     `;
   } else {
     // Return all athletes with confirmation status
+    // Calculate season_best from 2025 marathon race results only
     athletes = await sql`
       SELECT DISTINCT
         a.id, 
@@ -54,7 +64,15 @@ export async function getAllAthletes(confirmedOnly = true) {
         a.age,
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
-        a.season_best as "seasonBest",
+        COALESCE(
+          (SELECT MIN(arr.finish_time)
+           FROM athlete_race_results arr
+           WHERE arr.athlete_id = a.id
+           AND arr.year = '2025'
+           AND arr.discipline = 'Marathon'
+           AND arr.finish_time IS NOT NULL),
+          a.season_best
+        ) as "seasonBest",
         CASE 
           WHEN ar.id IS NOT NULL THEN true 
           ELSE false 
@@ -93,7 +111,15 @@ export async function getAthleteById(id) {
       age,
       date_of_birth as "dateOfBirth",
       sponsor,
-      season_best as "seasonBest"
+      COALESCE(
+        (SELECT MIN(arr.finish_time)
+         FROM athlete_race_results arr
+         WHERE arr.athlete_id = id
+         AND arr.year = '2025'
+         AND arr.discipline = 'Marathon'
+         AND arr.finish_time IS NOT NULL),
+        season_best
+      ) as "seasonBest"
     FROM athletes
     WHERE id = ${id}
   `;

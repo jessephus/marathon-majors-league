@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy NY Marathon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -159,114 +161,171 @@
             </div>
         </main>
 
-        <!-- Athlete Card Modal -->
+        <!-- Athlete Card Modal - Redesigned -->
         <div id="athlete-modal" class="modal">
             <div class="modal-overlay"></div>
-            <div class="athlete-card">
+            <div class="athlete-card-container">
                 <button class="modal-close" aria-label="Close">&times;</button>
                 
-                <!-- Compact Card Header with Inline Photo and Name -->
-                <div class="card-header">
-                    <div class="card-header-content">
-                        <div class="card-photo">
-                            <img id="modal-athlete-photo" src="" alt="Athlete photo">
-                            <div class="card-photo-overlay">
-                                <span id="modal-athlete-country" class="country-badge"></span>
+                <!-- Masthead Section with Gradient Background -->
+                <div id="card-masthead" class="card-masthead">
+                    <div class="masthead-content">
+                        <!-- Left: Headshot and Flag -->
+                        <div class="masthead-photo-section">
+                            <div class="masthead-photo-wrapper">
+                                <img id="modal-athlete-photo" src="" alt="Athlete photo" class="masthead-photo">
+                                <div class="masthead-flag">
+                                    <span id="modal-athlete-country" class="flag-emoji"></span>
+                                </div>
                             </div>
                         </div>
-                        <div class="card-title">
-                            <h2 id="modal-athlete-name"></h2>
-                            <div class="card-subtitle">
-                                <span id="modal-athlete-gender" class="gender-badge"></span>
-                                <span id="modal-athlete-age" class="age-badge"></span>
+                        
+                        <!-- Right: Biographical Data -->
+                        <div class="masthead-bio-section">
+                            <h2 id="modal-athlete-name" class="athlete-name"></h2>
+                            <div class="bio-details">
+                                <div class="bio-item">
+                                    <span id="modal-athlete-gender" class="bio-value"></span>
+                                </div>
+                                <div class="bio-item">
+                                    <span id="modal-athlete-age" class="bio-value"></span>
+                                </div>
+                            </div>
+                            <div class="masthead-stats-grid">
+                                <div class="masthead-stat">
+                                    <div class="masthead-stat-label">Marathon Rank</div>
+                                    <div id="modal-athlete-marathon-rank" class="masthead-stat-value">#61</div>
+                                </div>
+                                <div class="masthead-stat">
+                                    <div class="masthead-stat-label">Personal Best</div>
+                                    <div id="modal-athlete-pb" class="masthead-stat-value">2:01:09</div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Ultra-Compact Stats List -->
-                <div class="card-stats">
-                    <div class="stat-row">
-                        <span class="stat-label">Personal Best</span>
-                        <span class="stat-value" id="modal-athlete-pb"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Season Best</span>
-                        <span class="stat-value" id="modal-athlete-sb"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Marathon Rank</span>
-                        <span class="stat-value" id="modal-athlete-marathon-rank"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Overall Rank</span>
-                        <span class="stat-value" id="modal-athlete-overall-rank"></span>
-                    </div>
-                </div>
-
-                <!-- Sponsor Badge -->
-                <div id="modal-athlete-sponsor-section" class="sponsor-section">
-                    <span class="sponsor-label">Sponsored by</span>
-                    <span id="modal-athlete-sponsor" class="sponsor-name"></span>
-                </div>
-
-                <!-- Tabs for Data Sections -->
-                <div class="card-tabs">
-                    <button class="card-tab active" data-tab="progression">Progression</button>
-                    <button class="card-tab" data-tab="results">2025 Results</button>
-                    <button class="card-tab" data-tab="profile">Profile</button>
+                <!-- Tabs Navigation -->
+                <div class="tabs-container">
+                    <nav class="tabs-nav">
+                        <button class="tab-button active" data-tab="overview">Overview</button>
+                        <button class="tab-button" data-tab="results">Race Log</button>
+                        <button class="tab-button" data-tab="progression">Progression</button>
+                        <button class="tab-button" data-tab="news">News</button>
+                    </nav>
                 </div>
 
                 <!-- Tab Content -->
-                <div class="card-content">
-                    <!-- Progression Tab -->
-                    <div id="tab-progression" class="tab-panel active">
-                        <div class="progression-header">
-                            <h3>Season's Best Progression</h3>
-                            <div id="progression-loading" class="loading-spinner">Loading...</div>
+                <div class="tab-content-container">
+                    <!-- Overview Tab -->
+                    <div id="tab-overview" class="tab-panel active">
+                        <div class="overview-section">
+                            <h3 class="section-title">Key Statistics</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-label">Personal Best</div>
+                                    <div id="overview-pb" class="stat-value-large">2:01:09</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Season Best</div>
+                                    <div id="modal-athlete-sb" class="stat-value-large">2:01:09</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Marathon Rank</div>
+                                    <div id="overview-marathon-rank" class="stat-value-large">#61</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Overall Rank</div>
+                                    <div id="modal-athlete-overall-rank" class="stat-value-large">#612</div>
+                                </div>
+                            </div>
                         </div>
-                        <div id="progression-chart" class="progression-list"></div>
-                        <div id="progression-empty" class="empty-state" style="display: none;">
-                            <p>No progression data available</p>
+
+                        <!-- Profile Information -->
+                        <div class="overview-section">
+                            <h3 class="section-title">Profile Information</h3>
+                            <div class="profile-grid">
+                                <div class="profile-row">
+                                    <span class="profile-label">Date of Birth</span>
+                                    <span id="modal-athlete-dob" class="profile-value">N/A</span>
+                                </div>
+                                <div class="profile-row">
+                                    <span class="profile-label">World Athletics ID</span>
+                                    <span id="modal-athlete-wa-id" class="profile-value">N/A</span>
+                                </div>
+                                <div class="profile-row">
+                                    <span class="profile-label">Road Running Rank</span>
+                                    <span id="modal-athlete-road-rank" class="profile-value">N/A</span>
+                                </div>
+                                <div id="modal-athlete-sponsor-section" class="profile-row" style="display: none;">
+                                    <span class="profile-label">Sponsor</span>
+                                    <span id="modal-athlete-sponsor" class="profile-value">N/A</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- World Athletics Link -->
+                        <div class="overview-section">
+                            <a id="modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="wa-link-button">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                View Full World Athletics Profile
+                            </a>
                         </div>
                     </div>
 
-                    <!-- Results Tab -->
+                    <!-- Race Log Tab -->
                     <div id="tab-results" class="tab-panel">
-                        <div class="results-header">
-                            <h3>2025 Race Results</h3>
-                            <div id="results-loading" class="loading-spinner">Loading...</div>
+                        <div class="tab-content-header">
+                            <h3 class="tab-content-title">2025 Race Results</h3>
+                            <div id="results-loading" class="loading-indicator">Loading...</div>
                         </div>
                         <div id="results-list" class="results-list"></div>
                         <div id="results-empty" class="empty-state" style="display: none;">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
                             <p>No 2025 race results available</p>
                         </div>
                     </div>
 
-                    <!-- Profile Tab -->
-                    <div id="tab-profile" class="tab-panel">
-                        <div class="profile-info">
-                            <div class="profile-item">
-                                <span class="profile-label">Date of Birth</span>
-                                <span id="modal-athlete-dob" class="profile-value"></span>
-                            </div>
-                            <div class="profile-item">
-                                <span class="profile-label">World Athletics ID</span>
-                                <span id="modal-athlete-wa-id" class="profile-value"></span>
-                            </div>
-                            <div class="profile-item">
-                                <span class="profile-label">Road Running Rank</span>
-                                <span id="modal-athlete-road-rank" class="profile-value"></span>
-                            </div>
+                    <!-- Progression Tab -->
+                    <div id="tab-progression" class="tab-panel">
+                        <div class="tab-content-header">
+                            <h3 id="progression-title" class="tab-content-title">Season's Best: Marathon</h3>
+                            <div id="progression-loading" class="loading-indicator">Loading...</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="progression-chart-canvas"></canvas>
+                        </div>
+                        <select id="discipline-selector" class="discipline-selector" style="display: none;">
+                            <option value="Marathon">Marathon</option>
+                        </select>
+                        <div id="selected-race-info" class="selected-race-info" style="display: none;">
+                            <h4 class="race-info-title">Race Details</h4>
+                            <div id="race-info-content"></div>
+                        </div>
+                        <div id="progression-empty" class="empty-state" style="display: none;">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p>No progression data available</p>
                         </div>
                     </div>
-                </div>
 
-                <!-- Footer with Action -->
-                <div class="card-footer">
-                    <a id="modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-                        View Full World Athletics Profile →
-                    </a>
+                    <!-- News Tab -->
+                    <div id="tab-news" class="tab-panel">
+                        <div class="tab-content-header">
+                            <h3 class="tab-content-title">Latest News</h3>
+                        </div>
+                        <div class="empty-state">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                            </svg>
+                            <p>News feed coming soon</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
