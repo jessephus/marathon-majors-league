@@ -33,7 +33,7 @@ export async function getAllAthletes(confirmedOnly = true) {
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
            WHERE arr.athlete_id = a.id
-           AND arr.year = 2025
+           AND arr.year = '2025'
            AND arr.discipline = 'Marathon'
            AND arr.finish_time IS NOT NULL),
           a.season_best
@@ -68,7 +68,7 @@ export async function getAllAthletes(confirmedOnly = true) {
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
            WHERE arr.athlete_id = a.id
-           AND arr.year = 2025
+           AND arr.year = '2025'
            AND arr.discipline = 'Marathon'
            AND arr.finish_time IS NOT NULL),
           a.season_best
@@ -115,7 +115,7 @@ export async function getAthleteById(id) {
         (SELECT MIN(arr.finish_time)
          FROM athlete_race_results arr
          WHERE arr.athlete_id = id
-         AND arr.year = 2025
+         AND arr.year = '2025'
          AND arr.discipline = 'Marathon'
          AND arr.finish_time IS NOT NULL),
         season_best
