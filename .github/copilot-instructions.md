@@ -108,6 +108,7 @@ vercel --prod              # Deploy to production
 - **JavaScript**: ES6+ features, async/await, template literals
 - **HTML/CSS**: Mobile-first responsive design, semantic elements, CSS custom properties
 - **API Design**: RESTful endpoints, CORS headers, consistent JSON responses
+- **UI/UX**: Do not use emoji for icons or visual elements - use text labels, SVG icons, or icon fonts instead
 
 ### Common Development Patterns
 - Use `storage.js` helper functions: `getData()`, `saveData()`

@@ -1088,6 +1088,19 @@ footer .btn {
     /* Applied dynamically in JavaScript */
 }
 
+/* Semi-transparent black overlay for better text readability */
+.card-masthead::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 0;
+    pointer-events: none;
+}
+
 .card-masthead::before {
     content: '';
     position: absolute;
@@ -1097,6 +1110,7 @@ footer .btn {
     height: 200%;
     background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
     animation: shimmer 4s infinite;
+    z-index: 0;
 }
 
 @keyframes shimmer {
@@ -1185,8 +1199,10 @@ footer .btn {
     backdrop-filter: blur(10px);
 }
 
-.bio-icon {
-    font-size: 16px;
+.bio-label {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.9;
 }
 
 .bio-value {
