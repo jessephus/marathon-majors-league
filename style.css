@@ -1283,6 +1283,7 @@ footer .btn {
 .tab-panel {
     display: none;
     padding: 20px;
+    padding-bottom: 80px; /* Extra space at bottom for mobile address bar */
     animation: fadeIn 0.3s ease;
     height: 100%;
     overflow-y: auto;
