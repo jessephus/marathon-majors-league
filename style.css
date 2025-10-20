@@ -1199,12 +1199,6 @@ footer .btn {
     backdrop-filter: blur(10px);
 }
 
-.bio-label {
-    font-size: 12px;
-    font-weight: 500;
-    opacity: 0.9;
-}
-
 .bio-value {
     font-weight: 600;
 }
