@@ -293,15 +293,15 @@
                     <!-- Progression Tab -->
                     <div id="tab-progression" class="tab-panel">
                         <div class="tab-content-header">
-                            <h3 class="tab-content-title">Season's Best Progression</h3>
-                            <select id="discipline-selector" class="discipline-selector" style="display: none;">
-                                <option value="Marathon">Marathon</option>
-                            </select>
+                            <h3 id="progression-title" class="tab-content-title">Season's Best: Marathon</h3>
                             <div id="progression-loading" class="loading-indicator">Loading...</div>
                         </div>
                         <div class="chart-container">
                             <canvas id="progression-chart-canvas"></canvas>
                         </div>
+                        <select id="discipline-selector" class="discipline-selector" style="display: none;">
+                            <option value="Marathon">Marathon</option>
+                        </select>
                         <div id="selected-race-info" class="selected-race-info" style="display: none;">
                             <h4 class="race-info-title">Race Details</h4>
                             <div id="race-info-content"></div>

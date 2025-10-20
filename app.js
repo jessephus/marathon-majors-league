@@ -2066,12 +2066,21 @@ function displayProgression(progression) {
     
     // Render chart with default discipline (Marathon or first available)
     const defaultDiscipline = disciplines.includes('Marathon') ? 'Marathon' : disciplines[0];
+    if (disciplineSelector) {
+        disciplineSelector.value = defaultDiscipline;
+    }
     renderProgressionChart(progression, defaultDiscipline);
 }
 
 function renderProgressionChart(progression, discipline = 'Marathon') {
     const canvas = document.getElementById('progression-chart-canvas');
     const ctx = canvas.getContext('2d');
+    const progressionTitle = document.getElementById('progression-title');
+    
+    // Update title with current discipline
+    if (progressionTitle) {
+        progressionTitle.textContent = `Season's Best: ${discipline}`;
+    }
     
     // Filter by discipline and group by season (best mark per season)
     const filtered = progression.filter(item => item.discipline === discipline);
