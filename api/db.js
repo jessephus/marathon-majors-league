@@ -12,7 +12,7 @@ export async function getAllAthletes(confirmedOnly = true) {
   
   if (confirmedOnly) {
     // Only return athletes confirmed for active races
-    // Calculate season_best from 2025 race results
+    // Calculate season_best from 2025 marathon race results only
     athletes = await sql`
       SELECT DISTINCT
         a.id, 
@@ -33,8 +33,8 @@ export async function getAllAthletes(confirmedOnly = true) {
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
            WHERE arr.athlete_id = a.id
-           AND arr.year = '2025'
-           AND arr.discipline ILIKE '%Marathon%'
+           AND arr.year = 2025
+           AND arr.discipline = 'Marathon'
            AND arr.finish_time IS NOT NULL),
           a.season_best
         ) as "seasonBest",
@@ -47,7 +47,7 @@ export async function getAllAthletes(confirmedOnly = true) {
     `;
   } else {
     // Return all athletes with confirmation status
-    // Calculate season_best from 2025 race results
+    // Calculate season_best from 2025 marathon race results only
     athletes = await sql`
       SELECT DISTINCT
         a.id, 
@@ -68,8 +68,8 @@ export async function getAllAthletes(confirmedOnly = true) {
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
            WHERE arr.athlete_id = a.id
-           AND arr.year = '2025'
-           AND arr.discipline ILIKE '%Marathon%'
+           AND arr.year = 2025
+           AND arr.discipline = 'Marathon'
            AND arr.finish_time IS NOT NULL),
           a.season_best
         ) as "seasonBest",
@@ -116,7 +116,7 @@ export async function getAthleteById(id) {
          FROM athlete_race_results arr
          WHERE arr.athlete_id = id
          AND arr.year = 2025
-         AND arr.discipline ILIKE '%Marathon%'
+         AND arr.discipline = 'Marathon'
          AND arr.finish_time IS NOT NULL),
         season_best
       ) as "seasonBest"

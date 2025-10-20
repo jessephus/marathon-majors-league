@@ -1914,8 +1914,13 @@ function populateAthleteBasicInfo(athlete) {
     if (athlete.headshotUrl) {
         photo.src = athlete.headshotUrl;
         photo.alt = athlete.name;
+        // Handle 404 errors by falling back to default runner icon
+        photo.onerror = function() {
+            this.onerror = null; // Prevent infinite loop
+            this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3Cpath fill="%236c757d" d="M-5-25 Q-5-30 0-30 Q5-30 5-25 Q5-20 0-20 Q-5-20 -5-25 M-10-15 L-10 0 L-15 15 L-10 15 L-5 5 L-5 20 L0 20 L0 5 L5 5 L5 20 L10 20 L10 5 L15 15 L20 15 L15 0 L15-15 Q15-18 12-18 L-12-18 Q-15-18 -15-15"/%3E%3C/g%3E%3C/svg%3E';
+        };
     } else {
-        photo.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><rect fill="%23ddd" width="120" height="120"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-size="40">?</text></svg>';
+        photo.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3Cpath fill="%236c757d" d="M-5-25 Q-5-30 0-30 Q5-30 5-25 Q5-20 0-20 Q-5-20 -5-25 M-10-15 L-10 0 L-15 15 L-10 15 L-5 5 L-5 20 L0 20 L0 5 L5 5 L5 20 L10 20 L10 5 L15 15 L20 15 L15 0 L15-15 Q15-18 12-18 L-12-18 Q-15-18 -15-15"/%3E%3C/g%3E%3C/svg%3E';
         photo.alt = 'No photo';
     }
     
@@ -2010,8 +2015,12 @@ async function loadAthleteDetailedData(athleteId) {
         
     } catch (error) {
         console.error('Error loading athlete details:', error);
-        progressionLoading.textContent = 'Error loading data';
-        resultsLoading.textContent = 'Error loading data';
+        progressionLoading.style.display = 'none';
+        resultsLoading.style.display = 'none';
+        progressionEmpty.textContent = 'Error loading data';
+        progressionEmpty.style.display = 'block';
+        resultsEmpty.textContent = 'Error loading data';
+        resultsEmpty.style.display = 'block';
     }
 }
 
