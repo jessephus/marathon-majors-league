@@ -1799,62 +1799,62 @@ footer .btn {
     }
 
     .card-masthead {
-        padding: 16px 12px;
+        padding: 12px 10px;
     }
 
     .masthead-content {
-        flex-direction: column;
-        text-align: center;
-        gap: 12px;
+        /* Keep two-column layout but make everything smaller */
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
     }
 
     .masthead-photo-section {
-        width: 100%;
-        display: flex;
-        justify-content: center;
+        flex-shrink: 0;
     }
 
     .masthead-photo-wrapper {
-        width: 90px;
-        height: 90px;
+        width: 70px;
+        height: 70px;
     }
 
     .masthead-flag {
-        width: 28px;
-        height: 28px;
-        font-size: 16px;
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
         border-width: 2px;
     }
 
     .athlete-name {
-        font-size: 18px;
+        font-size: 16px;
+        margin-bottom: 8px;
     }
 
     .bio-details {
-        justify-content: center;
-        gap: 12px;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     .bio-item {
-        font-size: 12px;
-        padding: 4px 8px;
+        font-size: 10px;
+        padding: 3px 6px;
     }
 
     .masthead-stats-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
     }
 
     .masthead-stat {
-        padding: 8px 10px;
+        padding: 6px 8px;
     }
 
     .masthead-stat-label {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     .masthead-stat-value {
-        font-size: 16px;
+        font-size: 13px;
     }
 
     .tabs-nav {
