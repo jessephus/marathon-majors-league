@@ -1909,18 +1909,28 @@ function populateAthleteBasicInfo(athlete) {
     const masthead = document.getElementById('card-masthead');
     masthead.style.background = getCountryGradient(athlete.country);
     
-    // Photo
+    // Photo with gender-specific runner fallback
     const photo = document.getElementById('modal-athlete-photo');
+    const isMale = athlete.gender === 'men';
+    
+    // Male runner SVG - running pose
+    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head --%3E%3Ccircle cx="0" cy="-22" r="8" fill="%236c757d"/%3E%3C!-- Body --%3E%3Cpath d="M-2-14 L-2 8" stroke="%236c757d" stroke-width="4" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-2-10 L-12-5 M-2-6 L8 2" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-2 8 L-8 22 M-2 8 L6 18" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    
+    // Female runner SVG - running pose with longer hair
+    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head with hair --%3E%3Cellipse cx="0" cy="-22" rx="9" ry="8" fill="%236c757d"/%3E%3Cpath d="M-9-22 Q-11-18 -9-14 M9-22 Q11-18 9-14" stroke="%236c757d" stroke-width="2" fill="none"/%3E%3C!-- Body --%3E%3Cpath d="M-1-14 L-1 8" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-1-10 L-11-5 M-1-6 L8 2" stroke="%236c757d" stroke-width="2.5" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-1 8 L-7 22 M-1 8 L6 18" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    
+    const defaultRunnerSvg = isMale ? maleRunnerSvg : femaleRunnerSvg;
+    
     if (athlete.headshotUrl) {
         photo.src = athlete.headshotUrl;
         photo.alt = athlete.name;
-        // Handle 404 errors by falling back to default runner icon
+        // Handle 404 errors by falling back to gender-specific runner icon
         photo.onerror = function() {
             this.onerror = null; // Prevent infinite loop
-            this.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3Cpath fill="%236c757d" d="M-5-25 Q-5-30 0-30 Q5-30 5-25 Q5-20 0-20 Q-5-20 -5-25 M-10-15 L-10 0 L-15 15 L-10 15 L-5 5 L-5 20 L0 20 L0 5 L5 5 L5 20 L10 20 L10 5 L15 15 L20 15 L15 0 L15-15 Q15-18 12-18 L-12-18 Q-15-18 -15-15"/%3E%3C/g%3E%3C/svg%3E';
+            this.src = defaultRunnerSvg;
         };
     } else {
-        photo.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3Cpath fill="%236c757d" d="M-5-25 Q-5-30 0-30 Q5-30 5-25 Q5-20 0-20 Q-5-20 -5-25 M-10-15 L-10 0 L-15 15 L-10 15 L-5 5 L-5 20 L0 20 L0 5 L5 5 L5 20 L10 20 L10 5 L15 15 L20 15 L15 0 L15-15 Q15-18 12-18 L-12-18 Q-15-18 -15-15"/%3E%3C/g%3E%3C/svg%3E';
+        photo.src = defaultRunnerSvg;
         photo.alt = 'No photo';
     }
     
@@ -2027,35 +2037,208 @@ async function loadAthleteDetailedData(athleteId) {
 /**
  * Display progression data in the modal
  */
+let progressionChart = null;
+let currentProgressionData = null;
+
 function displayProgression(progression) {
-    const container = document.getElementById('progression-chart');
+    currentProgressionData = progression;
     
-    // Group by season and discipline, keep best mark per combination
-    const grouped = progression.reduce((acc, item) => {
-        const key = `${item.season}-${item.discipline}`;
-        if (!acc[key] || item.mark < acc[key].mark) {
-            acc[key] = item;
+    // Get unique disciplines
+    const disciplines = [...new Set(progression.map(item => item.discipline))].sort();
+    
+    // Show discipline selector if more than one discipline
+    const disciplineSelector = document.getElementById('discipline-selector');
+    if (disciplines.length > 1) {
+        disciplineSelector.style.display = 'block';
+        disciplineSelector.innerHTML = disciplines.map(d => 
+            `<option value="${d}">${d}</option>`
+        ).join('');
+        
+        // Add change event listener
+        disciplineSelector.onchange = function() {
+            renderProgressionChart(currentProgressionData, this.value);
+        };
+    } else {
+        disciplineSelector.style.display = 'none';
+    }
+    
+    // Render chart with default discipline (Marathon or first available)
+    const defaultDiscipline = disciplines.includes('Marathon') ? 'Marathon' : disciplines[0];
+    renderProgressionChart(progression, defaultDiscipline);
+}
+
+function renderProgressionChart(progression, discipline = 'Marathon') {
+    const canvas = document.getElementById('progression-chart-canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Filter by discipline and group by season (best mark per season)
+    const filtered = progression.filter(item => item.discipline === discipline);
+    const grouped = filtered.reduce((acc, item) => {
+        const season = item.season;
+        if (!acc[season] || item.mark < acc[season].mark) {
+            acc[season] = item;
         }
         return acc;
     }, {});
     
-    // Sort by season (most recent first)
+    // Sort by season and limit to last 7 years
     const sorted = Object.values(grouped).sort((a, b) => 
-        parseInt(b.season) - parseInt(a.season)
+        parseInt(a.season) - parseInt(b.season)
     );
+    const limited = sorted.slice(-7);
     
-    container.innerHTML = sorted.map(item => `
-        <div class="progression-item">
-            <div class="progression-year">${item.season}</div>
-            <div class="progression-details">
-                <div class="progression-mark">${item.mark}</div>
-                <div class="progression-venue">${item.venue || 'Unknown venue'}</div>
-                <div class="progression-discipline">${item.discipline}</div>
-            </div>
-            <div class="progression-badge">SB</div>
-        </div>
-    `).join('');
+    if (limited.length === 0) {
+        document.getElementById('progression-empty').style.display = 'block';
+        canvas.parentElement.style.display = 'none';
+        return;
+    }
+    
+    document.getElementById('progression-empty').style.display = 'none';
+    canvas.parentElement.style.display = 'block';
+    
+    // Convert time strings to seconds for plotting
+    const timeToSeconds = (timeStr) => {
+        if (!timeStr) return null;
+        const parts = timeStr.split(':').map(Number);
+        if (parts.length === 3) {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else if (parts.length === 2) {
+            return parts[0] * 60 + parts[1];
+        }
+        return null;
+    };
+    
+    const secondsToTime = (seconds) => {
+        if (!seconds) return 'N/A';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        return `${minutes}:${String(secs).padStart(2, '0')}`;
+    };
+    
+    const chartData = limited.map(item => ({
+        x: item.season,
+        y: timeToSeconds(item.mark),
+        ...item
+    }));
+    
+    // Destroy previous chart if exists
+    if (progressionChart) {
+        progressionChart.destroy();
+    }
+    
+    // Create new chart
+    progressionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: discipline,
+                data: chartData,
+                borderColor: '#ff6900',
+                backgroundColor: 'rgba(255, 105, 0, 0.1)',
+                borderWidth: 3,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#ff6900',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                tension: 0.2,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'nearest'
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: {
+                        display: true,
+                        text: 'Year',
+                        font: {
+                            weight: 'bold',
+                            size: 13
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return Math.floor(value);
+                        },
+                        stepSize: 1
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    reverse: true, // Lower times are better
+                    title: {
+                        display: true,
+                        text: 'Time',
+                        font: {
+                            weight: 'bold',
+                            size: 13
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return secondsToTime(value);
+                        }
+                    }
+                }
+            },
+            onClick: (event, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const data = chartData[index];
+                    displaySelectedRaceInfo(data);
+                }
+            }
+        }
+    });
 }
+
+function displaySelectedRaceInfo(raceData) {
+    const container = document.getElementById('selected-race-info');
+    const content = document.getElementById('race-info-content');
+    
+    content.innerHTML = `
+        <div class="race-info-item">
+            <div class="race-info-label">Year</div>
+            <div class="race-info-value">${raceData.season}</div>
+        </div>
+        <div class="race-info-item">
+            <div class="race-info-label">Time</div>
+            <div class="race-info-value">${raceData.mark}</div>
+        </div>
+        <div class="race-info-item">
+            <div class="race-info-label">Venue</div>
+            <div class="race-info-value">${raceData.venue || 'Unknown'}</div>
+        </div>
+        <div class="race-info-item">
+            <div class="race-info-label">Discipline</div>
+            <div class="race-info-value">${raceData.discipline}</div>
+        </div>
+    `;
+    
+    container.style.display = 'block';
+}
+
 
 /**
  * Display race results in the modal

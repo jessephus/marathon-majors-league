@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fantasy NY Marathon</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -293,9 +294,18 @@
                     <div id="tab-progression" class="tab-panel">
                         <div class="tab-content-header">
                             <h3 class="tab-content-title">Season's Best Progression</h3>
+                            <select id="discipline-selector" class="discipline-selector" style="display: none;">
+                                <option value="Marathon">Marathon</option>
+                            </select>
                             <div id="progression-loading" class="loading-indicator">Loading...</div>
                         </div>
-                        <div id="progression-chart" class="progression-list"></div>
+                        <div class="chart-container">
+                            <canvas id="progression-chart-canvas"></canvas>
+                        </div>
+                        <div id="selected-race-info" class="selected-race-info" style="display: none;">
+                            <h4 class="race-info-title">Race Details</h4>
+                            <div id="race-info-content"></div>
+                        </div>
                         <div id="progression-empty" class="empty-state" style="display: none;">
                             <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
