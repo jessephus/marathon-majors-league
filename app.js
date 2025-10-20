@@ -1983,20 +1983,22 @@ function populateAthleteBasicInfo(athlete) {
  * Load progression and race results from API
  */
 async function loadAthleteDetailedData(athleteId) {
-    const progressionDiv = document.getElementById('progression-chart');
     const resultsDiv = document.getElementById('results-list');
     const progressionLoading = document.getElementById('progression-loading');
     const resultsLoading = document.getElementById('results-loading');
     const progressionEmpty = document.getElementById('progression-empty');
     const resultsEmpty = document.getElementById('results-empty');
+    const chartContainer = document.querySelector('.chart-container');
+    const selectedRaceInfo = document.getElementById('selected-race-info');
     
     // Show loading states
     progressionLoading.style.display = 'block';
     resultsLoading.style.display = 'block';
-    progressionDiv.innerHTML = '';
     resultsDiv.innerHTML = '';
     progressionEmpty.style.display = 'none';
     resultsEmpty.style.display = 'none';
+    if (chartContainer) chartContainer.style.display = 'none';
+    if (selectedRaceInfo) selectedRaceInfo.style.display = 'none';
     
     try {
         // Fetch athlete profile with progression and results
