@@ -942,3 +942,150 @@ export async function seedNYMarathon2025() {
   
   return race;
 }
+
+// ============================================================================
+// SCORING RULES
+// ============================================================================
+
+export async function getScoringRules(version = 2) {
+  const [rules] = await sql`
+    SELECT id, version, rules, created_at, created_by, description
+    FROM scoring_rules
+    WHERE version = ${version}
+  `;
+  return rules;
+}
+
+export async function getAllScoringRules() {
+  const rules = await sql`
+    SELECT id, version, rules, created_at, created_by, description
+    FROM scoring_rules
+    ORDER BY version DESC
+  `;
+  return rules;
+}
+
+export async function createScoringRules(version, rules, createdBy = 'api', description = '') {
+  const [newRules] = await sql`
+    INSERT INTO scoring_rules (version, rules, created_by, description)
+    VALUES (${version}, ${JSON.stringify(rules)}, ${createdBy}, ${description})
+    RETURNING id, version, rules, created_at, created_by, description
+  `;
+  return newRules;
+}
+
+// ============================================================================
+// STANDINGS
+// ============================================================================
+
+export async function getStandings(gameId) {
+  const standings = await sql`
+    SELECT 
+      player_code,
+      races_count,
+      wins,
+      top3,
+      total_points,
+      average_points,
+      world_records,
+      course_records,
+      last_race_points,
+      last_updated_at
+    FROM league_standings
+    WHERE game_id = ${gameId}
+    ORDER BY total_points DESC, player_code ASC
+  `;
+  return standings;
+}
+
+// ============================================================================
+// RECORDS AUDIT
+// ============================================================================
+
+export async function getRecordsAudit(gameId = null, athleteId = null) {
+  let audit;
+  
+  if (gameId && athleteId) {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      WHERE ra.game_id = ${gameId} AND ra.athlete_id = ${athleteId}
+      ORDER BY ra.changed_at DESC
+    `;
+  } else if (gameId) {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      WHERE ra.game_id = ${gameId}
+      ORDER BY ra.changed_at DESC
+    `;
+  } else if (athleteId) {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      WHERE ra.athlete_id = ${athleteId}
+      ORDER BY ra.changed_at DESC
+    `;
+  } else {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      ORDER BY ra.changed_at DESC
+      LIMIT 100
+    `;
+  }
+  
+  return audit;
+}
