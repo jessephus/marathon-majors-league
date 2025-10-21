@@ -9,7 +9,12 @@
     "start": "next start",
     "deploy": "vercel --prod",
     "postbuild": "node scripts/init-db.js",
-    "seed": "node scripts/init-db.js"
+    "seed": "node scripts/init-db.js",
+    "test": "node tests/run-tests.js",
+    "test:api": "node tests/api-endpoints.test.js",
+    "test:db": "node tests/database.test.js",
+    "test:frontend": "node tests/frontend-integration.test.js",
+    "test:flow": "node tests/game-flow.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
