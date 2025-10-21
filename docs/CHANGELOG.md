@@ -48,6 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Record detection and provisional workflow
 - Breakdown JSON schema for transparent scoring
 
+### Fixed
+- `/api/results` now tolerates legacy payloads and stores expanded scoring data, and `race_results` schema is auto-migrated to include all scoring columns.
+
 ## [Previous Releases]
 
 ### Added

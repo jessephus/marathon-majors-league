@@ -50,14 +50,27 @@ export default async function handler(req, res) {
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
       // Save race results
-      const { results, autoScore } = req.body;
+      const body = req.body || {};
+      const autoScore = body.autoScore ?? body.autoscore ?? body.auto_score;
+      const usingFallbackPayload = body.results === undefined;
+      let resultsPayload = body.results ?? body;
 
-      if (!results || typeof results !== 'object') {
+      if (!resultsPayload || typeof resultsPayload !== 'object' || Array.isArray(resultsPayload)) {
+        return res.status(400).json({ error: 'Results data is required' });
+      }
+
+      if (usingFallbackPayload) {
+        // Remove known control fields that might be present when using legacy payloads
+        const { autoScore: legacyAutoScore, autoscore, auto_score, ...rest } = resultsPayload;
+        resultsPayload = rest;
+      }
+
+      if (Object.keys(resultsPayload).length === 0) {
         return res.status(400).json({ error: 'Results data is required' });
       }
 
       // Save results
-      await saveRaceResults(gameId, results);
+      await saveRaceResults(gameId, resultsPayload);
       
       // Automatically trigger scoring if requested (default: true)
       let scoringResult = null;
