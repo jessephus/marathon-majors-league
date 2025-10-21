@@ -1269,36 +1269,6 @@ function showPointsBreakdownModal(athleteName, result) {
         }
     });
 }
-        
-        const countryDiv = document.createElement('div');
-        countryDiv.className = 'country';
-        countryDiv.innerHTML = `${getCountryFlag(enrichedAthlete.country)} ${enrichedAthlete.country}`;
-        
-        const detailsText = formatAthleteDetails(enrichedAthlete);
-        if (detailsText) {
-            const detailsDiv = document.createElement('div');
-            detailsDiv.className = 'details';
-            detailsDiv.textContent = detailsText;
-            infoDiv.appendChild(nameDiv);
-            infoDiv.appendChild(countryDiv);
-            infoDiv.appendChild(detailsDiv);
-        } else {
-            infoDiv.appendChild(nameDiv);
-            infoDiv.appendChild(countryDiv);
-        }
-        
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'time';
-        timeDiv.textContent = time;
-        
-        athleteDiv.appendChild(infoDiv);
-        athleteDiv.appendChild(timeDiv);
-        womenSection.appendChild(athleteDiv);
-    });
-    card.appendChild(womenSection);
-
-    return card;
-}
 
 // Results management - Update live results
 async function handleUpdateResults() {
