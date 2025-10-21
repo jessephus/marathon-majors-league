@@ -1,0 +1,2305 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-orange: #ff6900;
+    --primary-blue: #2C39A2;
+    --dark-orange: #e55d00;
+    --dark-blue: #161C4F;
+    --light-gray: #f8f9fa;
+    --medium-gray: #e9ecef;
+    --dark-gray: #6c757d;
+    --text-dark: #212529;
+    --white: #ffffff;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --success-green: #28a745;
+    --warning-yellow: #ffc107;
+    --success-bg: #d4edda;
+    --success-text: #155724;
+    --warning-bg: #fff3cd;
+    --warning-text: #856404;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--light-gray) 0%, var(--medium-gray) 100%);
+    color: var(--text-dark);
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    color: var(--white);
+    padding: 30px 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
+
+footer .btn {
+    margin-top: 10px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+/* Welcome Card */
+.welcome-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 40px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.welcome-card h2 {
+    color: var(--primary-orange);
+    margin-bottom: 15px;
+}
+
+.welcome-card p {
+    color: var(--dark-gray);
+    margin-bottom: 30px;
+}
+
+.auth-section {
+    margin-bottom: 20px;
+}
+
+.auth-section label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.auth-section input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 5px;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    transition: border-color 0.3s;
+}
+
+.auth-section input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+}
+
+/* Buttons */
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background: var(--primary-blue);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--dark-blue);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-secondary {
+    background: var(--dark-gray);
+    color: var(--white);
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-danger {
+    background: var(--primary-orange);
+    color: var(--white);
+}
+
+.btn-danger:hover {
+    background: var(--dark-orange);
+}
+
+.btn-success {
+    background: var(--success-green);
+    color: var(--white);
+}
+
+.btn-success:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn-warning {
+    background: var(--warning-yellow);
+    color: var(--text-dark);
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Player Info */
+.player-info {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.player-info h2 {
+    color: var(--primary-blue);
+}
+
+.player-info span {
+    color: var(--primary-orange);
+}
+
+/* Ranking Container */
+.ranking-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.ranking-section {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.ranking-section h3 {
+    color: var(--primary-orange);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.ranking-list {
+    min-height: 400px;
+    border: 2px dashed var(--medium-gray);
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.ranking-item {
+    background: var(--light-gray);
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border-left: 4px solid var(--primary-blue);
+    cursor: move;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.ranking-item:hover {
+    background: var(--medium-gray);
+    transform: translateX(5px);
+}
+
+.ranking-item .rank {
+    font-weight: bold;
+    color: var(--primary-orange);
+    margin-right: 10px;
+    min-width: 25px;
+}
+
+/* Rank input field in ranking items */
+.ranking-item .rank-input {
+    width: 45px;
+    padding: 4px 6px;
+    margin-right: 10px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+    background: var(--white);
+    transition: all 0.2s ease;
+}
+
+.ranking-item .rank-input:hover {
+    border-color: var(--primary-blue);
+}
+
+.ranking-item .rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.ranking-item .rank-input::-webkit-inner-spin-button,
+.ranking-item .rank-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.ranking-item .name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.ranking-item .country {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    margin-left: 10px;
+}
+
+.ranking-item .remove-btn {
+    background: var(--primary-orange);
+    color: var(--white);
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.ranking-item .remove-btn:hover {
+    background: var(--dark-orange);
+}
+
+/* Athlete Selection */
+.athlete-selection {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.athlete-selection h3 {
+    color: var(--primary-blue);
+    margin-bottom: 15px;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.tab {
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    color: var(--dark-gray);
+}
+
+.tab.active {
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
+}
+
+.tab:hover {
+    color: var(--primary-blue);
+}
+
+.athlete-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.athlete-card {
+    background: var(--light-gray);
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid var(--medium-gray);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.athlete-card:hover {
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.athlete-card.selected {
+    background: var(--primary-blue);
+    color: var(--white);
+    border-color: var(--primary-blue);
+}
+
+.athlete-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.athlete-card .headshot-small {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--primary-blue);
+}
+
+.athlete-card.selected .headshot-small {
+    border-color: var(--white);
+}
+
+.athlete-card .headshot-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.athlete-card .athlete-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.athlete-card .name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.athlete-card .country {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    margin-bottom: 2px;
+}
+
+.athlete-card.selected .country {
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.athlete-card .details {
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+}
+
+.athlete-card.selected .details {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Draft Results */
+.draft-info {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--dark-gray);
+}
+
+#draft-results, #teams-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.team-card {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.team-card h3 {
+    color: var(--primary-orange);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.team-card .team-section {
+    margin-bottom: 20px;
+}
+
+.team-card .team-section h4 {
+    color: var(--primary-blue);
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.team-card .athlete {
+    padding: 10px;
+    margin-bottom: 8px;
+    background: var(--light-gray);
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.team-card .athlete .headshot {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--primary-blue);
+}
+
+.team-card .athlete .headshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.team-card .athlete .athlete-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.team-card .athlete .name {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.team-card .athlete .country {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    margin-bottom: 2px;
+}
+
+.team-card .athlete .details {
+    color: var(--dark-gray);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.team-card .athlete .time {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--primary-blue);
+    font-size: 0.95rem;
+}
+
+.team-card .score {
+    margin-top: 15px;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    color: var(--white);
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Commissioner Dashboard */
+.commissioner-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.action-card {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.action-card h3 {
+    color: var(--primary-blue);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.action-card label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.action-card input,
+.action-card select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.action-card input:focus,
+.action-card select:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+}
+
+#player-codes-display {
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--light-gray);
+    border-radius: 5px;
+    font-family: monospace;
+}
+
+.player-code-item {
+    padding: 8px;
+    margin-bottom: 5px;
+    background: var(--white);
+    border-left: 4px solid var(--primary-blue);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-code-item.submitted {
+    border-left-color: var(--success-green);
+}
+
+.player-code-item.pending {
+    border-left-color: var(--warning-yellow);
+}
+
+.player-code-item .status-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+
+.player-code-item.submitted .status-icon {
+    color: var(--success-green);
+}
+
+.player-code-item.pending .status-icon {
+    color: var(--warning-yellow);
+}
+
+.player-code-item .status-text {
+    margin-left: auto;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+}
+
+.player-code-item.submitted .status-text {
+    background: var(--success-bg);
+    color: var(--success-text);
+}
+
+.player-code-item.pending .status-text {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+}
+
+.rankings-summary {
+    margin-top: 15px;
+    padding: 12px;
+    background: var(--white);
+    border-radius: 5px;
+    text-align: center;
+    color: var(--primary-blue);
+    border: 2px solid var(--primary-blue);
+}
+
+#results-form {
+    margin-bottom: 15px;
+}
+
+.result-entry {
+    margin-bottom: 15px;
+    padding: 15px;
+    background: var(--light-gray);
+    border-radius: 5px;
+}
+
+.result-entry label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.result-entry input {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 5px;
+}
+
+#winner-display {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    color: var(--white);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+#draft-status {
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--light-gray);
+    border-radius: 5px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .welcome-card {
+        padding: 20px;
+    }
+
+    .ranking-container {
+        grid-template-columns: 1fr;
+    }
+
+    .athlete-list {
+        grid-template-columns: 1fr;
+        max-height: 300px;
+    }
+
+    #draft-results, #teams-display {
+        grid-template-columns: 1fr;
+    }
+
+    .commissioner-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .welcome-card {
+        padding: 15px;
+    }
+
+    .action-card, .team-card, .ranking-section {
+        padding: 15px;
+    }
+}
+
+/* Drag and Drop */
+.dragging {
+    opacity: 0.5;
+}
+
+.drag-over {
+    border-color: var(--primary-blue);
+    background: var(--medium-gray);
+}
+
+/* Athlete Management */
+.athlete-filters {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+    padding: 15px;
+    background: var(--light-gray);
+    border-radius: 5px;
+}
+
+.athlete-filters label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.athlete-filters input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.athlete-filters select {
+    padding: 5px 10px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    margin-top: 10px;
+}
+
+.athlete-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    box-shadow: var(--shadow);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.athlete-table thead {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    color: var(--white);
+}
+
+.athlete-table th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.athlete-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--medium-gray);
+    font-size: 0.85rem;
+}
+
+.athlete-table tbody tr:hover {
+    background: var(--light-gray);
+}
+
+.athlete-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+#athlete-table-container {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Athlete Management Page */
+#athlete-management-page {
+    padding: 20px;
+}
+
+#athlete-management-page .page-description {
+    text-align: center;
+    color: var(--dark-gray);
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+}
+
+#athlete-management-page .athlete-filters {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#athlete-management-page #athlete-table-container {
+    background: var(--white);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+#athlete-management-page #back-to-commissioner {
+    margin-top: 20px;
+}
+
+/* World Athletics ID editing */
+.wa-id-cell {
+    padding: 8px !important;
+}
+
+.wa-id-input {
+    width: 120px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: monospace;
+}
+
+.wa-id-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.wa-id-input::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: var(--primary-orange);
+    color: white;
+    transition: all 0.2s;
+}
+
+.btn-small:hover:not(:disabled) {
+    background-color: #e55f00;
+    transform: translateY(-1px);
+}
+
+.btn-small:active {
+    transform: translateY(0);
+}
+
+.btn-small:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: var(--primary-blue);
+    margin-left: 4px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #1f2a7a;
+}
+
+.actions-cell {
+    white-space: nowrap;
+    padding: 8px !important;
+}
+
+.actions-cell .btn-small {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.info-message {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #1565C0;
+}
+
+.info-message strong {
+    color: #0d47a1;
+}
+
+.athlete-name-link {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.athlete-name-link:hover {
+    color: var(--primary-orange);
+    text-decoration: underline;
+}
+
+/* ============================================================================
+   ATHLETE CARD MODAL - Redesigned with Masthead & Tabs
+   ============================================================================ */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+}
+
+.athlete-card-container {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    max-width: 640px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.4s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10001;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: var(--primary-orange);
+    color: white;
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* ============================================================================
+   MASTHEAD SECTION - Gradient Background with Headshot & Bio
+   ============================================================================ */
+
+.card-masthead {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Dynamic country gradient will be applied via inline style */
+.card-masthead.country-gradient {
+    /* Applied dynamically in JavaScript */
+}
+
+/* Semi-transparent black overlay for better text readability */
+.card-masthead::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.card-masthead::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+    animation: shimmer 4s infinite;
+    z-index: 0;
+}
+
+@keyframes shimmer {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-40px, -40px); }
+}
+
+.masthead-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+/* Left: Headshot and Flag */
+.masthead-photo-section {
+    flex-shrink: 0;
+}
+
+.masthead-photo-wrapper {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.masthead-photo {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    background: #ddd;
+}
+
+.masthead-flag {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.flag-emoji {
+    line-height: 1;
+}
+
+/* Right: Biographical Data */
+.masthead-bio-section {
+    flex: 1;
+    min-width: 0;
+    color: white;
+}
+
+.athlete-name {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    line-height: 1.2;
+}
+
+.bio-details {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.bio-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.bio-value {
+    font-weight: 600;
+}
+
+.masthead-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.masthead-stat {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 10px 12px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.masthead-stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.masthead-stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================================================
+   TABS NAVIGATION
+   ============================================================================ */
+
+.tabs-container {
+    background: white;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.tabs-nav {
+    display: flex;
+    padding: 0 16px;
+}
+
+.tab-button {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 16px 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 3px solid transparent;
+    position: relative;
+    top: 1px;
+}
+
+.tab-button:hover {
+    color: var(--primary-orange);
+    background: rgba(255, 105, 0, 0.05);
+}
+
+.tab-button.active {
+    color: var(--primary-orange);
+    border-bottom-color: var(--primary-orange);
+}
+
+/* ============================================================================
+   TAB CONTENT
+   ============================================================================ */
+
+.tab-content-container {
+    flex: 1;
+    overflow-y: auto;
+    background: #f9fafb;
+}
+
+.tab-panel {
+    display: none;
+    padding: 20px;
+    padding-bottom: 80px; /* Extra space at bottom for mobile address bar */
+    animation: fadeIn 0.3s ease;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.tab-content-header {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tab-content-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin: 0;
+}
+
+/* ============================================================================
+   OVERVIEW TAB
+   ============================================================================ */
+
+.overview-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-orange);
+}
+
+.stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.stat-value-large {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--primary-blue);
+}
+
+.profile-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.profile-row:hover {
+    background: #e9ecef;
+}
+
+.profile-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.profile-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.wa-link-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.wa-link-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wa-link-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ============================================================================
+   PROGRESSION LIST
+   ============================================================================ */
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.discipline-selector {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 2px solid var(--primary-orange);
+    background: white;
+    color: var(--primary-blue);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 16px 0;
+    display: block;
+    width: 100%;
+    max-width: 300px;
+}
+
+.discipline-selector:hover {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.selected-race-info {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.race-info-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin: 0 0 12px 0;
+}
+
+#race-info-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.race-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.race-info-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.race-info-value {
+    font-size: 15px;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+.progression-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.progression-item {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 50px 1fr 80px;
+    gap: 16px;
+    align-items: center;
+    transition: all 0.2s ease;
+    border: 2px solid #e5e5e5;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.progression-item:hover {
+    border-color: var(--primary-orange);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.progression-year {
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--primary-blue);
+}
+
+.progression-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.progression-mark {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-dark);
+}
+
+.progression-venue {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.progression-discipline {
+    font-size: 11px;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.progression-badge {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, #e55d00 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================================================
+   RESULTS LIST
+   ============================================================================ */
+
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.result-item {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    border: 2px solid #e5e5e5;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.result-item:hover {
+    border-color: var(--primary-orange);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.result-competition {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--primary-blue);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 12px;
+}
+
+.result-position {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, #e55d00 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.result-details {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.result-time {
+    font-weight: 700;
+    color: var(--text-dark);
+    font-family: 'Courier New', monospace;
+}
+
+.result-venue {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.result-date {
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+/* ============================================================================
+   LOADING & EMPTY STATES
+   ============================================================================ */
+
+.loading-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-orange);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.loading-indicator::after {
+    content: '...';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: #9ca3af;
+}
+
+.empty-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+/* Tablet (768px and below) */
+@media (max-width: 768px) {
+    .athlete-card-container {
+        max-width: 100%;
+        max-height: 95vh;
+    }
+
+    .card-masthead {
+        padding: 20px 16px;
+    }
+
+    .masthead-content {
+        gap: 16px;
+    }
+
+    .masthead-photo-wrapper {
+        width: 100px;
+        height: 100px;
+    }
+
+    .masthead-flag {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .athlete-name {
+        font-size: 20px;
+    }
+
+    .masthead-stats-grid {
+        gap: 10px;
+    }
+
+    .masthead-stat {
+        padding: 8px 10px;
+    }
+
+    .masthead-stat-value {
+        font-size: 16px;
+    }
+
+    .tab-button {
+        font-size: 13px;
+        padding: 14px 6px;
+    }
+
+    .tab-panel {
+        padding: 16px;
+    }
+
+    .stats-grid {
+        gap: 10px;
+    }
+
+    .stat-value-large {
+        font-size: 20px;
+    }
+
+    .progression-item {
+        grid-template-columns: 45px 1fr 70px;
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .progression-year {
+        font-size: 16px;
+    }
+
+    .progression-mark {
+        font-size: 15px;
+    }
+
+    .result-item {
+        padding: 14px;
+    }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+    .modal {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .athlete-card-container {
+        max-width: 100%;
+        width: 100%;
+        max-height: 100vh;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .modal-close {
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        font-size: 20px;
+    }
+
+    .card-masthead {
+        padding: 12px 10px;
+    }
+
+    .masthead-content {
+        /* Keep two-column layout but make everything smaller */
+        flex-direction: row;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .masthead-photo-section {
+        flex-shrink: 0;
+    }
+
+    .masthead-photo-wrapper {
+        width: 70px;
+        height: 70px;
+    }
+
+    .masthead-flag {
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
+        border-width: 2px;
+    }
+
+    .athlete-name {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .bio-details {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .bio-item {
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+
+    .masthead-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .masthead-stat {
+        padding: 6px 8px;
+    }
+
+    .masthead-stat-label {
+        font-size: 9px;
+    }
+
+    .masthead-stat-value {
+        font-size: 13px;
+    }
+
+    .tabs-nav {
+        padding: 0 8px;
+    }
+
+    .tab-button {
+        font-size: 11px;
+        padding: 12px 4px;
+    }
+
+    .tab-panel {
+        padding: 12px;
+    }
+
+    .overview-section {
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    .section-title {
+        font-size: 14px;
+        margin-bottom: 12px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .stat-card {
+        padding: 12px;
+    }
+
+    .stat-value-large {
+        font-size: 20px;
+    }
+
+    .profile-row {
+        padding: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .wa-link-button {
+        font-size: 13px;
+        padding: 12px 16px;
+    }
+
+    .progression-item {
+        grid-template-columns: 40px 1fr 65px;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .progression-year {
+        font-size: 15px;
+    }
+
+    .progression-mark {
+        font-size: 14px;
+    }
+
+    .progression-venue {
+        font-size: 11px;
+    }
+
+    .progression-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    .result-item {
+        padding: 12px;
+    }
+
+    .result-competition {
+        font-size: 14px;
+    }
+
+    .result-position {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+
+    .result-details {
+        font-size: 12px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+}
+
+/* ========================================
+   SORTABLE TABLE VIEW FOR ATHLETES
+   ======================================== */
+
+.athlete-selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.athlete-selection-header h3 {
+    margin: 0;
+}
+
+.view-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.view-toggle-btn {
+    background: var(--white);
+    border: 2px solid var(--medium-gray);
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn:hover {
+    border-color: var(--primary-blue);
+    background: var(--light-gray);
+}
+
+.view-toggle-btn.active {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white);
+}
+
+.athlete-table-container {
+    overflow-x: auto;
+    margin-top: 15px;
+}
+
+.athlete-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.athlete-table thead {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    color: var(--white);
+}
+
+.athlete-table th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.athlete-table tbody tr {
+    border-bottom: 1px solid var(--medium-gray);
+    transition: background 0.2s ease;
+}
+
+.athlete-table tbody tr:hover {
+    background: var(--light-gray);
+}
+
+.athlete-table tbody tr.ranked-row {
+    background: #e3f2fd;
+    cursor: default; /* Only the handle shows move cursor */
+    /* Allow touch to work normally - scrolling and tapping */
+    touch-action: pan-y; /* Allow vertical scrolling */
+    transition: transform 0.15s ease, opacity 0.2s ease, background-color 0.2s ease;
+    position: relative;
+}
+
+.athlete-table tbody tr.ranked-row:hover {
+    background: #bbdefb;
+}
+
+.athlete-table tbody tr.ranked-row:active {
+    background: #90caf9;
+}
+
+/* Visual feedback during drag */
+.athlete-table tbody tr.ranked-row[style*="opacity: 0.8"] {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    background: #90caf9 !important;
+}
+
+/* Drag handle column */
+.drag-handle-header {
+    width: 40px;
+    padding: 8px 4px !important;
+}
+
+.drag-handle-cell {
+    width: 40px;
+    text-align: center;
+    padding: 8px 4px !important;
+    cursor: grab;
+    user-select: none;
+}
+
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #999;
+    font-size: 18px;
+    transition: color 0.2s ease;
+    /* Allow touch to work on handle */
+    touch-action: none;
+}
+
+.drag-handle:hover {
+    color: #666;
+}
+
+.drag-handle:active {
+    color: var(--primary-orange);
+    cursor: grabbing;
+}
+
+.drag-grip {
+    display: inline-block;
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+/* On mobile, make the handle slightly larger for easier touch */
+@media (max-width: 768px) {
+    .drag-handle-cell {
+        width: 44px; /* iOS minimum touch target */
+    }
+    
+    .drag-handle {
+        font-size: 20px;
+    }
+}
+
+.athlete-table td {
+    padding: 10px 8px;
+    font-size: 13px;
+    /* Prevent text selection during drag on mobile */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.athlete-table .name-cell {
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+.athlete-table .name-cell:hover {
+    color: var(--primary-orange);
+    cursor: pointer;
+}
+
+.athlete-table .country-cell {
+    white-space: nowrap;
+}
+
+.athlete-table .rank-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-orange);
+}
+
+.athlete-table .rank-cell.top-rank {
+    color: #d4af37;
+}
+
+.athlete-table .rank-column {
+    width: 70px;
+    text-align: center;
+}
+
+.athlete-table .rank-cell-input {
+    text-align: center;
+    width: 70px;
+}
+
+.athlete-table .table-rank-input {
+    width: 50px;
+    padding: 4px 6px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+    background: var(--white);
+    transition: all 0.2s ease;
+    /* Re-enable text selection for input fields */
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+    /* Don't interfere with drag on mobile */
+    touch-action: auto;
+}
+
+.athlete-table .table-rank-input:hover {
+    border-color: var(--primary-blue);
+}
+
+.athlete-table .table-rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+.athlete-table .rank-display-cell {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-orange);
+}
+
+.athlete-table .rank-cell.top-rank {
+    color: #d4af37;
+}
+
+.athlete-table .pb-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.athlete-table .action-column {
+    text-align: center;
+    width: 100px;
+}
+
+.athlete-table .add-btn {
+    background: var(--primary-orange);
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.athlete-table .add-btn:hover {
+    background: var(--dark-orange);
+    transform: translateY(-1px);
+}
+
+.athlete-table .add-btn:disabled {
+    background: var(--dark-gray);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.athlete-table .remove-table-btn {
+    background: #dc3545;
+    color: var(--white);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.athlete-table .remove-table-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.athlete-table .selected-badge {
+    background: var(--success-green);
+    color: var(--white);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Rank input for manual editing */
+.ranking-item .rank-input {
+    width: 40px;
+    padding: 4px 6px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 700;
+    color: var(--primary-blue);
+    font-size: 14px;
+}
+
+.ranking-item .rank-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    background: #fff8f0;
+}
+
+.ranking-item .rank-input::-webkit-inner-spin-button,
+.ranking-item .rank-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .athlete-table {
+        font-size: 11px;
+    }
+    
+    .athlete-table th,
+    .athlete-table td {
+        padding: 8px 4px;
+    }
+    
+    .athlete-table th {
+        font-size: 11px;
+    }
+    
+    .view-toggle-btn {
+        padding: 6px 10px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .athlete-table {
+        font-size: 10px;
+    }
+    
+    .athlete-table th,
+    .athlete-table td {
+        padding: 6px 2px;
+    }
+    
+    .athlete-table .add-btn {
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+
