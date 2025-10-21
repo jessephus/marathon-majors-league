@@ -59,11 +59,19 @@ async function loadAthletes() {
     try {
         // Load from database API (will auto-seed if empty)
         const response = await fetch(`${API_BASE}/api/athletes`);
-        
+
+        const contentType = response.headers.get('content-type') || '';
+        if (response.status === 401 || response.status === 403 || contentType.includes('text/html')) {
+            const message = 'This deployment is protected by Vercel Preview Authentication. Please sign in to Vercel or use a preview share link to access API endpoints.';
+            console.error('Preview protected:', response.status, response.statusText);
+            alert(message);
+            throw new Error(message);
+        }
+
         if (!response.ok) {
             throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
         }
-        
+
         const athletes = await response.json();
         
         // Validate we got data
