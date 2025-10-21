@@ -1,18 +1,26 @@
 {
   "name": "fantasy-ny-marathon",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Fantasy game for the NY Marathon",
-  "type": "module",
-  "main": "index.html",
+  "main": "pages/index.js",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "deploy": "vercel --prod",
     "postbuild": "node scripts/init-db.js",
-    "seed": "node scripts/init-db.js"
+    "seed": "node scripts/init-db.js",
+    "test": "node tests/run-tests.js",
+    "test:api": "node tests/api-endpoints.test.js",
+    "test:db": "node tests/database.test.js",
+    "test:frontend": "node tests/frontend-integration.test.js",
+    "test:flow": "node tests/game-flow.test.js"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^1.0.2"
+    "@neondatabase/serverless": "^1.0.2",
+    "next": "^15.5.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "keywords": [
     "fantasy",

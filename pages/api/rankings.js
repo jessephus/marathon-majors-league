@@ -1,4 +1,4 @@
-import { getPlayerRankings, savePlayerRankings, clearAllRankings } from './db.js';
+import { getPlayerRankings, savePlayerRankings, clearAllRankings } from './db';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

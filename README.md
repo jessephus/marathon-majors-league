@@ -110,12 +110,46 @@ vercel dev
 
 ## 🏁 Game Rules & Scoring
 
+### Version 2: Points-Based Scoring System 🎯
+
+**Fantasy NY Marathon** now features an advanced points league system that rewards both placement and performance quality:
+
+#### Point Categories
+
+1. **Placement Points (Top 10)**
+   - 1st place: 10 pts | 2nd: 9 pts | 3rd: 8 pts ... 10th: 1 pt
+   - Ties handled with standard competition ranking
+
+2. **Time Gap Bonuses**
+   - Within 60s of winner: +5 pts
+   - Within 2 minutes: +4 pts
+   - Within 3 minutes: +3 pts
+   - Within 5 minutes: +2 pts
+   - Within 10 minutes: +1 pt
+
+3. **Performance Bonuses**
+   - **Negative Split**: +2 pts (second half faster than first)
+   - **Even Pace**: +1 pt (consistent pacing within 0.5%)
+   - **Fast Finish Kick**: +1 pt (final 5km 3% faster than average)
+
+4. **Record Bonuses**
+   - **World Record**: +15 pts 🌎
+   - **Course Record**: +5 pts 🏆
+   - Records may be provisional pending confirmation
+
+### How to Win
+
 - **Team Size**: Each player drafts exactly 3 men and 3 women (6 total athletes)
-- **Draft Process**: Snake draft based on your submitted rankings - higher ranked athletes are prioritized
-- **Winning Condition**: The team with the **lowest combined finish time** across all 6 athletes wins
-- **Live Tracking**: Follow your team's progress with real-time split updates throughout the race
-- **Commissioner Control**: Only the game commissioner can enter and update official race results
-- **Fair Play**: Results are locked once finalized to ensure game integrity
+- **Draft Process**: Snake draft based on your submitted rankings
+- **Winning**: Team with the **highest total points** across all athletes wins!
+- **Live Tracking**: Follow real-time standings with detailed point breakdowns
+- **Fair Play**: Results are locked once finalized to ensure integrity
+
+For complete scoring details, see **[Points Scoring System Documentation](docs/POINTS_SCORING_SYSTEM.md)**.
+
+### Legacy Scoring (Version 1)
+
+The original time-based system (lowest combined finish time wins) remains available as a fallback for compatibility.
 
 ## 🛠️ Technical Architecture
 

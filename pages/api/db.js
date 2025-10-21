@@ -7,7 +7,7 @@ const sql = neon(process.env.DATABASE_URL);
 // ATHLETES
 // ============================================================================
 
-export async function getAllAthletes(confirmedOnly = true) {
+export async function getAllAthletes(confirmedOnly = false) {
   let athletes;
   
   if (confirmedOnly) {
@@ -648,13 +648,146 @@ export async function getRaceResults(gameId) {
 
 export async function saveRaceResults(gameId, results) {
   // Update or insert results
-  for (const [athleteId, finishTime] of Object.entries(results)) {
+  for (const [athleteIdKey, rawValue] of Object.entries(results)) {
+    const athleteId = parseInt(athleteIdKey, 10);
+    if (Number.isNaN(athleteId)) {
+      continue;
+    }
+
+    let finishTime = null;
+    let split5k = null;
+    let split10k = null;
+    let splitHalf = null;
+    let split30k = null;
+    let split35k = null;
+    let split40k = null;
+    let placement = null;
+    let placementPoints = null;
+    let timeGapSeconds = null;
+    let timeGapPoints = null;
+    let performanceBonusPoints = null;
+    let recordBonusPoints = null;
+    let totalPoints = null;
+    let pointsVersion = null;
+    let breakdown = null;
+    let recordType = null;
+    let recordStatus = null;
+    let isWorldRecord = null;
+    let isCourseRecord = null;
+
+    if (rawValue && typeof rawValue === 'object' && !Array.isArray(rawValue)) {
+      finishTime = rawValue.finishTime ?? rawValue.finish_time ?? rawValue.time ?? rawValue.finish ?? null;
+
+      const splits = rawValue.splits || {};
+      split5k = rawValue.split5k ?? rawValue.split_5k ?? splits['5k'] ?? splits['split_5k'] ?? null;
+      split10k = rawValue.split10k ?? rawValue.split_10k ?? splits['10k'] ?? splits['split_10k'] ?? null;
+      splitHalf = rawValue.splitHalf ?? rawValue.split_half ?? splits['half'] ?? splits['21k'] ?? splits['13.1m'] ?? null;
+      split30k = rawValue.split30k ?? rawValue.split_30k ?? splits['30k'] ?? null;
+      split35k = rawValue.split35k ?? rawValue.split_35k ?? splits['35k'] ?? null;
+      split40k = rawValue.split40k ?? rawValue.split_40k ?? splits['40k'] ?? null;
+
+      placement = rawValue.placement ?? rawValue.place ?? null;
+      placementPoints = rawValue.placementPoints ?? rawValue.placement_points ?? null;
+      timeGapSeconds = rawValue.timeGapSeconds ?? rawValue.time_gap_seconds ?? null;
+      timeGapPoints = rawValue.timeGapPoints ?? rawValue.time_gap_points ?? null;
+      performanceBonusPoints = rawValue.performanceBonusPoints ?? rawValue.performance_bonus_points ?? null;
+      recordBonusPoints = rawValue.recordBonusPoints ?? rawValue.record_bonus_points ?? null;
+      totalPoints = rawValue.totalPoints ?? rawValue.total_points ?? null;
+      pointsVersion = rawValue.pointsVersion ?? rawValue.points_version ?? null;
+      breakdown = rawValue.breakdown ?? null;
+      recordType = rawValue.recordType ?? rawValue.record_type ?? null;
+      recordStatus = rawValue.recordStatus ?? rawValue.record_status ?? null;
+
+      const worldRecordFlag = rawValue.isWorldRecord ?? rawValue.is_world_record;
+      const courseRecordFlag = rawValue.isCourseRecord ?? rawValue.is_course_record;
+      const computedWorldRecord = recordType && (recordType === 'WORLD' || recordType === 'BOTH');
+      const computedCourseRecord = recordType && (recordType === 'COURSE' || recordType === 'BOTH');
+
+      isWorldRecord = worldRecordFlag ?? (computedWorldRecord ? true : null);
+      isCourseRecord = courseRecordFlag ?? (computedCourseRecord ? true : null);
+    } else if (typeof rawValue === 'string') {
+      finishTime = rawValue;
+    }
+
+    if (!finishTime && !split5k && !split10k && !splitHalf && !split30k && !split35k && !split40k) {
+      // Nothing to store for this athlete
+      continue;
+    }
+
     await sql`
-      INSERT INTO race_results (game_id, athlete_id, finish_time, is_final)
-      VALUES (${gameId}, ${parseInt(athleteId)}, ${finishTime}, false)
+      INSERT INTO race_results (
+        game_id,
+        athlete_id,
+        finish_time,
+        split_5k,
+        split_10k,
+        split_half,
+        split_30k,
+        split_35k,
+        split_40k,
+        placement,
+        placement_points,
+        time_gap_seconds,
+        time_gap_points,
+        performance_bonus_points,
+        record_bonus_points,
+        total_points,
+        points_version,
+        breakdown,
+        record_type,
+        record_status,
+        is_world_record,
+        is_course_record,
+        is_final
+      )
+      VALUES (
+        ${gameId},
+        ${athleteId},
+        ${finishTime},
+        ${split5k},
+        ${split10k},
+        ${splitHalf},
+        ${split30k},
+        ${split35k},
+        ${split40k},
+        ${placement},
+        ${placementPoints},
+        ${timeGapSeconds},
+        ${timeGapPoints},
+        ${performanceBonusPoints},
+        ${recordBonusPoints},
+        ${totalPoints},
+        ${pointsVersion},
+        ${breakdown},
+        ${recordType},
+        ${recordStatus},
+        ${isWorldRecord},
+        ${isCourseRecord},
+        false
+      )
       ON CONFLICT (game_id, athlete_id) DO UPDATE SET
-        finish_time = EXCLUDED.finish_time,
-        updated_at = CURRENT_TIMESTAMP
+        finish_time = COALESCE(EXCLUDED.finish_time, race_results.finish_time),
+        split_5k = COALESCE(EXCLUDED.split_5k, race_results.split_5k),
+        split_10k = COALESCE(EXCLUDED.split_10k, race_results.split_10k),
+        split_half = COALESCE(EXCLUDED.split_half, race_results.split_half),
+        split_30k = COALESCE(EXCLUDED.split_30k, race_results.split_30k),
+        split_35k = COALESCE(EXCLUDED.split_35k, race_results.split_35k),
+        split_40k = COALESCE(EXCLUDED.split_40k, race_results.split_40k),
+        placement = COALESCE(EXCLUDED.placement, race_results.placement),
+        placement_points = COALESCE(EXCLUDED.placement_points, race_results.placement_points),
+        time_gap_seconds = COALESCE(EXCLUDED.time_gap_seconds, race_results.time_gap_seconds),
+        time_gap_points = COALESCE(EXCLUDED.time_gap_points, race_results.time_gap_points),
+        performance_bonus_points = COALESCE(EXCLUDED.performance_bonus_points, race_results.performance_bonus_points),
+        record_bonus_points = COALESCE(EXCLUDED.record_bonus_points, race_results.record_bonus_points),
+        total_points = COALESCE(EXCLUDED.total_points, race_results.total_points),
+        points_version = COALESCE(EXCLUDED.points_version, race_results.points_version),
+        breakdown = COALESCE(EXCLUDED.breakdown, race_results.breakdown),
+        record_type = COALESCE(EXCLUDED.record_type, race_results.record_type),
+        record_status = COALESCE(EXCLUDED.record_status, race_results.record_status),
+        is_world_record = COALESCE(EXCLUDED.is_world_record, race_results.is_world_record),
+        is_course_record = COALESCE(EXCLUDED.is_course_record, race_results.is_course_record),
+        updated_at = CURRENT_TIMESTAMP,
+        is_final = CASE WHEN race_results.is_final = true THEN true ELSE COALESCE(race_results.is_final, false) END
     `;
   }
 }
@@ -941,4 +1074,151 @@ export async function seedNYMarathon2025() {
   }
   
   return race;
+}
+
+// ============================================================================
+// SCORING RULES
+// ============================================================================
+
+export async function getScoringRules(version = 2) {
+  const [rules] = await sql`
+    SELECT id, version, rules, created_at, created_by, description
+    FROM scoring_rules
+    WHERE version = ${version}
+  `;
+  return rules;
+}
+
+export async function getAllScoringRules() {
+  const rules = await sql`
+    SELECT id, version, rules, created_at, created_by, description
+    FROM scoring_rules
+    ORDER BY version DESC
+  `;
+  return rules;
+}
+
+export async function createScoringRules(version, rules, createdBy = 'api', description = '') {
+  const [newRules] = await sql`
+    INSERT INTO scoring_rules (version, rules, created_by, description)
+    VALUES (${version}, ${JSON.stringify(rules)}, ${createdBy}, ${description})
+    RETURNING id, version, rules, created_at, created_by, description
+  `;
+  return newRules;
+}
+
+// ============================================================================
+// STANDINGS
+// ============================================================================
+
+export async function getStandings(gameId) {
+  const standings = await sql`
+    SELECT 
+      player_code,
+      races_count,
+      wins,
+      top3,
+      total_points,
+      average_points,
+      world_records,
+      course_records,
+      last_race_points,
+      last_updated_at
+    FROM league_standings
+    WHERE game_id = ${gameId}
+    ORDER BY total_points DESC, player_code ASC
+  `;
+  return standings;
+}
+
+// ============================================================================
+// RECORDS AUDIT
+// ============================================================================
+
+export async function getRecordsAudit(gameId = null, athleteId = null) {
+  let audit;
+  
+  if (gameId && athleteId) {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      WHERE ra.game_id = ${gameId} AND ra.athlete_id = ${athleteId}
+      ORDER BY ra.changed_at DESC
+    `;
+  } else if (gameId) {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      WHERE ra.game_id = ${gameId}
+      ORDER BY ra.changed_at DESC
+    `;
+  } else if (athleteId) {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      WHERE ra.athlete_id = ${athleteId}
+      ORDER BY ra.changed_at DESC
+    `;
+  } else {
+    audit = await sql`
+      SELECT 
+        ra.id,
+        ra.race_result_id,
+        ra.game_id,
+        ra.athlete_id,
+        ra.record_type,
+        ra.status_before,
+        ra.status_after,
+        ra.points_delta,
+        ra.changed_by,
+        ra.changed_at,
+        ra.notes,
+        a.name as athlete_name
+      FROM records_audit ra
+      JOIN athletes a ON ra.athlete_id = a.id
+      ORDER BY ra.changed_at DESC
+      LIMIT 100
+    `;
+  }
+  
+  return audit;
 }

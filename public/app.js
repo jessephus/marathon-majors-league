@@ -60,8 +60,11 @@ async function loadAthletes() {
         // Load from database API (will auto-seed if empty)
         const response = await fetch(`${API_BASE}/api/athletes`);
 
+        // If a preview is protected by Vercel SSO, the response will be an HTML page
+        // with a 401/403 status. Detect that and show a clearer message.
         const contentType = response.headers.get('content-type') || '';
         if (response.status === 401 || response.status === 403 || contentType.includes('text/html')) {
+            // Provide a useful message to the user about signing into Vercel or using the share token
             const message = 'This deployment is protected by Vercel Preview Authentication. Please sign in to Vercel or use a preview share link to access API endpoints.';
             console.error('Preview protected:', response.status, response.statusText);
             alert(message);

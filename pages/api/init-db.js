@@ -1,4 +1,4 @@
-import { initializeDatabase, seedAthletes, getAllAthletes, seedNYMarathon2025 } from './db.js';
+import { initializeDatabase, seedAthletes, getAllAthletes, seedNYMarathon2025 } from './db';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
@@ -78,6 +78,36 @@ export default async function handler(req, res) {
           throw error;
         }
       }
+
+      console.log('Checking for race results scoring columns...');
+      try {
+        await sql`SELECT total_points, breakdown, record_type, record_status FROM race_results LIMIT 1`;
+        console.log('Race results scoring columns already exist');
+      } catch (error) {
+        if (error.message.includes('does not exist') || error.message.includes('column')) {
+          console.log('Adding race results scoring columns...');
+          try {
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS placement INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS placement_points INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS time_gap_seconds INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS time_gap_points INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS performance_bonus_points INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS record_bonus_points INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS total_points INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS points_version INTEGER`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS breakdown JSONB`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS record_type VARCHAR(20)`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS record_status VARCHAR(20)`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS is_world_record BOOLEAN DEFAULT FALSE`;
+            await sql`ALTER TABLE race_results ADD COLUMN IF NOT EXISTS is_course_record BOOLEAN DEFAULT FALSE`;
+            console.log('Race results scoring columns added successfully');
+          } catch (alterError) {
+            console.error('Error adding race results scoring columns:', alterError);
+          }
+        } else {
+          throw error;
+        }
+      }
     }
     
     // If table doesn't exist, create schema
@@ -131,7 +161,7 @@ export default async function handler(req, res) {
     }
     
     // Check if athletes table is populated
-    const athletes = await getAllAthletes();
+  const athletes = await getAllAthletes(false);
     const athletesCount = athletes.men.length + athletes.women.length;
     
     let message = 'Neon Postgres database is ready';

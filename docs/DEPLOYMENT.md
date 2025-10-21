@@ -13,7 +13,7 @@
 ### 2. Import Your Repository
 - Click "Add New Project" in your Vercel dashboard
 - Import your GitHub repository
-- Vercel will automatically detect the configuration
+- Vercel will automatically detect the configuration. No custom build output is required—leave `vercel.json` with the default Next.js settings so API routes remain active.
 
 ### 3. Add Neon Postgres Database
 - In your project dashboard, go to the **Integrations** tab
@@ -77,15 +77,11 @@ vercel dev
 3. Use SQL Editor to query data or browse tables
 
 ### Backup Data
-```sql
--- Export game data
-COPY (SELECT * FROM games) TO STDOUT WITH CSV HEADER;
-
--- Export results
-COPY (SELECT * FROM race_results) TO STDOUT WITH CSV HEADER;
 ```
 
-Or use the Neon dashboard to create snapshots.
+```
+
+### Local Development
 
 ### Reset Game Data
 - Use the "Reset Game" button in Commissioner Mode

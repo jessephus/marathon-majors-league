@@ -8,6 +8,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Points-Based Scoring System (Version 2)**: Complete overhaul of scoring mechanics
+  - Placement points for top 10 finishers (10 pts for 1st down to 1 pt for 10th)
+  - Time gap bonuses (5 levels: +5 pts within 60s down to +1 pt within 10 min)
+  - Performance bonuses: Negative Split (+2), Even Pace (+1), Fast Finish Kick (+1)
+  - Record bonuses: World Record (+15), Course Record (+5)
+  - Provisional record workflow with confirmation/rejection
+  - Detailed points breakdown modal for each athlete
+  - Points-based leaderboard with comprehensive team statistics
+- Database schema enhancements for scoring
+  - New `scoring_rules` table with versioned configuration
+  - New `league_standings` table for cached leaderboard
+  - New `records_audit` table for record status tracking
+  - New `race_records` table for course and world records
+  - Enhanced `race_results` with placement, points, splits, and breakdown data
+- API endpoints for scoring system
+  - `/api/scoring` for calculation and record management
+  - `/api/standings` for leaderboard with caching
+  - Auto-scoring on result entry
+- Frontend UI enhancements
+  - Points breakdown tooltips and modal displays
+  - Record badges (WR/CR) with provisional indicators
+  - Enhanced team cards showing total points and rankings
+  - Responsive points leaderboard table
+  - Fallback to legacy time-based display for compatibility
+- Comprehensive documentation for points scoring system
+- Migration script with utility functions and seeded records
+
+### Changed
+- Results API now auto-triggers scoring calculation
+- Team cards enhanced with points display alongside legacy time display
+- Leaderboard prioritizes points-based standings with fallback
+
+### Technical
+- Scoring engine module with modular calculation functions
+- Database helper functions for scoring rules and standings
+- Version 2 scoring rules with configurable parameters
+- Tie handling using standard competition ranking
+- Record detection and provisional workflow
+- Breakdown JSON schema for transparent scoring
+
+### Fixed
+- `/api/results` now tolerates legacy payloads and stores expanded scoring data, and `race_results` schema is auto-migrated to include all scoring columns.
+
+## [Previous Releases]
+
+### Added
 - Comprehensive documentation overhaul with dedicated architecture documentation
 - GitHub Copilot repository instructions for enhanced AI assistance
 - User guide with detailed player and commissioner instructions

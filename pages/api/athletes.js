@@ -1,4 +1,4 @@
-import { getAllAthletes, seedAthletes, getAthleteProfile } from './db.js';
+import { getAllAthletes, seedAthletes, getAthleteProfile } from './db';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
