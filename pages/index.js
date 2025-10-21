@@ -154,6 +154,11 @@ function getMainHTML() {
                 <button id="back-from-athletes" class="btn btn-secondary">Back to Commissioner</button>
             </div>
         </main>
+
+        <footer>
+            <p>Marathon Majors League &copy; 2025</p>
+            <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+        </footer>
     </div>
   `;
 }
