@@ -131,6 +131,9 @@ function setupEventListeners() {
     // Landing page
     document.getElementById('enter-game').addEventListener('click', handleEnterGame);
     document.getElementById('commissioner-mode').addEventListener('click', handleCommissionerMode);
+    
+    // Footer
+    document.getElementById('home-button').addEventListener('click', () => showPage('landing-page'));
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
@@ -156,7 +159,6 @@ function setupEventListeners() {
     document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
     document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
-    document.getElementById('export-data').addEventListener('click', handleExportData);
     document.getElementById('view-athletes').addEventListener('click', () => {
         showPage('athlete-management-page');
         handleViewAthletes();
@@ -1845,16 +1847,6 @@ async function handleResetGame() {
             alert('Error resetting game. Please try again.');
         }
     }
-}
-
-function handleExportData() {
-    const data = JSON.stringify(gameState, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fantasy-ny-marathon-data.json';
-    a.click();
 }
 
 // Handle view athletes

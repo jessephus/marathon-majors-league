@@ -580,6 +580,7 @@ footer .btn {
 
 .action-card h3 {
     color: var(--primary-blue);
+    font-weight: bolder;
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--medium-gray);

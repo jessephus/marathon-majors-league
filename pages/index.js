@@ -133,7 +133,6 @@ function getMainHTML() {
                     <div class="action-card">
                         <h3>Game State</h3>
                         <button id="reset-game" class="btn btn-danger">Reset Game</button>
-                        <button id="export-data" class="btn btn-secondary">Export Data</button>
                     </div>
                 </div>
                 <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
@@ -336,6 +335,7 @@ function getMainHTML() {
 
         <footer>
             <p>Marathon Majors League &copy; 2025</p>
+            <button id="home-button" class="btn btn-secondary">Home</button>
             <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
         </footer>
     </div>
