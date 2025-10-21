@@ -63,26 +63,23 @@ function getMainHTML() {
                             <thead>
                                 <tr>
                                     <th class="drag-handle-header"></th>
-                                    <th class="rank-header">Rank</th>
-                                    <th>Athlete</th>
+                                    <th class="rank-column">Rank</th>
+                                    <th>Name</th>
                                     <th>Country</th>
-                                    <th class="hidden-mobile">Personal Best</th>
-                                    <th class="hidden-mobile">Season Best</th>
-                                    <th class="hidden-mobile">Details</th>
-                                    <th>NYC Confirmed</th>
+                                    <th>PB</th>
+                                    <th>Season Best</th>
+                                    <th>Marathon Rank</th>
+                                    <th>Overall Rank</th>
+                                    <th>Age</th>
                                 </tr>
                             </thead>
                             <tbody id="athlete-table-body">
-                                <!-- Athletes populated dynamically -->
                             </tbody>
                         </table>
                     </div>
-                    <div class="selection-summary">
-                        <p>Selected: <span id="selection-count">0</span> / 10</p>
-                    </div>
-                    <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
-                    <button id="back-to-landing-from-ranking" class="btn btn-secondary">Back to Home</button>
                 </div>
+
+                <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
             </div>
 
             <!-- Draft Page -->
@@ -136,24 +133,206 @@ function getMainHTML() {
                     <div class="action-card">
                         <h3>Game State</h3>
                         <button id="reset-game" class="btn btn-danger">Reset Game</button>
+                        <button id="export-data" class="btn btn-secondary">Export Data</button>
                     </div>
                 </div>
-                <button id="back-to-landing-from-commissioner" class="btn btn-secondary">Back to Home</button>
+                <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
             </div>
 
-            <!-- Athletes View Page -->
-            <div id="athletes-page" class="page">
-                <h2>All Athletes</h2>
-                <div class="athlete-filter">
-                    <div class="tabs">
-                        <button class="tab active" data-gender="men">Men</button>
-                        <button class="tab" data-gender="women">Women</button>
-                    </div>
+            <!-- Athlete Management Page -->
+            <div id="athlete-management-page" class="page">
+                <h2>Athlete Management</h2>
+                <p class="page-description">View and manage all athletes in the database</p>
+                
+                <div class="athlete-filters">
+                    <label>
+                        <input type="checkbox" id="filter-confirmed" checked> Show only confirmed for NYC Marathon
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-missing-wa-id"> Show only missing World Athletics ID
+                    </label>
+                    <label>
+                        Gender:
+                        <select id="filter-gender">
+                            <option value="all">All</option>
+                            <option value="men">Men</option>
+                            <option value="women">Women</option>
+                        </select>
+                    </label>
+                    <label>
+                        Sort by:
+                        <select id="sort-athletes">
+                            <option value="id">ID</option>
+                            <option value="name">Name</option>
+                            <option value="marathon_rank">Marathon Rank</option>
+                            <option value="pb">Personal Best</option>
+                        </select>
+                    </label>
                 </div>
-                <div id="athletes-list"></div>
-                <button id="back-from-athletes" class="btn btn-secondary">Back to Commissioner</button>
+                
+                <div id="athlete-management-container"></div>
+                
+                <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
             </div>
         </main>
+
+        <!-- Athlete Card Modal -->
+        <div id="athlete-modal" class="modal">
+            <div class="modal-overlay"></div>
+            <div class="athlete-card-container">
+                <button class="modal-close" aria-label="Close">&times;</button>
+                
+                <div id="card-masthead" class="card-masthead">
+                    <div class="masthead-content">
+                        <div class="masthead-photo-section">
+                            <div class="masthead-photo-wrapper">
+                                <img id="modal-athlete-photo" src="" alt="Athlete photo" class="masthead-photo">
+                                <div class="masthead-flag">
+                                    <span id="modal-athlete-country" class="flag-emoji"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="masthead-bio-section">
+                            <h2 id="modal-athlete-name" class="athlete-name"></h2>
+                            <div class="bio-details">
+                                <div class="bio-item">
+                                    <span id="modal-athlete-gender" class="bio-value"></span>
+                                </div>
+                                <div class="bio-item">
+                                    <span id="modal-athlete-age" class="bio-value"></span>
+                                </div>
+                            </div>
+                            <div class="masthead-stats-grid">
+                                <div class="masthead-stat">
+                                    <div class="masthead-stat-label">Marathon Rank</div>
+                                    <div id="modal-athlete-marathon-rank" class="masthead-stat-value"></div>
+                                </div>
+                                <div class="masthead-stat">
+                                    <div class="masthead-stat-label">Personal Best</div>
+                                    <div id="modal-athlete-pb" class="masthead-stat-value"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tabs-container">
+                    <nav class="tabs-nav">
+                        <button class="tab-button active" data-tab="overview">Overview</button>
+                        <button class="tab-button" data-tab="results">Race Log</button>
+                        <button class="tab-button" data-tab="progression">Progression</button>
+                        <button class="tab-button" data-tab="news">News</button>
+                    </nav>
+                </div>
+
+                <div class="tab-content-container">
+                    <div id="tab-overview" class="tab-panel active">
+                        <div class="overview-section">
+                            <h3 class="section-title">Key Statistics</h3>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-label">Personal Best</div>
+                                    <div id="overview-pb" class="stat-value-large"></div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Season Best</div>
+                                    <div id="modal-athlete-sb" class="stat-value-large"></div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Marathon Rank</div>
+                                    <div id="overview-marathon-rank" class="stat-value-large"></div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Overall Rank</div>
+                                    <div id="modal-athlete-overall-rank" class="stat-value-large"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overview-section">
+                            <h3 class="section-title">Profile Information</h3>
+                            <div class="profile-grid">
+                                <div class="profile-row">
+                                    <span class="profile-label">Date of Birth</span>
+                                    <span id="modal-athlete-dob" class="profile-value">N/A</span>
+                                </div>
+                                <div class="profile-row">
+                                    <span class="profile-label">World Athletics ID</span>
+                                    <span id="modal-athlete-wa-id" class="profile-value">N/A</span>
+                                </div>
+                                <div class="profile-row">
+                                    <span class="profile-label">Road Running Rank</span>
+                                    <span id="modal-athlete-road-rank" class="profile-value">N/A</span>
+                                </div>
+                                <div id="modal-athlete-sponsor-section" class="profile-row" style="display: none;">
+                                    <span class="profile-label">Sponsor</span>
+                                    <span id="modal-athlete-sponsor" class="profile-value">N/A</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overview-section">
+                            <a id="modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="wa-link-button">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                View Full World Athletics Profile
+                            </a>
+                        </div>
+                    </div>
+
+                    <div id="tab-results" class="tab-panel">
+                        <div class="tab-content-header">
+                            <h3 class="tab-content-title">2025 Race Results</h3>
+                            <div id="results-loading" class="loading-indicator">Loading...</div>
+                        </div>
+                        <div id="results-list" class="results-list"></div>
+                        <div id="results-empty" class="empty-state" style="display: none;">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                            </svg>
+                            <p>No 2025 race results available</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-progression" class="tab-panel">
+                        <div class="tab-content-header">
+                            <h3 id="progression-title" class="tab-content-title">Season's Best: Marathon</h3>
+                            <div id="progression-loading" class="loading-indicator">Loading...</div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="progression-chart-canvas"></canvas>
+                        </div>
+                        <select id="discipline-selector" class="discipline-selector" style="display: none;">
+                            <option value="Marathon">Marathon</option>
+                        </select>
+                        <div id="selected-race-info" class="selected-race-info" style="display: none;">
+                            <h4 class="race-info-title">Race Details</h4>
+                            <div id="race-info-content"></div>
+                        </div>
+                        <div id="progression-empty" class="empty-state" style="display: none;">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p>No progression data available</p>
+                        </div>
+                    </div>
+
+                    <div id="tab-news" class="tab-panel">
+                        <div class="tab-content-header">
+                            <h3 class="tab-content-title">Latest News</h3>
+                        </div>
+                        <div class="empty-state">
+                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                            </svg>
+                            <p>News feed coming soon</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <footer>
             <p>Marathon Majors League &copy; 2025</p>

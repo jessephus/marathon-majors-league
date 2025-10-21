@@ -9,7 +9,7 @@ The `/api/athletes` endpoint was calling `getAllAthletes()` which had race filte
 ## Solution
 
 ### 1. Updated `getAllAthletes()` in `api/db.js`
-Added a `confirmedOnly` parameter (default: `true`) that controls the query logic:
+Added a `confirmedOnly` parameter (default: `false`) that controls the query logic:
 
 **When `confirmedOnly = true`:**
 - Uses `INNER JOIN` with `athlete_races` and `races` tables

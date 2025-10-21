@@ -16,7 +16,7 @@ let rankingViewState = {
 };
 
 // API base URL - will be relative in production
-const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
 const GAME_ID = 'default'; // Can be made configurable if multiple games needed
 
 // Load game state from database
@@ -2683,4 +2683,8 @@ function setupAthleteModal() {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

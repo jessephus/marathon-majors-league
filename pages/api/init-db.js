@@ -131,7 +131,7 @@ export default async function handler(req, res) {
     }
     
     // Check if athletes table is populated
-    const athletes = await getAllAthletes();
+  const athletes = await getAllAthletes(false);
     const athletesCount = athletes.men.length + athletes.women.length;
     
     let message = 'Neon Postgres database is ready';

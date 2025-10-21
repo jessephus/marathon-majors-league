@@ -7,7 +7,7 @@ const sql = neon(process.env.DATABASE_URL);
 // ATHLETES
 // ============================================================================
 
-export async function getAllAthletes(confirmedOnly = true) {
+export async function getAllAthletes(confirmedOnly = false) {
   let athletes;
   
   if (confirmedOnly) {
