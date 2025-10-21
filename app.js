@@ -946,31 +946,70 @@ function createTeamCard(player, team, showScore = false) {
 
     // Show score/ranking at the top if results are available
     if (showScore && Object.keys(gameState.results).length > 0) {
-        const averageTime = calculateAverageTime(team);
-        
-        // Calculate team rankings
-        const allScores = {};
-        Object.entries(gameState.teams).forEach(([p, t]) => {
-            allScores[p] = calculateTeamScore(t);
+        // Try to fetch points-based standings
+        fetchScoringDetails().then(scoringResults => {
+            if (scoringResults && scoringResults.length > 0) {
+                // Calculate total points for this player's team
+                const teamAthleteIds = [...team.men, ...team.women].map(a => a.id);
+                const teamPoints = scoringResults
+                    .filter(r => teamAthleteIds.includes(r.athlete_id))
+                    .reduce((sum, r) => sum + (r.total_points || 0), 0);
+                
+                // Get all team points for ranking
+                const allTeamPoints = {};
+                Object.entries(gameState.teams).forEach(([p, t]) => {
+                    const athleteIds = [...t.men, ...t.women].map(a => a.id);
+                    allTeamPoints[p] = scoringResults
+                        .filter(r => athleteIds.includes(r.athlete_id))
+                        .reduce((sum, r) => sum + (r.total_points || 0), 0);
+                });
+                
+                const sortedTeams = Object.entries(allTeamPoints).sort((a, b) => b[1] - a[1]);
+                const rank = sortedTeams.findIndex(([p, pts]) => p === player) + 1;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+                
+                // Update or create score div
+                let scoreDiv = card.querySelector('.score');
+                if (!scoreDiv) {
+                    scoreDiv = document.createElement('div');
+                    scoreDiv.className = 'score';
+                    card.insertBefore(scoreDiv, card.children[1]);
+                }
+                
+                scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
+                scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
+                scoreDiv.style.marginBottom = '15px';
+                scoreDiv.style.padding = '10px';
+                scoreDiv.style.background = rank === 1 ? 'rgba(220, 53, 69, 0.1)' : 'var(--light-gray)';
+                scoreDiv.style.borderRadius = '5px';
+                scoreDiv.innerHTML = `
+                    <div style="font-size: 1.2em; margin-bottom: 5px;">
+                        ${medal} Rank: #${rank} of ${sortedTeams.length}
+                    </div>
+                    <div style="color: var(--primary-blue); font-weight: bold; font-size: 1.1em;">
+                        Total Points: ${teamPoints}
+                    </div>
+                    <div style="font-size: 0.9em; color: var(--dark-gray); margin-top: 4px;">
+                        Average: ${(teamPoints / teamAthleteIds.length).toFixed(1)} pts/athlete
+                    </div>
+                `;
+            } else {
+                // Fallback to legacy time-based display
+                displayLegacyScore(card, player, team);
+            }
+        }).catch(err => {
+            console.error('Error displaying points score:', err);
+            displayLegacyScore(card, player, team);
         });
-        const sortedTeams = Object.entries(allScores).sort((a, b) => a[1] - b[1]);
-        const rank = sortedTeams.findIndex(([p, s]) => p === player) + 1;
-        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
         
+        // Show placeholder while loading
         const scoreDiv = document.createElement('div');
         scoreDiv.className = 'score';
-        scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
-        scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
         scoreDiv.style.marginBottom = '15px';
         scoreDiv.style.padding = '10px';
-        scoreDiv.style.background = rank === 1 ? 'rgba(220, 53, 69, 0.1)' : 'var(--light-gray)';
+        scoreDiv.style.background = 'var(--light-gray)';
         scoreDiv.style.borderRadius = '5px';
-        scoreDiv.innerHTML = `
-            <div style="font-size: 1.2em; margin-bottom: 5px;">
-                ${medal} Rank: #${rank} of ${sortedTeams.length}
-            </div>
-            <div>Average Finish Time: ${averageTime}</div>
-        `;
+        scoreDiv.innerHTML = '<div>Calculating points...</div>';
         card.appendChild(scoreDiv);
     }
 
@@ -983,59 +1022,8 @@ function createTeamCard(player, team, showScore = false) {
     menSection.appendChild(menTitle);
     
     team.men.forEach(athlete => {
-        // Enrich athlete data with current information
         const enrichedAthlete = enrichAthleteData(athlete, 'men');
-        const time = gameState.results[enrichedAthlete.id] || '-';
-        const athleteDiv = document.createElement('div');
-        athleteDiv.className = 'athlete';
-        
-        // Create headshot container
-        const headshot = createHeadshotElement(enrichedAthlete, 'headshot');
-        if (headshot) athleteDiv.appendChild(headshot);
-        
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'athlete-info';
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'name';
-        
-        // Add World Athletics link if available
-        if (enrichedAthlete.worldAthleticsProfileUrl) {
-            const link = document.createElement('a');
-            link.href = enrichedAthlete.worldAthleticsProfileUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = enrichedAthlete.name;
-            link.style.color = 'inherit';
-            link.title = 'View World Athletics profile';
-            nameDiv.appendChild(link);
-        } else {
-            nameDiv.textContent = enrichedAthlete.name;
-        }
-        
-        const countryDiv = document.createElement('div');
-        countryDiv.className = 'country';
-        countryDiv.innerHTML = `${getCountryFlag(enrichedAthlete.country)} ${enrichedAthlete.country}`;
-        
-        const detailsText = formatAthleteDetails(enrichedAthlete);
-        if (detailsText) {
-            const detailsDiv = document.createElement('div');
-            detailsDiv.className = 'details';
-            detailsDiv.textContent = detailsText;
-            infoDiv.appendChild(nameDiv);
-            infoDiv.appendChild(countryDiv);
-            infoDiv.appendChild(detailsDiv);
-        } else {
-            infoDiv.appendChild(nameDiv);
-            infoDiv.appendChild(countryDiv);
-        }
-        
-        const timeDiv = document.createElement('div');
-        timeDiv.className = 'time';
-        timeDiv.textContent = time;
-        
-        athleteDiv.appendChild(infoDiv);
-        athleteDiv.appendChild(timeDiv);
+        const athleteDiv = createAthleteRow(enrichedAthlete, showScore);
         menSection.appendChild(athleteDiv);
     });
     card.appendChild(menSection);
@@ -1049,35 +1037,238 @@ function createTeamCard(player, team, showScore = false) {
     womenSection.appendChild(womenTitle);
     
     team.women.forEach(athlete => {
-        // Enrich athlete data with current information
         const enrichedAthlete = enrichAthleteData(athlete, 'women');
-        const time = gameState.results[enrichedAthlete.id] || '-';
-        const athleteDiv = document.createElement('div');
-        athleteDiv.className = 'athlete';
-        
-        // Create headshot container
-        const headshot = createHeadshotElement(enrichedAthlete, 'headshot');
-        if (headshot) athleteDiv.appendChild(headshot);
-        
-        const infoDiv = document.createElement('div');
-        infoDiv.className = 'athlete-info';
-        
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'name';
-        
-        // Add World Athletics link if available
-        if (enrichedAthlete.worldAthleticsProfileUrl) {
-            const link = document.createElement('a');
-            link.href = enrichedAthlete.worldAthleticsProfileUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-            link.textContent = enrichedAthlete.name;
-            link.style.color = 'inherit';
-            link.title = 'View World Athletics profile';
-            nameDiv.appendChild(link);
-        } else {
-            nameDiv.textContent = enrichedAthlete.name;
+        const athleteDiv = createAthleteRow(enrichedAthlete, showScore);
+        womenSection.appendChild(athleteDiv);
+    });
+    card.appendChild(womenSection);
+
+    return card;
+}
+
+// Helper to display legacy time-based score
+function displayLegacyScore(card, player, team) {
+    const averageTime = calculateAverageTime(team);
+    
+    // Calculate team rankings
+    const allScores = {};
+    Object.entries(gameState.teams).forEach(([p, t]) => {
+        allScores[p] = calculateTeamScore(t);
+    });
+    const sortedTeams = Object.entries(allScores).sort((a, b) => a[1] - b[1]);
+    const rank = sortedTeams.findIndex(([p, s]) => p === player) + 1;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    
+    let scoreDiv = card.querySelector('.score');
+    if (!scoreDiv) {
+        scoreDiv = document.createElement('div');
+        scoreDiv.className = 'score';
+        card.insertBefore(scoreDiv, card.children[1]);
+    }
+    
+    scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
+    scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
+    scoreDiv.style.marginBottom = '15px';
+    scoreDiv.style.padding = '10px';
+    scoreDiv.style.background = rank === 1 ? 'rgba(220, 53, 69, 0.1)' : 'var(--light-gray)';
+    scoreDiv.style.borderRadius = '5px';
+    scoreDiv.innerHTML = `
+        <div style="font-size: 1.2em; margin-bottom: 5px;">
+            ${medal} Rank: #${rank} of ${sortedTeams.length}
+        </div>
+        <div>Average Finish Time: ${averageTime}</div>
+    `;
+}
+
+// Create athlete row with points info
+function createAthleteRow(enrichedAthlete, showScore) {
+    const time = gameState.results[enrichedAthlete.id] || '-';
+    const athleteDiv = document.createElement('div');
+    athleteDiv.className = 'athlete';
+    athleteDiv.dataset.athleteId = enrichedAthlete.id;
+    
+    // Create headshot container
+    const headshot = createHeadshotElement(enrichedAthlete, 'headshot');
+    if (headshot) athleteDiv.appendChild(headshot);
+    
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'athlete-info';
+    
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'name';
+    
+    // Add World Athletics link if available
+    if (enrichedAthlete.worldAthleticsProfileUrl) {
+        const link = document.createElement('a');
+        link.href = enrichedAthlete.worldAthleticsProfileUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = enrichedAthlete.name;
+        link.style.color = 'inherit';
+        link.title = 'View World Athletics profile';
+        nameDiv.appendChild(link);
+    } else {
+        nameDiv.textContent = enrichedAthlete.name;
+    }
+    
+    const countryDiv = document.createElement('div');
+    countryDiv.className = 'country';
+    countryDiv.innerHTML = `${getCountryFlag(enrichedAthlete.country)} ${enrichedAthlete.country}`;
+    
+    const detailsText = formatAthleteDetails(enrichedAthlete);
+    if (detailsText) {
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'details';
+        detailsDiv.textContent = detailsText;
+        infoDiv.appendChild(nameDiv);
+        infoDiv.appendChild(countryDiv);
+        infoDiv.appendChild(detailsDiv);
+    } else {
+        infoDiv.appendChild(nameDiv);
+        infoDiv.appendChild(countryDiv);
+    }
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'time';
+    timeDiv.textContent = time;
+    
+    // Add points info if available and showing score
+    if (showScore && time !== '-') {
+        fetchScoringDetails().then(scoringResults => {
+            const result = scoringResults.find(r => r.athlete_id === enrichedAthlete.id);
+            if (result) {
+                // Add record badge if applicable
+                const badge = getRecordBadge(result.record_type, result.record_status);
+                if (badge) {
+                    nameDiv.innerHTML += badge;
+                }
+                
+                // Add points to time display
+                const pointsSpan = document.createElement('span');
+                pointsSpan.style.cssText = 'display: block; font-size: 0.9em; color: var(--primary-blue); font-weight: bold; margin-top: 2px;';
+                pointsSpan.textContent = `${result.total_points} pts`;
+                pointsSpan.title = 'Click for breakdown';
+                pointsSpan.style.cursor = 'pointer';
+                
+                // Add click handler for breakdown
+                pointsSpan.addEventListener('click', () => {
+                    showPointsBreakdownModal(enrichedAthlete.name, result);
+                });
+                
+                timeDiv.appendChild(pointsSpan);
+            }
+        }).catch(err => {
+            console.error('Error fetching scoring for athlete:', err);
+        });
+    }
+    
+    athleteDiv.appendChild(infoDiv);
+    athleteDiv.appendChild(timeDiv);
+    
+    return athleteDiv;
+}
+
+// Show points breakdown in a modal
+function showPointsBreakdownModal(athleteName, result) {
+    if (!result || !result.breakdown) return;
+    
+    const breakdown = result.breakdown;
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center;
+        justify-content: center; z-index: 10000; padding: 20px;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white; border-radius: 10px; padding: 20px;
+        max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto;
+    `;
+    
+    let html = `
+        <h3 style="margin: 0 0 15px 0; color: var(--primary-blue);">${escapeHtml(athleteName)} - Points Breakdown</h3>
+        <div style="border-bottom: 2px solid var(--light-gray); margin-bottom: 15px;"></div>
+    `;
+    
+    // Placement
+    if (breakdown.placement && breakdown.placement.points > 0) {
+        html += `
+            <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                <div style="font-weight: bold; color: var(--dark-gray);">🏁 Placement</div>
+                <div>${getOrdinal(breakdown.placement.position)} place</div>
+                <div style="color: var(--primary-blue); font-weight: bold;">+${breakdown.placement.points} points</div>
+            </div>
+        `;
+    }
+    
+    // Time gap
+    if (breakdown.time_gap && breakdown.time_gap.points > 0) {
+        html += `
+            <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                <div style="font-weight: bold; color: var(--dark-gray);">⏱️ Time Gap</div>
+                <div>${breakdown.time_gap.gap_seconds} seconds behind winner</div>
+                <div style="font-size: 0.85em; color: #666;">(Within ${breakdown.time_gap.window?.max_gap_seconds}s window)</div>
+                <div style="color: var(--primary-blue); font-weight: bold;">+${breakdown.time_gap.points} points</div>
+            </div>
+        `;
+    }
+    
+    // Performance bonuses
+    if (breakdown.performance_bonuses && breakdown.performance_bonuses.length > 0) {
+        breakdown.performance_bonuses.forEach(bonus => {
+            const icon = bonus.type === 'NEGATIVE_SPLIT' ? '📈' : 
+                        bonus.type === 'EVEN_PACE' ? '⚖️' : '🚀';
+            const name = bonus.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            html += `
+                <div style="margin-bottom: 12px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
+                    <div style="font-weight: bold; color: var(--dark-gray);">${icon} ${name}</div>
+                    <div style="color: var(--primary-blue); font-weight: bold;">+${bonus.points} points</div>
+                </div>
+            `;
+        });
+    }
+    
+    // Record bonuses
+    if (breakdown.record_bonuses && breakdown.record_bonuses.length > 0) {
+        breakdown.record_bonuses.forEach(record => {
+            const icon = record.type === 'WORLD_RECORD' ? '🌎' : '🏆';
+            const name = record.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const statusText = record.status === 'provisional' ? ' (Provisional - Pending)' : '';
+            html += `
+                <div style="margin-bottom: 12px; padding: 10px; background: #fff3cd; border-radius: 5px; border: 2px solid #ffc107;">
+                    <div style="font-weight: bold; color: var(--dark-gray);">${icon} ${name}${statusText}</div>
+                    <div style="color: var(--primary-blue); font-weight: bold;">+${record.points} points</div>
+                </div>
+            `;
+        });
+    }
+    
+    // Total
+    html += `
+        <div style="margin-top: 15px; padding: 15px; background: var(--primary-blue); color: white; border-radius: 5px; text-align: center;">
+            <div style="font-size: 0.9em; opacity: 0.9;">TOTAL POINTS</div>
+            <div style="font-size: 2em; font-weight: bold;">${result.total_points}</div>
+        </div>
+        <button id="close-modal" style="margin-top: 15px; width: 100%; padding: 10px; background: var(--dark-gray); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em;">
+            Close
+        </button>
+    `;
+    
+    content.innerHTML = html;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Close handlers
+    document.getElementById('close-modal').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
         }
+    });
+}
         
         const countryDiv = document.createElement('div');
         countryDiv.className = 'country';
@@ -1246,8 +1437,8 @@ async function handleFinalizeResults() {
     }
 }
 
-// Update live standings display
-function updateLiveStandings() {
+// Update live standings display with points-based scoring
+async function updateLiveStandings() {
     const display = document.getElementById('live-standings');
     
     if (Object.keys(gameState.results).length === 0) {
@@ -1255,6 +1446,73 @@ function updateLiveStandings() {
         return;
     }
 
+    try {
+        // Fetch standings from API (includes points calculations)
+        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
+        if (response.ok) {
+            const data = await response.json();
+            displayPointsStandings(data.standings, display);
+        } else {
+            // Fallback to legacy time-based standings
+            displayLegacyStandings(display);
+        }
+    } catch (error) {
+        console.error('Error fetching standings:', error);
+        // Fallback to legacy time-based standings
+        displayLegacyStandings(display);
+    }
+}
+
+// Display points-based standings (Version 2)
+function displayPointsStandings(standings, display) {
+    if (!standings || standings.length === 0) {
+        display.innerHTML = '<p style="color: var(--dark-gray); margin-top: 10px;">No standings available yet.</p>';
+        return;
+    }
+
+    display.innerHTML = `
+        <h4 style="margin-top: 20px;">🏆 Current Standings (Points League)</h4>
+        <div style="background: var(--light-gray); padding: 15px; border-radius: 5px; margin-top: 10px; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <thead>
+                    <tr style="border-bottom: 2px solid var(--dark-gray);">
+                        <th style="padding: 8px; text-align: left;">Rank</th>
+                        <th style="padding: 8px; text-align: left;">Player</th>
+                        <th style="padding: 8px; text-align: center;">Races</th>
+                        <th style="padding: 8px; text-align: center;">Wins</th>
+                        <th style="padding: 8px; text-align: center;">Top 3</th>
+                        <th style="padding: 8px; text-align: center;" title="World Records">WR</th>
+                        <th style="padding: 8px; text-align: center;" title="Course Records">CR</th>
+                        <th style="padding: 8px; text-align: right;"><strong>Total Points</strong></th>
+                        <th style="padding: 8px; text-align: right;">Avg</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${standings.map((standing, i) => {
+                        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                        const isLeader = i === 0;
+                        return `
+                            <tr style="border-bottom: 1px solid #ddd; ${isLeader ? 'background: #fff9e6;' : ''}">
+                                <td style="padding: 8px; font-weight: ${isLeader ? 'bold' : 'normal'};">${medal}${standing.rank}</td>
+                                <td style="padding: 8px; font-weight: ${isLeader ? 'bold' : 'normal'}; color: ${isLeader ? 'var(--primary-red)' : 'inherit'};">${escapeHtml(standing.player_code)}</td>
+                                <td style="padding: 8px; text-align: center;">${standing.races_count}</td>
+                                <td style="padding: 8px; text-align: center;">${standing.wins || 0}</td>
+                                <td style="padding: 8px; text-align: center;">${standing.top3 || 0}</td>
+                                <td style="padding: 8px; text-align: center;">${standing.world_records || 0}</td>
+                                <td style="padding: 8px; text-align: center;">${standing.course_records || 0}</td>
+                                <td style="padding: 8px; text-align: right; font-weight: bold; color: var(--primary-blue);">${standing.total_points}</td>
+                                <td style="padding: 8px; text-align: right;">${standing.average_points.toFixed(1)}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+// Legacy time-based standings (fallback)
+function displayLegacyStandings(display) {
     const scores = {};
     const averageTimes = {};
     Object.entries(gameState.teams).forEach(([player, team]) => {
@@ -1265,16 +1523,121 @@ function updateLiveStandings() {
     const sortedTeams = Object.entries(scores).sort((a, b) => a[1] - b[1]);
 
     display.innerHTML = `
-        <h4 style="margin-top: 20px;">Current Standings</h4>
+        <h4 style="margin-top: 20px;">Current Standings (Time-Based)</h4>
         <div style="background: var(--light-gray); padding: 15px; border-radius: 5px; margin-top: 10px;">
             ${sortedTeams.map(([player, score], i) => {
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
                 return `<div style="padding: 8px 0; font-weight: ${i === 0 ? 'bold' : 'normal'}; color: ${i === 0 ? 'var(--primary-red)' : 'inherit'};">
-                    ${medal} ${player}: ${averageTimes[player]}
+                    ${medal} ${escapeHtml(player)}: ${averageTimes[player]}
                 </div>`;
             }).join('')}
         </div>
     `;
+}
+
+// Fetch detailed scoring data for all results
+async function fetchScoringDetails() {
+    try {
+        const response = await fetch(`${API_BASE}/api/scoring?gameId=${GAME_ID}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.results || [];
+        }
+    } catch (error) {
+        console.error('Error fetching scoring details:', error);
+    }
+    return [];
+}
+
+// Create points breakdown tooltip
+function createPointsBreakdown(athleteId, scoringResults) {
+    const result = scoringResults.find(r => r.athlete_id === athleteId);
+    
+    if (!result || !result.breakdown) {
+        return null;
+    }
+    
+    const breakdown = result.breakdown;
+    const parts = [];
+    
+    // Placement points
+    if (breakdown.placement && breakdown.placement.points > 0) {
+        parts.push(`<div><strong>Placement:</strong> ${getOrdinal(breakdown.placement.position)} = +${breakdown.placement.points} pts</div>`);
+    }
+    
+    // Time gap points
+    if (breakdown.time_gap && breakdown.time_gap.points > 0) {
+        parts.push(`<div><strong>Time Gap:</strong> ${breakdown.time_gap.gap_seconds}s (≤${breakdown.time_gap.window.max_gap_seconds}s) = +${breakdown.time_gap.points} pts</div>`);
+    }
+    
+    // Performance bonuses
+    if (breakdown.performance_bonuses && breakdown.performance_bonuses.length > 0) {
+        const bonusText = breakdown.performance_bonuses.map(b => {
+            const name = b.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `${name} +${b.points}`;
+        }).join(', ');
+        parts.push(`<div><strong>Bonuses:</strong> ${bonusText}</div>`);
+    }
+    
+    // Record bonuses
+    if (breakdown.record_bonuses && breakdown.record_bonuses.length > 0) {
+        breakdown.record_bonuses.forEach(r => {
+            const badge = r.type === 'WORLD_RECORD' ? '🌎 WR' : '🏆 CR';
+            const statusText = r.status === 'provisional' ? ' (Provisional)' : '';
+            parts.push(`<div><strong>${badge}${statusText}:</strong> +${r.points} pts</div>`);
+        });
+    }
+    
+    parts.push(`<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ddd;"><strong>Total:</strong> ${result.total_points} points</div>`);
+    
+    return `
+        <div class="points-breakdown" style="
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 0.85em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 300px;
+        ">
+            ${parts.join('')}
+        </div>
+    `;
+}
+
+// Get ordinal suffix for placement
+function getOrdinal(n) {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+// Add record badge to athlete display
+function getRecordBadge(recordType, recordStatus) {
+    if (recordType === 'NONE' || !recordType) {
+        return '';
+    }
+    
+    let badge = '';
+    let title = '';
+    let style = 'padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: bold; margin-left: 6px;';
+    
+    if (recordType === 'WORLD' || recordType === 'BOTH') {
+        badge = 'WR';
+        title = 'World Record';
+        style += ' background: gold; color: #333;';
+    } else if (recordType === 'COURSE') {
+        badge = 'CR';
+        title = 'Course Record';
+        style += ' background: #2C39A2; color: white;';
+    }
+    
+    if (recordStatus === 'provisional') {
+        style += ' border: 2px dashed #666;';
+        title += ' (Provisional - Pending Confirmation)';
+    }
+    
+    return `<span style="${style}" title="${title}">${badge}</span>`;
 }
 
 function calculateTeamScore(team) {
