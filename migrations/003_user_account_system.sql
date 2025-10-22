@@ -212,9 +212,11 @@ CREATE TABLE user_games (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    UNIQUE(user_id, game_id),
-    UNIQUE(game_id, player_code) WHERE player_code IS NOT NULL
+    UNIQUE(user_id, game_id)
 );
+
+-- Partial unique index for player_code (replacing inline UNIQUE constraint with WHERE)
+CREATE UNIQUE INDEX idx_user_games_player_code ON user_games(game_id, player_code) WHERE player_code IS NOT NULL;
 
 -- Indexes for performance
 CREATE INDEX idx_user_games_user_id ON user_games(user_id);
@@ -371,25 +373,29 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION cleanup_expired_auth_tokens()
 RETURNS INTEGER AS $$
 DECLARE
-    deleted_count INTEGER;
+    deleted_count INTEGER := 0;
+    temp_count INTEGER;
 BEGIN
     -- Delete expired OTPs
     DELETE FROM one_time_passwords
     WHERE expires_at < CURRENT_TIMESTAMP AND used = FALSE;
     
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
+    GET DIAGNOSTICS temp_count = ROW_COUNT;
+    deleted_count := deleted_count + temp_count;
     
     -- Delete expired magic links
     DELETE FROM magic_links
     WHERE expires_at < CURRENT_TIMESTAMP AND used = FALSE;
     
-    GET DIAGNOSTICS deleted_count = deleted_count + ROW_COUNT;
+    GET DIAGNOSTICS temp_count = ROW_COUNT;
+    deleted_count := deleted_count + temp_count;
     
     -- Delete expired sessions
     DELETE FROM user_sessions
     WHERE expires_at < CURRENT_TIMESTAMP AND revoked = FALSE;
     
-    GET DIAGNOSTICS deleted_count = deleted_count + ROW_COUNT;
+    GET DIAGNOSTICS temp_count = ROW_COUNT;
+    deleted_count := deleted_count + temp_count;
     
     RETURN deleted_count;
 END;
