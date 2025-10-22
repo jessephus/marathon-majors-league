@@ -28,7 +28,7 @@ export async function sendEmail({ to, subject, text, html }) {
   try {
     switch (provider.toLowerCase()) {
       case 'sendgrid':
-        return await sendViaWe(to, subject, text, html);
+        return await sendViaSendGrid(to, subject, text, html);
       
       case 'ses':
       case 'aws-ses':
