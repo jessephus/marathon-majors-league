@@ -6,7 +6,7 @@
  * 
  * Usage:
  *   npm test                    # Run all tests against localhost:3000
- *   TEST_URL=https://your-app.vercel.app npm test    # Run against production
+ *   TEST_URL=https://marathonmajorsfantasy.com npm test    # Run against production
  */
 
 import { exec } from 'child_process';

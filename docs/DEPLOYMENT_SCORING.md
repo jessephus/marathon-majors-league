@@ -101,10 +101,10 @@ vercel --prod
 
 ```bash
 # Test scoring rules endpoint
-curl https://your-app.vercel.app/api/scoring?gameId=default
+curl https://marathonmajorsfantasy.com/api/scoring?gameId=default
 
 # Test standings endpoint
-curl https://your-app.vercel.app/api/standings?gameId=default
+curl https://marathonmajorsfantasy.com/api/standings?gameId=default
 ```
 
 2. **Test Frontend**

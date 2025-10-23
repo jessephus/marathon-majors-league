@@ -324,7 +324,7 @@ vercel env pull
 ### Database Management
 ```bash
 # Check database health
-curl https://your-app.vercel.app/api/init-db
+curl https://marathonmajorsfantasy.com/api/init-db
 
 # View database in Neon console
 # Go to https://console.neon.tech -> Select your database -> SQL Editor

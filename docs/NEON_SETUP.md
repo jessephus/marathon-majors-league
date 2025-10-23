@@ -43,10 +43,10 @@ The integration will automatically:
 3. **Verify the setup:**
    ```bash
    # Check database status
-   curl https://your-app.vercel.app/api/init-db
+   curl https://marathonmajorsfantasy.com/api/init-db
    
    # Get athletes from API
-   curl https://your-app.vercel.app/api/athletes
+   curl https://marathonmajorsfantasy.com/api/athletes
    ```
 
 **Important Notes:**
