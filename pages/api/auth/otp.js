@@ -5,10 +5,10 @@
  * POST /api/auth/otp?action=verify - Verify an OTP code
  */
 
-import { getUserById, getUserByEmail, getUserByPhone, createOTP, verifyOTP as verifyOTPDB } from '../../db.js';
-import { generateOTPCode, isValidEmail, isValidPhone, formatPhoneE164, AuthErrors } from '../../lib/auth-utils.js';
-import { sendEmail, generateOTPEmail } from '../../lib/email.js';
-import { sendSMS, generateOTPSMS, generateLoginSMS } from '../../lib/sms.js';
+import { getUserById, getUserByEmail, getUserByPhone, createOTP, verifyOTP as verifyOTPDB } from '../db.js';
+import { generateOTPCode, isValidEmail, isValidPhone, formatPhoneE164, AuthErrors } from '../lib/auth-utils.js';
+import { sendEmail, generateOTPEmail } from '../lib/email.js';
+import { sendSMS, generateOTPSMS, generateLoginSMS } from '../lib/sms.js';
 
 export default async function handler(req, res) {
   // Set CORS headers

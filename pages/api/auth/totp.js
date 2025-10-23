@@ -6,7 +6,7 @@
  * POST /api/auth/totp/verify - Verify a TOTP code during login
  */
 
-import { getUserById, updateUser } from '../../db.js';
+import { getUserById, updateUser } from '../db.js';
 import { 
   generateTOTPSecret, 
   generateTOTPQRCode, 
@@ -15,7 +15,7 @@ import {
   decryptTOTPSecret,
   generateBackupCodes,
   AuthErrors 
-} from '../../lib/auth-utils.js';
+} from '../lib/auth-utils.js';
 import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);

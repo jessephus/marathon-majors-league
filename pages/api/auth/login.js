@@ -10,7 +10,7 @@
  * - Magic Link (handled separately via /api/auth/magic-link)
  */
 
-import { getUserByEmail, recordUserLogin, createSession } from '../../db.js';
+import { getUserByEmail, recordUserLogin, createSession } from '../db.js';
 import { 
   isValidEmail, 
   generateSessionToken, 
@@ -18,7 +18,7 @@ import {
   decryptTOTPSecret,
   verifyBackupCode,
   AuthErrors 
-} from '../../lib/auth-utils.js';
+} from '../lib/auth-utils.js';
 import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);

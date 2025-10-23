@@ -5,9 +5,9 @@
  * GET /api/auth/magic-link?action=verify - Verify magic link token
  */
 
-import { getUserByEmail, createMagicLink, verifyMagicLink as verifyMagicLinkDB, createSession } from '../../db.js';
-import { generateMagicLinkToken, generateSessionToken, isValidEmail, AuthErrors } from '../../lib/auth-utils.js';
-import { sendEmail, generateMagicLinkEmail } from '../../lib/email.js';
+import { getUserByEmail, createMagicLink, verifyMagicLink as verifyMagicLinkDB, createSession } from '../db.js';
+import { generateMagicLinkToken, generateSessionToken, isValidEmail, AuthErrors } from '../lib/auth-utils.js';
+import { sendEmail, generateMagicLinkEmail } from '../lib/email.js';
 
 export default async function handler(req, res) {
   // Set CORS headers

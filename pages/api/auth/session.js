@@ -5,8 +5,8 @@
  * DELETE /api/auth/session - Logout (revoke session)
  */
 
-import { verifySession, revokeSession, revokeAllUserSessions, getUserById } from '../../db.js';
-import { AuthErrors } from '../../lib/auth-utils.js';
+import { verifySession, revokeSession, revokeAllUserSessions, getUserById } from '../db.js';
+import { AuthErrors } from '../lib/auth-utils.js';
 
 export default async function handler(req, res) {
   // Set CORS headers

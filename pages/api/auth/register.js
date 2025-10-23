@@ -4,9 +4,9 @@
  * POST /api/auth/register - Register a new user account
  */
 
-import { getUserByEmail, createUser, createMagicLink } from '../../db.js';
-import { isValidEmail, isValidPhone, formatPhoneE164, generateMagicLinkToken, AuthErrors } from '../../lib/auth-utils.js';
-import { sendEmail, generateMagicLinkEmail, generateWelcomeEmail } from '../../lib/email.js';
+import { getUserByEmail, createUser, createMagicLink } from '../db.js';
+import { isValidEmail, isValidPhone, formatPhoneE164, generateMagicLinkToken, AuthErrors } from '../lib/auth-utils.js';
+import { sendEmail, generateMagicLinkEmail, generateWelcomeEmail } from '../lib/email.js';
 import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);
