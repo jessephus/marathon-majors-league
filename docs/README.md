@@ -29,6 +29,28 @@ Welcome to the Fantasy NY Marathon documentation! This index helps you find the 
   - Troubleshooting common issues
   - Migration guide
 
+## 🔐 Authentication System (NEW)
+
+- **[Authentication Setup Guide](AUTHENTICATION_SETUP.md)** - Configure external services for authentication
+  - Email service setup (SendGrid, AWS SES, Resend)
+  - SMS service setup (Twilio, AWS SNS)
+  - Environment variable configuration
+  - Testing and troubleshooting
+
+- **[Authentication API Reference](AUTHENTICATION_API.md)** - Complete API documentation
+  - User registration and login
+  - TOTP (Google Authenticator) setup
+  - OTP (SMS/Email) authentication
+  - Magic link authentication
+  - Session management
+  - Error codes and examples
+
+- **[Phase 2 Implementation Summary](PHASE_2_SUMMARY.md)** - Authentication system overview
+  - Implementation details
+  - Security features
+  - Next steps for deployment
+  - Testing checklist
+
 ## 🔄 Automated Sync System
 
 - **[Sync Top 100 Guide](SYNC_TOP_100.md)** - Automated World Athletics data sync
@@ -79,14 +101,16 @@ Read these:
 Follow this path:
 1. [Deployment Guide](DEPLOYMENT.md) - Deploy to Vercel
 2. [Neon Setup Guide](NEON_SETUP.md) - Configure database
-3. [Data Persistence Guide](DATA_PERSISTENCE.md) - Understanding deployments
+3. [Authentication Setup Guide](AUTHENTICATION_SETUP.md) - Configure email/SMS services (NEW)
+4. [Data Persistence Guide](DATA_PERSISTENCE.md) - Understanding deployments
 
 ### I Want to Contribute Code
 Read these in order:
 1. [Development Guide](DEVELOPMENT.md) - Setup and standards
 2. [Architecture Guide](ARCHITECTURE.md) - System design
 3. [Database Guide](DATABASE.md) - Data models
-4. [Testing Guide](TESTING.md) - Testing approach
+4. [Authentication API Reference](AUTHENTICATION_API.md) - Authentication endpoints (NEW)
+5. [Testing Guide](TESTING.md) - Testing approach
 
 ### I Want to Understand the Sync System
 Explore these:
@@ -106,6 +130,12 @@ Explore these:
 
 **"How do I deploy my own instance?"**
 → [Deployment Guide](DEPLOYMENT.md)
+
+**"How do I set up authentication?"** (NEW)
+→ [Authentication Setup Guide](AUTHENTICATION_SETUP.md)
+
+**"How do authentication APIs work?"** (NEW)
+→ [Authentication API Reference](AUTHENTICATION_API.md)
 
 **"How does the automated athlete sync work?"**
 → [Sync Top 100 Guide](SYNC_TOP_100.md)
@@ -130,6 +160,8 @@ Explore these:
 | File | Purpose |
 |------|---------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Technical architecture and design decisions |
+| [AUTHENTICATION_API.md](AUTHENTICATION_API.md) | **NEW:** Complete authentication API documentation |
+| [AUTHENTICATION_SETUP.md](AUTHENTICATION_SETUP.md) | **NEW:** Email/SMS service setup for authentication |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and project evolution |
 | [DATABASE.md](DATABASE.md) | Database schema, init, and troubleshooting |
 | [DATA_PERSISTENCE.md](DATA_PERSISTENCE.md) | How data persists across deployments |
@@ -139,6 +171,7 @@ Explore these:
 | [LIVE_RESULTS_FEATURE.md](LIVE_RESULTS_FEATURE.md) | Live result update system |
 | [MIGRATION.md](MIGRATION.md) | Database migration history |
 | [NEON_SETUP.md](NEON_SETUP.md) | Neon Postgres setup guide |
+| [PHASE_2_SUMMARY.md](PHASE_2_SUMMARY.md) | **NEW:** Authentication system implementation summary |
 | [POSTGRES_REFERENCE.md](POSTGRES_REFERENCE.md) | SQL query examples |
 | [SYNC_TOP_100.md](SYNC_TOP_100.md) | Automated athlete sync system |
 | [TESTING.md](TESTING.md) | Testing procedures |
@@ -162,4 +195,4 @@ For questions not covered in the documentation:
 
 ---
 
-**Note:** This documentation is actively maintained. Last major update: October 2025 (Dropped Athlete Sync feature)
+**Note:** This documentation is actively maintained. Last major update: October 2025 (Authentication System - Phase 2)

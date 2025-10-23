@@ -35,7 +35,7 @@ When you deploy new code to Vercel:
 **Solution:**
 ```bash
 # Option 1: Visit the init endpoint (will auto-create schema)
-curl -X POST https://your-app.vercel.app/api/init-db
+curl -X POST https://marathonmajorsfantasy.com/api/init-db
 
 # Option 2: Access any page (auto-creates on first API call)
 # Just visit your app URL in browser
@@ -97,7 +97,7 @@ SELECT COUNT(*) FROM games;
 
 **Step 1: Check database connection**
 ```bash
-curl https://your-app.vercel.app/api/init-db
+curl https://marathonmajorsfantasy.com/api/init-db
 ```
 
 Expected response:
@@ -135,7 +135,7 @@ The `/api/init-db` endpoint will automatically create it. If it fails:
 
 2. **Manually seed via init endpoint**
    ```bash
-   curl -X POST https://your-app.vercel.app/api/init-db
+   curl -X POST https://marathonmajorsfantasy.com/api/init-db
    ```
 
 3. **Check for file system errors** in Vercel logs
@@ -187,10 +187,10 @@ The `/api/init-db` endpoint will automatically create it. If it fails:
 **Option 2: API Export** (for game data)
 ```bash
 # Export game state
-curl https://your-app.vercel.app/api/game-state?gameId=your-game-id
+curl https://marathonmajorsfantasy.com/api/game-state?gameId=your-game-id
 
 # Export rankings
-curl https://your-app.vercel.app/api/rankings?gameId=your-game-id
+curl https://marathonmajorsfantasy.com/api/rankings?gameId=your-game-id
 ```
 
 ### Restore Data
@@ -199,7 +199,7 @@ If you lose data (which shouldn't happen), you can:
 
 1. **Re-seed athletes** (if lost)
    ```bash
-   curl -X POST https://your-app.vercel.app/api/init-db
+   curl -X POST https://marathonmajorsfantasy.com/api/init-db
    ```
 
 2. **Restore from backup** (manual)
@@ -212,10 +212,10 @@ If you lose data (which shouldn't happen), you can:
 
 ```bash
 # Full status check
-curl https://your-app.vercel.app/api/init-db
+curl https://marathonmajorsfantasy.com/api/init-db
 
 # Just get athletes (lighter check)
-curl https://your-app.vercel.app/api/athletes
+curl https://marathonmajorsfantasy.com/api/athletes
 ```
 
 ### Verify Data Counts

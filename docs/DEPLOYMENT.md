@@ -32,15 +32,15 @@ See [NEON_SETUP.md](../NEON_SETUP.md) for detailed database setup instructions.
 ### 5. Deploy
 - Click "Deploy" in Vercel dashboard
 - Wait for the build to complete
-- Your site will be live at `https://your-project.vercel.app`
+- Your site will be live at `https://marathonmajorsfantasy.com`
 
 ### 6. Seed Athletes Data
-- Visit `https://your-project.vercel.app/api/init-db`
+- Visit `https://marathonmajorsfantasy.com/api/init-db`
 - Athletes will be automatically seeded from `athletes.json`
 - You should see a success message with athlete count
 
 ### 7. Share with Friends
-- Give your friends the URL: `https://your-project.vercel.app`
+- Give your friends the URL: `https://marathonmajorsfantasy.com`
 - As commissioner, generate player codes in the app
 - Share the codes with your players
 

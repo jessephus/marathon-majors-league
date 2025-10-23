@@ -221,7 +221,7 @@ The application uses multiple fallback mechanisms to ensure the database is alwa
 
 **Usage:**
 ```bash
-curl -X POST https://your-app.vercel.app/api/init-db
+curl -X POST https://marathonmajorsfantasy.com/api/init-db
 ```
 
 **Response:**
@@ -349,7 +349,7 @@ POST /api/init-db
 **Solution:**
 ```bash
 # Visit the init endpoint (auto-creates schema)
-curl -X POST https://your-app.vercel.app/api/init-db
+curl -X POST https://marathonmajorsfantasy.com/api/init-db
 
 # Or manually run schema.sql in Neon console
 ```
@@ -390,10 +390,10 @@ The app will auto-seed on first access (Tier 2). If it persists:
 
 ```bash
 # Check initialization status
-curl https://your-app.vercel.app/api/init-db
+curl https://marathonmajorsfantasy.com/api/init-db
 
 # Check athletes count
-curl https://your-app.vercel.app/api/athletes | jq '.men | length, .women | length'
+curl https://marathonmajorsfantasy.com/api/athletes | jq '.men | length, .women | length'
 ```
 
 ## Migrations

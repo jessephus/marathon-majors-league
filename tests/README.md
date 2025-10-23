@@ -66,7 +66,7 @@ End-to-end test of complete game workflow.
 
 2. **Or test against production:**
    ```bash
-   TEST_URL=https://your-app.vercel.app npm test
+   TEST_URL=https://marathonmajorsfantasy.com npm test
    ```
 
 ### Run All Tests
@@ -112,10 +112,10 @@ Examples:
 npm test
 
 # Test production
-TEST_URL=https://your-app.vercel.app npm test
+TEST_URL=https://marathonmajorsfantasy.com npm test
 
 # Test preview deployment
-TEST_URL=https://your-pr-123.vercel.app npm test
+TEST_URL=https://marathonmajorsfantasy.com npm test
 ```
 
 ## What Gets Tested

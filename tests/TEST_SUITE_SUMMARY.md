@@ -68,7 +68,7 @@ npm run test:flow       # Game flow only
 
 ### Test Production
 ```bash
-TEST_URL=https://your-app.vercel.app npm test
+TEST_URL=https://marathonmajorsfantasy.com npm test
 ```
 
 ## ✅ What Gets Tested

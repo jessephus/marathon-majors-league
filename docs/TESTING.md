@@ -18,7 +18,7 @@ Before testing, ensure:
 
 ```bash
 # Test database connection
-curl https://your-app.vercel.app/api/init-db
+curl https://marathonmajorsfantasy.com/api/init-db
 
 # Expected response:
 {
@@ -41,7 +41,7 @@ curl https://your-app.vercel.app/api/init-db
 
 ```bash
 # Get athletes
-curl https://your-app.vercel.app/api/athletes
+curl https://marathonmajorsfantasy.com/api/athletes
 
 # Expected response structure:
 {
@@ -72,12 +72,12 @@ curl https://your-app.vercel.app/api/athletes
 
 ```bash
 # Create a game with players
-curl -X POST https://your-app.vercel.app/api/game-state?gameId=test-game \
+curl -X POST https://marathonmajorsfantasy.com/api/game-state?gameId=test-game \
   -H "Content-Type: application/json" \
   -d '{"players": ["PLAYER1", "PLAYER2", "PLAYER3"]}'
 
 # Get game state
-curl https://your-app.vercel.app/api/game-state?gameId=test-game
+curl https://marathonmajorsfantasy.com/api/game-state?gameId=test-game
 
 # Expected response:
 {
@@ -101,7 +101,7 @@ curl https://your-app.vercel.app/api/game-state?gameId=test-game
 
 ```bash
 # Save rankings for PLAYER1
-curl -X POST https://your-app.vercel.app/api/rankings?gameId=test-game \
+curl -X POST https://marathonmajorsfantasy.com/api/rankings?gameId=test-game \
   -H "Content-Type: application/json" \
   -d '{
     "playerCode": "PLAYER1",
@@ -115,10 +115,10 @@ curl -X POST https://your-app.vercel.app/api/rankings?gameId=test-game \
   }'
 
 # Get rankings for specific player
-curl https://your-app.vercel.app/api/rankings?gameId=test-game&playerCode=PLAYER1
+curl https://marathonmajorsfantasy.com/api/rankings?gameId=test-game&playerCode=PLAYER1
 
 # Get all rankings
-curl https://your-app.vercel.app/api/rankings?gameId=test-game
+curl https://marathonmajorsfantasy.com/api/rankings?gameId=test-game
 ```
 
 **Validation:**
@@ -132,7 +132,7 @@ curl https://your-app.vercel.app/api/rankings?gameId=test-game
 
 ```bash
 # Save draft results
-curl -X POST https://your-app.vercel.app/api/draft?gameId=test-game \
+curl -X POST https://marathonmajorsfantasy.com/api/draft?gameId=test-game \
   -H "Content-Type: application/json" \
   -d '{
     "teams": {
@@ -148,10 +148,10 @@ curl -X POST https://your-app.vercel.app/api/draft?gameId=test-game \
   }'
 
 # Get draft results
-curl https://your-app.vercel.app/api/draft?gameId=test-game
+curl https://marathonmajorsfantasy.com/api/draft?gameId=test-game
 
 # Verify game state updated
-curl https://your-app.vercel.app/api/game-state?gameId=test-game
+curl https://marathonmajorsfantasy.com/api/game-state?gameId=test-game
 ```
 
 **Validation:**
@@ -165,7 +165,7 @@ curl https://your-app.vercel.app/api/game-state?gameId=test-game
 
 ```bash
 # Save race results
-curl -X POST https://your-app.vercel.app/api/results?gameId=test-game \
+curl -X POST https://marathonmajorsfantasy.com/api/results?gameId=test-game \
   -H "Content-Type: application/json" \
   -d '{
     "results": {
@@ -175,7 +175,7 @@ curl -X POST https://your-app.vercel.app/api/results?gameId=test-game \
   }'
 
 # Get results
-curl https://your-app.vercel.app/api/results?gameId=test-game
+curl https://marathonmajorsfantasy.com/api/results?gameId=test-game
 
 # Expected response:
 {
@@ -195,18 +195,18 @@ curl https://your-app.vercel.app/api/results?gameId=test-game
 
 ```bash
 # Create game 1
-curl -X POST https://your-app.vercel.app/api/game-state?gameId=game-1 \
+curl -X POST https://marathonmajorsfantasy.com/api/game-state?gameId=game-1 \
   -H "Content-Type: application/json" \
   -d '{"players": ["A", "B"]}'
 
 # Create game 2
-curl -X POST https://your-app.vercel.app/api/game-state?gameId=game-2 \
+curl -X POST https://marathonmajorsfantasy.com/api/game-state?gameId=game-2 \
   -H "Content-Type: application/json" \
   -d '{"players": ["C", "D"]}'
 
 # Verify isolation
-curl https://your-app.vercel.app/api/game-state?gameId=game-1
-curl https://your-app.vercel.app/api/game-state?gameId=game-2
+curl https://marathonmajorsfantasy.com/api/game-state?gameId=game-1
+curl https://marathonmajorsfantasy.com/api/game-state?gameId=game-2
 ```
 
 **Validation:**
@@ -219,7 +219,7 @@ curl https://your-app.vercel.app/api/game-state?gameId=game-2
 **Test:** Verify frontend loads data correctly
 
 1. **Open application in browser**
-   - Visit https://your-app.vercel.app
+   - Visit https://marathonmajorsfantasy.com
 
 2. **Check browser console**
    - No errors should be present
@@ -257,13 +257,13 @@ curl https://your-app.vercel.app/api/game-state?gameId=game-2
 
 ```bash
 # Test missing game
-curl https://your-app.vercel.app/api/game-state?gameId=nonexistent
+curl https://marathonmajorsfantasy.com/api/game-state?gameId=nonexistent
 
 # Test invalid player code
-curl https://your-app.vercel.app/api/rankings?gameId=test&playerCode=invalid
+curl https://marathonmajorsfantasy.com/api/rankings?gameId=test&playerCode=invalid
 
 # Test malformed request
-curl -X POST https://your-app.vercel.app/api/results?gameId=test \
+curl -X POST https://marathonmajorsfantasy.com/api/results?gameId=test \
   -H "Content-Type: application/json" \
   -d '{"invalid": "data"}'
 ```
@@ -279,8 +279,8 @@ curl -X POST https://your-app.vercel.app/api/results?gameId=test \
 
 ```bash
 # Test response time
-time curl https://your-app.vercel.app/api/athletes
-time curl https://your-app.vercel.app/api/game-state?gameId=test
+time curl https://marathonmajorsfantasy.com/api/athletes
+time curl https://marathonmajorsfantasy.com/api/game-state?gameId=test
 ```
 
 **Validation:**
