@@ -171,14 +171,21 @@ function setupEventListeners() {
     document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
     
     // Athlete Management modal
+    const addAthleteModal = document.getElementById('add-athlete-modal');
     document.getElementById('add-athlete-btn').addEventListener('click', () => {
-        document.getElementById('add-athlete-modal').style.display = 'block';
+        addAthleteModal.style.display = 'flex';
     });
     document.getElementById('add-athlete-modal-close').addEventListener('click', () => {
-        document.getElementById('add-athlete-modal').style.display = 'none';
+        addAthleteModal.style.display = 'none';
     });
     document.getElementById('cancel-add-athlete').addEventListener('click', () => {
-        document.getElementById('add-athlete-modal').style.display = 'none';
+        addAthleteModal.style.display = 'none';
+    });
+    // Close modal when clicking the overlay
+    addAthleteModal.addEventListener('click', (e) => {
+        if (e.target === addAthleteModal) {
+            addAthleteModal.style.display = 'none';
+        }
     });
     document.getElementById('add-athlete-form').addEventListener('submit', handleAddAthlete);
 }
