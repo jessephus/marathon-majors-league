@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       res.status(200).json({
         message: confirmed
           ? 'Athlete confirmed for NYC Marathon'
-          : 'Athlete unconfirmed from NYC Marathon',
+          : 'Athlete removed from NYC Marathon',
         athlete: {
           id: athleteResult[0].id,
           name: athleteResult[0].name,

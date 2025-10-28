@@ -67,7 +67,7 @@ export default async function handler(req, res) {
           ${marathonRank || null},
           ${age || null},
           ${sponsor || null},
-          ${seasonBest || personalBest}
+          ${seasonBest || null}
         )
         RETURNING id, name, country, gender, personal_best as pb
       `;

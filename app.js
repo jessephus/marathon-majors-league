@@ -1962,7 +1962,7 @@ async function handleViewAthletes() {
                                 class="btn-save-wa-id btn-small" 
                                 data-athlete-id="${athlete.id}"
                                 title="Save World Athletics ID"
-                            >Save WA ID</button>
+                            >Save</button>
                             <button 
                                 class="btn-sync-athlete btn-small btn-secondary" 
                                 data-athlete-id="${athlete.id}"
