@@ -2304,3 +2304,112 @@ footer .btn {
     }
 }
 
+/* Add Athlete Modal Styles */
+#add-athlete-modal .modal-content {
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+#add-athlete-form .form-group {
+    margin-bottom: 15px;
+}
+
+#add-athlete-form label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+#add-athlete-form input[type="text"],
+#add-athlete-form input[type="number"],
+#add-athlete-form input[type="url"],
+#add-athlete-form select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#add-athlete-form input[type="text"]:focus,
+#add-athlete-form input[type="number"]:focus,
+#add-athlete-form input[type="url"]:focus,
+#add-athlete-form select:focus {
+    outline: none;
+    border-color: var(--primary-orange, #ff6900);
+    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+}
+
+#add-athlete-form input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Action buttons at top of page */
+.action-buttons {
+    margin-bottom: 20px;
+}
+
+/* NYC Confirmed cell styling */
+.nyc-confirmed-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.confirmation-status {
+    min-width: 50px;
+    font-weight: 600;
+}
+
+/* Button color variants */
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+/* Responsive adjustments for new elements */
+@media (max-width: 768px) {
+    #add-athlete-modal .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions button {
+        width: 100%;
+    }
+    
+    .nyc-confirmed-cell {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
