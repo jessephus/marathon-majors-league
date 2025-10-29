@@ -538,8 +538,11 @@ async function restoreSession() {
             } else if (gameState.rankings[session.teamName]) {
                 setupRankingPage();
                 showPage('ranking-page');
+            } else {
+                // No rankings submitted yet - go to ranking page so they can submit
+                setupRankingPage();
+                showPage('ranking-page');
             }
-            // Otherwise stay on landing page so they can see their team
             
             updateFooterButtons();  // Update UI after session restored
             return true;
