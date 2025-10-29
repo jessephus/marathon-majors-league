@@ -65,22 +65,10 @@ export default async function handler(req, res) {
         });
         
         if (!verified) {
-            // Log failed attempt
-            await sql`
-                INSERT INTO audit_log (user_id, action, details)
-                VALUES (${user.id}, 'TOTP_VERIFY_FAILED', '{"email": "${email}"}'::jsonb)
-            `;
-            
             return res.status(401).json({ error: 'Invalid TOTP code' });
         }
         
-        // Success - log the login
-        await sql`
-            INSERT INTO audit_log (user_id, action, details)
-            VALUES (${user.id}, 'TOTP_LOGIN_SUCCESS', '{"email": "${email}"}'::jsonb)
-        `;
-        
-        // Update last login
+        // Success - update last login
         await sql`
             UPDATE users
             SET last_login = CURRENT_TIMESTAMP
