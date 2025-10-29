@@ -2031,3 +2031,181 @@ export async function logAudit(auditData) {
   `;
 }
 
+// ============================================================================
+// ANONYMOUS SESSIONS
+// ============================================================================
+
+/**
+ * Verify an anonymous session token
+ * @param {string} sessionToken - The session token to verify
+ * @returns {Promise<Object|null>} Session details if valid, null otherwise
+ */
+export async function verifyAnonymousSession(sessionToken) {
+  if (!sessionToken) {
+    return null;
+  }
+  
+  const result = await sql`
+    SELECT * FROM verify_anonymous_session(${sessionToken})
+  `;
+  
+  if (!result || result.length === 0) {
+    return null;
+  }
+  
+  const session = result[0];
+  
+  // Return null if session is invalid
+  if (!session.is_valid) {
+    return null;
+  }
+  
+  return {
+    id: session.session_id,
+    type: session.session_type,
+    gameId: session.game_id,
+    displayName: session.display_name,
+    expiresAt: session.expires_at,
+    daysUntilExpiry: session.days_until_expiry
+  };
+}
+
+/**
+ * Get game state with anonymous session validation
+ * @param {string} gameId - The game ID
+ * @param {string} sessionToken - Optional anonymous session token
+ * @returns {Promise<Object|null>} Game state if accessible, null otherwise
+ */
+export async function getGameStateWithSession(gameId, sessionToken = null) {
+  // Get base game state
+  const gameState = await getGameState(gameId);
+  
+  if (!gameState) {
+    return null;
+  }
+  
+  // If no session token provided, return game state (backward compatibility)
+  if (!sessionToken) {
+    return gameState;
+  }
+  
+  // Verify session has access to this game
+  const session = await verifyAnonymousSession(sessionToken);
+  
+  if (!session) {
+    return null;
+  }
+  
+  // Check if session is associated with this game
+  if (session.gameId && session.gameId !== gameId) {
+    return null;
+  }
+  
+  return {
+    ...gameState,
+    sessionType: session.type,
+    sessionDisplayName: session.displayName
+  };
+}
+
+/**
+ * Check if a session token has commissioner access to a game
+ * @param {string} gameId - The game ID
+ * @param {string} sessionToken - The session token
+ * @returns {Promise<boolean>} True if session has commissioner access
+ */
+export async function hasCommissionerAccess(gameId, sessionToken) {
+  if (!sessionToken) {
+    return false;
+  }
+  
+  // Verify session
+  const session = await verifyAnonymousSession(sessionToken);
+  
+  if (!session) {
+    return false;
+  }
+  
+  // Check if session type is commissioner
+  if (session.type !== 'commissioner') {
+    return false;
+  }
+  
+  // Check if session is associated with this game
+  if (session.gameId && session.gameId !== gameId) {
+    return false;
+  }
+  
+  // Check if game has this session token as commissioner
+  const [game] = await sql`
+    SELECT anonymous_session_token
+    FROM games
+    WHERE game_id = ${gameId}
+      AND (anonymous_session_token = ${sessionToken} OR anonymous_session_token IS NULL)
+  `;
+  
+  if (!game) {
+    return false;
+  }
+  
+  // If game doesn't have a session token yet, allow this commissioner session to claim it
+  if (!game.anonymous_session_token) {
+    await sql`
+      UPDATE games
+      SET anonymous_session_token = ${sessionToken},
+          allow_anonymous_access = true,
+          anonymous_access_enabled_at = CURRENT_TIMESTAMP
+      WHERE game_id = ${gameId}
+    `;
+    return true;
+  }
+  
+  return game.anonymous_session_token === sessionToken;
+}
+
+/**
+ * Check if a session token has player access to a game
+ * @param {string} gameId - The game ID
+ * @param {string} playerCode - The player code
+ * @param {string} sessionToken - The session token
+ * @returns {Promise<boolean>} True if session has player access
+ */
+export async function hasPlayerAccess(gameId, playerCode, sessionToken) {
+  if (!sessionToken || !playerCode) {
+    return false;
+  }
+  
+  // Verify session
+  const session = await verifyAnonymousSession(sessionToken);
+  
+  if (!session) {
+    return false;
+  }
+  
+  // Check if session is associated with this game and player code
+  const [sessionRecord] = await sql`
+    SELECT id, game_id, player_code
+    FROM anonymous_sessions
+    WHERE session_token = ${sessionToken}
+      AND is_active = true
+      AND (game_id = ${gameId} OR game_id IS NULL)
+      AND (player_code = ${playerCode} OR player_code IS NULL)
+  `;
+  
+  if (!sessionRecord) {
+    return false;
+  }
+  
+  // Update session with game and player code if not set
+  if (!sessionRecord.game_id || !sessionRecord.player_code) {
+    await sql`
+      UPDATE anonymous_sessions
+      SET game_id = ${gameId},
+          player_code = ${playerCode}
+      WHERE session_token = ${sessionToken}
+    `;
+  }
+  
+  return true;
+}
+

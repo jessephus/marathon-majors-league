@@ -1,15 +1,20 @@
-import { getGameState, updateGameState, getPlayerRankings, getDraftTeams, getRaceResults } from './db';
+import { getGameState, updateGameState, getPlayerRankings, getDraftTeams, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   const gameId = req.query.gameId || 'default';
+  
+  // Get session token from query parameter or Authorization header
+  const sessionToken = req.query.session 
+    || req.headers.authorization?.replace('Bearer ', '')
+    || null;
 
   try {
     if (req.method === 'GET') {
@@ -18,6 +23,12 @@ export default async function handler(req, res) {
       const rankings = await getPlayerRankings(gameId);
       const teams = await getDraftTeams(gameId);
       const results = await getRaceResults(gameId);
+      
+      // Verify session if provided
+      let sessionInfo = null;
+      if (sessionToken) {
+        sessionInfo = await verifyAnonymousSession(sessionToken);
+      }
 
       res.status(200).json({
         players: gameState?.players || [],
@@ -25,10 +36,28 @@ export default async function handler(req, res) {
         resultsFinalized: gameState?.results_finalized || false,
         rankings,
         teams,
-        results
+        results,
+        // Include session info if valid
+        session: sessionInfo ? {
+          type: sessionInfo.type,
+          displayName: sessionInfo.displayName,
+          expiresAt: sessionInfo.expiresAt,
+          daysUntilExpiry: sessionInfo.daysUntilExpiry
+        } : null
       });
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
+      // Check commissioner access for updates
+      if (sessionToken) {
+        const hasAccess = await hasCommissionerAccess(gameId, sessionToken);
+        if (!hasAccess) {
+          return res.status(403).json({ 
+            error: 'Forbidden',
+            message: 'You do not have commissioner access to this game'
+          });
+        }
+      }
+      
       // Update game state
       const { players, draftComplete, resultsFinalized } = req.body;
 
