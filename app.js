@@ -310,6 +310,7 @@ async function init() {
     
     // Navigate based on session state
     if (anonymousSession.token) {
+        console.log('Session detected in init:', anonymousSession.type, 'playerCode:', anonymousSession.playerCode);
         // User has an active session
         if (anonymousSession.type === 'commissioner') {
             showPage('commissioner-page');
@@ -327,7 +328,10 @@ async function init() {
                 alert('You have already submitted your rankings. Waiting for draft...');
                 showPage('landing-page');
                 // Hide the landing page content since they're already in
-                document.querySelector('.welcome-card').style.display = 'none';
+                const welcomeCard = document.querySelector('.welcome-card');
+                if (welcomeCard) {
+                    welcomeCard.style.display = 'none';
+                }
             } else {
                 // Need to submit rankings
                 showPage('ranking-page');
@@ -337,6 +341,7 @@ async function init() {
             showPage('landing-page');
         }
     } else {
+        console.log('No session detected in init');
         // No session - show landing page
         showPage('landing-page');
     }
@@ -346,6 +351,8 @@ async function init() {
 function updateFooterButtons() {
     const footer = document.querySelector('footer');
     
+    console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
+    
     // Remove existing session buttons if they exist
     const existingLogout = document.getElementById('logout-button');
     const existingCopyUrl = document.getElementById('copy-url-button');
@@ -353,6 +360,7 @@ function updateFooterButtons() {
     if (existingCopyUrl) existingCopyUrl.remove();
     
     if (anonymousSession.token) {
+        console.log('Adding logout and copy URL buttons');
         // User has an active session - show logout and copy URL buttons
         const logoutBtn = document.createElement('button');
         logoutBtn.id = 'logout-button';
@@ -366,10 +374,20 @@ function updateFooterButtons() {
         copyUrlBtn.textContent = 'Copy My URL';
         copyUrlBtn.addEventListener('click', handleCopyUrl);
         
-        // Insert before the last element (which should be the copyright text)
-        const copyrightText = footer.querySelector('p');
-        footer.insertBefore(copyUrlBtn, copyrightText.nextSibling);
-        footer.insertBefore(logoutBtn, copyrightText.nextSibling);
+        // Insert after the Home button (which is the second child after the <p> tag)
+        const homeButton = document.getElementById('home-button');
+        if (homeButton) {
+            // Insert logout button after home button
+            homeButton.insertAdjacentElement('afterend', logoutBtn);
+            // Insert copy URL button after logout button
+            logoutBtn.insertAdjacentElement('afterend', copyUrlBtn);
+            console.log('Buttons inserted after home button');
+        } else {
+            // Fallback: append to footer
+            footer.appendChild(logoutBtn);
+            footer.appendChild(copyUrlBtn);
+            console.log('Buttons appended to footer (fallback)');
+        }
     }
 }
 
@@ -560,6 +578,8 @@ async function handleCommissionerMode() {
                 // Show the unique URL to the commissioner
                 alert(`Your commissioner link has been created!\n\nSave this URL to return to your game:\n${result.uniqueUrl}\n\nYou can bookmark it or save it to your home screen.`);
                 console.log('Commissioner session created:', result.uniqueUrl);
+                // Update footer buttons now that we have a session
+                updateFooterButtons();
             } else {
                 alert('Failed to create commissioner session. Using temporary access.');
             }
