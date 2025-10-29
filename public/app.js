@@ -143,7 +143,7 @@ async function init() {
     setupAthleteModal();
     
     // Restore session if exists
-    const hasSession = restoreSession();
+    const hasSession = await restoreSession();
     
     // If no session restored, show landing page
     if (!hasSession) {
@@ -382,18 +382,18 @@ async function handleCommissionerTOTPLogin(e) {
 // ========== SESSION RESTORATION ==========
 
 // Check for session token in URL (for cross-device access)
-function checkURLForSession() {
+async function checkURLForSession() {
     const params = new URLSearchParams(window.location.search);
     const sessionToken = params.get('session');
     
     if (sessionToken) {
         // Verify and load session from backend
-        verifyAndLoadSession(sessionToken);
+        const success = await verifyAndLoadSession(sessionToken);
         
         // Clean URL (remove session parameter)
         const cleanURL = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanURL);
-        return true;
+        return success;
     }
     
     return false;
@@ -401,6 +401,8 @@ function checkURLForSession() {
 
 // Verify session with backend and load it
 async function verifyAndLoadSession(token) {
+    console.log('Verifying session token:', token);
+    
     try {
         const response = await fetch(`${API_BASE}/api/session/verify`, {
             method: 'POST',
@@ -410,6 +412,7 @@ async function verifyAndLoadSession(token) {
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Session verified:', data);
             
             // Save session to state and localStorage
             anonymousSession = {
@@ -425,21 +428,28 @@ async function verifyAndLoadSession(token) {
             gameState.currentPlayer = anonymousSession.teamName;
             document.getElementById('player-name').textContent = anonymousSession.teamName;
             
+            console.log('Game state:', gameState);
+            console.log('Draft complete?', gameState.draftComplete);
+            console.log('Has rankings?', !!gameState.rankings[anonymousSession.teamName]);
+            
             // Auto-navigate based on game state
             if (gameState.draftComplete) {
+                console.log('Navigating to teams page');
                 displayTeams();
                 showPage('teams-page');
             } else if (gameState.rankings[anonymousSession.teamName]) {
+                console.log('Navigating to ranking page (has submitted rankings)');
                 setupRankingPage();
                 showPage('ranking-page');
             } else {
+                console.log('Navigating to ranking page (no rankings yet)');
                 setupRankingPage();
                 showPage('ranking-page');
             }
             
             return true;
         } else {
-            console.error('Session verification failed');
+            console.error('Session verification failed:', response.status);
             return false;
         }
     } catch (error) {
@@ -449,9 +459,9 @@ async function verifyAndLoadSession(token) {
 }
 
 // Restore session from localStorage
-function restoreSession() {
+async function restoreSession() {
     // Priority 1: Check URL for session token (cross-device sharing)
-    const hasURLSession = checkURLForSession();
+    const hasURLSession = await checkURLForSession();
     if (hasURLSession) {
         return true;  // verifyAndLoadSession handles navigation
     }
