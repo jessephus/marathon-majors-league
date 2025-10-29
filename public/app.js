@@ -145,9 +145,25 @@ async function init() {
     // Restore session if exists
     const hasSession = await restoreSession();
     
-    // If no session restored, show landing page
+    // If no session restored, show landing page with welcome card
     if (!hasSession) {
+        showWelcomeCard();
         showPage('landing-page');
+    }
+}
+
+// Show/hide welcome card based on session state
+function showWelcomeCard() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.style.display = 'block';
+    }
+}
+
+function hideWelcomeCard() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.style.display = 'none';
     }
 }
 
@@ -299,6 +315,8 @@ async function handleTeamCreation(e) {
         const uniqueURL = `${window.location.origin}/?session=${data.session.token}`;
         alert(`✅ Team created!\n\n📋 Team: ${teamName}\n\n🔗 Your unique URL (save this to access your team from other devices):\n${uniqueURL}\n\nThis URL will be saved in your browser.`);
         
+        hideWelcomeCard();  // Hide welcome card after team creation
+        
         // Update footer buttons
         updateFooterButtons();
         
@@ -363,6 +381,8 @@ async function handleCommissionerTOTPLogin(e) {
             };
             
             localStorage.setItem(COMMISSIONER_SESSION_KEY, JSON.stringify(commissionerSession));
+            
+            hideWelcomeCard();  // Hide welcome card after commissioner login
             
             // Update footer buttons
             updateFooterButtons();
@@ -452,6 +472,8 @@ async function verifyAndLoadSession(token) {
             gameState.currentPlayer = anonymousSession.teamName;
             document.getElementById('player-name').textContent = anonymousSession.teamName;
             
+            hideWelcomeCard();  // Hide welcome card after session verified
+            
             console.log('Game state:', gameState);
             console.log('Draft complete?', gameState.draftComplete);
             console.log('Has rankings?', !!gameState.rankings[anonymousSession.teamName]);
@@ -487,6 +509,7 @@ async function restoreSession() {
     // Priority 1: Check URL for session token (cross-device sharing)
     const hasURLSession = await checkURLForSession();
     if (hasURLSession) {
+        hideWelcomeCard();  // Hide welcome card for sessions from URL
         updateFooterButtons();  // Update UI after session restored
         return true;  // verifyAndLoadSession handles navigation
     }
@@ -505,6 +528,8 @@ async function restoreSession() {
             
             anonymousSession = session;
             gameState.currentPlayer = session.teamName;
+            
+            hideWelcomeCard();  // Hide welcome card for restored team session
             
             // Auto-navigate if appropriate
             if (gameState.draftComplete) {
@@ -526,7 +551,8 @@ async function restoreSession() {
             const session = JSON.parse(commissionerSessionData);
             if (session.isCommissioner) {
                 commissionerSession = session;
-                // Don't auto-navigate to commissioner page, let them click the button
+                hideWelcomeCard();  // Hide welcome card for commissioner
+                handleCommissionerMode();  // Auto-navigate to commissioner page
                 updateFooterButtons();  // Update UI after commissioner session restored
                 return true;
             }
