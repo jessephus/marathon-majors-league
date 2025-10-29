@@ -42,17 +42,6 @@ function getMainHTML() {
                         <p>Create your team and draft elite runners - no registration required!</p>
                         <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
                     </div>
-                    
-                    <div class="divider">
-                        <span>OR</span>
-                    </div>
-                    
-                    <!-- Commissioner Login -->
-                    <div class="commissioner-login-section">
-                        <h3>👑 Commissioner Login</h3>
-                        <p>Enter your TOTP code to manage the game</p>
-                        <button id="commissioner-login-btn" class="btn btn-secondary">Commissioner Login</button>
-                    </div>
                 </div>
             </div>
             

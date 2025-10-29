@@ -155,7 +155,6 @@ async function init() {
 function setupEventListeners() {
     // Landing page
     document.getElementById('create-team-btn').addEventListener('click', showTeamCreationModal);
-    document.getElementById('commissioner-login-btn').addEventListener('click', showCommissionerTOTPModal);
     
     // Team Creation Modal
     document.getElementById('close-team-modal').addEventListener('click', hideTeamCreationModal);
@@ -169,8 +168,9 @@ function setupEventListeners() {
     document.getElementById('commissioner-totp-form').addEventListener('submit', handleCommissionerTOTPLogin);
     document.querySelector('#commissioner-totp-modal .modal-overlay').addEventListener('click', hideCommissionerTOTPModal);
     
-    // Footer
+    // Footer buttons
     document.getElementById('home-button').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('commissioner-mode').addEventListener('click', showCommissionerTOTPModal);
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
