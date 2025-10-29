@@ -195,7 +195,29 @@ function setupEventListeners() {
     document.querySelector('#commissioner-totp-modal .modal-overlay').addEventListener('click', hideCommissionerTOTPModal);
     
     // Footer buttons
-    document.getElementById('home-button').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('home-button').addEventListener('click', async () => {
+        // Navigate based on session state
+        if (anonymousSession.token) {
+            // Team session - go to appropriate page
+            if (gameState.draftComplete) {
+                displayTeams();
+                showPage('teams-page');
+            } else if (gameState.rankings[anonymousSession.teamName]) {
+                await setupRankingPage();
+                showPage('ranking-page');
+            } else {
+                await setupRankingPage();
+                showPage('ranking-page');
+            }
+        } else if (commissionerSession.isCommissioner) {
+            // Commissioner session - go to commissioner page
+            handleCommissionerMode();
+        } else {
+            // No session - show landing page with welcome card
+            showWelcomeCard();
+            showPage('landing-page');
+        }
+    });
     document.getElementById('commissioner-mode').addEventListener('click', showCommissionerTOTPModal);
 
     // Ranking page
