@@ -1,4 +1,4 @@
-import { getRaceResults, saveRaceResults } from './db';
+import { getRaceResults, saveRaceResults, hasCommissionerAccess } from './db';
 import { scoreRace } from './scoring-engine';
 import { neon } from '@neondatabase/serverless';
 
@@ -7,17 +7,22 @@ const sql = neon(process.env.DATABASE_URL);
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
   const gameId = req.query.gameId || 'default';
+  
+  // Get session token from query parameter or Authorization header
+  const sessionToken = req.query.session 
+    || req.headers.authorization?.replace('Bearer ', '')
+    || null;
 
   try {
     if (req.method === 'GET') {
-      // Get all race results with scoring data
+      // Get all race results with scoring data - no authentication required for viewing
       const results = await sql`
         SELECT 
           rr.athlete_id,
@@ -49,6 +54,17 @@ export default async function handler(req, res) {
       });
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
+      // Verify commissioner access for results entry
+      if (sessionToken) {
+        const hasAccess = await hasCommissionerAccess(gameId, sessionToken);
+        if (!hasAccess) {
+          return res.status(403).json({ 
+            error: 'Forbidden',
+            message: 'Only commissioners can enter race results'
+          });
+        }
+      }
+      
       // Save race results
       const body = req.body || {};
       const autoScore = body.autoScore ?? body.autoscore ?? body.auto_score;

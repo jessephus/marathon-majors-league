@@ -1,3 +1,155 @@
+// Anonymous Session Management
+let anonymousSession = {
+    token: null,
+    type: null,  // 'commissioner', 'player', or 'spectator'
+    expiresAt: null,
+    displayName: null
+};
+
+// Session storage keys
+const SESSION_STORAGE_KEY = 'marathon_fantasy_session';
+
+// Load session from localStorage
+function loadSessionFromStorage() {
+    try {
+        const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            anonymousSession = parsed;
+            console.log('Loaded session from storage:', anonymousSession.type);
+            return true;
+        }
+    } catch (error) {
+        console.error('Error loading session from storage:', error);
+    }
+    return false;
+}
+
+// Save session to localStorage
+function saveSessionToStorage() {
+    try {
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(anonymousSession));
+        console.log('Saved session to storage:', anonymousSession.type);
+    } catch (error) {
+        console.error('Error saving session to storage:', error);
+    }
+}
+
+// Clear session from storage
+function clearSession() {
+    anonymousSession = {
+        token: null,
+        type: null,
+        expiresAt: null,
+        displayName: null
+    };
+    try {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+        console.log('Cleared session from storage');
+    } catch (error) {
+        console.error('Error clearing session:', error);
+    }
+}
+
+// Check URL for session token
+function getSessionFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionToken = urlParams.get('session');
+    const gameIdParam = urlParams.get('game');
+    
+    if (sessionToken) {
+        console.log('Found session token in URL');
+        return { token: sessionToken, gameId: gameIdParam };
+    }
+    return null;
+}
+
+// Verify session token with server
+async function verifySession(token) {
+    try {
+        const response = await fetch(`${API_BASE}/api/session/verify?token=${token}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.valid) {
+                anonymousSession = {
+                    token: token,
+                    type: data.session.type,
+                    expiresAt: data.session.expiresAt,
+                    displayName: data.session.displayName
+                };
+                saveSessionToStorage();
+                
+                // Show warning if session expires soon
+                if (data.warning) {
+                    console.warn(data.warning);
+                }
+                
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error('Error verifying session:', error);
+    }
+    return false;
+}
+
+// Create a new anonymous session
+async function createAnonymousSession(sessionType, displayName = null, gameId = null) {
+    try {
+        const response = await fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType,
+                displayName,
+                gameId,
+                expiryDays: 90
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            anonymousSession = {
+                token: data.session.token,
+                type: data.session.sessionType,
+                expiresAt: data.session.expiresAt,
+                displayName: displayName
+            };
+            saveSessionToStorage();
+            
+            console.log('Created new session:', sessionType);
+            console.log('Unique URL:', data.uniqueUrl);
+            
+            return {
+                success: true,
+                uniqueUrl: data.uniqueUrl,
+                instructions: data.instructions
+            };
+        }
+    } catch (error) {
+        console.error('Error creating session:', error);
+    }
+    return { success: false };
+}
+
+// Add session token to API requests
+function getAPIHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (anonymousSession.token) {
+        headers['Authorization'] = `Bearer ${anonymousSession.token}`;
+    }
+    return headers;
+}
+
+// Add session parameter to API URLs
+function addSessionToURL(url) {
+    if (!anonymousSession.token) {
+        return url;
+    }
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}session=${anonymousSession.token}`;
+}
+
 // Game State
 let gameState = {
     athletes: { men: [], women: [] },
@@ -22,7 +174,8 @@ const GAME_ID = 'default'; // Can be made configurable if multiple games needed
 // Load game state from database
 async function loadGameState() {
     try {
-        const response = await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        const url = addSessionToURL(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        const response = await fetch(url);
         if (response.ok) {
             const data = await response.json();
             gameState.players = data.players || [];
@@ -40,9 +193,10 @@ async function loadGameState() {
 // Save game state to database
 async function saveGameState() {
     try {
-        await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`, {
+        const url = addSessionToURL(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAPIHeaders(),
             body: JSON.stringify({
                 players: gameState.players,
                 draftComplete: gameState.draftComplete,
@@ -116,11 +270,54 @@ async function loadAthletes() {
 
 // Initialize the app
 async function init() {
+    // Check for session token in URL first
+    const urlSession = getSessionFromURL();
+    if (urlSession && urlSession.token) {
+        const valid = await verifySession(urlSession.token);
+        if (valid) {
+            console.log('Verified session from URL:', anonymousSession.type);
+            // Clean up URL parameters
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+    
+    // If no valid session from URL, try loading from storage
+    if (!anonymousSession.token) {
+        loadSessionFromStorage();
+        
+        // Verify stored session is still valid
+        if (anonymousSession.token) {
+            const valid = await verifySession(anonymousSession.token);
+            if (!valid) {
+                clearSession();
+            }
+        }
+    }
+    
     await loadAthletes();
     await loadGameState();
     setupEventListeners();
     setupAthleteModal();
-    showPage('landing-page');
+    
+    // If we have a valid commissioner session, show commissioner page
+    if (anonymousSession.type === 'commissioner') {
+        showPage('commissioner-page');
+        console.log('Auto-navigating to commissioner page');
+    } else if (anonymousSession.type === 'player' && gameState.currentPlayer) {
+        // Auto-navigate player to appropriate page
+        if (gameState.draftComplete) {
+            displayTeams();
+            showPage('teams-page');
+        } else if (gameState.rankings[gameState.currentPlayer]) {
+            alert('You have already submitted your rankings. Waiting for draft...');
+            showPage('landing-page');
+        } else {
+            showPage('ranking-page');
+            setupAthleteSearch();
+        }
+    } else {
+        showPage('landing-page');
+    }
 }
 
 // Setup event listeners
@@ -206,9 +403,53 @@ function handleEnterGame() {
 }
 
 // Handle commissioner mode
-function handleCommissionerMode() {
-    const password = prompt('Enter commissioner password:');
-    if (password === 'kipchoge') {
+async function handleCommissionerMode() {
+    // Check if we already have a commissioner session
+    if (anonymousSession.type === 'commissioner') {
+        showPage('commissioner-page');
+        // Refresh player codes display if players exist
+        if (gameState.players.length > 0) {
+            displayPlayerCodes();
+        }
+        // Setup results form if draft is complete
+        if (gameState.draftComplete) {
+            setupResultsForm();
+            updateLiveStandings();
+            
+            // Update button states based on finalized state
+            if (gameState.resultsFinalized) {
+                document.getElementById('update-results').textContent = 'Results Finalized';
+                document.getElementById('update-results').disabled = true;
+                document.getElementById('finalize-results').style.display = 'none';
+            } else {
+                document.getElementById('update-results').textContent = 'Update Live Results';
+                document.getElementById('update-results').disabled = false;
+                if (Object.keys(gameState.results).length > 0) {
+                    document.getElementById('finalize-results').style.display = 'inline-block';
+                } else {
+                    document.getElementById('finalize-results').style.display = 'none';
+                }
+            }
+        }
+        return;
+    }
+    
+    // Legacy password check OR create new session
+    const password = prompt('Enter commissioner password (or leave blank to create anonymous session):');
+    
+    if (password === 'kipchoge' || password === '') {
+        // Create anonymous commissioner session if not using legacy password
+        if (password === '') {
+            const result = await createAnonymousSession('commissioner', 'Commissioner', GAME_ID);
+            if (result.success) {
+                // Show the unique URL to the commissioner
+                alert(`Your commissioner link has been created!\n\nSave this URL to return to your game:\n${result.uniqueUrl}\n\nYou can bookmark it or save it to your home screen.`);
+                console.log('Commissioner session created:', result.uniqueUrl);
+            } else {
+                alert('Failed to create commissioner session. Using temporary access.');
+            }
+        }
+        
         showPage('commissioner-page');
         // Refresh player codes display if players exist
         if (gameState.players.length > 0) {
@@ -663,9 +904,10 @@ async function handleSubmitRankings() {
 
     try {
         // Save top 10 rankings to database
-        await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
+        const url = addSessionToURL(`${API_BASE}/api/rankings?gameId=${GAME_ID}`);
+        await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAPIHeaders(),
             body: JSON.stringify({
                 playerCode: gameState.currentPlayer,
                 men: menRankings,
@@ -705,7 +947,8 @@ async function handleGenerateCodes() {
     }
     gameState.players = shuffled.slice(0, numPlayers);
 
-    displayPlayerCodes();
+    // Generate anonymous sessions for each player
+    await displayPlayerCodesWithSessions();
 
     await saveGameState();
 }
@@ -719,40 +962,104 @@ function hasPlayerSubmittedRankings(playerCode) {
            ranking.women.length === 10;
 }
 
-function displayPlayerCodes() {
+async function displayPlayerCodesWithSessions() {
     const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
+    display.innerHTML = '<h4>Player Links (share these unique URLs with your players):</h4>';
+    display.innerHTML += '<p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">Each player gets a unique link to access the game without needing to create an account.</p>';
     
-    gameState.players.forEach(code => {
+    for (const code of gameState.players) {
         const hasSubmitted = hasPlayerSubmittedRankings(code);
         
         const item = document.createElement('div');
         item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
+        item.style.marginBottom = '15px';
+        item.style.padding = '10px';
+        item.style.border = '1px solid #ddd';
+        item.style.borderRadius = '4px';
         
         const statusIcon = document.createElement('span');
         statusIcon.className = 'status-icon';
         statusIcon.textContent = hasSubmitted ? '✓' : '○';
         
-        const codeText = document.createElement('span');
-        codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+        // Create anonymous session for this player
+        const sessionResult = await createAnonymousSession('player', code, GAME_ID);
         
-        const statusText = document.createElement('span');
-        statusText.className = 'status-text';
-        statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+        if (sessionResult.success) {
+            const linkContainer = document.createElement('div');
+            linkContainer.style.marginTop = '5px';
+            
+            const label = document.createElement('div');
+            label.style.fontWeight = 'bold';
+            label.textContent = `Player: ${code}`;
+            
+            const link = document.createElement('div');
+            link.style.fontSize = '0.85em';
+            link.style.wordBreak = 'break-all';
+            link.style.marginTop = '5px';
+            
+            const linkText = document.createElement('a');
+            linkText.href = sessionResult.uniqueUrl;
+            linkText.textContent = sessionResult.uniqueUrl;
+            linkText.target = '_blank';
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = 'Copy Link';
+            copyBtn.style.marginLeft = '10px';
+            copyBtn.style.fontSize = '0.85em';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(sessionResult.uniqueUrl);
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => copyBtn.textContent = 'Copy Link', 2000);
+            };
+            
+            link.appendChild(linkText);
+            link.appendChild(copyBtn);
+            
+            linkContainer.appendChild(label);
+            linkContainer.appendChild(link);
+            
+            const statusText = document.createElement('span');
+            statusText.className = 'status-text';
+            statusText.style.display = 'block';
+            statusText.style.marginTop = '5px';
+            statusText.style.fontSize = '0.9em';
+            statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+            statusText.style.color = hasSubmitted ? '#28a745' : '#ffc107';
+            
+            item.appendChild(statusIcon);
+            item.appendChild(linkContainer);
+            item.appendChild(statusText);
+        } else {
+            // Fallback to old system
+            const codeText = document.createElement('span');
+            codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+            
+            const statusText = document.createElement('span');
+            statusText.className = 'status-text';
+            statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+            
+            item.appendChild(statusIcon);
+            item.appendChild(codeText);
+            item.appendChild(statusText);
+        }
         
-        item.appendChild(statusIcon);
-        item.appendChild(codeText);
-        item.appendChild(statusText);
         display.appendChild(item);
-    });
+    }
     
     // Add summary
     const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
     
     const summary = document.createElement('div');
     summary.className = 'rankings-summary';
-    summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
+    summary.style.marginTop = '15px';
+    summary.style.fontWeight = 'bold';
+    summary.innerHTML = `${submittedCount} of ${gameState.players.length} players have submitted rankings`;
     display.appendChild(summary);
+}
+
+function displayPlayerCodes() {
+    // This is the legacy version, redirect to async version
+    displayPlayerCodesWithSessions();
 }
 
 // Snake draft algorithm
@@ -784,9 +1091,10 @@ async function handleRunDraft() {
 
     try {
         // Save draft results to database
-        await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`, {
+        const url = addSessionToURL(`${API_BASE}/api/draft?gameId=${GAME_ID}`);
+        await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAPIHeaders(),
             body: JSON.stringify({ teams: gameState.teams })
         });
 
