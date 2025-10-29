@@ -137,18 +137,28 @@ async function loadAthletes() {
 
 // Initialize the app
 async function init() {
-    await loadAthletes();
-    await loadGameState();
+    // Setup UI immediately for faster perceived load time
     setupEventListeners();
     setupAthleteModal();
     
-    // Restore session if exists
+    // Show landing page immediately (will be hidden if session exists)
+    showPage('landing-page');
+    
+    // Load critical data in parallel
+    const gameStatePromise = loadGameState();
+    
+    // Try to restore session immediately (only needs gameState, not athletes)
+    await gameStatePromise;
     const hasSession = await restoreSession();
     
-    // If no session restored, show landing page with welcome card
+    // Load athletes in background (only needed for ranking page)
+    loadAthletes().catch(error => {
+        console.error('Failed to load athletes:', error);
+    });
+    
+    // If no session restored, show welcome card
     if (!hasSession) {
         showWelcomeCard();
-        showPage('landing-page');
     }
 }
 
@@ -328,7 +338,7 @@ async function handleTeamCreation(e) {
             displayTeams();
             showPage('teams-page');
         } else {
-            setupRankingPage();
+            await setupRankingPage();
             showPage('ranking-page');
         }
         
@@ -485,11 +495,11 @@ async function verifyAndLoadSession(token) {
                 showPage('teams-page');
             } else if (gameState.rankings[anonymousSession.teamName]) {
                 console.log('Navigating to ranking page (has submitted rankings)');
-                setupRankingPage();
+                await setupRankingPage();
                 showPage('ranking-page');
             } else {
                 console.log('Navigating to ranking page (no rankings yet)');
-                setupRankingPage();
+                await setupRankingPage();
                 showPage('ranking-page');
             }
             
@@ -537,11 +547,11 @@ async function restoreSession() {
                 displayTeams();
                 showPage('teams-page');
             } else if (gameState.rankings[session.teamName]) {
-                setupRankingPage();
+                await setupRankingPage();
                 showPage('ranking-page');
             } else {
                 // No rankings submitted yet - go to ranking page so they can submit
-                setupRankingPage();
+                await setupRankingPage();
                 showPage('ranking-page');
             }
             
@@ -679,7 +689,7 @@ function handleCopyUrl() {
 // ========== END SESSION FUNCTIONS ==========
 
 // Handle enter game
-function handleEnterGame() {
+async function handleEnterGame() {
     const code = document.getElementById('player-code').value.trim().toUpperCase();
     if (!code) {
         alert('Please enter a player code');
@@ -704,7 +714,7 @@ function handleEnterGame() {
             showPage('landing-page');
         }
     } else {
-        setupRankingPage();
+        await setupRankingPage();
         showPage('ranking-page');
     }
 }
@@ -790,7 +800,11 @@ function handleCommissionerMode() {
 }
 
 // Setup ranking page
-function setupRankingPage() {
+async function setupRankingPage() {
+    // Ensure athletes are loaded before displaying
+    if (!gameState.athletes.men || gameState.athletes.men.length === 0) {
+        await loadAthletes();
+    }
     switchTab('men');
 }
 
