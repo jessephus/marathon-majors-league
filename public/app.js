@@ -190,7 +190,6 @@ function setupEventListeners() {
     document.getElementById('back-to-landing').addEventListener('click', () => showPage('landing-page'));
 
     // Commissioner page
-    document.getElementById('generate-codes').addEventListener('click', handleGenerateCodes);
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
     document.getElementById('update-results').addEventListener('click', handleUpdateResults);
     document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
@@ -1058,34 +1057,6 @@ async function handleSubmitRankings() {
 }
 
 // Commissioner functions
-async function handleGenerateCodes() {
-    const numPlayers = parseInt(document.getElementById('num-players').value);
-    if (numPlayers < 2 || numPlayers > 4) {
-        alert('Please enter a number between 2 and 4');
-        return;
-    }
-
-    // Marathon-themed words for player codes
-    const marathonWords = [
-        'RUNNER', 'SPRINTER', 'PACER', 'CHAMPION', 
-        'FINISHER', 'STRIDE', 'ENDURANCE', 'VELOCITY',
-        'RACER', 'ATHLETE', 'DASHER', 'JOGGER',
-        'TRACKSTAR', 'SPEEDSTER', 'MARATHON', 'DISTANCE'
-    ];
-
-    // Fisher-Yates shuffle for better randomization
-    const shuffled = [...marathonWords];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    gameState.players = shuffled.slice(0, numPlayers);
-
-    displayPlayerCodes();
-
-    await saveGameState();
-}
-
 function hasPlayerSubmittedRankings(playerCode) {
     const ranking = gameState.rankings[playerCode];
     return ranking && 

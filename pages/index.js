@@ -149,10 +149,7 @@ function getMainHTML() {
                 <h2>Commissioner Dashboard</h2>
                 <div class="commissioner-actions">
                     <div class="action-card">
-                        <h3>Game Setup</h3>
-                        <label>Number of Players:</label>
-                        <input type="number" id="num-players" min="2" max="4" value="3">
-                        <button id="generate-codes" class="btn btn-primary">Generate Player Codes</button>
+                        <h3>Player Links</h3>
                         <div id="player-codes-display"></div>
                     </div>
 
