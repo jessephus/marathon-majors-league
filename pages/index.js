@@ -187,6 +187,10 @@ function getMainHTML() {
                 <h2>Athlete Management</h2>
                 <p class="page-description">View and manage all athletes in the database</p>
                 
+                <div class="action-buttons">
+                    <button id="add-athlete-btn" class="btn btn-primary">Add New Athlete</button>
+                </div>
+                
                 <div class="athlete-filters">
                     <label>
                         <input type="checkbox" id="filter-confirmed" checked> Show only confirmed for NYC Marathon
@@ -216,6 +220,71 @@ function getMainHTML() {
                 <div id="athlete-management-container"></div>
                 
                 <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
+            </div>
+            
+            <!-- Add Athlete Modal -->
+            <div id="add-athlete-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="add-athlete-modal-close">&times;</button>
+                    <h2>Add New Athlete</h2>
+                    <form id="add-athlete-form">
+                        <div class="form-group">
+                            <label for="athlete-name">Name *</label>
+                            <input type="text" id="athlete-name" required placeholder="First LAST">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-country">Country Code *</label>
+                            <input type="text" id="athlete-country" required placeholder="USA" maxlength="3" pattern="[A-Z]{3}">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-gender">Gender *</label>
+                            <select id="athlete-gender" required>
+                                <option value="">Select...</option>
+                                <option value="men">Men</option>
+                                <option value="women">Women</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-pb">Personal Best *</label>
+                            <input type="text" id="athlete-pb" required placeholder="2:05:30" pattern="[0-9]:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-season-best">Season Best</label>
+                            <input type="text" id="athlete-season-best" placeholder="2:06:00" pattern="[0-9]:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-marathon-rank">Marathon Rank</label>
+                            <input type="number" id="athlete-marathon-rank" placeholder="42" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-age">Age</label>
+                            <input type="number" id="athlete-age" placeholder="28" min="18" max="60">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-sponsor">Sponsor</label>
+                            <input type="text" id="athlete-sponsor" placeholder="Nike">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-wa-id">World Athletics ID</label>
+                            <input type="text" id="athlete-wa-id" placeholder="14208500">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-headshot">Headshot URL</label>
+                            <input type="url" id="athlete-headshot" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="athlete-confirm-nyc">
+                                Confirm for NYC Marathon
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Athlete</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-add-athlete">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </main>
 

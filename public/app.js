@@ -205,6 +205,25 @@ function setupEventListeners() {
     document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
     document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
+    
+    // Athlete Management modal
+    const addAthleteModal = document.getElementById('add-athlete-modal');
+    document.getElementById('add-athlete-btn').addEventListener('click', () => {
+        addAthleteModal.style.display = 'flex';
+    });
+    document.getElementById('add-athlete-modal-close').addEventListener('click', () => {
+        addAthleteModal.style.display = 'none';
+    });
+    document.getElementById('cancel-add-athlete').addEventListener('click', () => {
+        addAthleteModal.style.display = 'none';
+    });
+    // Close modal when clicking the overlay
+    addAthleteModal.addEventListener('click', (e) => {
+        if (e.target === addAthleteModal) {
+            addAthleteModal.style.display = 'none';
+        }
+    });
+    document.getElementById('add-athlete-form').addEventListener('submit', handleAddAthlete);
 }
 
 // Show page
@@ -2492,7 +2511,14 @@ async function handleViewAthletes() {
                                 title="World Athletics ID (e.g., 14208500)"
                             />
                         </td>
-                        <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
+                        <td>
+                            <button 
+                                class="btn-toggle-confirmed btn-small ${athlete.nycConfirmed ? 'btn-success' : 'btn-secondary'}"
+                                data-athlete-id="${athlete.id}"
+                                data-confirmed="${athlete.nycConfirmed}"
+                                title="Click to ${athlete.nycConfirmed ? 'unconfirm' : 'confirm'} for NYC Marathon"
+                            >${athlete.nycConfirmed ? '✓ Confirmed' : '✗ Not Confirmed'}</button>
+                        </td>
                         <td class="actions-cell">
                             <button 
                                 class="btn-save-wa-id btn-small" 
@@ -2540,6 +2566,15 @@ async function handleViewAthletes() {
         // Add event listeners to sync buttons
         document.querySelectorAll('.btn-sync-athlete').forEach(button => {
             button.addEventListener('click', handleSyncAthlete);
+        });
+        
+        // Add event listeners to toggle confirmation buttons
+        document.querySelectorAll('.btn-toggle-confirmed').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const athleteId = parseInt(e.target.dataset.athleteId, 10);
+                const currentStatus = e.target.dataset.confirmed === 'true';
+                handleToggleConfirmation(athleteId, currentStatus);
+            });
         });
         
     } catch (error) {
@@ -2660,6 +2695,89 @@ async function handleSyncAthlete(event) {
         button.textContent = 'Sync';
         button.style.opacity = '1';
         button.disabled = false;
+    }
+}
+
+/**
+ * Handle adding a new athlete
+ */
+async function handleAddAthlete(e) {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('athlete-name').value.trim(),
+        country: document.getElementById('athlete-country').value.trim().toUpperCase(),
+        gender: document.getElementById('athlete-gender').value,
+        personalBest: document.getElementById('athlete-pb').value.trim(),
+        seasonBest: document.getElementById('athlete-season-best').value.trim() || null,
+        marathonRank: document.getElementById('athlete-marathon-rank').value ? parseInt(document.getElementById('athlete-marathon-rank').value) : null,
+        age: document.getElementById('athlete-age').value ? parseInt(document.getElementById('athlete-age').value) : null,
+        sponsor: document.getElementById('athlete-sponsor').value.trim() || null,
+        worldAthleticsId: document.getElementById('athlete-wa-id').value.trim() || null,
+        headshotUrl: document.getElementById('athlete-headshot').value.trim() || null,
+        confirmForNYC: document.getElementById('athlete-confirm-nyc').checked
+    };
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/add-athlete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.details || error.error || 'Failed to add athlete');
+        }
+        
+        const result = await response.json();
+        alert(`✓ Athlete added successfully! ID: ${result.athleteId}`);
+        
+        // Close modal and reset form
+        document.getElementById('add-athlete-modal').style.display = 'none';
+        document.getElementById('add-athlete-form').reset();
+        
+        // Refresh athlete list
+        handleViewAthletes();
+        
+    } catch (error) {
+        console.error('Error adding athlete:', error);
+        alert(`Error adding athlete: ${error.message}`);
+    }
+}
+
+/**
+ * Handle toggling athlete confirmation for NYC Marathon
+ */
+async function handleToggleConfirmation(athleteId, currentStatus) {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'confirm' : 'unconfirm';
+    
+    if (!confirm(`Are you sure you want to ${action} this athlete for the NYC Marathon?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/toggle-athlete-confirmation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: athleteId,
+                confirmed: newStatus
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.details || error.error || 'Failed to toggle confirmation');
+        }
+        
+        // Refresh athlete list
+        handleViewAthletes();
+        
+    } catch (error) {
+        console.error('Error toggling confirmation:', error);
+        alert(`Error: ${error.message}`);
     }
 }
 
