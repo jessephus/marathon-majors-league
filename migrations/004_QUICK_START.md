@@ -38,8 +38,18 @@ console.log('✅ Migration 004 completed');
 -- Check table created
 SELECT COUNT(*) FROM anonymous_sessions;
 
--- Check functions created
-\df *anonymous_session*
+-- Check functions created (in psql, use \\df command)
+-- Or query information schema:
+SELECT routine_name 
+FROM information_schema.routines 
+WHERE routine_schema = 'public' 
+  AND routine_name IN (
+    'create_anonymous_session',
+    'verify_anonymous_session',
+    'cleanup_expired_anonymous_sessions',
+    'upgrade_anonymous_session_to_user',
+    'extend_anonymous_session'
+  );
 
 -- Test session creation
 SELECT * FROM create_anonymous_session('player', 'Test', 'default');

@@ -243,10 +243,19 @@ Check that tables and functions were created:
 -- Verify table exists
 SELECT COUNT(*) FROM anonymous_sessions;
 
--- Verify functions exist
+-- Verify all required functions exist
 SELECT routine_name 
 FROM information_schema.routines 
-WHERE routine_name LIKE '%anonymous_session%';
+WHERE routine_schema = 'public' 
+  AND routine_name IN (
+    'create_anonymous_session',
+    'verify_anonymous_session',
+    'cleanup_expired_anonymous_sessions',
+    'upgrade_anonymous_session_to_user',
+    'extend_anonymous_session'
+  )
+ORDER BY routine_name;
+-- Should return 5 rows
 
 -- Test session creation
 SELECT * FROM create_anonymous_session('player', 'Test Player', 'default');
@@ -271,14 +280,42 @@ Default settings (can be customized in code):
 
 Expired sessions are automatically marked inactive. Run cleanup periodically:
 
+**Manual Cleanup:**
 ```sql
--- Manual cleanup
+-- Run this manually or via application cron job
 SELECT cleanup_expired_anonymous_sessions();
+```
 
--- Setup cron job (example)
--- Run daily at 2 AM
+**Automated Cleanup Options:**
+
+1. **Via Node.js Application Cron:**
+```javascript
+// Example using node-cron
+import cron from 'node-cron';
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.DATABASE_URL);
+
+// Run daily at 2 AM
+cron.schedule('0 2 * * *', async () => {
+  const result = await sql`SELECT cleanup_expired_anonymous_sessions()`;
+  console.log(`Cleaned ${result[0].cleanup_expired_anonymous_sessions} sessions`);
+});
+```
+
+2. **Via pg_cron Extension** (if available in your PostgreSQL instance):
+```sql
+-- Note: Requires pg_cron extension to be installed first
+-- CREATE EXTENSION IF NOT EXISTS pg_cron;
+
 SELECT cron.schedule('cleanup-sessions', '0 2 * * *', 
   'SELECT cleanup_expired_anonymous_sessions()');
+```
+
+3. **Via External Cron Job:**
+```bash
+# Add to crontab: 0 2 * * * /path/to/cleanup.sh
+psql $DATABASE_URL -c "SELECT cleanup_expired_anonymous_sessions();"
 ```
 
 ## User Experience Flows
@@ -371,6 +408,7 @@ SELECT cron.schedule('cleanup-sessions', '0 2 * * *',
 
 ### Planned Features
 - [ ] Session upgrade to user account UI
+- [ ] Session upgrade API endpoint (`/api/session/upgrade`)
 - [ ] Session expiry warning notifications
 - [ ] Multi-device session sync
 - [ ] Session revocation interface
@@ -378,29 +416,39 @@ SELECT cron.schedule('cleanup-sessions', '0 2 * * *',
 - [ ] Push notifications for session events
 - [ ] Session analytics dashboard
 
-### Migration to User Accounts
+### Migration to User Accounts (Future)
 
-When ready to upgrade anonymous sessions to full accounts:
+When the session upgrade feature is implemented, users will be able to convert anonymous sessions to full accounts:
 
+**Planned Frontend Flow:**
 ```javascript
-// Frontend call
+// This endpoint will be implemented in a future update
 await fetch('/api/session/upgrade', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     sessionToken: anonymousSession.token,
     email: 'user@example.com',
-    password: 'secure-password'
+    inviteCode: 'INVITE-CODE'  // During preview phase
   })
 });
 ```
 
-Backend automatically:
-1. Creates user account
-2. Links session data to user
-3. Preserves game associations
-4. Transfers team ownership
-5. Deactivates anonymous session
+**Database Function Already Implemented:**
+```sql
+-- This function is already available via Migration 004
+SELECT upgrade_anonymous_session_to_user(
+  'session-token-here',
+  123  -- user_id from newly created user account
+);
+```
+
+The backend will automatically:
+1. Create user account (via existing `/api/auth/register`)
+2. Link session data to user (via `upgrade_anonymous_session_to_user`)
+3. Preserve game associations
+4. Transfer team ownership
+5. Deactivate anonymous session
 
 ## Support
 
