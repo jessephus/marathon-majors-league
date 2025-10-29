@@ -35,11 +35,58 @@ function getMainHTML() {
                 <div class="welcome-card">
                     <h2>Welcome to the Fantasy NY Marathon!</h2>
                     <p>Compete with friends by drafting elite marathon runners.</p>
-                    <div class="auth-section">
-                        <label for="player-code">Enter Your Player Code:</label>
-                        <input type="text" id="player-code" placeholder="e.g., RUNNER or SPRINTER">
-                        <button id="enter-game" class="btn btn-primary">Enter Game</button>
+                    
+                    <!-- Team Creation for Visitors -->
+                    <div class="create-team-section">
+                        <h3>🏃‍♂️ Join the Competition</h3>
+                        <p>Create your team and draft elite runners - no registration required!</p>
+                        <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Team Creation Modal -->
+            <div id="team-creation-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="close-team-modal">&times;</button>
+                    <h2>Create Your Team</h2>
+                    <p>Enter your team name to get started:</p>
+                    <form id="team-creation-form">
+                        <div class="form-group">
+                            <label for="team-name">Team Name</label>
+                            <input type="text" id="team-name" placeholder="e.g., The Fast Finishers" required maxlength="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="team-owner">Your Name (optional)</label>
+                            <input type="text" id="team-owner" placeholder="e.g., John Smith" maxlength="50">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-team-creation">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Team & Start Drafting</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Commissioner TOTP Modal -->
+            <div id="commissioner-totp-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="close-totp-modal">&times;</button>
+                    <h2>Commissioner Login</h2>
+                    <p>Enter the 6-digit code from your authenticator app:</p>
+                    <form id="commissioner-totp-form">
+                        <div class="form-group">
+                            <label for="totp-code">TOTP Code</label>
+                            <input type="text" id="totp-code" placeholder="000000" required pattern="[0-9]{6}" maxlength="6" inputmode="numeric" autocomplete="off">
+                            <small>Code changes every 30 seconds</small>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-totp-login">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -102,10 +149,7 @@ function getMainHTML() {
                 <h2>Commissioner Dashboard</h2>
                 <div class="commissioner-actions">
                     <div class="action-card">
-                        <h3>Game Setup</h3>
-                        <label>Number of Players:</label>
-                        <input type="number" id="num-players" min="2" max="4" value="3">
-                        <button id="generate-codes" class="btn btn-primary">Generate Player Codes</button>
+                        <h3>Player Links</h3>
                         <div id="player-codes-display"></div>
                     </div>
 
@@ -143,6 +187,10 @@ function getMainHTML() {
                 <h2>Athlete Management</h2>
                 <p class="page-description">View and manage all athletes in the database</p>
                 
+                <div class="action-buttons">
+                    <button id="add-athlete-btn" class="btn btn-primary">Add New Athlete</button>
+                </div>
+                
                 <div class="athlete-filters">
                     <label>
                         <input type="checkbox" id="filter-confirmed" checked> Show only confirmed for NYC Marathon
@@ -172,6 +220,71 @@ function getMainHTML() {
                 <div id="athlete-management-container"></div>
                 
                 <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
+            </div>
+            
+            <!-- Add Athlete Modal -->
+            <div id="add-athlete-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="add-athlete-modal-close">&times;</button>
+                    <h2>Add New Athlete</h2>
+                    <form id="add-athlete-form">
+                        <div class="form-group">
+                            <label for="athlete-name">Name *</label>
+                            <input type="text" id="athlete-name" required placeholder="First LAST">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-country">Country Code *</label>
+                            <input type="text" id="athlete-country" required placeholder="USA" maxlength="3" pattern="[A-Z]{3}">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-gender">Gender *</label>
+                            <select id="athlete-gender" required>
+                                <option value="">Select...</option>
+                                <option value="men">Men</option>
+                                <option value="women">Women</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-pb">Personal Best *</label>
+                            <input type="text" id="athlete-pb" required placeholder="2:05:30" pattern="[0-9]:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-season-best">Season Best</label>
+                            <input type="text" id="athlete-season-best" placeholder="2:06:00" pattern="[0-9]:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-marathon-rank">Marathon Rank</label>
+                            <input type="number" id="athlete-marathon-rank" placeholder="42" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-age">Age</label>
+                            <input type="number" id="athlete-age" placeholder="28" min="18" max="60">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-sponsor">Sponsor</label>
+                            <input type="text" id="athlete-sponsor" placeholder="Nike">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-wa-id">World Athletics ID</label>
+                            <input type="text" id="athlete-wa-id" placeholder="14208500">
+                        </div>
+                        <div class="form-group">
+                            <label for="athlete-headshot">Headshot URL</label>
+                            <input type="url" id="athlete-headshot" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="athlete-confirm-nyc">
+                                Confirm for NYC Marathon
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Athlete</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-add-athlete">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </main>
 

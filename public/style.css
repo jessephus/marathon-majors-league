@@ -94,6 +94,127 @@ footer .btn {
     margin-bottom: 30px;
 }
 
+/* Team Creation Section */
+.create-team-section {
+    margin-bottom: 20px;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(255, 105, 0, 0.08) 0%, rgba(44, 57, 162, 0.08) 100%);
+    border-radius: 12px;
+    border: 2px solid var(--primary-orange);
+    text-align: center;
+}
+
+.create-team-section h3 {
+    color: var(--primary-orange);
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+}
+
+.create-team-section p {
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.btn-large {
+    padding: 16px 40px;
+    font-size: 1.1rem;
+}
+
+/* Commissioner Login Section */
+.commissioner-login-section {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.commissioner-login-section h3 {
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+}
+
+.commissioner-login-section p {
+    color: var(--dark-gray);
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: var(--dark-gray);
+    font-size: 0.85rem;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 25px;
+}
+
+.form-actions button {
+    flex: 1;
+}
+
+@media (max-width: 480px) {
+    .form-actions {
+        flex-direction: column;
+    }
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 30px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.divider span {
+    padding: 0 15px;
+    color: var(--dark-gray);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
 .auth-section {
     margin-bottom: 20px;
 }
@@ -617,13 +738,13 @@ footer .btn {
 }
 
 .player-code-item {
-    padding: 8px;
-    margin-bottom: 5px;
+    padding: 12px;
+    margin-bottom: 8px;
     background: var(--white);
     border-left: 4px solid var(--primary-blue);
     border-radius: 3px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
 }
 
@@ -640,6 +761,7 @@ footer .btn {
     font-weight: bold;
     min-width: 20px;
     text-align: center;
+    margin-top: 2px;
 }
 
 .player-code-item.submitted .status-icon {
@@ -651,11 +773,11 @@ footer .btn {
 }
 
 .player-code-item .status-text {
-    margin-left: auto;
     font-size: 0.85rem;
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 3px;
+    margin-left: auto;
 }
 
 .player-code-item.submitted .status-text {
@@ -666,6 +788,109 @@ footer .btn {
 .player-code-item.pending .status-text {
     background: var(--warning-bg);
     color: var(--warning-text);
+}
+
+/* Player code content wrapper */
+.player-code-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0; /* Allow flex child to shrink */
+}
+
+/* Top row with team name and UUID link */
+.player-code-top-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.player-code-top-row strong {
+    color: var(--primary-blue);
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.session-link {
+    color: var(--primary-orange);
+    text-decoration: none;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+    transition: color 0.2s ease;
+}
+
+.session-link:hover {
+    color: var(--dark-orange);
+    text-decoration: underline;
+}
+
+/* Bottom row with copy button and status */
+.player-code-bottom-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-copy-small {
+    background: var(--light-gray);
+    border: 1px solid var(--medium-gray);
+    color: var(--dark-gray);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-copy-small:hover {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* URL Container for player links (legacy - remove if not used elsewhere) */
+.url-container {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 10px;
+    margin: 0 10px;
+}
+
+.url-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--primary-blue);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-copy {
+    padding: 6px 12px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.btn-copy:hover {
+    background: var(--dark-blue);
+    transform: translateY(-1px);
+}
+
+.btn-copy:active {
+    transform: translateY(0);
 }
 
 .rankings-summary {
@@ -1015,6 +1240,67 @@ footer .btn {
     bottom: 0;
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
+}
+
+/* Modal Content (for team creation and TOTP modals) */
+.modal-content {
+    position: relative;
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    animation: slideUp 0.4s ease;
+    padding: 40px 32px;
+    z-index: 1;
+}
+
+.modal-content h2 {
+    color: var(--primary-blue);
+    margin-bottom: 10px;
+    font-size: 1.8rem;
+}
+
+.modal-content p {
+    color: var(--dark-gray);
+    margin-bottom: 25px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--dark-gray);
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    z-index: 2;
+}
+
+.modal-close:hover {
+    background: var(--light-gray);
+    color: var(--text-dark);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .athlete-card-container {

@@ -1,9 +1,9 @@
-import { getPlayerRankings, savePlayerRankings, clearAllRankings } from './db';
+import { getPlayerRankings, savePlayerRankings, clearAllRankings, verifyAnonymousSession, hasPlayerAccess, hasCommissionerAccess } from './db';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -11,6 +11,11 @@ export default async function handler(req, res) {
 
   const gameId = req.query.gameId || 'default';
   const playerCode = req.query.playerCode;
+  
+  // Get session token from query parameter or Authorization header
+  const sessionToken = req.query.session 
+    || req.headers.authorization?.replace('Bearer ', '')
+    || null;
 
   try {
     if (req.method === 'GET') {
@@ -18,6 +23,17 @@ export default async function handler(req, res) {
       const rankings = await getPlayerRankings(gameId, playerCode);
 
       if (playerCode) {
+        // Verify session has access to this player's rankings
+        if (sessionToken) {
+          const hasAccess = await hasPlayerAccess(gameId, playerCode, sessionToken);
+          if (!hasAccess) {
+            return res.status(403).json({ 
+              error: 'Forbidden',
+              message: 'You do not have access to this player\'s rankings'
+            });
+          }
+        }
+        
         if (rankings && Object.keys(rankings).length > 0) {
           res.status(200).json(rankings);
         } else {
@@ -32,8 +48,18 @@ export default async function handler(req, res) {
       const { playerCode: bodyPlayerCode, men, women, rankings: resetRankings } = req.body;
       const code = bodyPlayerCode || playerCode;
 
-      // Check if this is a reset operation
+      // Check if this is a reset operation (commissioner only)
       if (resetRankings !== undefined) {
+        if (sessionToken) {
+          const hasAccess = await hasCommissionerAccess(gameId, sessionToken);
+          if (!hasAccess) {
+            return res.status(403).json({ 
+              error: 'Forbidden',
+              message: 'Only commissioners can reset rankings'
+            });
+          }
+        }
+        
         // Reset all rankings
         await clearAllRankings(gameId);
         return res.status(200).json({ message: 'Rankings reset successfully' });
@@ -41,6 +67,17 @@ export default async function handler(req, res) {
 
       if (!code) {
         return res.status(400).json({ error: 'Player code is required' });
+      }
+      
+      // Verify session has access to save this player's rankings
+      if (sessionToken) {
+        const hasAccess = await hasPlayerAccess(gameId, code, sessionToken);
+        if (!hasAccess) {
+          return res.status(403).json({ 
+            error: 'Forbidden',
+            message: 'You do not have access to save this player\'s rankings'
+          });
+        }
       }
 
       // Save player rankings

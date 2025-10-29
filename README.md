@@ -10,7 +10,8 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 
 ## ✨ Features
 
-- 🎮 **Code-Based Authentication**: No accounts needed - players join with unique game codes
+- 🔗 **Account-Free Team Creation**: Create and join games with unique URLs - no registration required
+- 🎮 **Code-Based Authentication**: Legacy support for players who join with game codes
 - 🐍 **Intelligent Snake Draft**: Fair automated drafting of 3 men and 3 women per player
 - 📱 **Mobile-First Design**: Optimized for watching and managing on your phone
 - 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
@@ -19,6 +20,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 - 💾 **Cloud Storage**: Reliable game state persistence with Neon Postgres database
 - 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
 - 🔄 **Automated Data Sync**: Top 100 marathon athletes automatically synced from World Athletics every 2 days
+- 🔒 **Secure Sessions**: 90-day session tokens with upgrade path to full user accounts
 
 ## 🎯 How to Play
 

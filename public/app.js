@@ -10,6 +10,24 @@ let gameState = {
     resultsFinalized: false
 };
 
+// Anonymous Session Management (for teams)
+let anonymousSession = {
+    token: null,
+    teamName: null,
+    ownerName: null,
+    expiresAt: null
+};
+
+// Commissioner Session (TOTP-based)
+let commissionerSession = {
+    isCommissioner: false,
+    loginTime: null
+};
+
+// Session Storage Keys
+const TEAM_SESSION_KEY = 'marathon_fantasy_team';
+const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
+
 // View state for ranking page
 let rankingViewState = {
     currentGender: 'men'
@@ -119,21 +137,88 @@ async function loadAthletes() {
 
 // Initialize the app
 async function init() {
-    await loadAthletes();
-    await loadGameState();
+    // Setup UI immediately for faster perceived load time
     setupEventListeners();
     setupAthleteModal();
+    
+    // Show landing page immediately (will be hidden if session exists)
     showPage('landing-page');
+    
+    // Load critical data in parallel
+    const gameStatePromise = loadGameState();
+    
+    // Try to restore session immediately (only needs gameState, not athletes)
+    await gameStatePromise;
+    const hasSession = await restoreSession();
+    
+    // Load athletes in background (only needed for ranking page)
+    loadAthletes().catch(error => {
+        console.error('Failed to load athletes:', error);
+    });
+    
+    // If no session restored, show welcome card
+    if (!hasSession) {
+        showWelcomeCard();
+    }
+}
+
+// Show/hide welcome card based on session state
+function showWelcomeCard() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.style.display = 'block';
+    }
+}
+
+function hideWelcomeCard() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.style.display = 'none';
+    }
 }
 
 // Setup event listeners
 function setupEventListeners() {
     // Landing page
-    document.getElementById('enter-game').addEventListener('click', handleEnterGame);
-    document.getElementById('commissioner-mode').addEventListener('click', handleCommissionerMode);
+    document.getElementById('create-team-btn').addEventListener('click', showTeamCreationModal);
     
-    // Footer
-    document.getElementById('home-button').addEventListener('click', () => showPage('landing-page'));
+    // Team Creation Modal
+    document.getElementById('close-team-modal').addEventListener('click', hideTeamCreationModal);
+    document.getElementById('cancel-team-creation').addEventListener('click', hideTeamCreationModal);
+    document.getElementById('team-creation-form').addEventListener('submit', handleTeamCreation);
+    document.querySelector('#team-creation-modal .modal-overlay').addEventListener('click', hideTeamCreationModal);
+    
+    // Commissioner TOTP Modal
+    document.getElementById('close-totp-modal').addEventListener('click', hideCommissionerTOTPModal);
+    document.getElementById('cancel-totp-login').addEventListener('click', hideCommissionerTOTPModal);
+    document.getElementById('commissioner-totp-form').addEventListener('submit', handleCommissionerTOTPLogin);
+    document.querySelector('#commissioner-totp-modal .modal-overlay').addEventListener('click', hideCommissionerTOTPModal);
+    
+    // Footer buttons
+    document.getElementById('home-button').addEventListener('click', async () => {
+        // Navigate based on session state
+        if (anonymousSession.token) {
+            // Team session - go to appropriate page
+            if (gameState.draftComplete) {
+                displayTeams();
+                showPage('teams-page');
+            } else if (gameState.rankings[anonymousSession.teamName]) {
+                await setupRankingPage();
+                showPage('ranking-page');
+            } else {
+                await setupRankingPage();
+                showPage('ranking-page');
+            }
+        } else if (commissionerSession.isCommissioner) {
+            // Commissioner session - go to commissioner page
+            handleCommissionerMode();
+        } else {
+            // No session - show landing page with welcome card
+            showWelcomeCard();
+            showPage('landing-page');
+        }
+    });
+    document.getElementById('commissioner-mode').addEventListener('click', showCommissionerTOTPModal);
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
@@ -153,7 +238,6 @@ function setupEventListeners() {
     document.getElementById('back-to-landing').addEventListener('click', () => showPage('landing-page'));
 
     // Commissioner page
-    document.getElementById('generate-codes').addEventListener('click', handleGenerateCodes);
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
     document.getElementById('update-results').addEventListener('click', handleUpdateResults);
     document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
@@ -169,6 +253,25 @@ function setupEventListeners() {
     document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
     document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
+    
+    // Athlete Management modal
+    const addAthleteModal = document.getElementById('add-athlete-modal');
+    document.getElementById('add-athlete-btn').addEventListener('click', () => {
+        addAthleteModal.style.display = 'flex';
+    });
+    document.getElementById('add-athlete-modal-close').addEventListener('click', () => {
+        addAthleteModal.style.display = 'none';
+    });
+    document.getElementById('cancel-add-athlete').addEventListener('click', () => {
+        addAthleteModal.style.display = 'none';
+    });
+    // Close modal when clicking the overlay
+    addAthleteModal.addEventListener('click', (e) => {
+        if (e.target === addAthleteModal) {
+            addAthleteModal.style.display = 'none';
+        }
+    });
+    document.getElementById('add-athlete-form').addEventListener('submit', handleAddAthlete);
 }
 
 // Show page
@@ -177,8 +280,438 @@ function showPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
+// ========== TEAM CREATION MODAL FUNCTIONS ==========
+
+function showTeamCreationModal() {
+    document.getElementById('team-creation-modal').style.display = 'flex';
+    document.getElementById('team-name').focus();
+}
+
+function hideTeamCreationModal() {
+    document.getElementById('team-creation-modal').style.display = 'none';
+    document.getElementById('team-creation-form').reset();
+}
+
+async function handleTeamCreation(e) {
+    e.preventDefault();
+    
+    const teamName = document.getElementById('team-name').value.trim();
+    const ownerName = document.getElementById('team-owner').value.trim();
+    
+    if (!teamName) {
+        alert('Please enter a team name');
+        return;
+    }
+    
+    try {
+        // Create anonymous session via API
+        const response = await fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType: 'player',
+                displayName: teamName,
+                gameId: GAME_ID,
+                playerCode: teamName,  // Use team name as player code
+                expiryDays: 90
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create session');
+        }
+        
+        const data = await response.json();
+        
+        // Save session to state and localStorage
+        anonymousSession = {
+            token: data.session.token,
+            teamName: teamName,
+            ownerName: ownerName || null,
+            expiresAt: data.session.expiresAt
+        };
+        
+        localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
+        
+        // Set as current player
+        gameState.currentPlayer = teamName;
+        document.getElementById('player-name').textContent = teamName;
+        
+        // Add to players list if not already there
+        if (!gameState.players.includes(teamName)) {
+            gameState.players.push(teamName);
+            await saveGameState();
+        }
+        
+        // Show success message with unique URL
+        const uniqueURL = `${window.location.origin}/?session=${data.session.token}`;
+        alert(`✅ Team created!\n\n📋 Team: ${teamName}\n\n🔗 Your unique URL (save this to access your team from other devices):\n${uniqueURL}\n\nThis URL will be saved in your browser.`);
+        
+        hideWelcomeCard();  // Hide welcome card after team creation
+        
+        // Update footer buttons
+        updateFooterButtons();
+        
+        // Hide modal and go to ranking page
+        hideTeamCreationModal();
+        
+        // Check if draft is complete
+        if (gameState.draftComplete) {
+            displayTeams();
+            showPage('teams-page');
+        } else {
+            await setupRankingPage();
+            showPage('ranking-page');
+        }
+        
+    } catch (error) {
+        console.error('Error creating team:', error);
+        alert('Error creating team. Please try again.');
+    }
+}
+
+// ========== COMMISSIONER TOTP MODAL FUNCTIONS ==========
+
+function showCommissionerTOTPModal() {
+    document.getElementById('commissioner-totp-modal').style.display = 'flex';
+    document.getElementById('totp-code').focus();
+}
+
+function hideCommissionerTOTPModal() {
+    document.getElementById('commissioner-totp-modal').style.display = 'none';
+    document.getElementById('commissioner-totp-form').reset();
+}
+
+async function handleCommissionerTOTPLogin(e) {
+    e.preventDefault();
+    
+    const totpCode = document.getElementById('totp-code').value.trim();
+    
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
+        alert('Please enter a valid 6-digit code');
+        return;
+    }
+    
+    try {
+        // Verify TOTP with backend
+        const response = await fetch(`${API_BASE}/api/auth/totp/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'commissioner@marathonmajorsfantasy.com',
+                totpCode: totpCode
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Save commissioner session
+            commissionerSession = {
+                isCommissioner: true,
+                loginTime: new Date().toISOString()
+            };
+            
+            localStorage.setItem(COMMISSIONER_SESSION_KEY, JSON.stringify(commissionerSession));
+            
+            hideWelcomeCard();  // Hide welcome card after commissioner login
+            
+            // Update footer buttons
+            updateFooterButtons();
+            
+            // Hide modal and go to commissioner page
+            hideCommissionerTOTPModal();
+            showPage('commissioner-page');
+            
+            // Refresh display if needed
+            if (gameState.players.length > 0) {
+                displayPlayerCodes();
+            }
+            if (gameState.draftComplete) {
+                setupResultsForm();
+                updateLiveStandings();
+                
+                // Update button states
+                if (gameState.resultsFinalized) {
+                    document.getElementById('update-results').textContent = 'Results Finalized';
+                    document.getElementById('update-results').disabled = true;
+                    document.getElementById('finalize-results').style.display = 'none';
+                } else {
+                    document.getElementById('update-results').textContent = 'Update Live Results';
+                    document.getElementById('update-results').disabled = false;
+                    if (Object.keys(gameState.results).length > 0) {
+                        document.getElementById('finalize-results').style.display = 'inline-block';
+                    }
+                }
+            }
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Invalid TOTP code. Please try again.');
+            document.getElementById('totp-code').value = '';
+            document.getElementById('totp-code').focus();
+        }
+    } catch (error) {
+        console.error('Error verifying TOTP:', error);
+        alert('Error logging in. Please try again.');
+    }
+}
+
+// ========== SESSION RESTORATION ==========
+
+// Check for session token in URL (for cross-device access)
+async function checkURLForSession() {
+    const params = new URLSearchParams(window.location.search);
+    const sessionToken = params.get('session');
+    
+    if (sessionToken) {
+        // Verify and load session from backend
+        const success = await verifyAndLoadSession(sessionToken);
+        
+        // Clean URL (remove session parameter)
+        const cleanURL = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanURL);
+        return success;
+    }
+    
+    return false;
+}
+
+// Verify session with backend and load it
+async function verifyAndLoadSession(token) {
+    console.log('Verifying session token:', token);
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/session/verify?token=${encodeURIComponent(token)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Session verified:', data);
+            
+            // Save session to state and localStorage
+            anonymousSession = {
+                token: token,
+                teamName: data.session.displayName,
+                ownerName: null,
+                expiresAt: data.session.expiresAt
+            };
+            
+            localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
+            
+            // Set as current player
+            gameState.currentPlayer = anonymousSession.teamName;
+            document.getElementById('player-name').textContent = anonymousSession.teamName;
+            
+            hideWelcomeCard();  // Hide welcome card after session verified
+            
+            console.log('Game state:', gameState);
+            console.log('Draft complete?', gameState.draftComplete);
+            console.log('Has rankings?', !!gameState.rankings[anonymousSession.teamName]);
+            
+            // Auto-navigate based on game state
+            if (gameState.draftComplete) {
+                console.log('Navigating to teams page');
+                displayTeams();
+                showPage('teams-page');
+            } else if (gameState.rankings[anonymousSession.teamName]) {
+                console.log('Navigating to ranking page (has submitted rankings)');
+                await setupRankingPage();
+                showPage('ranking-page');
+            } else {
+                console.log('Navigating to ranking page (no rankings yet)');
+                await setupRankingPage();
+                showPage('ranking-page');
+            }
+            
+            return true;
+        } else {
+            console.error('Session verification failed:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error verifying session:', error);
+        return false;
+    }
+}
+
+// Restore session from localStorage
+async function restoreSession() {
+    // Priority 1: Check URL for session token (cross-device sharing)
+    const hasURLSession = await checkURLForSession();
+    if (hasURLSession) {
+        hideWelcomeCard();  // Hide welcome card for sessions from URL
+        updateFooterButtons();  // Update UI after session restored
+        return true;  // verifyAndLoadSession handles navigation
+    }
+    
+    // Priority 2: Check for team session in localStorage
+    try {
+        const teamSession = localStorage.getItem(TEAM_SESSION_KEY);
+        if (teamSession) {
+            const session = JSON.parse(teamSession);
+            
+            // Check if expired
+            if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+                localStorage.removeItem(TEAM_SESSION_KEY);
+                return false;
+            }
+            
+            anonymousSession = session;
+            gameState.currentPlayer = session.teamName;
+            document.getElementById('player-name').textContent = session.teamName;
+            
+            hideWelcomeCard();  // Hide welcome card for restored team session
+            
+            // Auto-navigate if appropriate
+            if (gameState.draftComplete) {
+                displayTeams();
+                showPage('teams-page');
+            } else if (gameState.rankings[session.teamName]) {
+                await setupRankingPage();
+                showPage('ranking-page');
+            } else {
+                // No rankings submitted yet - go to ranking page so they can submit
+                await setupRankingPage();
+                showPage('ranking-page');
+            }
+            
+            updateFooterButtons();  // Update UI after session restored
+            return true;
+        }
+        
+        // Priority 3: Check for commissioner session
+        const commissionerSessionData = localStorage.getItem(COMMISSIONER_SESSION_KEY);
+        if (commissionerSessionData) {
+            const session = JSON.parse(commissionerSessionData);
+            if (session.isCommissioner) {
+                commissionerSession = session;
+                hideWelcomeCard();  // Hide welcome card for commissioner
+                handleCommissionerMode();  // Auto-navigate to commissioner page
+                updateFooterButtons();  // Update UI after commissioner session restored
+                return true;
+            }
+        }
+    } catch (error) {
+        console.error('Error restoring session:', error);
+    }
+    
+    return false;
+}
+
+// Update footer buttons based on session state
+function updateFooterButtons() {
+    const footer = document.querySelector('footer');
+    
+    console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
+    console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    
+    // Remove existing session buttons if they exist
+    const existingLogout = document.getElementById('logout-button');
+    const existingCopyUrl = document.getElementById('copy-url-button');
+    if (existingLogout) existingLogout.remove();
+    if (existingCopyUrl) existingCopyUrl.remove();
+    
+    if (anonymousSession.token) {
+        console.log('Adding logout and copy URL buttons for team session');
+        // User has an active team session - show logout and copy URL buttons
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleLogout);
+        
+        const copyUrlBtn = document.createElement('button');
+        copyUrlBtn.id = 'copy-url-button';
+        copyUrlBtn.className = 'btn btn-secondary';
+        copyUrlBtn.textContent = 'Copy My URL';
+        copyUrlBtn.addEventListener('click', handleCopyUrl);
+        
+        // Find the commissioner mode button
+        const commissionerBtn = footer.querySelector('.btn[onclick*="showCommissionerTOTPModal"]') || 
+                                 footer.querySelector('.btn:last-child');
+        
+        if (commissionerBtn) {
+            // Insert before the commissioner button
+            commissionerBtn.insertAdjacentElement('beforebegin', copyUrlBtn);
+            commissionerBtn.insertAdjacentElement('beforebegin', logoutBtn);
+            console.log('Buttons inserted before commissioner button');
+        } else {
+            // Fallback: append to footer
+            footer.appendChild(logoutBtn);
+            footer.appendChild(copyUrlBtn);
+            console.log('Buttons appended to footer (fallback)');
+        }
+    } else if (commissionerSession.isCommissioner) {
+        console.log('Adding logout button for commissioner session');
+        // Commissioner is logged in - show logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleCommissionerLogout);
+        
+        // Insert before the commissioner mode button
+        const commissionerBtn = footer.querySelector('.btn[onclick*="showCommissionerTOTPModal"]') || 
+                                 footer.querySelector('.btn:last-child');
+        
+        if (commissionerBtn) {
+            commissionerBtn.insertAdjacentElement('beforebegin', logoutBtn);
+            console.log('Commissioner logout button inserted');
+        } else {
+            footer.appendChild(logoutBtn);
+            console.log('Commissioner logout button appended (fallback)');
+        }
+    }
+}
+
+// Handle team logout
+function handleLogout() {
+    if (confirm('Are you sure you want to logout? Make sure you have saved your team URL!')) {
+        // Clear team session
+        localStorage.removeItem(TEAM_SESSION_KEY);
+        anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+        gameState.currentPlayer = null;
+        
+        updateFooterButtons();
+        showPage('landing-page');
+    }
+}
+
+// Handle commissioner logout
+function handleCommissionerLogout() {
+    if (confirm('Are you sure you want to logout from Commissioner mode?')) {
+        // Clear commissioner session
+        localStorage.removeItem(COMMISSIONER_SESSION_KEY);
+        commissionerSession = { isCommissioner: false, loginTime: null };
+        
+        updateFooterButtons();
+        showPage('landing-page');
+    }
+}
+
+// Handle copy URL
+function handleCopyUrl() {
+    const gameId = GAME_ID;
+    const sessionUrl = `${window.location.origin}${window.location.pathname}?session=${anonymousSession.token}&game=${gameId}`;
+    
+    navigator.clipboard.writeText(sessionUrl).then(() => {
+        const originalText = document.getElementById('copy-url-button').textContent;
+        document.getElementById('copy-url-button').textContent = '✅ Copied!';
+        setTimeout(() => {
+            document.getElementById('copy-url-button').textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert(`Copy this URL to access your team:\n\n${sessionUrl}`);
+    });
+}
+
+// ========== END SESSION FUNCTIONS ==========
+
 // Handle enter game
-function handleEnterGame() {
+async function handleEnterGame() {
     const code = document.getElementById('player-code').value.trim().toUpperCase();
     if (!code) {
         alert('Please enter a player code');
@@ -203,8 +736,54 @@ function handleEnterGame() {
             showPage('landing-page');
         }
     } else {
-        setupRankingPage();
+        await setupRankingPage();
         showPage('ranking-page');
+    }
+}
+
+// Handle create new game (Account-Free)
+async function handleCreateNewGame() {
+    try {
+        // Create anonymous commissioner session
+        const response = await fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType: 'commissioner',
+                displayName: 'Commissioner',
+                gameId: GAME_ID,
+                expiryDays: 90
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create session');
+        }
+        
+        const data = await response.json();
+        
+        // Save session
+        const session = {
+            token: data.session.token,
+            type: 'commissioner',
+            expiresAt: data.session.expiresAt,
+            displayName: 'Commissioner',
+            gameId: GAME_ID
+        };
+        saveSession(session);
+        
+        // Show success message with unique URL
+        alert(`✅ Game Created Successfully!\n\n` +
+              `Your unique commissioner URL:\n${data.uniqueUrl}\n\n` +
+              `⚠️ IMPORTANT: Save this URL! You'll need it to return to your game.\n\n` +
+              `You can bookmark it or save it to your home screen.`);
+        
+        // Navigate to commissioner page
+        showPage('commissioner-page');
+        
+    } catch (error) {
+        console.error('Error creating game:', error);
+        alert('Failed to create game. Please try again.');
     }
 }
 
@@ -243,7 +822,11 @@ function handleCommissionerMode() {
 }
 
 // Setup ranking page
-function setupRankingPage() {
+async function setupRankingPage() {
+    // Ensure athletes are loaded before displaying
+    if (!gameState.athletes.men || gameState.athletes.men.length === 0) {
+        await loadAthletes();
+    }
     switchTab('men');
 }
 
@@ -685,34 +1268,6 @@ async function handleSubmitRankings() {
 }
 
 // Commissioner functions
-async function handleGenerateCodes() {
-    const numPlayers = parseInt(document.getElementById('num-players').value);
-    if (numPlayers < 2 || numPlayers > 4) {
-        alert('Please enter a number between 2 and 4');
-        return;
-    }
-
-    // Marathon-themed words for player codes
-    const marathonWords = [
-        'RUNNER', 'SPRINTER', 'PACER', 'CHAMPION', 
-        'FINISHER', 'STRIDE', 'ENDURANCE', 'VELOCITY',
-        'RACER', 'ATHLETE', 'DASHER', 'JOGGER',
-        'TRACKSTAR', 'SPEEDSTER', 'MARATHON', 'DISTANCE'
-    ];
-
-    // Fisher-Yates shuffle for better randomization
-    const shuffled = [...marathonWords];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    gameState.players = shuffled.slice(0, numPlayers);
-
-    displayPlayerCodes();
-
-    await saveGameState();
-}
-
 function hasPlayerSubmittedRankings(playerCode) {
     const ranking = gameState.rankings[playerCode];
     return ranking && 
@@ -722,11 +1277,11 @@ function hasPlayerSubmittedRankings(playerCode) {
            ranking.women.length === 10;
 }
 
-function displayPlayerCodes() {
+async function displayPlayerCodes() {
     const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
+    display.innerHTML = '<h4>Share these unique URLs with your players:</h4>';
     
-    gameState.players.forEach(code => {
+    for (const code of gameState.players) {
         const hasSubmitted = hasPlayerSubmittedRankings(code);
         
         const item = document.createElement('div');
@@ -736,18 +1291,93 @@ function displayPlayerCodes() {
         statusIcon.className = 'status-icon';
         statusIcon.textContent = hasSubmitted ? '✓' : '○';
         
-        const codeText = document.createElement('span');
-        codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+        // Create anonymous session for player
+        try {
+            const response = await fetch(`${API_BASE}/api/session/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionType: 'player',
+                    displayName: code,
+                    gameId: GAME_ID,
+                    playerCode: code,
+                    expiryDays: 90
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const uniqueURL = data.uniqueUrl;
+                const sessionToken = uniqueURL.split('?session=')[1];
+                
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'player-code-content';
+                
+                // First row: Team name and clickable UUID
+                const topRow = document.createElement('div');
+                topRow.className = 'player-code-top-row';
+                
+                const codeLabel = document.createElement('strong');
+                codeLabel.textContent = `${code}: `;
+                
+                const urlLink = document.createElement('a');
+                urlLink.className = 'session-link';
+                urlLink.href = uniqueURL;
+                urlLink.target = '_blank';
+                urlLink.textContent = sessionToken;
+                
+                topRow.appendChild(codeLabel);
+                topRow.appendChild(urlLink);
+                
+                // Second row: Copy button and status
+                const bottomRow = document.createElement('div');
+                bottomRow.className = 'player-code-bottom-row';
+                
+                const copyButton = document.createElement('button');
+                copyButton.className = 'btn-copy-small';
+                copyButton.textContent = '📋 Copy Link';
+                copyButton.onclick = () => {
+                    navigator.clipboard.writeText(uniqueURL).then(() => {
+                        copyButton.textContent = '✅ Copied!';
+                        setTimeout(() => {
+                            copyButton.textContent = '📋 Copy Link';
+                        }, 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy:', err);
+                        alert('Failed to copy URL. Please copy manually.');
+                    });
+                };
+                
+                const statusText = document.createElement('span');
+                statusText.className = 'status-text';
+                statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+                
+                bottomRow.appendChild(copyButton);
+                bottomRow.appendChild(statusText);
+                
+                contentWrapper.appendChild(topRow);
+                contentWrapper.appendChild(bottomRow);
+                
+                item.appendChild(statusIcon);
+                item.appendChild(contentWrapper);
+            } else {
+                // Fallback to legacy code display
+                const codeText = document.createElement('span');
+                codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+                item.appendChild(statusIcon);
+                item.appendChild(codeText);
+            }
+        } catch (error) {
+            console.error('Error creating player session:', error);
+            // Fallback to legacy code display
+            const codeText = document.createElement('span');
+            codeText.textContent = `${code}`;
+            item.appendChild(statusIcon);
+            item.appendChild(codeText);
+        }
         
-        const statusText = document.createElement('span');
-        statusText.className = 'status-text';
-        statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
-        
-        item.appendChild(statusIcon);
-        item.appendChild(codeText);
-        item.appendChild(statusText);
         display.appendChild(item);
-    });
+    }
     
     // Add summary
     const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
@@ -1947,7 +2577,14 @@ async function handleViewAthletes() {
                                 title="World Athletics ID (e.g., 14208500)"
                             />
                         </td>
-                        <td>${athlete.nycConfirmed ? '✓ Yes' : '✗ No'}</td>
+                        <td>
+                            <button 
+                                class="btn-toggle-confirmed btn-small ${athlete.nycConfirmed ? 'btn-success' : 'btn-secondary'}"
+                                data-athlete-id="${athlete.id}"
+                                data-confirmed="${athlete.nycConfirmed}"
+                                title="Click to ${athlete.nycConfirmed ? 'unconfirm' : 'confirm'} for NYC Marathon"
+                            >${athlete.nycConfirmed ? '✓ Confirmed' : '✗ Not Confirmed'}</button>
+                        </td>
                         <td class="actions-cell">
                             <button 
                                 class="btn-save-wa-id btn-small" 
@@ -1995,6 +2632,15 @@ async function handleViewAthletes() {
         // Add event listeners to sync buttons
         document.querySelectorAll('.btn-sync-athlete').forEach(button => {
             button.addEventListener('click', handleSyncAthlete);
+        });
+        
+        // Add event listeners to toggle confirmation buttons
+        document.querySelectorAll('.btn-toggle-confirmed').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const athleteId = parseInt(e.target.dataset.athleteId, 10);
+                const currentStatus = e.target.dataset.confirmed === 'true';
+                handleToggleConfirmation(athleteId, currentStatus);
+            });
         });
         
     } catch (error) {
@@ -2115,6 +2761,89 @@ async function handleSyncAthlete(event) {
         button.textContent = 'Sync';
         button.style.opacity = '1';
         button.disabled = false;
+    }
+}
+
+/**
+ * Handle adding a new athlete
+ */
+async function handleAddAthlete(e) {
+    e.preventDefault();
+    
+    const formData = {
+        name: document.getElementById('athlete-name').value.trim(),
+        country: document.getElementById('athlete-country').value.trim().toUpperCase(),
+        gender: document.getElementById('athlete-gender').value,
+        personalBest: document.getElementById('athlete-pb').value.trim(),
+        seasonBest: document.getElementById('athlete-season-best').value.trim() || null,
+        marathonRank: document.getElementById('athlete-marathon-rank').value ? parseInt(document.getElementById('athlete-marathon-rank').value) : null,
+        age: document.getElementById('athlete-age').value ? parseInt(document.getElementById('athlete-age').value) : null,
+        sponsor: document.getElementById('athlete-sponsor').value.trim() || null,
+        worldAthleticsId: document.getElementById('athlete-wa-id').value.trim() || null,
+        headshotUrl: document.getElementById('athlete-headshot').value.trim() || null,
+        confirmForNYC: document.getElementById('athlete-confirm-nyc').checked
+    };
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/add-athlete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.details || error.error || 'Failed to add athlete');
+        }
+        
+        const result = await response.json();
+        alert(`✓ Athlete added successfully! ID: ${result.athleteId}`);
+        
+        // Close modal and reset form
+        document.getElementById('add-athlete-modal').style.display = 'none';
+        document.getElementById('add-athlete-form').reset();
+        
+        // Refresh athlete list
+        handleViewAthletes();
+        
+    } catch (error) {
+        console.error('Error adding athlete:', error);
+        alert(`Error adding athlete: ${error.message}`);
+    }
+}
+
+/**
+ * Handle toggling athlete confirmation for NYC Marathon
+ */
+async function handleToggleConfirmation(athleteId, currentStatus) {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'confirm' : 'unconfirm';
+    
+    if (!confirm(`Are you sure you want to ${action} this athlete for the NYC Marathon?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/toggle-athlete-confirmation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                athleteId: athleteId,
+                confirmed: newStatus
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.details || error.error || 'Failed to toggle confirmation');
+        }
+        
+        // Refresh athlete list
+        handleViewAthletes();
+        
+    } catch (error) {
+        console.error('Error toggling confirmation:', error);
+        alert(`Error: ${error.message}`);
     }
 }
 
