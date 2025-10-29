@@ -528,6 +528,7 @@ async function restoreSession() {
             
             anonymousSession = session;
             gameState.currentPlayer = session.teamName;
+            document.getElementById('player-name').textContent = session.teamName;
             
             hideWelcomeCard();  // Hide welcome card for restored team session
             
