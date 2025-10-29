@@ -1,33 +1,16 @@
 /**
  * TOTP Verification API for Commissioner Login
  * POST /api/auth/totp/verify
+ * 
+ * TOTP secrets are stored as plaintext base32 strings in the database.
+ * This is standard practice - the secret itself is meant to be protected
+ * by database access controls, not additional encryption.
  */
 
 import { neon } from '@neondatabase/serverless';
 import * as speakeasy from 'speakeasy';
-import * as crypto from 'crypto';
 
 const sql = neon(process.env.DATABASE_URL);
-
-// Encryption settings (must match setup script)
-const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
-const ENCRYPTION_KEY = process.env.TOTP_ENCRYPTION_KEY;
-
-function decryptTOTPSecret(encryptedData) {
-    const key = Buffer.from(ENCRYPTION_KEY, 'base64');
-    const decipher = crypto.createDecipheriv(
-        ENCRYPTION_ALGORITHM,
-        key,
-        Buffer.from(encryptedData.iv, 'hex')
-    );
-    
-    decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
-    
-    let decrypted = decipher.update(encryptedData.encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    return decrypted;
-}
 
 export default async function handler(req, res) {
     // CORS headers
@@ -70,9 +53,8 @@ export default async function handler(req, res) {
         
         const user = result[0];
         
-        // Decrypt TOTP secret
-        const encryptedData = JSON.parse(user.totp_secret);
-        const secret = decryptTOTPSecret(encryptedData);
+        // Get TOTP secret (stored as plaintext base32)
+        const secret = user.totp_secret;
         
         // Verify TOTP code
         const verified = speakeasy.totp.verify({
