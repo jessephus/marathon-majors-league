@@ -94,6 +94,127 @@ footer .btn {
     margin-bottom: 30px;
 }
 
+/* Team Creation Section */
+.create-team-section {
+    margin-bottom: 20px;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(255, 105, 0, 0.08) 0%, rgba(44, 57, 162, 0.08) 100%);
+    border-radius: 12px;
+    border: 2px solid var(--primary-orange);
+    text-align: center;
+}
+
+.create-team-section h3 {
+    color: var(--primary-orange);
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+}
+
+.create-team-section p {
+    color: var(--text-dark);
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.btn-large {
+    padding: 16px 40px;
+    font-size: 1.1rem;
+}
+
+/* Commissioner Login Section */
+.commissioner-login-section {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.commissioner-login-section h3 {
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+}
+
+.commissioner-login-section p {
+    color: var(--dark-gray);
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--medium-gray);
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: var(--dark-gray);
+    font-size: 0.85rem;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 25px;
+}
+
+.form-actions button {
+    flex: 1;
+}
+
+@media (max-width: 480px) {
+    .form-actions {
+        flex-direction: column;
+    }
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 30px 0;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.divider span {
+    padding: 0 15px;
+    color: var(--dark-gray);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
 .auth-section {
     margin-bottom: 20px;
 }
@@ -666,6 +787,47 @@ footer .btn {
 .player-code-item.pending .status-text {
     background: var(--warning-bg);
     color: var(--warning-text);
+}
+
+/* URL Container for player links */
+.url-container {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 10px;
+    margin: 0 10px;
+}
+
+.url-text {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: var(--primary-blue);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-copy {
+    padding: 6px 12px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.btn-copy:hover {
+    background: var(--dark-blue);
+    transform: translateY(-1px);
+}
+
+.btn-copy:active {
+    transform: translateY(0);
 }
 
 .rankings-summary {

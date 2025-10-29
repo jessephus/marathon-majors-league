@@ -35,11 +35,69 @@ function getMainHTML() {
                 <div class="welcome-card">
                     <h2>Welcome to the Fantasy NY Marathon!</h2>
                     <p>Compete with friends by drafting elite marathon runners.</p>
-                    <div class="auth-section">
-                        <label for="player-code">Enter Your Player Code:</label>
-                        <input type="text" id="player-code" placeholder="e.g., RUNNER or SPRINTER">
-                        <button id="enter-game" class="btn btn-primary">Enter Game</button>
+                    
+                    <!-- Team Creation for Visitors -->
+                    <div class="create-team-section">
+                        <h3>🏃‍♂️ Join the Competition</h3>
+                        <p>Create your team and draft elite runners - no registration required!</p>
+                        <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
                     </div>
+                    
+                    <div class="divider">
+                        <span>OR</span>
+                    </div>
+                    
+                    <!-- Commissioner Login -->
+                    <div class="commissioner-login-section">
+                        <h3>👑 Commissioner Login</h3>
+                        <p>Enter your TOTP code to manage the game</p>
+                        <button id="commissioner-login-btn" class="btn btn-secondary">Commissioner Login</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Team Creation Modal -->
+            <div id="team-creation-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="close-team-modal">&times;</button>
+                    <h2>Create Your Team</h2>
+                    <p>Enter your team name to get started:</p>
+                    <form id="team-creation-form">
+                        <div class="form-group">
+                            <label for="team-name">Team Name</label>
+                            <input type="text" id="team-name" placeholder="e.g., The Fast Finishers" required maxlength="50">
+                        </div>
+                        <div class="form-group">
+                            <label for="team-owner">Your Name (optional)</label>
+                            <input type="text" id="team-owner" placeholder="e.g., John Smith" maxlength="50">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-team-creation">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Team & Start Drafting</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Commissioner TOTP Modal -->
+            <div id="commissioner-totp-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="close-totp-modal">&times;</button>
+                    <h2>Commissioner Login</h2>
+                    <p>Enter the 6-digit code from your authenticator app:</p>
+                    <form id="commissioner-totp-form">
+                        <div class="form-group">
+                            <label for="totp-code">TOTP Code</label>
+                            <input type="text" id="totp-code" placeholder="000000" required pattern="[0-9]{6}" maxlength="6" inputmode="numeric" autocomplete="off">
+                            <small>Code changes every 30 seconds</small>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" id="cancel-totp-login">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
