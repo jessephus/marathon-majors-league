@@ -280,6 +280,9 @@ async function handleTeamCreation(e) {
         const uniqueURL = `${window.location.origin}/?session=${data.session.token}`;
         alert(`✅ Team created!\n\n📋 Team: ${teamName}\n\n🔗 Your unique URL (save this to access your team from other devices):\n${uniqueURL}\n\nThis URL will be saved in your browser.`);
         
+        // Update footer buttons
+        updateFooterButtons();
+        
         // Hide modal and go to ranking page
         hideTeamCreationModal();
         
@@ -341,6 +344,9 @@ async function handleCommissionerTOTPLogin(e) {
             };
             
             localStorage.setItem(COMMISSIONER_SESSION_KEY, JSON.stringify(commissionerSession));
+            
+            // Update footer buttons
+            updateFooterButtons();
             
             // Hide modal and go to commissioner page
             hideCommissionerTOTPModal();
@@ -462,6 +468,7 @@ async function restoreSession() {
     // Priority 1: Check URL for session token (cross-device sharing)
     const hasURLSession = await checkURLForSession();
     if (hasURLSession) {
+        updateFooterButtons();  // Update UI after session restored
         return true;  // verifyAndLoadSession handles navigation
     }
     
@@ -490,6 +497,7 @@ async function restoreSession() {
             }
             // Otherwise stay on landing page so they can see their team
             
+            updateFooterButtons();  // Update UI after session restored
             return true;
         }
         
@@ -500,6 +508,7 @@ async function restoreSession() {
             if (session.isCommissioner) {
                 commissionerSession = session;
                 // Don't auto-navigate to commissioner page, let them click the button
+                updateFooterButtons();  // Update UI after commissioner session restored
                 return true;
             }
         }
@@ -508,6 +517,114 @@ async function restoreSession() {
     }
     
     return false;
+}
+
+// Update footer buttons based on session state
+function updateFooterButtons() {
+    const footer = document.querySelector('footer');
+    
+    console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
+    console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    
+    // Remove existing session buttons if they exist
+    const existingLogout = document.getElementById('logout-button');
+    const existingCopyUrl = document.getElementById('copy-url-button');
+    if (existingLogout) existingLogout.remove();
+    if (existingCopyUrl) existingCopyUrl.remove();
+    
+    if (anonymousSession.token) {
+        console.log('Adding logout and copy URL buttons for team session');
+        // User has an active team session - show logout and copy URL buttons
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleLogout);
+        
+        const copyUrlBtn = document.createElement('button');
+        copyUrlBtn.id = 'copy-url-button';
+        copyUrlBtn.className = 'btn btn-secondary';
+        copyUrlBtn.textContent = 'Copy My URL';
+        copyUrlBtn.addEventListener('click', handleCopyUrl);
+        
+        // Find the commissioner mode button
+        const commissionerBtn = footer.querySelector('.btn[onclick*="showCommissionerTOTPModal"]') || 
+                                 footer.querySelector('.btn:last-child');
+        
+        if (commissionerBtn) {
+            // Insert before the commissioner button
+            commissionerBtn.insertAdjacentElement('beforebegin', copyUrlBtn);
+            commissionerBtn.insertAdjacentElement('beforebegin', logoutBtn);
+            console.log('Buttons inserted before commissioner button');
+        } else {
+            // Fallback: append to footer
+            footer.appendChild(logoutBtn);
+            footer.appendChild(copyUrlBtn);
+            console.log('Buttons appended to footer (fallback)');
+        }
+    } else if (commissionerSession.isCommissioner) {
+        console.log('Adding logout button for commissioner session');
+        // Commissioner is logged in - show logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleCommissionerLogout);
+        
+        // Insert before the commissioner mode button
+        const commissionerBtn = footer.querySelector('.btn[onclick*="showCommissionerTOTPModal"]') || 
+                                 footer.querySelector('.btn:last-child');
+        
+        if (commissionerBtn) {
+            commissionerBtn.insertAdjacentElement('beforebegin', logoutBtn);
+            console.log('Commissioner logout button inserted');
+        } else {
+            footer.appendChild(logoutBtn);
+            console.log('Commissioner logout button appended (fallback)');
+        }
+    }
+}
+
+// Handle team logout
+function handleLogout() {
+    if (confirm('Are you sure you want to logout? Make sure you have saved your team URL!')) {
+        // Clear team session
+        localStorage.removeItem(TEAM_SESSION_KEY);
+        anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+        gameState.currentPlayer = null;
+        
+        updateFooterButtons();
+        showPage('landing-page');
+    }
+}
+
+// Handle commissioner logout
+function handleCommissionerLogout() {
+    if (confirm('Are you sure you want to logout from Commissioner mode?')) {
+        // Clear commissioner session
+        localStorage.removeItem(COMMISSIONER_SESSION_KEY);
+        commissionerSession = { isCommissioner: false, loginTime: null };
+        
+        updateFooterButtons();
+        showPage('landing-page');
+    }
+}
+
+// Handle copy URL
+function handleCopyUrl() {
+    const gameId = GAME_ID;
+    const sessionUrl = `${window.location.origin}${window.location.pathname}?session=${anonymousSession.token}&game=${gameId}`;
+    
+    navigator.clipboard.writeText(sessionUrl).then(() => {
+        const originalText = document.getElementById('copy-url-button').textContent;
+        document.getElementById('copy-url-button').textContent = '✅ Copied!';
+        setTimeout(() => {
+            document.getElementById('copy-url-button').textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert(`Copy this URL to access your team:\n\n${sessionUrl}`);
+    });
 }
 
 // ========== END SESSION FUNCTIONS ==========
