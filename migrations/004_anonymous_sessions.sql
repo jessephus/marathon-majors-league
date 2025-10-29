@@ -137,6 +137,7 @@ RETURNS TABLE(
     session_id INTEGER,
     session_type VARCHAR,
     game_id VARCHAR,
+    player_code VARCHAR,
     display_name VARCHAR,
     expires_at TIMESTAMP,
     days_until_expiry INTEGER
@@ -148,6 +149,7 @@ BEGIN
         id as session_id,
         anonymous_sessions.session_type,
         anonymous_sessions.game_id,
+        anonymous_sessions.player_code,
         anonymous_sessions.display_name,
         anonymous_sessions.expires_at,
         EXTRACT(DAY FROM (anonymous_sessions.expires_at - CURRENT_TIMESTAMP))::INTEGER as days_until_expiry

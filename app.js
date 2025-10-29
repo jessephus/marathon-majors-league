@@ -2,6 +2,7 @@
 let anonymousSession = {
     token: null,
     type: null,  // 'commissioner', 'player', or 'spectator'
+    playerCode: null,  // For player sessions
     expiresAt: null,
     displayName: null
 };
@@ -40,6 +41,7 @@ function clearSession() {
     anonymousSession = {
         token: null,
         type: null,
+        playerCode: null,
         expiresAt: null,
         displayName: null
     };
@@ -74,10 +76,16 @@ async function verifySession(token) {
                 anonymousSession = {
                     token: token,
                     type: data.session.type,
+                    playerCode: data.session.playerCode,
                     expiresAt: data.session.expiresAt,
                     displayName: data.session.displayName
                 };
                 saveSessionToStorage();
+                
+                // If this is a player session, set the currentPlayer
+                if (data.session.playerCode) {
+                    gameState.currentPlayer = data.session.playerCode;
+                }
                 
                 // Show warning if session expires soon
                 if (data.warning) {
@@ -298,24 +306,131 @@ async function init() {
     await loadGameState();
     setupEventListeners();
     setupAthleteModal();
+    updateFooterButtons();
     
-    // If we have a valid commissioner session, show commissioner page
-    if (anonymousSession.type === 'commissioner') {
-        showPage('commissioner-page');
-        console.log('Auto-navigating to commissioner page');
-    } else if (anonymousSession.type === 'player' && gameState.currentPlayer) {
-        // Auto-navigate player to appropriate page
-        if (gameState.draftComplete) {
-            displayTeams();
-            showPage('teams-page');
-        } else if (gameState.rankings[gameState.currentPlayer]) {
-            alert('You have already submitted your rankings. Waiting for draft...');
-            showPage('landing-page');
+    // Navigate based on session state
+    if (anonymousSession.token) {
+        // User has an active session
+        if (anonymousSession.type === 'commissioner') {
+            showPage('commissioner-page');
+            console.log('Auto-navigating to commissioner page');
+        } else if (anonymousSession.type === 'player') {
+            // Player session - check their progress
+            const playerCode = anonymousSession.playerCode || gameState.currentPlayer;
+            
+            if (gameState.draftComplete) {
+                // Draft is done, show their team
+                displayTeams();
+                showPage('teams-page');
+            } else if (gameState.rankings[playerCode]) {
+                // Rankings submitted, waiting for draft
+                alert('You have already submitted your rankings. Waiting for draft...');
+                showPage('landing-page');
+                // Hide the landing page content since they're already in
+                document.querySelector('.welcome-card').style.display = 'none';
+            } else {
+                // Need to submit rankings
+                showPage('ranking-page');
+                setupAthleteSearch();
+            }
         } else {
-            showPage('ranking-page');
-            setupAthleteSearch();
+            showPage('landing-page');
         }
     } else {
+        // No session - show landing page
+        showPage('landing-page');
+    }
+}
+
+// Update footer buttons based on session state
+function updateFooterButtons() {
+    const footer = document.querySelector('footer');
+    
+    // Remove existing session buttons if they exist
+    const existingLogout = document.getElementById('logout-button');
+    const existingCopyUrl = document.getElementById('copy-url-button');
+    if (existingLogout) existingLogout.remove();
+    if (existingCopyUrl) existingCopyUrl.remove();
+    
+    if (anonymousSession.token) {
+        // User has an active session - show logout and copy URL buttons
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleLogout);
+        
+        const copyUrlBtn = document.createElement('button');
+        copyUrlBtn.id = 'copy-url-button';
+        copyUrlBtn.className = 'btn btn-secondary';
+        copyUrlBtn.textContent = 'Copy My URL';
+        copyUrlBtn.addEventListener('click', handleCopyUrl);
+        
+        // Insert before the last element (which should be the copyright text)
+        const copyrightText = footer.querySelector('p');
+        footer.insertBefore(copyUrlBtn, copyrightText.nextSibling);
+        footer.insertBefore(logoutBtn, copyrightText.nextSibling);
+    }
+}
+
+// Handle logout
+function handleLogout() {
+    if (confirm('Are you sure you want to logout? Make sure you have saved your team URL!')) {
+        clearSession();
+        gameState.currentPlayer = null;
+        updateFooterButtons();
+        // Show the welcome card again
+        const welcomeCard = document.querySelector('.welcome-card');
+        if (welcomeCard) welcomeCard.style.display = 'block';
+        showPage('landing-page');
+    }
+}
+
+// Handle copy URL
+function handleCopyUrl() {
+    const gameId = GAME_ID;
+    const sessionUrl = `${window.location.origin}${window.location.pathname}?session=${anonymousSession.token}&game=${gameId}`;
+    
+    navigator.clipboard.writeText(sessionUrl).then(() => {
+        const btn = document.getElementById('copy-url-button');
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy URL:', err);
+        alert('Failed to copy URL. Please copy it manually:\n\n' + sessionUrl);
+    });
+}
+
+// Handle home button click
+function handleHomeButton() {
+    if (anonymousSession.token) {
+        // User has an active session - navigate based on their role and state
+        if (anonymousSession.type === 'commissioner') {
+            showPage('commissioner-page');
+        } else if (anonymousSession.type === 'player') {
+            const playerCode = anonymousSession.playerCode || gameState.currentPlayer;
+            
+            if (gameState.draftComplete) {
+                displayTeams();
+                showPage('teams-page');
+            } else if (gameState.rankings[playerCode]) {
+                // Rankings submitted, show landing but hide welcome card
+                showPage('landing-page');
+                const welcomeCard = document.querySelector('.welcome-card');
+                if (welcomeCard) welcomeCard.style.display = 'none';
+            } else {
+                showPage('ranking-page');
+            }
+        } else {
+            showPage('landing-page');
+        }
+    } else {
+        // No session - show normal landing page
+        const welcomeCard = document.querySelector('.welcome-card');
+        if (welcomeCard) welcomeCard.style.display = 'block';
         showPage('landing-page');
     }
 }
@@ -327,7 +442,7 @@ function setupEventListeners() {
     document.getElementById('commissioner-mode').addEventListener('click', handleCommissionerMode);
     
     // Footer
-    document.getElementById('home-button').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('home-button').addEventListener('click', handleHomeButton);
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
@@ -344,7 +459,7 @@ function setupEventListeners() {
     });
 
     // Teams page
-    document.getElementById('back-to-landing').addEventListener('click', () => showPage('landing-page'));
+    document.getElementById('back-to-landing').addEventListener('click', handleHomeButton);
 
     // Commissioner page
     document.getElementById('generate-codes').addEventListener('click', handleGenerateCodes);

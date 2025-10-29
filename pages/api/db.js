@@ -2064,6 +2064,7 @@ export async function verifyAnonymousSession(sessionToken) {
     id: session.session_id,
     type: session.session_type,
     gameId: session.game_id,
+    playerCode: session.player_code,
     displayName: session.display_name,
     expiresAt: session.expires_at,
     daysUntilExpiry: session.days_until_expiry

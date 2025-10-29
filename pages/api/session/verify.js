@@ -65,6 +65,7 @@ export default async function handler(req, res) {
         id: session.session_id,
         type: session.session_type,
         gameId: session.game_id,
+        playerCode: session.player_code,
         displayName: session.display_name,
         expiresAt: session.expires_at,
         daysUntilExpiry: session.days_until_expiry
