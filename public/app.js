@@ -1126,19 +1126,33 @@ async function displayPlayerCodes() {
             if (response.ok) {
                 const data = await response.json();
                 const uniqueURL = data.uniqueUrl;
+                const sessionToken = uniqueURL.split('?session=')[1];
                 
-                const urlContainer = document.createElement('div');
-                urlContainer.className = 'url-container';
+                const contentWrapper = document.createElement('div');
+                contentWrapper.className = 'player-code-content';
+                
+                // First row: Team name and clickable UUID
+                const topRow = document.createElement('div');
+                topRow.className = 'player-code-top-row';
                 
                 const codeLabel = document.createElement('strong');
                 codeLabel.textContent = `${code}: `;
                 
-                const urlText = document.createElement('span');
-                urlText.className = 'url-text';
-                urlText.textContent = uniqueURL;
+                const urlLink = document.createElement('a');
+                urlLink.className = 'session-link';
+                urlLink.href = uniqueURL;
+                urlLink.target = '_blank';
+                urlLink.textContent = sessionToken;
+                
+                topRow.appendChild(codeLabel);
+                topRow.appendChild(urlLink);
+                
+                // Second row: Copy button and status
+                const bottomRow = document.createElement('div');
+                bottomRow.className = 'player-code-bottom-row';
                 
                 const copyButton = document.createElement('button');
-                copyButton.className = 'btn-copy';
+                copyButton.className = 'btn-copy-small';
                 copyButton.textContent = '📋 Copy Link';
                 copyButton.onclick = () => {
                     navigator.clipboard.writeText(uniqueURL).then(() => {
@@ -1152,17 +1166,18 @@ async function displayPlayerCodes() {
                     });
                 };
                 
-                urlContainer.appendChild(codeLabel);
-                urlContainer.appendChild(urlText);
-                urlContainer.appendChild(copyButton);
-                
                 const statusText = document.createElement('span');
                 statusText.className = 'status-text';
                 statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
                 
+                bottomRow.appendChild(copyButton);
+                bottomRow.appendChild(statusText);
+                
+                contentWrapper.appendChild(topRow);
+                contentWrapper.appendChild(bottomRow);
+                
                 item.appendChild(statusIcon);
-                item.appendChild(urlContainer);
-                item.appendChild(statusText);
+                item.appendChild(contentWrapper);
             } else {
                 // Fallback to legacy code display
                 const codeText = document.createElement('span');
