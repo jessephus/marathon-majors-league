@@ -404,10 +404,9 @@ async function verifyAndLoadSession(token) {
     console.log('Verifying session token:', token);
     
     try {
-        const response = await fetch(`${API_BASE}/api/session/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionToken: token })
+        const response = await fetch(`${API_BASE}/api/session/verify?token=${encodeURIComponent(token)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
         });
         
         if (response.ok) {
@@ -417,9 +416,9 @@ async function verifyAndLoadSession(token) {
             // Save session to state and localStorage
             anonymousSession = {
                 token: token,
-                teamName: data.session.display_name || data.session.player_code,
+                teamName: data.session.displayName,
                 ownerName: null,
-                expiresAt: data.session.expires_at
+                expiresAt: data.session.expiresAt
             };
             
             localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
