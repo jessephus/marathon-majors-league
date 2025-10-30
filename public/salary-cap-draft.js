@@ -32,14 +32,24 @@ let salaryCapState = {
  * Load session from localStorage
  */
 function loadSession() {
-    const TEAM_SESSION_KEY = 'marathon_fantasy_team_session';
+    const TEAM_SESSION_KEY = 'marathon_fantasy_team'; // Fixed: was 'marathon_fantasy_team_session'
+    console.log('🔍 loadSession: Looking for key:', TEAM_SESSION_KEY);
+    console.log('🔍 loadSession: All localStorage keys:', Object.keys(localStorage));
+    
     const sessionData = localStorage.getItem(TEAM_SESSION_KEY);
-    if (!sessionData) return null;
+    console.log('🔍 loadSession: Raw sessionData:', sessionData);
+    
+    if (!sessionData) {
+        console.log('❌ loadSession: No session data found');
+        return null;
+    }
     
     try {
-        return JSON.parse(sessionData);
+        const parsed = JSON.parse(sessionData);
+        console.log('✅ loadSession: Parsed session:', parsed);
+        return parsed;
     } catch (error) {
-        console.error('Error parsing session:', error);
+        console.error('❌ loadSession: Error parsing session:', error);
         return null;
     }
 }
