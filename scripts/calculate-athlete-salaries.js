@@ -39,8 +39,8 @@ const SALARY_CONFIG = {
   totalCap: 30000,
   teamSize: 6,
   averageSalary: 5000,
-  minSalary: 1000,
-  maxSalary: 15000
+  minSalary: 1500,
+  maxSalary: 14000
 };
 
 /**
@@ -197,12 +197,12 @@ function calculateSalary(athlete) {
     }
   }
   
-  // Convert score (0-100) to salary ($1k-$15k)
-  // Use exponential curve to create bigger gaps between elite and average
+  // Convert score (0-100) to salary ($1.5k-$14k)
+  // Use power curve to create separation between tiers
   const normalizedScore = Math.max(0, Math.min(100, score));
   const salary = SALARY_CONFIG.minSalary + 
     (SALARY_CONFIG.maxSalary - SALARY_CONFIG.minSalary) * 
-    Math.pow(normalizedScore / 100, 1.5); // Exponential curve
+    Math.pow(normalizedScore / 100, 1.2); // Moderate exponential curve
   
   return {
     salary: Math.round(salary / 100) * 100, // Round to nearest $100
