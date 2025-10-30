@@ -1442,6 +1442,112 @@ function displayDraftResults() {
     });
 }
 
+// Display leaderboard with team rankings
+async function displayLeaderboard() {
+    const container = document.getElementById('leaderboard-display');
+    container.innerHTML = '<div class="loading-spinner">Loading leaderboard...</div>';
+
+    if (!gameState.draftComplete) {
+        container.innerHTML = '<p>Draft has not been completed yet. No teams to display.</p>';
+        return;
+    }
+
+    // Check if there are any results
+    const hasResults = Object.keys(gameState.results).length > 0;
+    
+    if (!hasResults) {
+        container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
+        return;
+    }
+
+    try {
+        // Fetch standings from API
+        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch standings');
+        }
+        
+        const data = await response.json();
+        const standings = data.standings || [];
+        
+        if (standings.length === 0) {
+            container.innerHTML = '<p>No standings available yet.</p>';
+            return;
+        }
+
+        // Find current player's rank
+        const currentPlayerCode = anonymousSession.teamName || gameState.currentPlayer;
+        const currentPlayerStanding = standings.find(s => s.player_code === currentPlayerCode);
+        const currentPlayerRank = currentPlayerStanding ? currentPlayerStanding.rank : null;
+
+        // Build leaderboard HTML
+        let leaderboardHTML = '<div class="leaderboard-container">';
+        
+        // Determine which teams to show
+        const TOP_COUNT = 3;
+        const showEllipsis = standings.length > TOP_COUNT + 1 && currentPlayerRank && currentPlayerRank > TOP_COUNT + 1;
+        
+        standings.forEach((standing, index) => {
+            const rank = standing.rank;
+            const isCurrentPlayer = standing.player_code === currentPlayerCode;
+            const isTop3 = rank <= TOP_COUNT;
+            
+            // Show top 3, current player (if not in top 3), and ellipsis when needed
+            if (isTop3 || isCurrentPlayer) {
+                // Show ellipsis before current player if needed
+                if (isCurrentPlayer && showEllipsis && rank > TOP_COUNT + 1) {
+                    leaderboardHTML += '<div class="leaderboard-ellipsis">...</div>';
+                }
+                
+                leaderboardHTML += createLeaderboardRow(standing, isCurrentPlayer);
+            }
+        });
+        
+        leaderboardHTML += '</div>';
+        
+        // Add refresh notice if results are not finalized
+        if (!gameState.resultsFinalized) {
+            leaderboardHTML = `
+                <div class="live-results-notice">
+                    <span class="live-indicator">●</span> Live Results - Pull down to refresh
+                </div>
+            ` + leaderboardHTML;
+        }
+        
+        container.innerHTML = leaderboardHTML;
+        
+    } catch (error) {
+        console.error('Error displaying leaderboard:', error);
+        container.innerHTML = `
+            <div class="error-message">
+                <p>Unable to load leaderboard</p>
+                <p style="font-size: 0.9em; color: var(--dark-gray);">${error.message}</p>
+                <button onclick="displayLeaderboard()" class="btn btn-secondary">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+// Create a single leaderboard row
+function createLeaderboardRow(standing, isCurrentPlayer = false) {
+    const rank = standing.rank;
+    const displayRank = rank <= 3 ? '' : rank; // Don't show number for medal positions
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    
+    const rowClass = isCurrentPlayer ? 'leaderboard-row leaderboard-row-highlight' : 'leaderboard-row';
+    
+    return `
+        <div class="${rowClass}">
+            <div class="leaderboard-rank">
+                <span class="rank-medal">${medal}</span>
+                <span class="rank-number">${displayRank}</span>
+            </div>
+            <div class="leaderboard-team-name">${escapeHtml(standing.player_code)}</div>
+            <div class="leaderboard-score">${standing.total_points}</div>
+        </div>
+    `;
+}
+
 function displayTeams() {
     const container = document.getElementById('teams-display');
     container.innerHTML = '';
