@@ -2614,56 +2614,92 @@ function displayDemoDataResults(data) {
         background: white;
         border-radius: 10px;
         padding: 30px;
-        max-width: 800px;
+        max-width: 900px;
         max-height: 80vh;
         overflow-y: auto;
         width: 100%;
     `;
     
+    const stats = data.stats || {};
+    
     let html = `
-        <h2 style="margin-top: 0;">🎭 Demo Data Loaded Successfully!</h2>
-        <p style="color: #666; margin-bottom: 20px;">
-            Created ${data.teams.length} teams with rosters${data.resultsCreated ? ' and race results' : ''}.
-            Use these URLs to test each team:
-        </p>
+        <h2 style="margin-top: 0;">🎭 Demo Game Created Successfully!</h2>
+        <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <strong>Game ID:</strong> ${data.gameId}<br>
+            <strong>Teams:</strong> ${stats.totalTeams} teams × 6 athletes = ${stats.totalAthletes} roster slots<br>
+            <strong>Unique Athletes:</strong> ${stats.uniqueAthletes} (some may be on multiple teams)<br>
+            <strong>Salary Cap:</strong> $${(data.salaryCap / 1000).toFixed(0)}K per team<br>
+            <strong>Results:</strong> ${data.resultsCreated ? `✅ ${stats.resultsCount} athletes with finish times & splits` : '⏳ Not created (add via commissioner mode)'}
+        </div>
+        
+        <h3 style="margin-top: 20px;">📋 Team Details</h3>
     `;
     
     data.teams.forEach(team => {
         const url = team.sessionUrl;
+        const budgetPct = ((team.totalSpent / data.salaryCap) * 100).toFixed(0);
+        
         html += `
-            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
-                <h3 style="margin: 0 0 10px 0; color: #2C39A2;">${team.teamName}</h3>
-                <div style="margin-bottom: 10px;">
+            <div style="border: 2px solid #2C39A2; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                    <div>
+                        <h3 style="margin: 0; color: #2C39A2;">${team.teamName}</h3>
+                        <div style="color: #666; font-size: 0.9em; margin-top: 5px;">${team.strategy}</div>
+                    </div>
+                    <div style="text-align: right; font-size: 0.9em;">
+                        <div><strong>Spent:</strong> $${(team.totalSpent / 1000).toFixed(1)}K (${budgetPct}%)</div>
+                        <div style="color: #28a745;"><strong>Left:</strong> $${(team.remaining / 1000).toFixed(1)}K</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
                     <strong>Session URL:</strong>
                     <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
                         <input 
                             type="text" 
                             value="${url}" 
                             readonly 
-                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
+                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: monospace;"
                         />
                         <button 
                             onclick="navigator.clipboard.writeText('${url}'); this.textContent = '✓ Copied'; setTimeout(() => this.textContent = 'Copy', 2000);"
-                            style="padding: 8px 16px; background: #2C39A2; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                            style="padding: 8px 16px; background: #2C39A2; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
                         >
                             Copy
                         </button>
                     </div>
                 </div>
-                <div style="margin-top: 10px;">
-                    <strong>Athletes:</strong>
-                    <ul style="margin: 5px 0; padding-left: 20px; font-size: 0.9em;">
-                        ${team.athletes.map(a => `<li>${a.name} (${a.country}) - $${(a.salary / 1000).toFixed(1)}K</li>`).join('')}
-                    </ul>
+                
+                <div>
+                    <strong>Roster (${team.athletes.length} athletes):</strong>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; font-size: 0.9em;">
+                        ${team.athletes.map(a => `
+                            <div style="padding: 5px; background: ${a.gender === 'men' ? '#e3f2fd' : '#fce4ec'}; border-radius: 4px;">
+                                <strong>${a.name}</strong> (${a.country})<br>
+                                <span style="color: #666;">
+                                    ${a.gender === 'men' ? '👨' : '👩'} 
+                                    $${(a.salary / 1000).toFixed(1)}K
+                                    ${a.marathonRank ? ` • Rank #${a.marathonRank}` : ''}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         `;
     });
     
     html += `
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 0.9em;">
+            <strong>📝 Next Steps:</strong>
+            <ol style="margin: 10px 0 0 20px; padding: 0;">
+                ${data.instructions.map(i => `<li style="margin: 5px 0;">${i}</li>`).join('')}
+            </ol>
+        </div>
+        
         <button 
             onclick="document.getElementById('demo-data-modal').remove();"
-            style="width: 100%; padding: 12px; background: #ff6900; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px;"
+            style="width: 100%; padding: 12px; background: #ff6900; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 20px; font-weight: bold;"
         >
             Close
         </button>
