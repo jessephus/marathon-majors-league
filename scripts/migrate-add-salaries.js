@@ -24,9 +24,11 @@ if (!DATABASE_URL) {
 const sql = neon(DATABASE_URL);
 
 // World record references
+// Note: Ruth Chepngetich's 2:09:56 removed due to PED ban
+// Using Tigst Assefa's 2:11:53 as women's reference
 const WORLD_RECORDS = {
   men: convertTimeToSeconds('2:00:35'),
-  women: convertTimeToSeconds('2:09:56')
+  women: convertTimeToSeconds('2:11:53')
 };
 
 const SALARY_CONFIG = {
