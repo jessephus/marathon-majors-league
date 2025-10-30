@@ -436,6 +436,13 @@ async function handleSubmitSalaryCapTeam() {
         return;
     }
     
+    console.log('Submitting team with session:', {
+        hasToken: !!session.token,
+        tokenLength: session.token?.length,
+        teamName: session.teamName,
+        expiresAt: session.expiresAt
+    });
+    
     try {
         // Save team via API
         const response = await fetch(`${API_BASE}/api/salary-cap-draft?gameId=${GAME_ID}`, {
@@ -473,7 +480,20 @@ async function handleSubmitSalaryCapTeam() {
         
     } catch (error) {
         console.error('Error submitting team:', error);
-        alert('Failed to submit team. Please try again.\n\nError: ' + error.message);
+        
+        // Check if this is a session expiration error
+        if (error.message && error.message.includes('Session expired')) {
+            alert(
+                'Your session has expired.\n\n' +
+                'Sessions last for 90 days. You\'ll need to create a new team to get a fresh session.\n\n' +
+                'Click OK to return to the home page.'
+            );
+            // Clear the expired session
+            localStorage.removeItem('marathon_fantasy_team_session');
+            showPage('landing-page');
+        } else {
+            alert('Failed to submit team. Please try again.\n\nError: ' + error.message);
+        }
     }
 }
 

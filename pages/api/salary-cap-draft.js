@@ -125,20 +125,27 @@ export default async function handler(req, res) {
         });
       }
 
-      // Get user from session token
+      // Get user from session token - REQUIRED
       const sessionToken = req.headers.authorization?.replace('Bearer ', '');
-      let playerCode = teamName || 'anonymous';
-
-      if (sessionToken) {
-        try {
-          const user = await verifySessionToken(sql, sessionToken);
-          if (user) {
-            playerCode = user.teamName || user.displayName || playerCode;
-          }
-        } catch (error) {
-          console.log('Session validation failed, using teamName from body');
-        }
+      
+      if (!sessionToken) {
+        return res.status(401).json({ 
+          error: 'Authentication required',
+          message: 'Session token is required to submit a team'
+        });
       }
+
+      const user = await verifySessionToken(sql, sessionToken);
+      
+      if (!user) {
+        return res.status(401).json({ 
+          error: 'Session expired or invalid',
+          message: 'Your session has expired. Please create a new team to get a fresh session.',
+          sessionExpired: true
+        });
+      }
+
+      const playerCode = user.teamName || user.displayName || teamName || 'anonymous';
 
       // Create table if it doesn't exist
       await sql`
