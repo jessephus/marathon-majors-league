@@ -15,6 +15,7 @@ export default function Home() {
       <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
       <Script src="/app.js" strategy="afterInteractive" />
+      <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 
       {/* Main HTML content from index.html */}
       <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
@@ -127,6 +128,95 @@ function getMainHTML() {
                 </div>
 
                 <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
+            </div>
+
+            <!-- Salary Cap Draft Page -->
+            <div id="salary-cap-draft-page" class="page">
+                <div class="player-info">
+                    <h2>Build Your Team</h2>
+                    <p>Select 3 men and 3 women within your $30,000 salary cap</p>
+                </div>
+
+                <!-- Budget Tracker -->
+                <div class="budget-tracker">
+                    <div class="budget-info">
+                        <div class="budget-item">
+                            <span class="budget-label">Total Cap:</span>
+                            <span class="budget-value">$30,000</span>
+                        </div>
+                        <div class="budget-item">
+                            <span class="budget-label">Spent:</span>
+                            <span class="budget-value" id="budget-spent">$0</span>
+                        </div>
+                        <div class="budget-item">
+                            <span class="budget-label">Remaining:</span>
+                            <span class="budget-value budget-remaining" id="budget-remaining">$30,000</span>
+                        </div>
+                    </div>
+                    <div class="team-progress">
+                        <span id="team-count">0/6 athletes selected</span>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="team-progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Team Display -->
+                <div class="selected-team">
+                    <h3>Your Team</h3>
+                    <div class="team-roster">
+                        <div class="roster-section">
+                            <h4>Men (0/3)</h4>
+                            <div id="selected-men" class="selected-athletes">
+                                <p class="empty-roster">No men selected yet</p>
+                            </div>
+                        </div>
+                        <div class="roster-section">
+                            <h4>Women (0/3)</h4>
+                            <div id="selected-women" class="selected-athletes">
+                                <p class="empty-roster">No women selected yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Athlete Browser -->
+                <div class="athlete-browser">
+                    <h3>Available Athletes</h3>
+                    
+                    <!-- Filters and Sort -->
+                    <div class="browser-controls">
+                        <div class="filter-group">
+                            <label>Gender:</label>
+                            <button class="filter-btn active" data-gender="all">All</button>
+                            <button class="filter-btn" data-gender="men">Men</button>
+                            <button class="filter-btn" data-gender="women">Women</button>
+                        </div>
+                        <div class="sort-group">
+                            <label for="athlete-sort">Sort by:</label>
+                            <select id="athlete-sort">
+                                <option value="salary-desc">Price (High to Low)</option>
+                                <option value="salary-asc">Price (Low to High)</option>
+                                <option value="rank-asc">Ranking (Best to Worst)</option>
+                                <option value="name-asc">Name (A-Z)</option>
+                            </select>
+                        </div>
+                        <div class="search-group">
+                            <input type="text" id="athlete-search" placeholder="Search athletes..." />
+                        </div>
+                    </div>
+
+                    <!-- Athlete List -->
+                    <div id="athlete-list" class="athlete-cards">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="draft-actions">
+                    <button id="submit-salary-cap-team" class="btn btn-primary btn-large" disabled>Submit Team</button>
+                    <button id="cancel-salary-cap-draft" class="btn btn-secondary">Cancel</button>
+                </div>
             </div>
 
             <!-- Draft Page -->
