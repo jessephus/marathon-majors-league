@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS athletes (
     date_of_birth DATE,
     sponsor VARCHAR(255),
     season_best VARCHAR(10),
+    salary INTEGER DEFAULT 5000,
     ranking_source VARCHAR(50) DEFAULT 'world_marathon',
     last_fetched_at TIMESTAMP WITH TIME ZONE,
     last_seen_at TIMESTAMP WITH TIME ZONE,
