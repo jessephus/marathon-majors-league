@@ -1,8 +1,32 @@
 import { neon } from '@neondatabase/serverless';
-import { getUserFromSession } from './session/validate';
 
 const SALARY_CAP = 30000;
 const TEAM_SIZE = 6;
+
+/**
+ * Verify anonymous session and get session details
+ */
+async function verifySessionToken(sql, sessionToken) {
+  try {
+    const result = await sql`
+      SELECT * FROM verify_anonymous_session(${sessionToken})
+    `;
+    
+    if (!result || result.length === 0 || !result[0].is_valid) {
+      return null;
+    }
+    
+    return {
+      teamName: result[0].display_name || result[0].player_code,
+      displayName: result[0].display_name,
+      playerCode: result[0].player_code,
+      gameId: result[0].game_id
+    };
+  } catch (error) {
+    console.error('Session verification error:', error);
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -107,7 +131,7 @@ export default async function handler(req, res) {
 
       if (sessionToken) {
         try {
-          const user = await getUserFromSession(sessionToken);
+          const user = await verifySessionToken(sql, sessionToken);
           if (user) {
             playerCode = user.teamName || user.displayName || playerCode;
           }
