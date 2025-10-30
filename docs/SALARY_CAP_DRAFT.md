@@ -121,9 +121,10 @@ Browse and search all available athletes:
 
 ### Sample Team Configurations
 
-**Elite Heavy Team** (~$51k - NOT POSSIBLE)
+**Elite Heavy Team** (~$51k - **IMPOSSIBLE BY DESIGN**)
 - Top 3 men + Top 3 women
-- Forces strategic compromises
+- Demonstrates that you cannot afford all the best athletes
+- Forces strategic compromises and balanced team building
 
 **Balanced Team** (~$29k - IDEAL)
 - 1-2 elite athletes ($10k+)
@@ -199,7 +200,7 @@ score = (PB_score * 0.4) +
 
 salary = MIN_SALARY + 
          (MAX_SALARY - MIN_SALARY) * 
-         (score / 100) ^ 1.2
+         (score / 100) ** 1.2
 
 // Round to nearest $100
 salary = round(salary / 100) * 100
@@ -271,11 +272,20 @@ Manual test checklist:
 ## Troubleshooting
 
 **"Salary column not found"**
-- Run migration: `node scripts/migrate-add-salaries.js`
+- Run migration script to add column and populate values:
+  ```bash
+  node scripts/migrate-add-salaries.js
+  ```
+- This script both adds the column AND calculates salaries
 
 **"All athletes show $5,000"**
-- Salaries not calculated yet
-- Run: `node scripts/calculate-athlete-salaries.js`
+- Salaries not calculated yet (only default value set)
+- The migration script above should fix this
+- Alternatively, run standalone calculation:
+  ```bash
+  node scripts/calculate-athlete-salaries.js
+  ```
+- Note: `migrate-add-salaries.js` is recommended as it handles both tasks
 
 **"Can't submit team"**
 - Verify exactly 3 men and 3 women selected
