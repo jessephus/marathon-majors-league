@@ -63,7 +63,7 @@ async function setupSalaryCapDraft() {
         await loadAthletes();
     }
     
-    // Reset state
+    // Reset state to defaults
     salaryCapState.slots = {
         M1: null,
         M2: null,
@@ -76,6 +76,47 @@ async function setupSalaryCapDraft() {
     salaryCapState.currentGender = null;
     salaryCapState.currentSort = 'salary';
     salaryCapState.totalSpent = 0;
+    salaryCapState.isLocked = false;
+    
+    // Try to load existing team if user has a session
+    const session = loadSession();
+    if (session && session.token) {
+        try {
+            const response = await fetch(`${API_BASE}/api/salary-cap-draft?gameId=${GAME_ID}`, {
+                headers: {
+                    'Authorization': `Bearer ${session.token}`
+                }
+            });
+            
+            if (response.ok) {
+                const teamData = await response.json();
+                const playerTeam = teamData[session.teamName];
+                
+                if (playerTeam && playerTeam.men && playerTeam.women) {
+                    console.log('Loading existing team:', playerTeam);
+                    
+                    // Load men into slots
+                    if (playerTeam.men[0]) salaryCapState.slots.M1 = playerTeam.men[0];
+                    if (playerTeam.men[1]) salaryCapState.slots.M2 = playerTeam.men[1];
+                    if (playerTeam.men[2]) salaryCapState.slots.M3 = playerTeam.men[2];
+                    
+                    // Load women into slots
+                    if (playerTeam.women[0]) salaryCapState.slots.W1 = playerTeam.women[0];
+                    if (playerTeam.women[1]) salaryCapState.slots.W2 = playerTeam.women[1];
+                    if (playerTeam.women[2]) salaryCapState.slots.W3 = playerTeam.women[2];
+                    
+                    // Calculate total spent
+                    salaryCapState.totalSpent = playerTeam.totalSpent || 0;
+                    
+                    // Lock the roster since it was already submitted
+                    salaryCapState.isLocked = true;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading existing team:', error);
+            // Continue with empty slots if loading fails
+        }
+    }
     
     // Setup event listeners
     setupSalaryCapEventListeners();
@@ -83,6 +124,11 @@ async function setupSalaryCapDraft() {
     // Update displays
     updateBudgetDisplay();
     updateAllSlots();
+    
+    // Apply lock state if team was loaded
+    if (salaryCapState.isLocked) {
+        lockRoster();
+    }
 }
 
 /**

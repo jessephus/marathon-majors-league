@@ -198,15 +198,9 @@ function setupEventListeners() {
     document.getElementById('home-button').addEventListener('click', async () => {
         // Navigate based on session state
         if (anonymousSession.token) {
-            // Team session - go to appropriate page
-            if (gameState.draftComplete) {
-                displayTeams();
-                showPage('teams-page');
-            } else {
-                // Go to salary cap draft page for DFS-style workflow
-                await setupSalaryCapDraft();
-                showPage('salary-cap-draft-page');
-            }
+            // Team session - always go to salary cap draft page (shows roster when locked)
+            await setupSalaryCapDraft();
+            showPage('salary-cap-draft-page');
         } else if (commissionerSession.isCommissioner) {
             // Commissioner session - go to commissioner page
             handleCommissionerMode();
@@ -559,15 +553,9 @@ async function restoreSession() {
             
             hideWelcomeCard();  // Hide welcome card for restored team session
             
-            // Auto-navigate if appropriate
-            if (gameState.draftComplete) {
-                displayTeams();
-                showPage('teams-page');
-            } else {
-                // Go to salary cap draft page for DFS-style workflow
-                await setupSalaryCapDraft();
-                showPage('salary-cap-draft-page');
-            }
+            // Always go to salary cap draft page (it shows roster when locked)
+            await setupSalaryCapDraft();
+            showPage('salary-cap-draft-page');
             
             updateFooterButtons();  // Update UI after session restored
             return true;
