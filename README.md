@@ -65,7 +65,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 3. **Follow the Action**
    - View your drafted team after the snake draft completes
    - Click **"View Leaderboard"** to see live rankings during the race
-   - Check where you stand against the competition with instant visual feedback
+   - Check where you stand against the competition
    - Your team is highlighted so you can quickly find your position
    - Watch live standings update as the commissioner enters race progress
    - Celebrate when your team takes the lead! 🎉

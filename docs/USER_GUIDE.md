@@ -118,7 +118,7 @@ Once race results start coming in:
    - Top 3 teams with medal indicators (🥇 🥈 🥉)
    - Your team's position (highlighted in orange if not in top 3)
    - Total points for each team
-3. **Live Updates**: Pull down to refresh and see latest standings
+3. **Live Updates**: Refresh the page to see latest standings
 4. **Return to Team**: Click **"Back to Your Team"** to view athlete details
 
 The leaderboard is designed for quick glances during the race - perfect for checking standings while watching the marathon!
