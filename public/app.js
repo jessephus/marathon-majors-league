@@ -202,12 +202,10 @@ function setupEventListeners() {
             if (gameState.draftComplete) {
                 displayTeams();
                 showPage('teams-page');
-            } else if (gameState.rankings[anonymousSession.teamName]) {
-                await setupRankingPage();
-                showPage('ranking-page');
             } else {
-                await setupRankingPage();
-                showPage('ranking-page');
+                // Go to salary cap draft page for DFS-style workflow
+                await setupSalaryCapDraft();
+                showPage('salary-cap-draft-page');
             }
         } else if (commissionerSession.isCommissioner) {
             // Commissioner session - go to commissioner page
@@ -352,7 +350,7 @@ async function handleTeamCreation(e) {
         // Update footer buttons
         updateFooterButtons();
         
-        // Hide modal and go to ranking page
+        // Hide modal and go to salary cap draft page
         hideTeamCreationModal();
         
         // Check if draft is complete
@@ -360,8 +358,8 @@ async function handleTeamCreation(e) {
             displayTeams();
             showPage('teams-page');
         } else {
-            await setupRankingPage();
-            showPage('ranking-page');
+            await setupSalaryCapDraft();
+            showPage('salary-cap-draft-page');
         }
         
     } catch (error) {
@@ -515,14 +513,11 @@ async function verifyAndLoadSession(token) {
                 console.log('Navigating to teams page');
                 displayTeams();
                 showPage('teams-page');
-            } else if (gameState.rankings[anonymousSession.teamName]) {
-                console.log('Navigating to ranking page (has submitted rankings)');
-                await setupRankingPage();
-                showPage('ranking-page');
             } else {
-                console.log('Navigating to ranking page (no rankings yet)');
-                await setupRankingPage();
-                showPage('ranking-page');
+                // Go to salary cap draft page for DFS-style workflow
+                console.log('Navigating to salary cap draft page');
+                await setupSalaryCapDraft();
+                showPage('salary-cap-draft-page');
             }
             
             return true;
@@ -568,13 +563,10 @@ async function restoreSession() {
             if (gameState.draftComplete) {
                 displayTeams();
                 showPage('teams-page');
-            } else if (gameState.rankings[session.teamName]) {
-                await setupRankingPage();
-                showPage('ranking-page');
             } else {
-                // No rankings submitted yet - go to ranking page so they can submit
-                await setupRankingPage();
-                showPage('ranking-page');
+                // Go to salary cap draft page for DFS-style workflow
+                await setupSalaryCapDraft();
+                showPage('salary-cap-draft-page');
             }
             
             updateFooterButtons();  // Update UI after session restored
@@ -726,18 +718,14 @@ async function handleEnterGame() {
     gameState.currentPlayer = code;
     document.getElementById('player-name').textContent = code;
 
-    // Check if player has already submitted rankings
-    if (gameState.rankings[code]) {
-        if (gameState.draftComplete) {
-            displayTeams();
-            showPage('teams-page');
-        } else {
-            alert('You have already submitted your rankings. Waiting for draft...');
-            showPage('landing-page');
-        }
+    // Check if player has already submitted team
+    if (gameState.draftComplete) {
+        displayTeams();
+        showPage('teams-page');
     } else {
-        await setupRankingPage();
-        showPage('ranking-page');
+        // Go to salary cap draft page for DFS-style workflow
+        await setupSalaryCapDraft();
+        showPage('salary-cap-draft-page');
     }
 }
 
