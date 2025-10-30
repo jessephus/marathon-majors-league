@@ -12,7 +12,8 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 
 - 🔗 **Account-Free Team Creation**: Create and join games with unique URLs - no registration required
 - 🎮 **Code-Based Authentication**: Legacy support for players who join with game codes
-- 🐍 **Intelligent Snake Draft**: Fair automated drafting of 3 men and 3 women per player
+- 💰 **Salary Cap Draft**: Daily fantasy-style team building with $30k budget constraint
+- 🐍 **Intelligent Snake Draft**: Alternative fair automated drafting of 3 men and 3 women per player
 - 📱 **Mobile-First Design**: Optimized for watching and managing on your phone
 - 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
 - ⚡ **Live Results Updates**: Real-time standings throughout the race with split times
@@ -238,6 +239,7 @@ Customizable options in the application:
 ### Quick Links
 
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
+- **[Salary Cap Draft Guide](docs/SALARY_CAP_DRAFT.md)** - Daily fantasy-style team building system
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy your own instance to Vercel
 - **[Development Guide](docs/DEVELOPMENT.md)** - Local development and code standards
 - **[Database Guide](docs/DATABASE.md)** - Schema, initialization, and troubleshooting

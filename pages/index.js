@@ -15,6 +15,7 @@ export default function Home() {
       <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
       <Script src="/app.js" strategy="afterInteractive" />
+      <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 
       {/* Main HTML content from index.html */}
       <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
@@ -127,6 +128,109 @@ function getMainHTML() {
                 </div>
 
                 <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
+            </div>
+
+            <!-- Salary Cap Draft Page -->
+            <div id="salary-cap-draft-page" class="page">
+                <!-- Header with Budget Info -->
+                <div class="draft-header">
+                    <div class="draft-budget">
+                        <div class="budget-row">
+                            <span class="budget-label">Cap:</span>
+                            <span class="budget-value">$30,000</span>
+                        </div>
+                        <div class="budget-row">
+                            <span class="budget-label">Spent:</span>
+                            <span class="budget-value" id="header-budget-spent">$0</span>
+                        </div>
+                        <div class="budget-row">
+                            <span class="budget-label">Left:</span>
+                            <span class="budget-value budget-remaining" id="header-budget-remaining">$30,000</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Six Slot Boxes -->
+                <div class="draft-slots-container">
+                    <div class="draft-slot empty" data-slot="M1" data-gender="men" data-index="0">
+                        <div class="slot-label">M1</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="M2" data-gender="men" data-index="1">
+                        <div class="slot-label">M2</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="M3" data-gender="men" data-index="2">
+                        <div class="slot-label">M3</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="W1" data-gender="women" data-index="0">
+                        <div class="slot-label">W1</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="W2" data-gender="women" data-index="1">
+                        <div class="slot-label">W2</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="W3" data-gender="women" data-index="2">
+                        <div class="slot-label">W3</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="draft-submit-container">
+                    <button id="submit-salary-cap-team" class="btn btn-primary btn-large" disabled>Submit Team</button>
+                </div>
+
+                <!-- Athlete Selection Modal (slides in from right) -->
+                <div id="athlete-selection-modal" class="selection-modal">
+                    <div class="modal-header">
+                        <button class="modal-back-btn" id="close-selection-modal">
+                            <span class="back-arrow">←</span>
+                        </button>
+                        <h3 id="selection-modal-title">Select Athlete</h3>
+                    </div>
+                    
+                    <div class="modal-sort-tabs">
+                        <button class="sort-tab active" data-sort="salary">Salary</button>
+                        <button class="sort-tab" data-sort="pb">PB</button>
+                        <button class="sort-tab" data-sort="rank">Rank</button>
+                    </div>
+                    
+                    <div class="modal-athlete-list" id="modal-athlete-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Athlete Detail Modal (slides up from bottom) -->
+                <div id="athlete-detail-modal" class="detail-modal">
+                    <div class="detail-modal-content">
+                        <div class="detail-header">
+                            <button class="modal-close-btn" id="close-detail-modal">×</button>
+                        </div>
+                        <div id="athlete-detail-content">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Draft Page -->
