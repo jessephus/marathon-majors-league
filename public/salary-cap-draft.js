@@ -25,7 +25,8 @@ let salaryCapState = {
     currentGender: null,
     currentSort: 'salary',
     totalSpent: 0,
-    isLocked: false  // Track if team is submitted and locked
+    isLocked: false,  // Track if team is submitted and locked
+    permanentlyLocked: false  // Track if roster is permanently locked due to race results
 };
 
 /**
@@ -77,6 +78,7 @@ async function setupSalaryCapDraft() {
     salaryCapState.currentSort = 'salary';
     salaryCapState.totalSpent = 0;
     salaryCapState.isLocked = false;
+    salaryCapState.permanentlyLocked = false;
     
     // Try to load existing team if user has a session
     const session = loadSession();
@@ -119,6 +121,22 @@ async function setupSalaryCapDraft() {
             console.error('Error loading existing team:', error);
             // Continue with empty slots if loading fails
         }
+    }
+    
+    // Check if results have been entered (permanent lock)
+    try {
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        if (resultsResponse.ok) {
+            const resultsData = await resultsResponse.json();
+            const hasResults = resultsData && Object.keys(resultsData).length > 0;
+            
+            if (hasResults) {
+                salaryCapState.isLocked = true;
+                salaryCapState.permanentlyLocked = true; // Can't unlock after results exist
+            }
+        }
+    } catch (error) {
+        console.error('Error checking for results:', error);
     }
     
     // Setup event listeners
@@ -686,13 +704,23 @@ function lockRoster() {
     // Disable submit button and change to locked state
     const submitBtn = document.getElementById('submit-salary-cap-team');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Roster Locked ✓';
-    submitBtn.style.opacity = '0.6';
     
-    // Show edit button
+    if (salaryCapState.permanentlyLocked) {
+        submitBtn.textContent = '🔒 Locked - Race Started';
+        submitBtn.style.opacity = '0.5';
+    } else {
+        submitBtn.textContent = 'Roster Locked ✓';
+        submitBtn.style.opacity = '0.6';
+    }
+    
+    // Show/hide edit button based on permanent lock
     const editBtn = document.getElementById('edit-salary-cap-team');
     if (editBtn) {
-        editBtn.style.display = 'inline-block';
+        if (salaryCapState.permanentlyLocked) {
+            editBtn.style.display = 'none'; // Hide edit button when permanently locked
+        } else {
+            editBtn.style.display = 'inline-block';
+        }
     }
     
     // Show navigation buttons (leaderboard, etc.)
@@ -709,6 +737,12 @@ function lockRoster() {
  * Unlock the roster for editing
  */
 function unlockRoster() {
+    // Check if roster is permanently locked due to race results
+    if (salaryCapState.permanentlyLocked) {
+        showErrorNotification('Cannot edit roster - race results have already been entered. Rosters are permanently locked once the race begins.');
+        return;
+    }
+    
     salaryCapState.isLocked = false;
     
     // Re-enable submit button

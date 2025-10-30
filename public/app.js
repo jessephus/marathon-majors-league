@@ -1479,20 +1479,18 @@ async function displayLeaderboard() {
     const container = document.getElementById('leaderboard-display');
     container.innerHTML = '<div class="loading-spinner">Loading leaderboard...</div>';
 
-    if (!gameState.draftComplete) {
-        container.innerHTML = '<p>Draft has not been completed yet. No teams to display.</p>';
-        return;
-    }
-
-    // Check if there are any results
-    const hasResults = Object.keys(gameState.results).length > 0;
-    
-    if (!hasResults) {
-        container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
-        return;
-    }
-
     try {
+        // First check if there are any race results for this game
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        const resultsData = await resultsResponse.json();
+        
+        const hasResults = resultsData && Object.keys(resultsData).length > 0;
+        
+        if (!hasResults) {
+            container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
+            return;
+        }
+
         // Fetch standings from API
         const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
         if (!response.ok) {
@@ -1537,14 +1535,12 @@ async function displayLeaderboard() {
         
         leaderboardHTML += '</div>';
         
-        // Add refresh notice if results are not finalized
-        if (!gameState.resultsFinalized) {
-            leaderboardHTML = `
-                <div class="live-results-notice">
-                    <span class="live-indicator">●</span> Live Results - Pull down to refresh
-                </div>
-            ` + leaderboardHTML;
-        }
+        // Add refresh notice (results are always live for now)
+        leaderboardHTML = `
+            <div class="live-results-notice">
+                <span class="live-indicator">●</span> Live Results - Pull down to refresh
+            </div>
+        ` + leaderboardHTML;
         
         container.innerHTML = leaderboardHTML;
         
