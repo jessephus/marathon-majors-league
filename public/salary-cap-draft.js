@@ -1,6 +1,6 @@
 /**
- * Salary Cap Draft System
- * Handles daily fantasy-style team building with budget constraints
+ * Salary Cap Draft System - New Slot-Based Design
+ * Six slots (M1, M2, M3, W1, W2, W3) that open selection modals
  */
 
 // Salary cap configuration
@@ -13,14 +13,18 @@ const SALARY_CAP_CONFIG = {
 
 // Salary cap draft state
 let salaryCapState = {
-    selectedTeam: {
-        men: [],
-        women: []
+    slots: {
+        M1: null,
+        M2: null,
+        M3: null,
+        W1: null,
+        W2: null,
+        W3: null
     },
-    totalSpent: 0,
-    filteredGender: 'all',
-    sortBy: 'salary-desc',
-    searchQuery: ''
+    currentSlot: null,
+    currentGender: null,
+    currentSort: 'salary',
+    totalSpent: 0
 };
 
 /**
@@ -33,213 +37,327 @@ async function setupSalaryCapDraft() {
     }
     
     // Reset state
-    salaryCapState.selectedTeam = { men: [], women: [] };
+    salaryCapState.slots = {
+        M1: null,
+        M2: null,
+        M3: null,
+        W1: null,
+        W2: null,
+        W3: null
+    };
+    salaryCapState.currentSlot = null;
+    salaryCapState.currentGender = null;
+    salaryCapState.currentSort = 'salary';
     salaryCapState.totalSpent = 0;
-    salaryCapState.filteredGender = 'all';
-    salaryCapState.sortBy = 'salary-desc';
-    salaryCapState.searchQuery = '';
     
     // Setup event listeners
     setupSalaryCapEventListeners();
     
-    // Render initial view
-    renderAthleteList();
+    // Update displays
     updateBudgetDisplay();
-    updateSelectedTeamDisplay();
+    updateAllSlots();
 }
 
 /**
- * Setup event listeners for salary cap draft
+ * Setup event listeners for the new design
  */
 function setupSalaryCapEventListeners() {
-    // Gender filter buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            salaryCapState.filteredGender = e.target.dataset.gender;
-            renderAthleteList();
+    // Slot click handlers
+    document.querySelectorAll('.draft-slot').forEach(slot => {
+        slot.addEventListener('click', (e) => {
+            // Don't trigger if clicking remove button
+            if (e.target.closest('.slot-remove-btn')) {
+                return;
+            }
+            handleSlotClick(slot);
         });
     });
     
-    // Sort dropdown
-    document.getElementById('athlete-sort').addEventListener('change', (e) => {
-        salaryCapState.sortBy = e.target.value;
-        renderAthleteList();
+    // Modal close button
+    document.getElementById('close-selection-modal').addEventListener('click', closeSelectionModal);
+    
+    // Sort tab buttons
+    document.querySelectorAll('.sort-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            document.querySelectorAll('.sort-tab').forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            salaryCapState.currentSort = e.target.dataset.sort;
+            renderModalAthleteList();
+        });
     });
     
-    // Search input
-    document.getElementById('athlete-search').addEventListener('input', (e) => {
-        salaryCapState.searchQuery = e.target.value.toLowerCase();
-        renderAthleteList();
-    });
+    // Detail modal close
+    document.getElementById('close-detail-modal').addEventListener('click', closeDetailModal);
     
     // Submit team button
     document.getElementById('submit-salary-cap-team').addEventListener('click', handleSubmitSalaryCapTeam);
-    
-    // Cancel button
-    document.getElementById('cancel-salary-cap-draft').addEventListener('click', () => {
-        if (confirm('Are you sure you want to cancel? Your team will not be saved.')) {
-            showPage('landing-page');
-        }
-    });
 }
 
 /**
- * Render the athlete list with current filters and sort
+ * Handle slot click to open athlete selection modal
  */
-function renderAthleteList() {
-    const container = document.getElementById('athlete-list');
+function handleSlotClick(slotElement) {
+    const slotId = slotElement.dataset.slot;
+    const gender = slotElement.dataset.gender;
+    
+    salaryCapState.currentSlot = slotId;
+    salaryCapState.currentGender = gender;
+    salaryCapState.currentSort = 'salary';
+    
+    // Update modal title
+    document.getElementById('selection-modal-title').textContent = 
+        `Select ${gender === 'men' ? 'Male' : 'Female'} Athlete (${slotId})`;
+    
+    // Reset sort tabs
+    document.querySelectorAll('.sort-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.sort-tab[data-sort="salary"]').classList.add('active');
+    
+    // Render athlete list
+    renderModalAthleteList();
+    
+    // Show modal
+    document.getElementById('athlete-selection-modal').classList.add('active');
+}
+
+/**
+ * Close the selection modal
+ */
+function closeSelectionModal() {
+    document.getElementById('athlete-selection-modal').classList.remove('active');
+    salaryCapState.currentSlot = null;
+    salaryCapState.currentGender = null;
+}
+
+/**
+ * Render the athlete list in the modal
+ */
+function renderModalAthleteList() {
+    const container = document.getElementById('modal-athlete-list');
     container.innerHTML = '';
     
-    // Get all athletes
-    let athletes = [];
-    if (salaryCapState.filteredGender === 'all') {
-        athletes = [
-            ...gameState.athletes.men.map(a => ({ ...a, gender: 'men' })),
-            ...gameState.athletes.women.map(a => ({ ...a, gender: 'women' }))
-        ];
-    } else if (salaryCapState.filteredGender === 'men') {
-        athletes = gameState.athletes.men.map(a => ({ ...a, gender: 'men' }));
-    } else {
-        athletes = gameState.athletes.women.map(a => ({ ...a, gender: 'women' }));
-    }
+    if (!salaryCapState.currentGender) return;
     
-    // Apply search filter
-    if (salaryCapState.searchQuery) {
-        athletes = athletes.filter(a => 
-            a.name.toLowerCase().includes(salaryCapState.searchQuery) ||
-            a.country.toLowerCase().includes(salaryCapState.searchQuery)
-        );
-    }
+    // Get athletes of the current gender
+    let athletes = [...gameState.athletes[salaryCapState.currentGender]];
     
     // Sort athletes
     athletes.sort((a, b) => {
-        switch (salaryCapState.sortBy) {
-            case 'salary-desc':
+        switch (salaryCapState.currentSort) {
+            case 'salary':
                 return (b.salary || 5000) - (a.salary || 5000);
-            case 'salary-asc':
-                return (a.salary || 5000) - (b.salary || 5000);
-            case 'rank-asc':
-                const aRank = a.worldAthletics?.marathonRank || 9999;
-                const bRank = b.worldAthletics?.marathonRank || 9999;
+            case 'pb':
+                const aPb = convertTimeToSeconds(a.pb);
+                const bPb = convertTimeToSeconds(b.pb);
+                return aPb - bPb;
+            case 'rank':
+                const aRank = a.marathonRank || a.worldAthletics?.marathonRank || 9999;
+                const bRank = b.marathonRank || b.worldAthletics?.marathonRank || 9999;
                 return aRank - bRank;
-            case 'name-asc':
-                return a.name.localeCompare(b.name);
             default:
                 return 0;
         }
     });
     
-    // Render athlete cards
-    athletes.forEach(athlete => {
-        const card = createAthleteCard(athlete);
-        container.appendChild(card);
-    });
+    // Get already selected athlete IDs
+    const selectedAthleteIds = Object.values(salaryCapState.slots)
+        .filter(a => a !== null)
+        .map(a => a.id);
     
-    if (athletes.length === 0) {
-        container.innerHTML = '<p style="text-align: center; padding: 40px; color: #999;">No athletes found matching your criteria.</p>';
-    }
+    // Render each athlete
+    athletes.forEach(athlete => {
+        const item = createModalAthleteItem(athlete, selectedAthleteIds);
+        container.appendChild(item);
+    });
 }
 
 /**
- * Create athlete card element
+ * Create a modal athlete list item
  */
-function createAthleteCard(athlete) {
-    const card = document.createElement('div');
-    card.className = 'athlete-card';
-    
-    // Check if athlete is already selected
-    const isSelected = salaryCapState.selectedTeam[athlete.gender].some(a => a.id === athlete.id);
-    if (isSelected) {
-        card.classList.add('selected');
-    }
-    
-    // Check if athlete can be added (gender limit, budget)
-    const genderCount = salaryCapState.selectedTeam[athlete.gender].length;
-    const maxForGender = athlete.gender === 'men' ? SALARY_CAP_CONFIG.menPerTeam : SALARY_CAP_CONFIG.womenPerTeam;
-    const canAdd = !isSelected && genderCount < maxForGender;
+function createModalAthleteItem(athlete, selectedAthleteIds) {
+    const item = document.createElement('div');
+    item.className = 'modal-athlete-item';
     
     const athleteSalary = athlete.salary || 5000;
-    const wouldExceedBudget = (salaryCapState.totalSpent + athleteSalary) > SALARY_CAP_CONFIG.totalCap;
+    const isSelected = selectedAthleteIds.includes(athlete.id);
+    const currentSlotAthlete = salaryCapState.slots[salaryCapState.currentSlot];
+    const isInCurrentSlot = currentSlotAthlete && currentSlotAthlete.id === athlete.id;
     
-    if (!canAdd || (wouldExceedBudget && !isSelected)) {
-        card.classList.add('disabled');
+    // Calculate if we can afford this athlete
+    const costWithoutCurrentSlot = isInCurrentSlot 
+        ? salaryCapState.totalSpent - athleteSalary 
+        : salaryCapState.totalSpent;
+    const wouldExceedBudget = (costWithoutCurrentSlot + athleteSalary) > SALARY_CAP_CONFIG.totalCap;
+    
+    if (isSelected && !isInCurrentSlot) {
+        item.classList.add('selected');
     }
     
-    // Rank display
-    const rank = athlete.worldAthletics?.marathonRank;
+    if ((isSelected && !isInCurrentSlot) || wouldExceedBudget) {
+        item.classList.add('disabled');
+    }
+    
+    const rank = athlete.marathonRank || athlete.worldAthletics?.marathonRank;
     const rankDisplay = rank ? `Rank: #${rank}` : 'Unranked';
     
-    card.innerHTML = `
-        <div class="athlete-card-header">
-            <div class="athlete-card-name">${athlete.name}</div>
-            <div class="athlete-card-salary">$${athleteSalary.toLocaleString()}</div>
+    item.innerHTML = `
+        <div class="modal-athlete-info">
+            <div class="modal-athlete-name">${athlete.name}</div>
+            <div class="modal-athlete-stats">
+                ${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}
+            </div>
         </div>
-        <div class="athlete-card-details">
-            <span class="athlete-card-detail">${getCountryFlag(athlete.country)} ${athlete.country}</span>
-            <span class="athlete-card-detail">${athlete.gender === 'men' ? '♂' : '♀'}</span>
-        </div>
-        <div class="athlete-card-stats">
-            <span class="stat-badge rank">${rankDisplay}</span>
-            <span class="stat-badge pb">PB: ${athlete.pb}</span>
-        </div>
-        <div class="athlete-card-action">
-            ${isSelected ? 
-                '<button class="add-athlete-btn" disabled>✓ Selected</button>' :
-                `<button class="add-athlete-btn" ${!canAdd || wouldExceedBudget ? 'disabled' : ''}>
-                    ${wouldExceedBudget ? 'Over Budget' : 'Add to Team'}
-                </button>`
+        <div class="modal-athlete-salary">$${athleteSalary.toLocaleString()}</div>
+        <button class="modal-add-btn" ${(isSelected && !isInCurrentSlot) || wouldExceedBudget ? 'disabled' : ''}>
+            ${isInCurrentSlot ? '✓' : '+'}
+        </button>
+    `;
+    
+    // Click on item to show detail modal
+    item.addEventListener('click', (e) => {
+        if (e.target.closest('.modal-add-btn')) {
+            e.stopPropagation();
+            if (!((isSelected && !isInCurrentSlot) || wouldExceedBudget)) {
+                selectAthleteForSlot(athlete);
             }
+        } else {
+            showAthleteDetail(athlete);
+        }
+    });
+    
+    return item;
+}
+
+/**
+ * Select an athlete for the current slot
+ */
+function selectAthleteForSlot(athlete) {
+    if (!salaryCapState.currentSlot) return;
+    
+    // Remove old athlete's salary if replacing
+    const oldAthlete = salaryCapState.slots[salaryCapState.currentSlot];
+    if (oldAthlete) {
+        salaryCapState.totalSpent -= (oldAthlete.salary || 5000);
+    }
+    
+    // Add new athlete
+    salaryCapState.slots[salaryCapState.currentSlot] = athlete;
+    salaryCapState.totalSpent += (athlete.salary || 5000);
+    
+    // Update displays
+    updateBudgetDisplay();
+    updateSlot(salaryCapState.currentSlot);
+    updateSubmitButton();
+    
+    // Close modal
+    closeSelectionModal();
+}
+
+/**
+ * Show athlete detail modal
+ */
+function showAthleteDetail(athlete) {
+    const content = document.getElementById('athlete-detail-content');
+    const athleteSalary = athlete.salary || 5000;
+    const rank = athlete.marathonRank || athlete.worldAthletics?.marathonRank;
+    
+    content.innerHTML = `
+        <div class="detail-athlete-header">
+            ${athlete.headshotUrl ? `<img src="${athlete.headshotUrl}" class="detail-athlete-headshot" alt="${athlete.name}">` : ''}
+            <div class="detail-athlete-name">${athlete.name}</div>
+            <div class="detail-athlete-country">${getCountryFlag(athlete.country)} ${athlete.country}</div>
+            <div class="detail-athlete-salary">$${athleteSalary.toLocaleString()}</div>
+        </div>
+        
+        <div class="detail-stats-grid">
+            <div class="detail-stat">
+                <div class="detail-stat-label">Personal Best</div>
+                <div class="detail-stat-value">${athlete.pb}</div>
+            </div>
+            <div class="detail-stat">
+                <div class="detail-stat-label">Marathon Rank</div>
+                <div class="detail-stat-value">${rank ? `#${rank}` : 'N/A'}</div>
+            </div>
+            ${athlete.seasonBest ? `
+            <div class="detail-stat">
+                <div class="detail-stat-label">Season Best</div>
+                <div class="detail-stat-value">${athlete.seasonBest}</div>
+            </div>
+            ` : ''}
+            ${athlete.age ? `
+            <div class="detail-stat">
+                <div class="detail-stat-label">Age</div>
+                <div class="detail-stat-value">${athlete.age}</div>
+            </div>
+            ` : ''}
         </div>
     `;
     
-    // Add click handler
-    if (canAdd && !wouldExceedBudget) {
-        card.addEventListener('click', () => addAthleteToTeam(athlete));
-    }
-    
-    return card;
+    // Show modal
+    document.getElementById('athlete-detail-modal').classList.add('active');
 }
 
 /**
- * Add athlete to selected team
+ * Close athlete detail modal
  */
-function addAthleteToTeam(athlete) {
-    const genderCount = salaryCapState.selectedTeam[athlete.gender].length;
-    const maxForGender = athlete.gender === 'men' ? SALARY_CAP_CONFIG.menPerTeam : SALARY_CAP_CONFIG.womenPerTeam;
-    
-    if (genderCount >= maxForGender) {
-        alert(`You can only select ${maxForGender} ${athlete.gender}`);
-        return;
-    }
-    
-    const athleteSalary = athlete.salary || 5000;
-    if (salaryCapState.totalSpent + athleteSalary > SALARY_CAP_CONFIG.totalCap) {
-        alert(`Adding this athlete would exceed your $${SALARY_CAP_CONFIG.totalCap.toLocaleString()} salary cap.`);
-        return;
-    }
-    
-    salaryCapState.selectedTeam[athlete.gender].push(athlete);
-    salaryCapState.totalSpent += athleteSalary;
-    
-    renderAthleteList();
-    updateBudgetDisplay();
-    updateSelectedTeamDisplay();
+function closeDetailModal() {
+    document.getElementById('athlete-detail-modal').classList.remove('active');
 }
 
 /**
- * Remove athlete from selected team
+ * Update a specific slot display
  */
-function removeAthleteFromTeam(athlete, gender) {
-    const index = salaryCapState.selectedTeam[gender].findIndex(a => a.id === athlete.id);
-    if (index !== -1) {
-        salaryCapState.selectedTeam[gender].splice(index, 1);
-        salaryCapState.totalSpent -= (athlete.salary || 5000);
+function updateSlot(slotId) {
+    const slotElement = document.querySelector(`.draft-slot[data-slot="${slotId}"]`);
+    if (!slotElement) return;
+    
+    const athlete = salaryCapState.slots[slotId];
+    const slotContent = slotElement.querySelector('.slot-content');
+    
+    if (athlete) {
+        slotElement.classList.remove('empty');
+        slotElement.classList.add('filled');
         
-        renderAthleteList();
+        const athleteSalary = athlete.salary || 5000;
+        const rank = athlete.marathonRank || athlete.worldAthletics?.marathonRank;
+        const rankDisplay = rank ? `#${rank}` : 'Unranked';
+        
+        slotContent.innerHTML = `
+            <div class="slot-athlete-info">
+                <div class="slot-athlete-name">${athlete.name}</div>
+                <div class="slot-athlete-details">${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}</div>
+            </div>
+            <div class="slot-athlete-salary">$${athleteSalary.toLocaleString()}</div>
+            <button class="slot-remove-btn" onclick="removeAthleteFromSlot('${slotId}'); event.stopPropagation();">×</button>
+        `;
+    } else {
+        slotElement.classList.add('empty');
+        slotElement.classList.remove('filled');
+        slotContent.innerHTML = '<div class="slot-placeholder">Tap to select</div>';
+    }
+}
+
+/**
+ * Update all slot displays
+ */
+function updateAllSlots() {
+    Object.keys(salaryCapState.slots).forEach(slotId => {
+        updateSlot(slotId);
+    });
+    updateSubmitButton();
+}
+
+/**
+ * Remove athlete from a slot
+ */
+function removeAthleteFromSlot(slotId) {
+    const athlete = salaryCapState.slots[slotId];
+    if (athlete) {
+        salaryCapState.totalSpent -= (athlete.salary || 5000);
+        salaryCapState.slots[slotId] = null;
+        
         updateBudgetDisplay();
-        updateSelectedTeamDisplay();
+        updateSlot(slotId);
+        updateSubmitButton();
     }
 }
 
@@ -249,105 +367,36 @@ function removeAthleteFromTeam(athlete, gender) {
 function updateBudgetDisplay() {
     const spent = salaryCapState.totalSpent;
     const remaining = SALARY_CAP_CONFIG.totalCap - spent;
-    const percentUsed = (spent / SALARY_CAP_CONFIG.totalCap) * 100;
     
-    document.getElementById('budget-spent').textContent = `$${spent.toLocaleString()}`;
-    document.getElementById('budget-remaining').textContent = `$${remaining.toLocaleString()}`;
+    document.getElementById('header-budget-spent').textContent = `$${spent.toLocaleString()}`;
+    document.getElementById('header-budget-remaining').textContent = `$${remaining.toLocaleString()}`;
     
-    const remainingEl = document.getElementById('budget-remaining');
-    remainingEl.classList.remove('over-budget', 'low-budget');
+    const remainingEl = document.getElementById('header-budget-remaining');
+    remainingEl.classList.remove('over-budget');
     if (remaining < 0) {
         remainingEl.classList.add('over-budget');
-    } else if (remaining < 5000) {
-        remainingEl.classList.add('low-budget');
-    }
-    
-    // Update progress bar
-    document.getElementById('team-progress-bar').style.width = `${Math.min(percentUsed, 100)}%`;
-    
-    // Update team count
-    const totalSelected = salaryCapState.selectedTeam.men.length + salaryCapState.selectedTeam.women.length;
-    document.getElementById('team-count').textContent = `${totalSelected}/${SALARY_CAP_CONFIG.teamSize} athletes selected`;
-    
-    // Enable/disable submit button
-    const canSubmit = totalSelected === SALARY_CAP_CONFIG.teamSize && remaining >= 0;
-    document.getElementById('submit-salary-cap-team').disabled = !canSubmit;
-}
-
-/**
- * Update selected team display
- */
-function updateSelectedTeamDisplay() {
-    // Update men
-    const menContainer = document.getElementById('selected-men');
-    const menCount = salaryCapState.selectedTeam.men.length;
-    document.querySelector('.roster-section h4').textContent = `Men (${menCount}/${SALARY_CAP_CONFIG.menPerTeam})`;
-    
-    if (menCount === 0) {
-        menContainer.innerHTML = '<p class="empty-roster">No men selected yet</p>';
-    } else {
-        menContainer.innerHTML = '';
-        salaryCapState.selectedTeam.men.forEach(athlete => {
-            const card = createSelectedAthleteCard(athlete, 'men');
-            menContainer.appendChild(card);
-        });
-    }
-    
-    // Update women
-    const womenContainer = document.getElementById('selected-women');
-    const womenCount = salaryCapState.selectedTeam.women.length;
-    document.querySelectorAll('.roster-section h4')[1].textContent = `Women (${womenCount}/${SALARY_CAP_CONFIG.womenPerTeam})`;
-    
-    if (womenCount === 0) {
-        womenContainer.innerHTML = '<p class="empty-roster">No women selected yet</p>';
-    } else {
-        womenContainer.innerHTML = '';
-        salaryCapState.selectedTeam.women.forEach(athlete => {
-            const card = createSelectedAthleteCard(athlete, 'women');
-            womenContainer.appendChild(card);
-        });
     }
 }
 
 /**
- * Create selected athlete card
+ * Update submit button state
  */
-function createSelectedAthleteCard(athlete, gender) {
-    const card = document.createElement('div');
-    card.className = 'selected-athlete-card';
+function updateSubmitButton() {
+    const allSlotsFilled = Object.values(salaryCapState.slots).every(slot => slot !== null);
+    const underBudget = salaryCapState.totalSpent <= SALARY_CAP_CONFIG.totalCap;
     
-    const athleteSalary = athlete.salary || 5000;
-    const rank = athlete.worldAthletics?.marathonRank;
-    const rankDisplay = rank ? `#${rank}` : 'Unranked';
-    
-    card.innerHTML = `
-        <div class="selected-athlete-info">
-            <div class="selected-athlete-name">${athlete.name}</div>
-            <div class="selected-athlete-details">
-                ${getCountryFlag(athlete.country)} ${athlete.country} • ${rankDisplay} • ${athlete.pb}
-            </div>
-        </div>
-        <div class="selected-athlete-salary">$${athleteSalary.toLocaleString()}</div>
-        <button class="remove-athlete-btn" title="Remove from team">×</button>
-    `;
-    
-    // Add remove handler
-    card.querySelector('.remove-athlete-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        removeAthleteFromTeam(athlete, gender);
-    });
-    
-    return card;
+    const submitBtn = document.getElementById('submit-salary-cap-team');
+    submitBtn.disabled = !(allSlotsFilled && underBudget);
 }
 
 /**
  * Submit salary cap team
  */
 async function handleSubmitSalaryCapTeam() {
-    const totalSelected = salaryCapState.selectedTeam.men.length + salaryCapState.selectedTeam.women.length;
+    const allSlotsFilled = Object.values(salaryCapState.slots).every(slot => slot !== null);
     
-    if (totalSelected !== SALARY_CAP_CONFIG.teamSize) {
-        alert(`You must select exactly ${SALARY_CAP_CONFIG.teamSize} athletes (3 men and 3 women)`);
+    if (!allSlotsFilled) {
+        alert('Please fill all 6 slots before submitting.');
         return;
     }
     
@@ -356,12 +405,11 @@ async function handleSubmitSalaryCapTeam() {
         return;
     }
     
-    // Verify gender distribution
-    if (salaryCapState.selectedTeam.men.length !== SALARY_CAP_CONFIG.menPerTeam ||
-        salaryCapState.selectedTeam.women.length !== SALARY_CAP_CONFIG.womenPerTeam) {
-        alert('You must select exactly 3 men and 3 women.');
-        return;
-    }
+    // Convert slots to team format
+    const team = {
+        men: [salaryCapState.slots.M1, salaryCapState.slots.M2, salaryCapState.slots.M3],
+        women: [salaryCapState.slots.W1, salaryCapState.slots.W2, salaryCapState.slots.W3]
+    };
     
     // Get session token
     const session = loadSession();
@@ -380,7 +428,7 @@ async function handleSubmitSalaryCapTeam() {
                 'Authorization': `Bearer ${session.token}`
             },
             body: JSON.stringify({
-                team: salaryCapState.selectedTeam,
+                team: team,
                 totalSpent: salaryCapState.totalSpent,
                 teamName: session.teamName || 'Unnamed Team'
             })
@@ -394,7 +442,7 @@ async function handleSubmitSalaryCapTeam() {
         const data = await response.json();
         
         // Update local state
-        gameState.teams[session.teamName] = salaryCapState.selectedTeam;
+        gameState.teams[session.teamName] = team;
         gameState.draftComplete = true;
         
         alert('✅ Team submitted successfully!\n\n' +
@@ -411,6 +459,20 @@ async function handleSubmitSalaryCapTeam() {
     }
 }
 
+/**
+ * Helper function to convert time to seconds for sorting
+ */
+function convertTimeToSeconds(timeString) {
+    if (!timeString || timeString === 'N/A' || timeString === 'Debut') return 999999;
+    const parts = timeString.split(':');
+    if (parts.length === 3) {
+        return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+    } else if (parts.length === 2) {
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+    return 999999;
+}
+
 // Helper function to get country flag (if not already defined)
 if (typeof getCountryFlag === 'undefined') {
     function getCountryFlag(countryCode) {
@@ -424,4 +486,5 @@ if (typeof getCountryFlag === 'undefined') {
 
 // Make functions available globally
 window.setupSalaryCapDraft = setupSalaryCapDraft;
+window.removeAthleteFromSlot = removeAthleteFromSlot;
 window.salaryCapState = salaryCapState;
