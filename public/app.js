@@ -1459,8 +1459,6 @@ function displayDraftResults() {
     });
 }
 
-}
-
 // Display leaderboard with team rankings
 async function displayLeaderboard() {
     const container = document.getElementById('leaderboard-display');
