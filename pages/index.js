@@ -573,8 +573,17 @@ function getMainHTML() {
 
         <footer>
             <p>Marathon Majors League &copy; 2025</p>
-            <button id="home-button" class="btn btn-secondary">Home</button>
-            <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+            <div class="footer-actions">
+                <button id="home-button" class="btn btn-secondary">Home</button>
+                <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+                <div class="game-switcher">
+                    <label for="game-select">Game: </label>
+                    <select id="game-select" class="game-select">
+                        <option value="default">Default Game</option>
+                        <option value="demo-game">Demo Game</option>
+                    </select>
+                </div>
+            </div>
         </footer>
     </div>
   `;

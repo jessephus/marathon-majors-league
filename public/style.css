@@ -61,8 +61,44 @@ footer {
     font-size: 0.9rem;
 }
 
-footer .btn {
+footer .footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
     margin-top: 10px;
+}
+
+footer .game-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+footer .game-select {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+footer .game-select:hover {
+    border-color: var(--primary-orange);
+}
+
+footer .btn {
+    margin-top: 0;
+}
+
+@media (min-width: 768px) {
+    footer .footer-actions {
+        flex-direction: row;
+        justify-content: center;
+        gap: 15px;
+    }
 }
 
 .page {
@@ -3192,223 +3228,3 @@ footer .btn {
         font-size: 1.05em;
     }
 }
-
-/* ==================== LEADERBOARD STYLES ==================== */
-
-.leaderboard-header {
-    text-align: center;
-    padding: 20px 0;
-    background: var(--light-gray);
-    border-radius: 10px 10px 0 0;
-    margin-bottom: 0;
-}
-
-.leaderboard-header h2 {
-    font-size: 1.2rem;
-    color: var(--dark-gray);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 0 0 5px 0;
-    font-weight: 400;
-}
-
-.leaderboard-subtitle {
-    font-size: 2rem;
-    color: var(--text-dark);
-    margin: 0;
-    font-weight: 700;
-}
-
-.leaderboard-container {
-    background: var(--white);
-    border-radius: 0 0 10px 10px;
-    box-shadow: var(--shadow);
-    overflow: hidden;
-}
-
-.leaderboard-row {
-    display: grid;
-    grid-template-columns: 80px 1fr 120px;
-    align-items: center;
-    padding: 20px 15px;
-    border-bottom: 1px solid var(--medium-gray);
-    transition: background-color 0.2s ease;
-}
-
-.leaderboard-row:last-child {
-    border-bottom: none;
-}
-
-.leaderboard-row:hover {
-    background-color: var(--light-gray);
-}
-
-.leaderboard-row-highlight {
-    background-color: rgba(255, 105, 0, 0.1);
-    border-left: 4px solid var(--primary-orange);
-    padding-left: 11px;
-}
-
-.leaderboard-row-highlight:hover {
-    background-color: rgba(255, 105, 0, 0.15);
-}
-
-.leaderboard-rank {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 5px;
-    font-size: 1.2rem;
-}
-
-.rank-medal {
-    font-size: 1.8rem;
-    line-height: 1;
-}
-
-.rank-number {
-    font-weight: 600;
-    color: var(--text-dark);
-    min-width: 35px;
-}
-
-.leaderboard-team-name {
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: var(--text-dark);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.leaderboard-score {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary-blue);
-    text-align: right;
-}
-
-.leaderboard-ellipsis {
-    text-align: center;
-    padding: 15px;
-    font-size: 1.5rem;
-    color: var(--dark-gray);
-    letter-spacing: 4px;
-    border-bottom: 1px solid var(--medium-gray);
-}
-
-.live-results-notice {
-    background: var(--warning-bg);
-    color: var(--warning-text);
-    padding: 12px 15px;
-    text-align: center;
-    font-size: 0.9rem;
-    font-weight: 500;
-    border-radius: 10px 10px 0 0;
-    border-bottom: 2px solid var(--warning-yellow);
-}
-
-.live-indicator {
-    color: var(--primary-orange);
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-.loading-spinner {
-    text-align: center;
-    padding: 40px;
-    color: var(--dark-gray);
-    font-size: 1.1rem;
-}
-
-.error-message {
-    background: var(--white);
-    border-radius: 10px;
-    padding: 30px;
-    text-align: center;
-    box-shadow: var(--shadow);
-}
-
-.error-message p {
-    margin: 10px 0;
-}
-
-.error-message button {
-    margin-top: 20px;
-}
-
-.page-actions {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-/* Mobile responsiveness for leaderboard */
-@media (max-width: 768px) {
-    .leaderboard-header h2 {
-        font-size: 1rem;
-    }
-    
-    .leaderboard-subtitle {
-        font-size: 1.5rem;
-    }
-    
-    .leaderboard-row {
-        grid-template-columns: 60px 1fr 100px;
-        padding: 16px 12px;
-    }
-    
-    .rank-medal {
-        font-size: 1.5rem;
-    }
-    
-    .leaderboard-team-name {
-        font-size: 1rem;
-    }
-    
-    .leaderboard-score {
-        font-size: 1.3rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .leaderboard-header {
-        padding: 15px 0;
-    }
-    
-    .leaderboard-row {
-        grid-template-columns: 50px 1fr 80px;
-        padding: 14px 10px;
-    }
-    
-    .rank-medal {
-        font-size: 1.3rem;
-    }
-    
-    .rank-number {
-        font-size: 1rem;
-        min-width: 30px;
-    }
-    
-    .leaderboard-team-name {
-        font-size: 0.95rem;
-    }
-    
-    .leaderboard-score {
-        font-size: 1.2rem;
-    }
-    
-    .page-actions {
-        flex-direction: column;
-    }
-    
-    .page-actions .btn {
-        width: 100%;
-    }
-}
-

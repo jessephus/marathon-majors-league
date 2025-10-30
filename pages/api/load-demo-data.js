@@ -57,21 +57,33 @@ export default async function handler(req, res) {
     }
     
     // Step 2: Get athletes with salaries for team building
-    const menWithSalary = await sql`
+    const menWithSalaryRaw = await sql`
       SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
       FROM athletes 
       WHERE gender = 'men' AND salary IS NOT NULL AND salary > 0
-      ORDER BY marathon_rank ASC NULLS LAST, salary DESC
-      LIMIT 50
+      ORDER BY salary ASC
+      LIMIT 100
     `;
     
-    const womenWithSalary = await sql`
+    const womenWithSalaryRaw = await sql`
       SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
       FROM athletes 
       WHERE gender = 'women' AND salary IS NOT NULL AND salary > 0
-      ORDER BY marathon_rank ASC NULLS LAST, salary DESC
-      LIMIT 50
+      ORDER BY salary ASC
+      LIMIT 100
     `;
+    
+    console.log(`🔍 RAW from DB - First man salary: "${menWithSalaryRaw[0].salary}" (type: ${typeof menWithSalaryRaw[0].salary})`);
+    console.log(`🔍 RAW from DB - First woman salary: "${womenWithSalaryRaw[0].salary}" (type: ${typeof womenWithSalaryRaw[0].salary})`);
+    
+    // Convert salary to number (it comes as string from database)
+    const menWithSalary = menWithSalaryRaw.map(a => ({ ...a, salary: Number(a.salary) }));
+    const womenWithSalary = womenWithSalaryRaw.map(a => ({ ...a, salary: Number(a.salary) }));
+    
+    // Debug: Check first athlete's salary type and actual values
+    console.log(`🔍 First man: ${menWithSalary[0].name}, salary: ${menWithSalary[0].salary} (type: ${typeof menWithSalary[0].salary})`);
+    console.log(`🔍 First 5 men salaries: ${menWithSalary.slice(0, 5).map(a => a.salary).join(', ')}`);
+    console.log(`🔍 First woman: ${womenWithSalary[0].name}, salary: ${womenWithSalary[0].salary} (type: ${typeof womenWithSalary[0].salary})`);
     
     if (menWithSalary.length < 9 || womenWithSalary.length < 9) {
       return res.status(500).json({ 
@@ -81,88 +93,116 @@ export default async function handler(req, res) {
         message: 'Need at least 9 men and 9 women with assigned salaries'
       });
     }
+        
+    console.log(`✓ Fetched ${menWithSalary.length} men and ${womenWithSalary.length} women for team building`);
     
-        console.log(`✓ Fetched ${menWithSalary.length} men and ${womenWithSalary.length} women for team building`);
+    // STRATEGY: Build teams with realistic budgets
+    // Check minimum costs first to set achievable targets
+    const cheapest3Men = menWithSalary.slice().sort((a, b) => a.salary - b.salary).slice(0, 3);
+    const cheapest3Women = womenWithSalary.slice().sort((a, b) => a.salary - b.salary).slice(0, 3);
+    const minMenCost = cheapest3Men.reduce((sum, a) => sum + a.salary, 0);
+    const minWomenCost = cheapest3Women.reduce((sum, a) => sum + a.salary, 0);
     
-    // Step 3: SMART TEAM BUILDING with distinct budget strategies
-    // Team 1: 20K men / 10K women (men-heavy)
-    // Team 2: 15K men / 15K women (balanced)
-    // Team 3: 10K men / 20K women (women-heavy)
+    console.log(`💰 Budget constraints: Min 3 men = $${minMenCost}, Min 3 women = $${minWomenCost}`);
+    console.log(`   Cheapest 3 men: ${cheapest3Men.map(a => `${a.name}($${a.salary})`).join(', ')}`);
+    console.log(`   Cheapest 3 women: ${cheapest3Women.map(a => `${a.name}($${a.salary})`).join(', ')}`);
+    console.log(`   Cheapest men salary types: ${cheapest3Men.map(a => typeof a.salary).join(', ')}`);
     
+    // TEST: Verify cheapest 3 should be under $6000
+    if (minMenCost > 6000) {
+      console.error(`❌ FAILED: minMenCost = ${minMenCost}, cheapest salaries = ${cheapest3Men.map(a => a.salary).join(', ')}`);
+      throw new Error(`❌ ALGORITHM ERROR: Cheapest 3 men cost $${minMenCost} (should be < $6000). Check salary data types!`);
+    }
+    if (minWomenCost > 6000) {
+      throw new Error(`❌ ALGORITHM ERROR: Cheapest 3 women cost $${minWomenCost} (should be < $6000). Check salary data types!`);
+    }
+    console.log(`✓ Sanity check passed: Cheapest 3 athletes are affordable`);
+    
+    // Step 3: SMART TEAM BUILDING - Flexible strategy that GUARANTEES cap compliance
     const teams = [];
     
     /**
-     * Pick 3 athletes near a target average salary
-     * Strategy: Find athletes within ±25% of target average
+     * Pick 3 athletes that fit under budget
+     * Uses expanding search ranges to guarantee success
      */
-    function pickThreeNearAverage(athletes, totalBudget, teamName) {
-      const targetAvg = totalBudget / 3;
-      const minPrice = targetAvg * 0.75; // 25% below average
-      const maxPrice = targetAvg * 1.25; // 25% above average
+    function pickThreeUnderBudget(athletes, maxBudget, preferenceOrder, teamName) {
+      console.log(`  ${teamName}: Budget $${maxBudget}, ${athletes.length} athletes available`);
       
-      console.log(`  ${teamName}: Looking for 3 athletes ~$${targetAvg.toFixed(0)} each (range: $${minPrice.toFixed(0)}-$${maxPrice.toFixed(0)})`);
+      // Sort athletes by preference (could be expensive-first, cheap-first, or ranked)
+      const sorted = athletes.slice().sort(preferenceOrder);
       
-      // Filter athletes in price range
-      const inRange = athletes.filter(a => a.salary >= minPrice && a.salary <= maxPrice);
-      
-      // If we have enough in range, pick 3 that total closest to budget
-      if (inRange.length >= 3) {
-        // Try to find best combination of 3 that fits budget
-        let bestCombo = null;
-        let bestDiff = Infinity;
-        
-        // Try different combinations
-        for (let i = 0; i < Math.min(inRange.length - 2, 10); i++) {
-          for (let j = i + 1; j < Math.min(inRange.length - 1, 15); j++) {
-            for (let k = j + 1; k < Math.min(inRange.length, 20); k++) {
-              const combo = [inRange[i], inRange[j], inRange[k]];
-              const total = combo.reduce((sum, a) => sum + a.salary, 0);
-              const diff = Math.abs(total - totalBudget);
-              
-              if (total <= totalBudget && diff < bestDiff) {
-                bestCombo = combo;
-                bestDiff = diff;
-              }
-            }
-          }
-        }
-        
-        if (bestCombo) {
-          const total = bestCombo.reduce((sum, a) => sum + a.salary, 0);
-          console.log(`    ✓ Found: $${total} (${((total/totalBudget)*100).toFixed(0)}% of budget)`);
-          return bestCombo;
-        }
-      }
-      
-      // Fallback: Just pick 3 cheapest that fit budget
-      console.log(`    ⚠️  Not enough in range (${inRange.length}), using fallback strategy`);
-      const sorted = athletes.slice().sort((a, b) => a.salary - b.salary);
+      // Try to pick 3 that fit under budget using greedy algorithm
       const selected = [];
       let runningTotal = 0;
       
       for (const athlete of sorted) {
-        if (selected.length < 3 && runningTotal + athlete.salary <= totalBudget) {
-          selected.push(athlete);
-          runningTotal += athlete.salary;
+        if (selected.length < 3) {
+          if (runningTotal + athlete.salary <= maxBudget) {
+            selected.push(athlete);
+            runningTotal += athlete.salary;
+          }
         }
         if (selected.length === 3) break;
       }
       
-      // Final desperate fallback: just take 3 cheapest regardless of budget
+      // If greedy didn't work, try 3 absolute cheapest
       if (selected.length < 3) {
-        console.log(`    🚨 EMERGENCY: Can't fit 3 in budget, taking 3 cheapest anyway`);
-        return sorted.slice(0, 3);
+        console.log(`    ⚠️  Greedy failed, trying 3 cheapest...`);
+        const cheapest = athletes.slice().sort((a, b) => a.salary - b.salary);
+        selected.length = 0;
+        runningTotal = 0;
+        
+        for (const athlete of cheapest) {
+          if (selected.length < 3 && runningTotal + athlete.salary <= maxBudget) {
+            selected.push(athlete);
+            runningTotal += athlete.salary;
+          }
+          if (selected.length === 3) break;
+        }
       }
       
-      console.log(`    Fallback result: ${selected.length} athletes, $${runningTotal}`);
+      // If STILL can't get 3, the budget is impossibly low
+      if (selected.length < 3) {
+        const cheapestThree = athletes.slice().sort((a, b) => a.salary - b.salary).slice(0, 3);
+        const minNeeded = cheapestThree.reduce((sum, a) => sum + a.salary, 0);
+        // Debug: Show what's actually available
+        const allSalaries = athletes.slice().sort((a, b) => a.salary - b.salary).map(a => a.salary);
+        const allNames = athletes.slice().sort((a, b) => a.salary - b.salary).map(a => `${a.name}:$${a.salary}`);
+        console.log(`    ❌ DEBUG: ${athletes.length} athletes available`);
+        console.log(`    ❌ DEBUG: Cheapest 10 salaries: ${allSalaries.slice(0, 10).join(', ')}`);
+        console.log(`    ❌ DEBUG: Cheapest 10 athletes: ${allNames.slice(0, 10).join(' | ')}`);
+        console.log(`    ❌ DEBUG: Selected so far: ${selected.length} athletes for $${runningTotal}`);
+        console.log(`    ❌ DEBUG: Cheapest 3 would cost: $${minNeeded}`);
+        throw new Error(
+          `${teamName}: Impossible to fit 3 athletes in $${maxBudget} budget. ` +
+          `Cheapest 3 cost $${minNeeded}. Need at least $${Math.ceil(minNeeded/1000)}K budget.`
+        );
+      }
+      
+      console.log(`    ✓ Selected 3 athletes: $${runningTotal} (${((runningTotal/maxBudget)*100).toFixed(0)}% of budget)`);
       return selected;
     }
     
-    // TEAM 1: Men-Heavy (20K men / 10K women)
+    // TEAM 1: Men-heavy (spend ~55% on men, ~45% on women)
     console.log('Building Team 1: Men-Heavy Strategy');
-    const team1Men = pickThreeNearAverage(menWithSalary, 20000, 'Team 1 Men');
-    const team1Women = pickThreeNearAverage(womenWithSalary, 10000, 'Team 1 Women');
-    const team1Total = [...team1Men, ...team1Women].reduce((sum, a) => sum + a.salary, 0);
+    const team1MenBudget = 16500; // Leave enough for women
+    const team1Men = pickThreeUnderBudget(
+      menWithSalary,
+      team1MenBudget,
+      (a, b) => b.salary - a.salary, // Prefer expensive
+      'Team 1 Men'
+    );
+    const team1MenSpent = team1Men.reduce((sum, a) => sum + a.salary, 0);
+    
+    // Remaining budget for women
+    const team1WomenBudget = SALARY_CAP - team1MenSpent;
+    const team1Women = pickThreeUnderBudget(
+      womenWithSalary,
+      team1WomenBudget,
+      (a, b) => a.salary - b.salary, // Prefer cheap to fit in remaining budget
+      'Team 1 Women'
+    );
+    const team1Total = team1MenSpent + team1Women.reduce((sum, a) => sum + a.salary, 0);
     
     teams.push({
       name: 'Team Men-Heavy',
@@ -170,17 +210,28 @@ export default async function handler(req, res) {
       men: team1Men,
       women: team1Women,
       totalSpent: team1Total,
-      strategy: `20K/10K split ($${(team1Total/1000).toFixed(1)}K total)`
+      strategy: `${(team1MenSpent/1000).toFixed(1)}K men / ${((team1Total-team1MenSpent)/1000).toFixed(1)}K women`
     });
     
-    // TEAM 2: Balanced (15K men / 15K women)
+    // TEAM 2: Balanced (50/50 split)
     console.log('Building Team 2: Balanced Strategy');
-    const availableMen = menWithSalary.filter(m => !team1Men.includes(m));
-    const availableWomen = womenWithSalary.filter(w => !team1Women.includes(w));
+    const team2MenBudget = 15000;
+    const team2Men = pickThreeUnderBudget(
+      menWithSalary,
+      team2MenBudget,
+      (a, b) => (a.marathon_rank || 999) - (b.marathon_rank || 999), // Prefer best ranked
+      'Team 2 Men'
+    );
+    const team2MenSpent = team2Men.reduce((sum, a) => sum + a.salary, 0);
     
-    const team2Men = pickThreeNearAverage(availableMen, 15000, 'Team 2 Men');
-    const team2Women = pickThreeNearAverage(availableWomen, 15000, 'Team 2 Women');
-    const team2Total = [...team2Men, ...team2Women].reduce((sum, a) => sum + a.salary, 0);
+    const team2WomenBudget = SALARY_CAP - team2MenSpent;
+    const team2Women = pickThreeUnderBudget(
+      womenWithSalary,
+      team2WomenBudget,
+      (a, b) => (a.marathon_rank || 999) - (b.marathon_rank || 999),
+      'Team 2 Women'
+    );
+    const team2Total = team2MenSpent + team2Women.reduce((sum, a) => sum + a.salary, 0);
     
     teams.push({
       name: 'Team Balanced',
@@ -188,17 +239,28 @@ export default async function handler(req, res) {
       men: team2Men,
       women: team2Women,
       totalSpent: team2Total,
-      strategy: `15K/15K split ($${(team2Total/1000).toFixed(1)}K total)`
+      strategy: `${(team2MenSpent/1000).toFixed(1)}K men / ${((team2Total-team2MenSpent)/1000).toFixed(1)}K women`
     });
     
-    // TEAM 3: Women-Heavy (10K men / 20K women)
+    // TEAM 3: Women-heavy (spend ~45% on men, ~55% on women)
     console.log('Building Team 3: Women-Heavy Strategy');
-    const remainingMen = menWithSalary.filter(m => !team1Men.includes(m) && !team2Men.includes(m));
-    const remainingWomen = womenWithSalary.filter(w => !team1Women.includes(w) && !team2Women.includes(w));
+    const team3MenBudget = Math.max(minMenCost + 1000, 13500); // Ensure we can afford 3 men
+    const team3Men = pickThreeUnderBudget(
+      menWithSalary,
+      team3MenBudget,
+      (a, b) => a.salary - b.salary, // Prefer cheap
+      'Team 3 Men'
+    );
+    const team3MenSpent = team3Men.reduce((sum, a) => sum + a.salary, 0);
     
-    const team3Men = pickThreeNearAverage(remainingMen, 10000, 'Team 3 Men');
-    const team3Women = pickThreeNearAverage(remainingWomen, 20000, 'Team 3 Women');
-    const team3Total = [...team3Men, ...team3Women].reduce((sum, a) => sum + a.salary, 0);
+    const team3WomenBudget = SALARY_CAP - team3MenSpent;
+    const team3Women = pickThreeUnderBudget(
+      womenWithSalary,
+      team3WomenBudget,
+      (a, b) => b.salary - a.salary, // Prefer expensive
+      'Team 3 Women'
+    );
+    const team3Total = team3MenSpent + team3Women.reduce((sum, a) => sum + a.salary, 0);
     
     teams.push({
       name: 'Team Women-Heavy',
@@ -206,7 +268,7 @@ export default async function handler(req, res) {
       men: team3Men,
       women: team3Women,
       totalSpent: team3Total,
-      strategy: `10K/20K split ($${(team3Total/1000).toFixed(1)}K total)`
+      strategy: `${(team3MenSpent/1000).toFixed(1)}K men / ${((team3Total-team3MenSpent)/1000).toFixed(1)}K women`
     });
     
     // Verify all teams meet requirements

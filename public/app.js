@@ -35,7 +35,16 @@ let rankingViewState = {
 
 // API base URL - will be relative in production
 const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
-const GAME_ID = 'default'; // Can be made configurable if multiple games needed
+
+// Game ID - can be switched between default and demo
+let GAME_ID = localStorage.getItem('current_game_id') || 'default';
+
+// Function to switch games
+function switchGame(gameId) {
+    GAME_ID = gameId;
+    localStorage.setItem('current_game_id', gameId);
+    location.reload(); // Reload to fetch new game data
+}
 
 // Load game state from database
 async function loadGameState() {
@@ -211,6 +220,26 @@ function setupEventListeners() {
         }
     });
     document.getElementById('commissioner-mode').addEventListener('click', showCommissionerTOTPModal);
+    
+    // Game switcher
+    const gameSelect = document.getElementById('game-select');
+    if (gameSelect) {
+        // Set current game in dropdown
+        gameSelect.value = GAME_ID;
+        
+        // Handle game switch
+        gameSelect.addEventListener('change', (e) => {
+            const newGameId = e.target.value;
+            if (newGameId !== GAME_ID) {
+                if (confirm(`Switch to ${newGameId === 'demo-game' ? 'Demo Game' : 'Default Game'}? This will reload the page.`)) {
+                    switchGame(newGameId);
+                } else {
+                    // Reset to current game if cancelled
+                    e.target.value = GAME_ID;
+                }
+            }
+        });
+    }
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
