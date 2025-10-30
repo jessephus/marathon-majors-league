@@ -347,14 +347,9 @@ async function handleTeamCreation(e) {
         // Hide modal and go to salary cap draft page
         hideTeamCreationModal();
         
-        // Check if draft is complete
-        if (gameState.draftComplete) {
-            displayTeams();
-            showPage('teams-page');
-        } else {
-            await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page');
-        }
+        // Always go to salary cap draft page (it shows roster when locked)
+        await setupSalaryCapDraft();
+        showPage('salary-cap-draft-page');
         
     } catch (error) {
         console.error('Error creating team:', error);
@@ -699,15 +694,9 @@ async function handleEnterGame() {
     gameState.currentPlayer = code;
     document.getElementById('player-name').textContent = code;
 
-    // Check if player has already submitted team
-    if (gameState.draftComplete) {
-        displayTeams();
-        showPage('teams-page');
-    } else {
-        // Go to salary cap draft page for DFS-style workflow
-        await setupSalaryCapDraft();
-        showPage('salary-cap-draft-page');
-    }
+    // Always go to salary cap draft page (it shows roster when locked)
+    await setupSalaryCapDraft();
+    showPage('salary-cap-draft-page');
 }
 
 // Handle create new game (Account-Free)
