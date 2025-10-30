@@ -127,6 +127,15 @@ function handleSlotClick(slotElement) {
     const slotId = slotElement.dataset.slot;
     const gender = slotElement.dataset.gender;
     
+    // If locked, show detail modal for filled slots or do nothing for empty
+    if (salaryCapState.isLocked) {
+        const athlete = salaryCapState.slots[slotId];
+        if (athlete) {
+            openDetailModal(athlete);
+        }
+        return;
+    }
+    
     salaryCapState.currentSlot = slotId;
     salaryCapState.currentGender = gender;
     salaryCapState.currentSort = 'salary';
@@ -345,7 +354,7 @@ function updateSlot(slotId) {
         slotElement.classList.add('filled');
         
         const athleteSalary = athlete.salary || 5000;
-        const rank = athlete.marathonRank || athlete.worldAthletics?.marathonRank;
+        const rank = athlete.marathonRank || athlete.worldAthletes?.marathonRank;
         const rankDisplay = rank ? `#${rank}` : 'Unranked';
         
         slotContent.innerHTML = `
@@ -354,12 +363,30 @@ function updateSlot(slotId) {
                 <div class="slot-athlete-details">${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}</div>
             </div>
             <div class="slot-athlete-salary">$${athleteSalary.toLocaleString()}</div>
-            <button class="slot-remove-btn" onclick="removeAthleteFromSlot('${slotId}'); event.stopPropagation();">×</button>
+            <button class="slot-remove-btn" ${salaryCapState.isLocked ? 'style="display: none;"' : ''} onclick="removeAthleteFromSlot('${slotId}'); event.stopPropagation();">×</button>
         `;
+        
+        // Update cursor and classes based on lock state  
+        if (salaryCapState.isLocked) {
+            slotElement.style.cursor = 'pointer';
+            slotElement.classList.add('locked');
+        } else {
+            slotElement.style.cursor = 'default';
+            slotElement.classList.remove('locked');
+        }
     } else {
         slotElement.classList.add('empty');
         slotElement.classList.remove('filled');
         slotContent.innerHTML = '<div class="slot-placeholder">Tap to select</div>';
+        
+        // Update cursor and classes based on lock state
+        if (salaryCapState.isLocked) {
+            slotElement.style.cursor = 'not-allowed';
+            slotElement.classList.add('locked');
+        } else {
+            slotElement.style.cursor = 'pointer';
+            slotElement.classList.remove('locked');
+        }
     }
 }
 
@@ -377,6 +404,12 @@ function updateAllSlots() {
  * Remove athlete from a slot
  */
 function removeAthleteFromSlot(slotId) {
+    // Prevent removal if roster is locked
+    if (salaryCapState.isLocked) {
+        console.log('Cannot remove athlete - roster is locked');
+        return;
+    }
+    
     const athlete = salaryCapState.slots[slotId];
     if (athlete) {
         salaryCapState.totalSpent -= (athlete.salary || 5000);
