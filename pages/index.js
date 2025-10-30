@@ -132,90 +132,104 @@ function getMainHTML() {
 
             <!-- Salary Cap Draft Page -->
             <div id="salary-cap-draft-page" class="page">
-                <div class="player-info">
-                    <h2>Build Your Team</h2>
-                    <p>Select 3 men and 3 women within your $30,000 salary cap</p>
-                </div>
-
-                <!-- Budget Tracker -->
-                <div class="budget-tracker">
-                    <div class="budget-info">
-                        <div class="budget-item">
-                            <span class="budget-label">Total Cap:</span>
+                <!-- Header with Budget Info -->
+                <div class="draft-header">
+                    <div class="draft-budget">
+                        <div class="budget-row">
+                            <span class="budget-label">Cap:</span>
                             <span class="budget-value">$30,000</span>
                         </div>
-                        <div class="budget-item">
+                        <div class="budget-row">
                             <span class="budget-label">Spent:</span>
-                            <span class="budget-value" id="budget-spent">$0</span>
+                            <span class="budget-value" id="header-budget-spent">$0</span>
                         </div>
-                        <div class="budget-item">
-                            <span class="budget-label">Remaining:</span>
-                            <span class="budget-value budget-remaining" id="budget-remaining">$30,000</span>
-                        </div>
-                    </div>
-                    <div class="team-progress">
-                        <span id="team-count">0/6 athletes selected</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="team-progress-bar"></div>
+                        <div class="budget-row">
+                            <span class="budget-label">Left:</span>
+                            <span class="budget-value budget-remaining" id="header-budget-remaining">$30,000</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Selected Team Display -->
-                <div class="selected-team">
-                    <h3>Your Team</h3>
-                    <div class="team-roster">
-                        <div class="roster-section">
-                            <h4>Men (0/3)</h4>
-                            <div id="selected-men" class="selected-athletes">
-                                <p class="empty-roster">No men selected yet</p>
-                            </div>
-                        </div>
-                        <div class="roster-section">
-                            <h4>Women (0/3)</h4>
-                            <div id="selected-women" class="selected-athletes">
-                                <p class="empty-roster">No women selected yet</p>
-                            </div>
+                <!-- Six Slot Boxes -->
+                <div class="draft-slots-container">
+                    <div class="draft-slot empty" data-slot="M1" data-gender="men" data-index="0">
+                        <div class="slot-label">M1</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Athlete Browser -->
-                <div class="athlete-browser">
-                    <h3>Available Athletes</h3>
                     
-                    <!-- Filters and Sort -->
-                    <div class="browser-controls">
-                        <div class="filter-group">
-                            <label>Gender:</label>
-                            <button class="filter-btn active" data-gender="all">All</button>
-                            <button class="filter-btn" data-gender="men">Men</button>
-                            <button class="filter-btn" data-gender="women">Women</button>
-                        </div>
-                        <div class="sort-group">
-                            <label for="athlete-sort">Sort by:</label>
-                            <select id="athlete-sort">
-                                <option value="salary-desc">Price (High to Low)</option>
-                                <option value="salary-asc">Price (Low to High)</option>
-                                <option value="rank-asc">Ranking (Best to Worst)</option>
-                                <option value="name-asc">Name (A-Z)</option>
-                            </select>
-                        </div>
-                        <div class="search-group">
-                            <input type="text" id="athlete-search" placeholder="Search athletes..." />
+                    <div class="draft-slot empty" data-slot="M2" data-gender="men" data-index="1">
+                        <div class="slot-label">M2</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
                         </div>
                     </div>
+                    
+                    <div class="draft-slot empty" data-slot="M3" data-gender="men" data-index="2">
+                        <div class="slot-label">M3</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="W1" data-gender="women" data-index="0">
+                        <div class="slot-label">W1</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="W2" data-gender="women" data-index="1">
+                        <div class="slot-label">W2</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                    
+                    <div class="draft-slot empty" data-slot="W3" data-gender="women" data-index="2">
+                        <div class="slot-label">W3</div>
+                        <div class="slot-content">
+                            <div class="slot-placeholder">Tap to select</div>
+                        </div>
+                    </div>
+                </div>
 
-                    <!-- Athlete List -->
-                    <div id="athlete-list" class="athlete-cards">
+                <!-- Submit Button -->
+                <div class="draft-submit-container">
+                    <button id="submit-salary-cap-team" class="btn btn-primary btn-large" disabled>Submit Team</button>
+                </div>
+
+                <!-- Athlete Selection Modal (slides in from right) -->
+                <div id="athlete-selection-modal" class="selection-modal">
+                    <div class="modal-header">
+                        <button class="modal-back-btn" id="close-selection-modal">
+                            <span class="back-arrow">←</span>
+                        </button>
+                        <h3 id="selection-modal-title">Select Athlete</h3>
+                    </div>
+                    
+                    <div class="modal-sort-tabs">
+                        <button class="sort-tab active" data-sort="salary">Salary</button>
+                        <button class="sort-tab" data-sort="pb">PB</button>
+                        <button class="sort-tab" data-sort="rank">Rank</button>
+                    </div>
+                    
+                    <div class="modal-athlete-list" id="modal-athlete-list">
                         <!-- Populated by JavaScript -->
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="draft-actions">
-                    <button id="submit-salary-cap-team" class="btn btn-primary btn-large" disabled>Submit Team</button>
-                    <button id="cancel-salary-cap-draft" class="btn btn-secondary">Cancel</button>
+                <!-- Athlete Detail Modal (slides up from bottom) -->
+                <div id="athlete-detail-modal" class="detail-modal">
+                    <div class="detail-modal-content">
+                        <div class="detail-header">
+                            <button class="modal-close-btn" id="close-detail-modal">×</button>
+                        </div>
+                        <div id="athlete-detail-content">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    </div>
                 </div>
             </div>
 
