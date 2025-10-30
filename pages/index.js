@@ -213,6 +213,11 @@ function getMainHTML() {
                     <button id="edit-salary-cap-team" class="btn btn-secondary btn-large" onclick="unlockRoster()" style="display: none; margin-left: 12px;">Edit Roster</button>
                 </div>
 
+                <!-- Navigation Buttons (shown after roster is locked) -->
+                <div id="roster-navigation" class="page-actions" style="display: none; margin-top: 20px;">
+                    <button id="view-leaderboard-from-roster" class="btn btn-primary">View Leaderboard</button>
+                </div>
+
                 <!-- Athlete Selection Modal (slides in from right) -->
                 <div id="athlete-selection-modal" class="selection-modal">
                     <div class="modal-header">
@@ -258,7 +263,19 @@ function getMainHTML() {
             <div id="teams-page" class="page">
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
-                <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                <div class="page-actions">
+                    <button id="view-leaderboard-btn" class="btn btn-primary">View Leaderboard</button>
+                    <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                </div>
+            </div>
+
+            <!-- Leaderboard Page -->
+            <div id="leaderboard-page" class="page">
+                <h2>Leaderboard</h2>
+                <div id="leaderboard-display"></div>
+                <div class="page-actions">
+                    <button id="back-to-roster" class="btn btn-secondary">Back to Roster</button>
+                </div>
             </div>
 
             <!-- Commissioner Page -->

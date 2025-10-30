@@ -2895,6 +2895,19 @@ footer .btn {
     max-width: 400px;
 }
 
+/* Roster Navigation (shown after lock) */
+#roster-navigation {
+    padding: 0 20px 20px;
+    text-align: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+#roster-navigation button {
+    flex: 1;
+    max-width: 250px;
+}
+
 /* Selection Modal (slides in from right) */
 .selection-modal {
     position: fixed;

@@ -257,6 +257,17 @@ function setupEventListeners() {
 
     // Teams page
     document.getElementById('back-to-landing').addEventListener('click', () => showPage('landing-page'));
+    
+    // Leaderboard page
+    document.getElementById('view-leaderboard-btn')?.addEventListener('click', async () => {
+        await displayLeaderboard();
+        showPage('leaderboard-page');
+    });
+    document.getElementById('view-leaderboard-from-roster')?.addEventListener('click', async () => {
+        await displayLeaderboard();
+        showPage('leaderboard-page');
+    });
+    document.getElementById('back-to-roster')?.addEventListener('click', () => showPage('salary-cap-draft-page'));
 
     // Commissioner page
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);

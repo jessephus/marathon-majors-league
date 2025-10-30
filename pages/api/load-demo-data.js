@@ -325,6 +325,7 @@ export default async function handler(req, res) {
           session_token,
           session_type,
           display_name,
+          player_code,
           game_id,
           expires_at,
           is_active
@@ -333,6 +334,7 @@ export default async function handler(req, res) {
           ${sessionToken},
           'player',
           ${team.name},
+          ${team.playerCode},
           ${DEMO_GAME_ID},
           ${expiresAt},
           true

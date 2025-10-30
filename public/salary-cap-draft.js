@@ -695,6 +695,12 @@ function lockRoster() {
         editBtn.style.display = 'inline-block';
     }
     
+    // Show navigation buttons (leaderboard, etc.)
+    const navDiv = document.getElementById('roster-navigation');
+    if (navDiv) {
+        navDiv.style.display = 'flex';
+    }
+    
     // Disable all slot interactions - update slots to show locked state
     updateAllSlotsLocked();
 }
@@ -715,6 +721,12 @@ function unlockRoster() {
     const editBtn = document.getElementById('edit-salary-cap-team');
     if (editBtn) {
         editBtn.style.display = 'none';
+    }
+    
+    // Hide navigation buttons
+    const navDiv = document.getElementById('roster-navigation');
+    if (navDiv) {
+        navDiv.style.display = 'none';
     }
     
     // Re-enable slot interactions
