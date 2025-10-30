@@ -132,20 +132,32 @@ function getMainHTML() {
 
             <!-- Salary Cap Draft Page -->
             <div id="salary-cap-draft-page" class="page">
-                <!-- Header with Budget Info -->
+                <!-- Header with Team Info and Budget -->
                 <div class="draft-header">
-                    <div class="draft-budget">
-                        <div class="budget-row">
-                            <span class="budget-label">Cap:</span>
-                            <span class="budget-value">$30,000</span>
+                    <div class="team-info">
+                        <div class="team-avatar-placeholder">
+                            <!-- Avatar will go here eventually -->
+                            <div class="avatar-circle">
+                                <span class="avatar-initials" id="team-avatar-initials"></span>
+                            </div>
                         </div>
-                        <div class="budget-row">
-                            <span class="budget-label">Spent:</span>
-                            <span class="budget-value" id="header-budget-spent">$0</span>
+                        <div class="team-name-display">
+                            <div class="team-name-label">Team</div>
+                            <div class="team-name-value" id="header-team-name">Your Team</div>
                         </div>
-                        <div class="budget-row">
-                            <span class="budget-label">Left:</span>
-                            <span class="budget-value budget-remaining" id="header-budget-remaining">$30,000</span>
+                    </div>
+                    <div class="draft-budget-compact">
+                        <div class="budget-metric">
+                            <span class="metric-label">Cap</span>
+                            <span class="metric-value">$30K</span>
+                        </div>
+                        <div class="budget-metric">
+                            <span class="metric-label">Spent</span>
+                            <span class="metric-value" id="header-budget-spent">$0</span>
+                        </div>
+                        <div class="budget-metric">
+                            <span class="metric-label">Left</span>
+                            <span class="metric-value budget-remaining" id="header-budget-remaining">$30K</span>
                         </div>
                     </div>
                 </div>

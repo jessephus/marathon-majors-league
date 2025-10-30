@@ -81,6 +81,9 @@ async function setupSalaryCapDraft() {
     // Try to load existing team if user has a session
     const session = loadSession();
     if (session && session.token) {
+        // Update header with team info
+        updateTeamHeader(session.teamName);
+        
         try {
             const response = await fetch(`${API_BASE}/api/salary-cap-draft?gameId=${GAME_ID}`, {
                 headers: {
@@ -468,14 +471,52 @@ function removeAthleteFromSlot(slotId) {
 }
 
 /**
+ * Update team header with name and initials
+ */
+function updateTeamHeader(teamName) {
+    if (!teamName) return;
+    
+    // Update team name
+    const teamNameEl = document.getElementById('header-team-name');
+    if (teamNameEl) {
+        teamNameEl.textContent = teamName;
+    }
+    
+    // Generate initials (first letter of each word, max 2)
+    const initialsEl = document.getElementById('team-avatar-initials');
+    if (initialsEl) {
+        const words = teamName.trim().split(/\s+/);
+        let initials = '';
+        
+        if (words.length === 1) {
+            // Single word: take first 2 letters
+            initials = words[0].substring(0, 2).toUpperCase();
+        } else {
+            // Multiple words: take first letter of first 2 words
+            initials = words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
+        }
+        
+        initialsEl.textContent = initials;
+    }
+}
+
+/**
  * Update budget display
  */
 function updateBudgetDisplay() {
     const spent = salaryCapState.totalSpent;
     const remaining = SALARY_CAP_CONFIG.totalCap - spent;
     
-    document.getElementById('header-budget-spent').textContent = `$${spent.toLocaleString()}`;
-    document.getElementById('header-budget-remaining').textContent = `$${remaining.toLocaleString()}`;
+    // Format values compactly (e.g., $5K instead of $5,000)
+    const formatCompact = (value) => {
+        if (value >= 1000) {
+            return `$${(value / 1000).toFixed(0)}K`;
+        }
+        return `$${value}`;
+    };
+    
+    document.getElementById('header-budget-spent').textContent = formatCompact(spent);
+    document.getElementById('header-budget-remaining').textContent = formatCompact(remaining);
     
     const remainingEl = document.getElementById('header-budget-remaining');
     remainingEl.classList.remove('over-budget');
