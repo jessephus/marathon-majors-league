@@ -246,6 +246,9 @@ function setupEventListeners() {
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
     document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
     
+    // Demo Data button
+    document.getElementById('load-demo-data').addEventListener('click', handleLoadDemoData);
+    
     // Athlete Management modal
     const addAthleteModal = document.getElementById('add-athlete-modal');
     document.getElementById('add-athlete-btn').addEventListener('click', () => {
@@ -2543,6 +2546,139 @@ async function handleResetGame() {
             alert('Error resetting game. Please try again.');
         }
     }
+}
+
+// Handle load demo data
+async function handleLoadDemoData() {
+    const btn = document.getElementById('load-demo-data');
+    const originalText = btn.textContent;
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = '⏳ Loading demo data...';
+        
+        // Get checkbox value for including results
+        const includeResults = confirm('Include fake race results?\n\nClick OK to include results, Cancel for teams only.');
+        
+        const response = await fetch(`${API_BASE}/api/load-demo-data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ includeResults })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to load demo data');
+        }
+        
+        const data = await response.json();
+        
+        // Display results in modal
+        displayDemoDataResults(data);
+        
+        btn.textContent = '✓ Demo data loaded!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Demo data error:', error);
+        alert(`Error loading demo data: ${error.message}`);
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Display demo data results in modal
+function displayDemoDataResults(data) {
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.id = 'demo-data-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+        width: 100%;
+    `;
+    
+    let html = `
+        <h2 style="margin-top: 0;">🎭 Demo Data Loaded Successfully!</h2>
+        <p style="color: #666; margin-bottom: 20px;">
+            Created ${data.teams.length} teams with rosters${data.resultsCreated ? ' and race results' : ''}.
+            Use these URLs to test each team:
+        </p>
+    `;
+    
+    data.teams.forEach(team => {
+        const url = team.sessionUrl;
+        html += `
+            <div style="border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+                <h3 style="margin: 0 0 10px 0; color: #2C39A2;">${team.teamName}</h3>
+                <div style="margin-bottom: 10px;">
+                    <strong>Session URL:</strong>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                        <input 
+                            type="text" 
+                            value="${url}" 
+                            readonly 
+                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;"
+                        />
+                        <button 
+                            onclick="navigator.clipboard.writeText('${url}'); this.textContent = '✓ Copied'; setTimeout(() => this.textContent = 'Copy', 2000);"
+                            style="padding: 8px 16px; background: #2C39A2; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                        >
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <strong>Athletes:</strong>
+                    <ul style="margin: 5px 0; padding-left: 20px; font-size: 0.9em;">
+                        ${team.athletes.map(a => `<li>${a.name} (${a.country}) - $${(a.salary / 1000).toFixed(1)}K</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        <button 
+            onclick="document.getElementById('demo-data-modal').remove();"
+            style="width: 100%; padding: 12px; background: #ff6900; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px;"
+        >
+            Close
+        </button>
+    `;
+    
+    content.innerHTML = html;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 // Handle view athletes

@@ -258,20 +258,7 @@ function getMainHTML() {
             <div id="teams-page" class="page">
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
-                <div class="page-actions">
-                    <button id="view-leaderboard-btn" class="btn btn-primary" style="display: none;">View Leaderboard</button>
-                    <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
-                </div>
-            </div>
-            
-            <!-- Leaderboard Page -->
-            <div id="leaderboard-page" class="page">
-                <div class="leaderboard-header">
-                    <h2>Live Results</h2>
-                    <h3 class="leaderboard-subtitle">Leaderboard</h3>
-                </div>
-                <div id="leaderboard-display"></div>
-                <button id="back-to-teams" class="btn btn-secondary">Back to Your Team</button>
+                <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
             </div>
 
             <!-- Commissioner Page -->
@@ -302,6 +289,14 @@ function getMainHTML() {
                     <div class="action-card">
                         <h3>Athlete Management</h3>
                         <button id="view-athletes" class="btn btn-primary">View All Athletes</button>
+                    </div>
+
+                    <div class="action-card">
+                        <h3>Development Tools</h3>
+                        <button id="load-demo-data" class="btn btn-primary">🎭 Load Demo Data</button>
+                        <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+                            Creates 3 fake teams with rosters and optional results for testing
+                        </p>
                     </div>
 
                     <div class="action-card">
