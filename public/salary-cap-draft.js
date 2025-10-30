@@ -24,8 +24,25 @@ let salaryCapState = {
     currentSlot: null,
     currentGender: null,
     currentSort: 'salary',
-    totalSpent: 0
+    totalSpent: 0,
+    isLocked: false  // Track if team is submitted and locked
 };
+
+/**
+ * Load session from localStorage
+ */
+function loadSession() {
+    const TEAM_SESSION_KEY = 'marathon_fantasy_team_session';
+    const sessionData = localStorage.getItem(TEAM_SESSION_KEY);
+    if (!sessionData) return null;
+    
+    try {
+        return JSON.parse(sessionData);
+    } catch (error) {
+        console.error('Error parsing session:', error);
+        return null;
+    }
+}
 
 /**
  * Initialize salary cap draft page
@@ -441,17 +458,18 @@ async function handleSubmitSalaryCapTeam() {
         
         const data = await response.json();
         
+        // Lock the team
+        salaryCapState.isLocked = true;
+        
         // Update local state
         gameState.teams[session.teamName] = team;
         gameState.draftComplete = true;
         
-        alert('✅ Team submitted successfully!\n\n' +
-              `Total spent: $${salaryCapState.totalSpent.toLocaleString()}\n` +
-              `Remaining budget: $${(SALARY_CAP_CONFIG.totalCap - salaryCapState.totalSpent).toLocaleString()}`);
+        // Show subtle success message
+        showSuccessNotification('✅ Roster saved successfully');
         
-        // Show teams page
-        displayTeams();
-        showPage('teams-page');
+        // Update UI to locked state
+        lockRoster();
         
     } catch (error) {
         console.error('Error submitting team:', error);
@@ -473,6 +491,103 @@ function convertTimeToSeconds(timeString) {
     return 999999;
 }
 
+/**
+ * Show subtle success notification
+ */
+function showSuccessNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'success-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Lock the roster after submission
+ */
+function lockRoster() {
+    // Disable submit button and change to locked state
+    const submitBtn = document.getElementById('submit-salary-cap-team');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Roster Locked ✓';
+    submitBtn.style.opacity = '0.6';
+    
+    // Show edit button
+    const editBtn = document.getElementById('edit-salary-cap-team');
+    if (editBtn) {
+        editBtn.style.display = 'inline-block';
+    }
+    
+    // Disable all slot interactions - update slots to show locked state
+    updateAllSlotsLocked();
+}
+
+/**
+ * Unlock the roster for editing
+ */
+function unlockRoster() {
+    salaryCapState.isLocked = false;
+    
+    // Re-enable submit button
+    const submitBtn = document.getElementById('submit-salary-cap-team');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Team';
+    submitBtn.style.opacity = '1';
+    
+    // Hide edit button
+    const editBtn = document.getElementById('edit-salary-cap-team');
+    if (editBtn) {
+        editBtn.style.display = 'none';
+    }
+    
+    // Re-enable slot interactions
+    updateAllSlots();
+    
+    showSuccessNotification('Roster unlocked - you can now make changes');
+}
+
+/**
+ * Update all slots to show locked state
+ */
+function updateAllSlotsLocked() {
+    ['M1', 'M2', 'M3', 'W1', 'W2', 'W3'].forEach(slotId => {
+        const slotElement = document.querySelector(`[data-slot="${slotId}"]`);
+        if (slotElement) {
+            slotElement.style.cursor = 'default';
+            slotElement.onclick = (e) => {
+                // Only allow viewing details, not removing
+                const athlete = salaryCapState.slots[slotId];
+                if (athlete && e.target.classList.contains('athlete-name')) {
+                    openDetailModal(athlete);
+                }
+            };
+            
+            // Remove the remove button
+            const removeBtn = slotElement.querySelector('.remove-athlete');
+            if (removeBtn) {
+                removeBtn.style.display = 'none';
+            }
+        }
+    });
+}
+
 // Helper function to get country flag (if not already defined)
 if (typeof getCountryFlag === 'undefined') {
     function getCountryFlag(countryCode) {
@@ -487,4 +602,5 @@ if (typeof getCountryFlag === 'undefined') {
 // Make functions available globally
 window.setupSalaryCapDraft = setupSalaryCapDraft;
 window.removeAthleteFromSlot = removeAthleteFromSlot;
+window.unlockRoster = unlockRoster;
 window.salaryCapState = salaryCapState;

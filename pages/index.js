@@ -198,6 +198,7 @@ function getMainHTML() {
                 <!-- Submit Button -->
                 <div class="draft-submit-container">
                     <button id="submit-salary-cap-team" class="btn btn-primary btn-large" disabled>Submit Team</button>
+                    <button id="edit-salary-cap-team" class="btn btn-secondary btn-large" onclick="unlockRoster()" style="display: none; margin-left: 12px;">Edit Roster</button>
                 </div>
 
                 <!-- Athlete Selection Modal (slides in from right) -->
