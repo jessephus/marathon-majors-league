@@ -258,7 +258,20 @@ function getMainHTML() {
             <div id="teams-page" class="page">
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
-                <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                <div class="page-actions">
+                    <button id="view-leaderboard-btn" class="btn btn-primary" style="display: none;">View Leaderboard</button>
+                    <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                </div>
+            </div>
+            
+            <!-- Leaderboard Page -->
+            <div id="leaderboard-page" class="page">
+                <div class="leaderboard-header">
+                    <h2>Live Results</h2>
+                    <h3 class="leaderboard-subtitle">Leaderboard</h3>
+                </div>
+                <div id="leaderboard-display"></div>
+                <button id="back-to-teams" class="btn btn-secondary">Back to Your Team</button>
             </div>
 
             <!-- Commissioner Page -->
