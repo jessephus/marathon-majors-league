@@ -777,8 +777,9 @@ async function handleCreateNewGame() {
 
 // Handle commissioner mode
 function handleCommissionerMode() {
-    const password = prompt('Enter commissioner password:');
-    if (password === 'kipchoge') {
+    // Check if already authenticated via TOTP
+    if (commissionerSession.isCommissioner) {
+        // Already authenticated, just show the page
         showPage('commissioner-page');
         // Refresh player codes display if players exist
         if (gameState.players.length > 0) {
@@ -804,8 +805,9 @@ function handleCommissionerMode() {
                 }
             }
         }
-    } else if (password !== null) {
-        alert('Incorrect password');
+    } else {
+        // Not authenticated - show TOTP login modal instead of password prompt
+        alert('Please log in with your TOTP code using the "Commissioner Mode" button in the footer.');
     }
 }
 
