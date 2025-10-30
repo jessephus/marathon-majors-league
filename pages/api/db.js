@@ -29,6 +29,7 @@ export async function getAllAthletes(confirmedOnly = false) {
         a.age,
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
+        a.salary,
         COALESCE(
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
@@ -64,6 +65,7 @@ export async function getAllAthletes(confirmedOnly = false) {
         a.age,
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
+        a.salary,
         COALESCE(
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
