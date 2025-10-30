@@ -410,7 +410,10 @@ function updateSubmitButton() {
  * Submit salary cap team
  */
 async function handleSubmitSalaryCapTeam() {
+    console.log('=== SUBMIT TEAM CALLED ===');
+    
     const allSlotsFilled = Object.values(salaryCapState.slots).every(slot => slot !== null);
+    console.log('All slots filled?', allSlotsFilled);
     
     if (!allSlotsFilled) {
         alert('Please fill all 6 slots before submitting.');
@@ -427,21 +430,28 @@ async function handleSubmitSalaryCapTeam() {
         men: [salaryCapState.slots.M1, salaryCapState.slots.M2, salaryCapState.slots.M3],
         women: [salaryCapState.slots.W1, salaryCapState.slots.W2, salaryCapState.slots.W3]
     };
+    console.log('Team prepared:', team);
     
     // Get session token
+    console.log('Loading session from localStorage...');
     const session = loadSession();
+    console.log('=== SESSION LOADED ===', {
+        raw: session,
+        hasSession: !!session,
+        hasToken: !!session?.token,
+        tokenValue: session?.token,
+        teamName: session?.teamName,
+        expiresAt: session?.expiresAt
+    });
+    
     if (!session || !session.token) {
+        console.error('❌ SESSION VALIDATION FAILED', { session });
         alert('Session expired. Please create a new team.');
         showPage('landing-page');
         return;
     }
     
-    console.log('Submitting team with session:', {
-        hasToken: !!session.token,
-        tokenLength: session.token?.length,
-        teamName: session.teamName,
-        expiresAt: session.expiresAt
-    });
+    console.log('✅ Session valid, proceeding with submission');
     
     try {
         // Save team via API
