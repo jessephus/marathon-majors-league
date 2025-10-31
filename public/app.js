@@ -1664,24 +1664,10 @@ async function displayLeaderboard() {
         // Build leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container">';
         
-        // Determine which teams to show
-        const TOP_COUNT = 3;
-        const showEllipsis = standings.length > TOP_COUNT + 1 && currentPlayerRank && currentPlayerRank > TOP_COUNT + 1;
-        
+        // Show ALL teams with sticky behavior for current player
         standings.forEach((standing, index) => {
-            const rank = standing.rank;
             const isCurrentPlayer = standing.player_code === currentPlayerCode;
-            const isTop3 = rank <= TOP_COUNT;
-            
-            // Show top 3, current player (if not in top 3), and ellipsis when needed
-            if (isTop3 || isCurrentPlayer) {
-                // Show ellipsis before current player if needed
-                if (isCurrentPlayer && showEllipsis && rank > TOP_COUNT + 1) {
-                    leaderboardHTML += '<div class="leaderboard-ellipsis">...</div>';
-                }
-                
-                leaderboardHTML += createLeaderboardRow(standing, isCurrentPlayer);
-            }
+            leaderboardHTML += createLeaderboardRow(standing, isCurrentPlayer);
         });
         
         leaderboardHTML += '</div>';

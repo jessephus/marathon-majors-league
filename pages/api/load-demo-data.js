@@ -384,72 +384,53 @@ export default async function handler(req, res) {
       console.log(`  Found ${allNYCMen.length} men and ${allNYCWomen.length} women confirmed for NYC Marathon`);
       
       // Identify athletes on rosters for DNF/DNS assignment
-      const athletesOnTeams = new Set();
+      const menOnTeams = new Set();
+      const womenOnTeams = new Set();
+      
       teams.forEach(team => {
-        [...team.men, ...team.women].forEach(athlete => {
-          athletesOnTeams.add(athlete.id);
-        });
+        team.men.forEach(athlete => menOnTeams.add(athlete.id));
+        team.women.forEach(athlete => womenOnTeams.add(athlete.id));
       });
       
-      const rostered = Array.from(athletesOnTeams);
+      const rosteredMen = Array.from(menOnTeams);
+      const rosteredWomen = Array.from(womenOnTeams);
       
-      // Select 2 different rostered athletes for DNF/DNS (for testing)
-      const shuffled = rostered.sort(() => 0.5 - Math.random());
-      const dnfAthlete = shuffled[0];
-      const dnsAthlete = shuffled[1]; // Ensures different athlete
+      // Select DNF/DNS athletes separately for each gender (for testing)
+      const shuffledMen = rosteredMen.sort(() => 0.5 - Math.random());
+      const shuffledWomen = rosteredWomen.sort(() => 0.5 - Math.random());
       
-      console.log(`  Assigning DNF to athlete ID ${dnfAthlete} and DNS to athlete ID ${dnsAthlete}`);
+      const dnfMaleAthlete = shuffledMen[0];
+      const dnsFemaleAthlete = shuffledWomen[0];
       
-      // Generate results for MEN
-      for (let i = 0; i < allNYCMen.length; i++) {
-        const athlete = allNYCMen[i];
-        const placement = i + 1;
-        
-        // Check if this athlete should DNF or DNS
-        if (athlete.id === dnfAthlete) {
-          await sql`
-            INSERT INTO race_results (
-              game_id, athlete_id, finish_time, split_half, placement, is_final
-            )
-            VALUES (
-              ${DEMO_GAME_ID}, ${athlete.id}, 'DNF', 
-              '1:02:30', NULL, true
-            )
-          `;
-          console.log(`  🚫 DNF: ${athlete.name}`);
-          continue;
-        }
-        
-        if (athlete.id === dnsAthlete) {
-          await sql`
-            INSERT INTO race_results (
-              game_id, athlete_id, finish_time, placement, is_final
-            )
-            VALUES (
-              ${DEMO_GAME_ID}, ${athlete.id}, 'DNS', NULL, true
-            )
-          `;
-          console.log(`  🚫 DNS: ${athlete.name}`);
-          continue;
-        }
+      console.log(`  Assigning DNF to male athlete ID ${dnfMaleAthlete} and female athlete ID ${dnsFemaleAthlete}`);
+      
+      // Separate finishers from DNF for MEN
+      const menFinishers = allNYCMen.filter(a => a.id !== dnfMaleAthlete);
+      const menDnf = allNYCMen.filter(a => a.id === dnfMaleAthlete);
+      
+      console.log(`  First 5 men in finishers array:`, menFinishers.slice(0, 5).map(a => `ID ${a.id} (${a.name}, rank ${a.marathon_rank})`));
+      
+      // Generate results for MEN FINISHERS
+      for (let i = 0; i < menFinishers.length; i++) {
+        const athlete = menFinishers[i];
+        const placement = i + 1; // Sequential placement for finishers only
         
         // Base time for men: 2:05:00
         const baseSeconds = 2 * 3600 + 5 * 60;
         
-        // Add time based on placement rank (faster progression for top athletes)
+        // Add time based on placement (MUST be strictly increasing for each placement)
+        // This ensures finish times match placements after scoring engine re-sorts
         let placementPenalty;
-        if (i < 10) {
-          placementPenalty = i * 5;  // Top 10: 5 seconds per place
-        } else if (i < 20) {
-          placementPenalty = 50 + (i - 10) * 10;  // 11-20: 10 seconds per place
+        if (placement <= 10) {
+          placementPenalty = (placement - 1) * 10;  // Top 10: 10 seconds per place (was 5)
+        } else if (placement <= 20) {
+          placementPenalty = 100 + (placement - 11) * 15;  // 11-20: 15 seconds per place (was 10)
         } else {
-          placementPenalty = 150 + (i - 20) * 20;  // 21+: 20 seconds per place
+          placementPenalty = 250 + (placement - 21) * 25;  // 21+: 25 seconds per place (was 20)
         }
         
-        // Add some randomness (±30 seconds)
-        const randomVariation = Math.floor(Math.random() * 60) - 30;
-        
-        const totalSeconds = baseSeconds + placementPenalty + randomVariation;
+        // NO random variation - times must be strictly sequential
+        const totalSeconds = baseSeconds + placementPenalty;
         
         // Convert to HH:MM:SS
         const hours = Math.floor(totalSeconds / 3600);
@@ -476,68 +457,59 @@ export default async function handler(req, res) {
           INSERT INTO race_results (
             game_id, athlete_id, finish_time,
             split_5k, split_10k, split_half, split_30k, split_35k, split_40k,
-            placement, is_final
+            is_final
           )
           VALUES (
             ${DEMO_GAME_ID}, ${athlete.id}, ${finishTime},
             ${formatSplit(split5kSeconds)}, ${formatSplit(split10kSeconds)},
             ${formatSplit(splitHalfSeconds)}, ${formatSplit(split30kSeconds)},
             ${formatSplit(split35kSeconds)}, ${formatSplit(split40kSeconds)},
-            ${placement}, true
+            true
           )
         `;
       }
       
-      console.log(`  ✓ Generated results for ${allNYCMen.length} men`);
+      // Insert DNF for MEN (no placement, partial splits)
+      for (const athlete of menDnf) {
+        await sql`
+          INSERT INTO race_results (
+            game_id, athlete_id, finish_time, split_half, is_final
+          )
+          VALUES (
+            ${DEMO_GAME_ID}, ${athlete.id}, 'DNF', 
+            '1:02:30', true
+          )
+        `;
+        console.log(`  🚫 DNF: ${athlete.name} (Men)`);
+      }
       
-      // Generate results for WOMEN
-      for (let i = 0; i < allNYCWomen.length; i++) {
-        const athlete = allNYCWomen[i];
-        const placement = i + 1;
-        
-        // Check if this athlete should DNF or DNS
-        if (athlete.id === dnfAthlete) {
-          await sql`
-            INSERT INTO race_results (
-              game_id, athlete_id, finish_time, split_half, placement, is_final
-            )
-            VALUES (
-              ${DEMO_GAME_ID}, ${athlete.id}, 'DNF', 
-              '1:10:00', NULL, true
-            )
-          `;
-          console.log(`  🚫 DNF: ${athlete.name}`);
-          continue;
-        }
-        
-        if (athlete.id === dnsAthlete) {
-          await sql`
-            INSERT INTO race_results (
-              game_id, athlete_id, finish_time, placement, is_final
-            )
-            VALUES (
-              ${DEMO_GAME_ID}, ${athlete.id}, 'DNS', NULL, true
-            )
-          `;
-          console.log(`  🚫 DNS: ${athlete.name}`);
-          continue;
-        }
+      console.log(`  ✓ Generated results for ${menFinishers.length} men (${menDnf.length} DNF)`);
+      
+      // Separate finishers from DNF for WOMEN
+      const womenFinishers = allNYCWomen.filter(a => a.id !== dnsFemaleAthlete);
+      const womenDnf = allNYCWomen.filter(a => a.id === dnsFemaleAthlete);
+      
+      // Generate results for WOMEN FINISHERS
+      for (let i = 0; i < womenFinishers.length; i++) {
+        const athlete = womenFinishers[i];
+        const placement = i + 1; // Sequential placement for finishers only
         
         // Base time for women: 2:20:00
         const baseSeconds = 2 * 3600 + 20 * 60;
         
-        // Add time based on placement rank
+        // Add time based on placement (MUST be strictly increasing for each placement)
+        // This ensures finish times match placements after scoring engine re-sorts
         let placementPenalty;
-        if (i < 10) {
-          placementPenalty = i * 5;
-        } else if (i < 20) {
-          placementPenalty = 50 + (i - 10) * 10;
+        if (placement <= 10) {
+          placementPenalty = (placement - 1) * 10;  // Top 10: 10 seconds per place (was 5)
+        } else if (placement <= 20) {
+          placementPenalty = 100 + (placement - 11) * 15;  // 11-20: 15 seconds per place (was 10)
         } else {
-          placementPenalty = 150 + (i - 20) * 20;
+          placementPenalty = 250 + (placement - 21) * 25;  // 21+: 25 seconds per place (was 20)
         }
         
-        const randomVariation = Math.floor(Math.random() * 60) - 30;
-        const totalSeconds = baseSeconds + placementPenalty + randomVariation;
+        // NO random variation - times must be strictly sequential
+        const totalSeconds = baseSeconds + placementPenalty;
         
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -562,20 +534,34 @@ export default async function handler(req, res) {
           INSERT INTO race_results (
             game_id, athlete_id, finish_time,
             split_5k, split_10k, split_half, split_30k, split_35k, split_40k,
-            placement, is_final
+            is_final
           )
           VALUES (
             ${DEMO_GAME_ID}, ${athlete.id}, ${finishTime},
             ${formatSplit(split5kSeconds)}, ${formatSplit(split10kSeconds)},
             ${formatSplit(splitHalfSeconds)}, ${formatSplit(split30kSeconds)},
             ${formatSplit(split35kSeconds)}, ${formatSplit(split40kSeconds)},
-            ${placement}, true
+            true
           )
         `;
       }
       
-      console.log(`  ✓ Generated results for ${allNYCWomen.length} women`);
-      console.log(`  ✓ Total results: ${allNYCMen.length + allNYCWomen.length} (includes 1 DNF, 1 DNS)`);
+      // Insert DNF for WOMEN (no placement, partial splits)
+      for (const athlete of womenDnf) {
+        await sql`
+          INSERT INTO race_results (
+            game_id, athlete_id, finish_time, split_half, is_final
+          )
+          VALUES (
+            ${DEMO_GAME_ID}, ${athlete.id}, 'DNF', 
+            '1:10:00', true
+          )
+        `;
+        console.log(`  🚫 DNF: ${athlete.name} (Women)`);
+      }
+      
+      console.log(`  ✓ Generated results for ${womenFinishers.length} women (${womenDnf.length} DNF)`);
+      console.log(`  ✓ Total results: ${menFinishers.length + womenFinishers.length + menDnf.length + womenDnf.length} (${menFinishers.length + womenFinishers.length} finishers, ${menDnf.length + womenDnf.length} DNF)`);
       
       // Optionally trigger automatic scoring
       try {

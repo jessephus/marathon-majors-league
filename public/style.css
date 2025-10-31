@@ -3364,6 +3364,9 @@ footer .btn {
 .leaderboard-row-highlight {
     background: linear-gradient(135deg, #fff3e6 0%, #ffe6cc 100%);
     border: 2px solid #ff6900;
+    position: sticky;
+    top: 80px; /* Stick to top when scrolling down */
+    z-index: 10;
 }
 
 .leaderboard-row-highlight:hover {
