@@ -14,6 +14,7 @@ let gameState = {
 let anonymousSession = {
     token: null,
     teamName: null,
+    playerCode: null,
     ownerName: null,
     expiresAt: null
 };
@@ -420,11 +421,13 @@ async function handleTeamCreation(e) {
         }
         
         const data = await response.json();
-        
-        // Save session to state and localStorage
+        const playerCode = data.session?.playerCode || teamName;
+
+        // Persist both the display name and the canonical player code
         anonymousSession = {
             token: data.session.token,
             teamName: teamName,
+            playerCode,
             ownerName: ownerName || null,
             expiresAt: data.session.expiresAt
         };
@@ -432,12 +435,12 @@ async function handleTeamCreation(e) {
         localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
         
         // Set as current player
-        gameState.currentPlayer = teamName;
+        gameState.currentPlayer = playerCode;
         document.getElementById('player-name').textContent = teamName;
         
         // Add to players list if not already there
-        if (!gameState.players.includes(teamName)) {
-            gameState.players.push(teamName);
+        if (!gameState.players.includes(playerCode)) {
+            gameState.players.push(playerCode);
             await saveGameState();
         }
         
@@ -602,11 +605,15 @@ async function verifyAndLoadSession(token) {
         if (response.ok) {
             const data = await response.json();
             console.log('Session verified:', data);
+
+            const playerCode = data.session.playerCode || data.session.displayName;
+            const displayName = data.session.displayName || playerCode;
             
             // Save session to state and localStorage
             anonymousSession = {
                 token: token,
-                teamName: data.session.displayName,
+                teamName: displayName,
+                playerCode,
                 ownerName: null,
                 expiresAt: data.session.expiresAt
             };
@@ -614,14 +621,14 @@ async function verifyAndLoadSession(token) {
             localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
             
             // Set as current player
-            gameState.currentPlayer = anonymousSession.teamName;
-            document.getElementById('player-name').textContent = anonymousSession.teamName;
+            gameState.currentPlayer = playerCode;
+            document.getElementById('player-name').textContent = displayName;
             
             hideWelcomeCard();  // Hide welcome card after session verified
             
             console.log('Game state:', gameState);
             console.log('Draft complete?', gameState.draftComplete);
-            console.log('Has rankings?', !!gameState.rankings[anonymousSession.teamName]);
+            console.log('Has rankings?', !!gameState.rankings[playerCode]);
             
             // Always navigate to salary cap draft page (shows roster when locked)
             console.log('Navigating to salary cap draft page');
@@ -667,12 +674,31 @@ async function restoreSession() {
             if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
                 console.warn('[Session Restore] Team session EXPIRED at:', session.expiresAt);
                 localStorage.removeItem(TEAM_SESSION_KEY);
-                anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+                anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
             } else {
                 console.log('[Session Restore] Team session is valid, expires at:', session.expiresAt);
-                anonymousSession = session;
-                gameState.currentPlayer = session.teamName;
-                document.getElementById('player-name').textContent = session.teamName;
+
+                const normalizedSession = {
+                    token: session.token || null,
+                    teamName: session.teamName || session.playerCode || null,
+                    playerCode: session.playerCode || session.teamName || null,
+                    ownerName: session.ownerName || null,
+                    expiresAt: session.expiresAt || null
+                };
+
+                anonymousSession = normalizedSession;
+
+                if (normalizedSession.playerCode) {
+                    gameState.currentPlayer = normalizedSession.playerCode;
+                }
+                if (normalizedSession.teamName) {
+                    document.getElementById('player-name').textContent = normalizedSession.teamName;
+                }
+
+                // Backfill playerCode for legacy sessions stored without it
+                if (!session.playerCode && normalizedSession.playerCode) {
+                    localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(normalizedSession));
+                }
                 hasTeamSession = true;
             }
         } else {
@@ -799,7 +825,7 @@ function handleLogout() {
         
         // Clear team session ONLY (don't touch commissioner session)
         localStorage.removeItem(TEAM_SESSION_KEY);
-        anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+    anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
         gameState.currentPlayer = null;
         
         console.log('[Team Logout] Team session cleared, commissioner session still active:', commissionerSession.isCommissioner);
@@ -1415,113 +1441,8 @@ function hasPlayerSubmittedRankings(playerCode) {
 
 async function displayPlayerCodes() {
     const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Share these unique URLs with your players:</h4>';
-    
-    for (const code of gameState.players) {
-        const hasSubmitted = hasPlayerSubmittedRankings(code);
-        
-        const item = document.createElement('div');
-        item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
-        
-        const statusIcon = document.createElement('span');
-        statusIcon.className = 'status-icon';
-        statusIcon.textContent = hasSubmitted ? '✓' : '○';
-        
-        // Create anonymous session for player
-        try {
-            const response = await fetch(`${API_BASE}/api/session/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sessionType: 'player',
-                    displayName: code,
-                    gameId: GAME_ID,
-                    playerCode: code,
-                    expiryDays: 90
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const uniqueURL = data.uniqueUrl;
-                const sessionToken = uniqueURL.split('?session=')[1];
-                
-                const contentWrapper = document.createElement('div');
-                contentWrapper.className = 'player-code-content';
-                
-                // First row: Team name and clickable UUID
-                const topRow = document.createElement('div');
-                topRow.className = 'player-code-top-row';
-                
-                const codeLabel = document.createElement('strong');
-                codeLabel.textContent = `${code}: `;
-                
-                const urlLink = document.createElement('a');
-                urlLink.className = 'session-link';
-                urlLink.href = uniqueURL;
-                urlLink.target = '_blank';
-                urlLink.textContent = sessionToken;
-                
-                topRow.appendChild(codeLabel);
-                topRow.appendChild(urlLink);
-                
-                // Second row: Copy button and status
-                const bottomRow = document.createElement('div');
-                bottomRow.className = 'player-code-bottom-row';
-                
-                const copyButton = document.createElement('button');
-                copyButton.className = 'btn-copy-small';
-                copyButton.textContent = '📋 Copy Link';
-                copyButton.onclick = () => {
-                    navigator.clipboard.writeText(uniqueURL).then(() => {
-                        copyButton.textContent = '✅ Copied!';
-                        setTimeout(() => {
-                            copyButton.textContent = '📋 Copy Link';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy:', err);
-                        alert('Failed to copy URL. Please copy manually.');
-                    });
-                };
-                
-                const statusText = document.createElement('span');
-                statusText.className = 'status-text';
-                statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
-                
-                bottomRow.appendChild(copyButton);
-                bottomRow.appendChild(statusText);
-                
-                contentWrapper.appendChild(topRow);
-                contentWrapper.appendChild(bottomRow);
-                
-                item.appendChild(statusIcon);
-                item.appendChild(contentWrapper);
-            } else {
-                // Fallback to legacy code display
-                const codeText = document.createElement('span');
-                codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
-                item.appendChild(statusIcon);
-                item.appendChild(codeText);
-            }
-        } catch (error) {
-            console.error('Error creating player session:', error);
-            // Fallback to legacy code display
-            const codeText = document.createElement('span');
-            codeText.textContent = `${code}`;
-            item.appendChild(statusIcon);
-            item.appendChild(codeText);
-        }
-        
-        display.appendChild(item);
-    }
-    
-    // Add summary
-    const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
-    
-    const summary = document.createElement('div');
-    summary.className = 'rankings-summary';
-    summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
-    display.appendChild(summary);
+    // Hide player links - only show "Manage Players/Teams" button
+    display.innerHTML = '';
 }
 
 async function displayTeamsTable() {
@@ -1762,31 +1683,17 @@ async function displayLeaderboard() {
         }
 
         // Find current player's rank
-        const currentPlayerCode = anonymousSession.teamName || gameState.currentPlayer;
+    const currentPlayerCode = anonymousSession.playerCode || gameState.currentPlayer || anonymousSession.teamName;
         const currentPlayerStanding = standings.find(s => s.player_code === currentPlayerCode);
         const currentPlayerRank = currentPlayerStanding ? currentPlayerStanding.rank : null;
 
         // Build leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container">';
         
-        // Determine which teams to show
-        const TOP_COUNT = 3;
-        const showEllipsis = standings.length > TOP_COUNT + 1 && currentPlayerRank && currentPlayerRank > TOP_COUNT + 1;
-        
+        // Show ALL teams with sticky behavior for current player
         standings.forEach((standing, index) => {
-            const rank = standing.rank;
             const isCurrentPlayer = standing.player_code === currentPlayerCode;
-            const isTop3 = rank <= TOP_COUNT;
-            
-            // Show top 3, current player (if not in top 3), and ellipsis when needed
-            if (isTop3 || isCurrentPlayer) {
-                // Show ellipsis before current player if needed
-                if (isCurrentPlayer && showEllipsis && rank > TOP_COUNT + 1) {
-                    leaderboardHTML += '<div class="leaderboard-ellipsis">...</div>';
-                }
-                
-                leaderboardHTML += createLeaderboardRow(standing, isCurrentPlayer);
-            }
+            leaderboardHTML += createLeaderboardRow(standing, isCurrentPlayer);
         });
         
         leaderboardHTML += '</div>';
@@ -1836,7 +1743,7 @@ function createLeaderboardRow(standing, isCurrentPlayer = false) {
 
 // Display race results (actual athlete performance)
 async function displayRaceResultsLeaderboard() {
-    console.log('🔥 displayRaceResultsLeaderboard v1.0 called');
+    console.log('🔥 displayRaceResultsLeaderboard v2.0 called');
     const container = document.getElementById('race-results-display');
     container.innerHTML = '<div class="loading-spinner">Loading race results...</div>';
 
@@ -1894,79 +1801,25 @@ async function displayRaceResultsLeaderboard() {
             athletesById.set(result.athlete_id, existing ? { ...existing, ...merged } : merged);
         });
         
-        // Separate men and women results using the map
-        const menResults = [];
-        const womenResults = [];
-        const otherResults = [];
+        // Store data for filtering
+        window.raceResultsData = {
+            scoredResults,
+            athletesById,
+            menResults: scoredResults.filter(r => {
+                const athlete = athletesById.get(r.athlete_id);
+                return athlete && athlete.gender === 'men';
+            }).sort((a, b) => (a.placement || 999) - (b.placement || 999)),
+            womenResults: scoredResults.filter(r => {
+                const athlete = athletesById.get(r.athlete_id);
+                return athlete && athlete.gender === 'women';
+            }).sort((a, b) => (a.placement || 999) - (b.placement || 999))
+        };
+
+        // Initial render with men's results and finish time
+        renderFilteredRaceResults('men', 'finish');
         
-        scoredResults.forEach(result => {
-            const athlete = athletesById.get(result.athlete_id);
-            if (athlete) {
-                if (athlete.gender === 'men') {
-                    menResults.push(result);
-                } else if (athlete.gender === 'women') {
-                    womenResults.push(result);
-                } else {
-                    otherResults.push(result);
-                }
-            }
-        });
-
-        // Sort by placement (already sorted from API, but ensure it)
-        menResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
-        womenResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
-        otherResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
-
-        // Build race results HTML
-        let resultsHTML = '<div class="race-results-container">';
-        
-        // Men's Results
-        if (menResults.length > 0) {
-            resultsHTML += '<div class="race-gender-section">';
-            resultsHTML += '<h3 class="gender-header">Men\'s Results</h3>';
-            resultsHTML += '<div class="race-results-list">';
-            
-            menResults.forEach(result => {
-                const athlete = athletesById.get(result.athlete_id);
-                if (athlete) {
-                    resultsHTML += createRaceResultRow(result, athlete);
-                }
-            });
-            
-            resultsHTML += '</div></div>';
-        }
-
-        // Women's Results
-        if (womenResults.length > 0) {
-            resultsHTML += '<div class="race-gender-section">';
-            resultsHTML += '<h3 class="gender-header">Women\'s Results</h3>';
-            resultsHTML += '<div class="race-results-list">';
-            
-            womenResults.forEach(result => {
-                const athlete = athletesById.get(result.athlete_id);
-                if (athlete) {
-                    resultsHTML += createRaceResultRow(result, athlete);
-                }
-            });
-            
-            resultsHTML += '</div></div>';
-        }
-
-        if (otherResults.length > 0) {
-            resultsHTML += '<div class="race-gender-section">';
-            resultsHTML += '<h3 class="gender-header">Additional Results</h3>';
-            resultsHTML += '<div class="race-results-list">';
-            otherResults.forEach(result => {
-                const athlete = athletesById.get(result.athlete_id);
-                if (athlete) {
-                    resultsHTML += createRaceResultRow(result, athlete);
-                }
-            });
-            resultsHTML += '</div></div>';
-        }
-
-        resultsHTML += '</div>';
-        container.innerHTML = resultsHTML;
+        // Set up event listeners for controls
+        setupRaceResultsControls();
         
     } catch (error) {
         console.error('Error displaying leaderboard race results:', error);
@@ -1980,16 +1833,119 @@ async function displayRaceResultsLeaderboard() {
     }
 }
 
+// Setup event listeners for race results controls
+function setupRaceResultsControls() {
+    // Gender toggle buttons
+    const genderButtons = document.querySelectorAll('.gender-toggle-btn');
+    genderButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all buttons
+            genderButtons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            
+            // Get current split selection
+            const splitSelect = document.getElementById('split-select');
+            const currentSplit = splitSelect ? splitSelect.value : 'finish';
+            
+            // Re-render with selected gender
+            renderFilteredRaceResults(btn.dataset.gender, currentSplit);
+        });
+    });
+    
+    // Split selector dropdown
+    const splitSelect = document.getElementById('split-select');
+    if (splitSelect) {
+        splitSelect.addEventListener('change', () => {
+            // Get current gender selection
+            const activeGenderBtn = document.querySelector('.gender-toggle-btn.active');
+            const currentGender = activeGenderBtn ? activeGenderBtn.dataset.gender : 'men';
+            
+            // Re-render with selected split
+            renderFilteredRaceResults(currentGender, splitSelect.value);
+        });
+    }
+}
+
+// Render filtered race results based on gender and split
+function renderFilteredRaceResults(gender, splitType) {
+    const container = document.getElementById('race-results-display');
+    
+    if (!window.raceResultsData) {
+        container.innerHTML = '<p>No race results data available</p>';
+        return;
+    }
+    
+    const { menResults, womenResults, athletesById } = window.raceResultsData;
+    const results = gender === 'men' ? menResults : womenResults;
+    const genderLabel = gender === 'men' ? 'Men' : 'Women';
+    
+    if (results.length === 0) {
+        container.innerHTML = `<p>No ${genderLabel.toLowerCase()}'s results available yet.</p>`;
+        return;
+    }
+    
+    // Build race results HTML
+    let resultsHTML = '<div class="race-results-container">';
+    resultsHTML += '<div class="race-gender-section">';
+    resultsHTML += `<h3 class="gender-header">${genderLabel}'s Results</h3>`;
+    resultsHTML += '<div class="race-results-list">';
+    
+    results.forEach(result => {
+        const athlete = athletesById.get(result.athlete_id);
+        if (athlete) {
+            resultsHTML += createRaceResultRow(result, athlete, splitType);
+        }
+    });
+    
+    resultsHTML += '</div></div></div>';
+    container.innerHTML = resultsHTML;
+}
+
 // Create a single race result row
-function createRaceResultRow(result, athlete) {
+function createRaceResultRow(result, athlete, splitType = 'finish') {
     const placement = result.placement || '-';
-    const finishTime = result.finish_time || 'DNF';
     const points = result.total_points || 0;
     const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
     
-    // Calculate gap from winner if available
+    // Determine which time to display based on splitType
+    let displayTime = 'N/A';
+    let timeLabel = 'Finish';
+    
+    switch(splitType) {
+        case 'finish':
+            displayTime = result.finish_time || 'DNF';
+            timeLabel = 'Finish';
+            break;
+        case '5k':
+            displayTime = result.split_5k || 'N/A';
+            timeLabel = '5K';
+            break;
+        case '10k':
+            displayTime = result.split_10k || 'N/A';
+            timeLabel = '10K';
+            break;
+        case 'half':
+            displayTime = result.split_half || 'N/A';
+            timeLabel = 'Half';
+            break;
+        case '30k':
+            displayTime = result.split_30k || 'N/A';
+            timeLabel = '30K';
+            break;
+        case '35k':
+            displayTime = result.split_35k || 'N/A';
+            timeLabel = '35K';
+            break;
+        case '40k':
+            displayTime = result.split_40k || 'N/A';
+            timeLabel = '40K';
+            break;
+    }
+    
+    // Calculate gap from winner if available (only for finish time)
     let gapFromFirst = '';
-    if (result.breakdown && result.breakdown.time_gap) {
+    if (splitType === 'finish' && result.breakdown && result.breakdown.time_gap) {
         const gapSeconds = result.breakdown.time_gap.gap_seconds || 0;
         if (gapSeconds > 0) {
             const minutes = Math.floor(gapSeconds / 60);
@@ -2038,8 +1994,8 @@ function createRaceResultRow(result, athlete) {
                 </div>
             </div>
             <div class="race-result-performance">
-                <div class="finish-time">${finishTime}</div>
-                ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : ''}
+                <div class="finish-time">${displayTime}</div>
+                ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : (splitType !== 'finish' ? `<div class="time-gap">${timeLabel} Split</div>` : '')}
             </div>
             <div class="race-result-points">
                 <div class="points-value">${points} pts</div>
@@ -2637,20 +2593,23 @@ async function updateLiveStandings() {
         return;
     }
 
-    try {
-        // Fetch standings from API (includes points calculations)
-        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
-        if (response.ok) {
-            const data = await response.json();
-            displayPointsStandings(data.standings, display);
-        } else {
-            // Fallback to legacy time-based standings
-            displayLegacyStandings(display);
-        }
-    } catch (error) {
-        console.error('Error fetching standings:', error);
-        // Fallback to legacy time-based standings
-        displayLegacyStandings(display);
+    // Show link to leaderboard instead of full standings list
+    display.innerHTML = `
+        <div style="margin-top: 20px; padding: 15px; background: var(--light-gray); border-radius: 5px; text-align: center;">
+            <p style="margin: 0 0 10px 0; font-weight: 500;">Results have been entered</p>
+            <button id="view-leaderboard-from-commissioner" class="btn btn-primary">
+                📊 View Full Leaderboard
+            </button>
+        </div>
+    `;
+    
+    // Add event listener to the button
+    const viewLeaderboardBtn = document.getElementById('view-leaderboard-from-commissioner');
+    if (viewLeaderboardBtn) {
+        viewLeaderboardBtn.addEventListener('click', () => {
+            showPage('leaderboard-page');
+            loadLeaderboard();
+        });
     }
 }
 
@@ -3035,7 +2994,7 @@ async function handleResetGame() {
             // Clear localStorage team session (user might have been on a team)
             // Note: Commissioner session is preserved
             localStorage.removeItem(TEAM_SESSION_KEY);
-            anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+            anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
 
             // Clear any displayed data in commissioner dashboard
             document.getElementById('player-codes-display').innerHTML = '';
@@ -3743,8 +3702,11 @@ function populateAthleteBasicInfo(athlete) {
     
     const defaultRunnerSvg = getRunnerSvg(athlete.gender);
     
-    if (athlete.headshotUrl) {
-        photo.src = athlete.headshotUrl;
+    // Handle both headshot_url (from database) and headshotUrl (camelCase)
+    const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
+    
+    if (headshotUrl) {
+        photo.src = headshotUrl;
         photo.alt = athlete.name;
         // Handle 404 errors by falling back to gender-specific runner icon
         photo.onerror = function() {

@@ -3364,6 +3364,9 @@ footer .btn {
 .leaderboard-row-highlight {
     background: linear-gradient(135deg, #fff3e6 0%, #ffe6cc 100%);
     border: 2px solid #ff6900;
+    position: sticky;
+    top: 80px; /* Stick to top when scrolling down */
+    z-index: 10;
 }
 
 .leaderboard-row-highlight:hover {
@@ -3432,6 +3435,108 @@ footer .btn {
     padding: 8px;
     font-size: 20px;
     font-weight: bold;
+}
+
+/* Race Results Controls */
+.race-results-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+}
+
+.gender-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.gender-toggle-btn {
+    padding: 10px 20px;
+    border: none;
+    background: var(--light-gray);
+    color: var(--text-dark);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-right: 1px solid var(--medium-gray);
+}
+
+.gender-toggle-btn:last-child {
+    border-right: none;
+}
+
+.gender-toggle-btn:hover {
+    background: var(--medium-gray);
+}
+
+.gender-toggle-btn.active {
+    background: var(--primary-orange);
+    color: white;
+}
+
+.split-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.split-selector label {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.split-select {
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 6px;
+    background: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.split-select:hover {
+    border-color: var(--primary-orange);
+}
+
+.split-select:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.1);
+}
+
+@media (max-width: 600px) {
+    .race-results-controls {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .gender-toggle {
+        width: 100%;
+    }
+    
+    .gender-toggle-btn {
+        flex: 1;
+    }
+    
+    .split-selector {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .split-select {
+        flex: 1;
+    }
 }
 
 /* Race Results Styles */

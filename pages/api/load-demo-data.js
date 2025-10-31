@@ -20,6 +20,7 @@ const sql = neon(process.env.DATABASE_URL);
 const DEMO_GAME_ID = 'demo-game';
 const SALARY_CAP = 30000;
 const NUM_TEAMS = 25; // Create 25 DFS-style teams
+const NYC_MARATHON_RACE_ID = 1; // NYC Marathon 2025
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -58,20 +59,28 @@ export default async function handler(req, res) {
       console.log('✓ Cleaned up old demo data');
     }
     
-    // Step 2: Get athletes with salaries for team building (DFS style - all available)
+    // Step 2: Get athletes CONFIRMED for NYC Marathon with salaries for team building
     const menWithSalaryRaw = await sql`
-      SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
-      FROM athletes 
-      WHERE gender = 'men' AND salary IS NOT NULL AND salary > 0
-      ORDER BY salary ASC
+      SELECT DISTINCT a.id, a.name, a.country, a.personal_best as pb, a.salary, a.marathon_rank, a.headshot_url, a.gender
+      FROM athletes a
+      INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+      WHERE a.gender = 'men' 
+        AND a.salary IS NOT NULL 
+        AND a.salary > 0
+        AND ar.race_id = ${NYC_MARATHON_RACE_ID}
+      ORDER BY a.salary ASC
       LIMIT 100
     `;
     
     const womenWithSalaryRaw = await sql`
-      SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
-      FROM athletes 
-      WHERE gender = 'women' AND salary IS NOT NULL AND salary > 0
-      ORDER BY salary ASC
+      SELECT DISTINCT a.id, a.name, a.country, a.personal_best as pb, a.salary, a.marathon_rank, a.headshot_url, a.gender
+      FROM athletes a
+      INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+      WHERE a.gender = 'women' 
+        AND a.salary IS NOT NULL 
+        AND a.salary > 0
+        AND ar.race_id = ${NYC_MARATHON_RACE_ID}
+      ORDER BY a.salary ASC
       LIMIT 100
     `;
     
@@ -343,49 +352,85 @@ export default async function handler(req, res) {
     
     console.log('✓ Created all team rosters (3 teams x 6 athletes = 18 total entries)');
     
-    // Step 7: Optionally create REALISTIC race results with splits and scoring
+    // Step 7: Create REALISTIC race results for ALL NYC Marathon confirmed athletes
+    let allNYCMen = [];
+    let allNYCWomen = [];
+    
     if (includeResults) {
-      console.log('🏃 Creating realistic race results...');
+      console.log('🏃 Creating realistic race results for ALL NYC Marathon confirmed athletes...');
       
-      // Get all unique athletes across all teams
-      const allDemoAthletes = [];
-      const athleteSet = new Set();
+      // Get ALL athletes confirmed for NYC Marathon (not just those on teams)
+      const allNYCMenRaw = await sql`
+        SELECT DISTINCT a.id, a.name, a.country, a.gender, a.marathon_rank
+        FROM athletes a
+        INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+        WHERE a.gender = 'men' 
+          AND ar.race_id = ${NYC_MARATHON_RACE_ID}
+        ORDER BY a.marathon_rank NULLS LAST
+      `;
+      
+      const allNYCWomenRaw = await sql`
+        SELECT DISTINCT a.id, a.name, a.country, a.gender, a.marathon_rank
+        FROM athletes a
+        INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+        WHERE a.gender = 'women' 
+          AND ar.race_id = ${NYC_MARATHON_RACE_ID}
+        ORDER BY a.marathon_rank NULLS LAST
+      `;
+      
+      allNYCMen = allNYCMenRaw.map(a => ({ ...a, marathon_rank: a.marathon_rank || 999 }));
+      allNYCWomen = allNYCWomenRaw.map(a => ({ ...a, marathon_rank: a.marathon_rank || 999 }));
+      
+      console.log(`  Found ${allNYCMen.length} men and ${allNYCWomen.length} women confirmed for NYC Marathon`);
+      
+      // Identify athletes on rosters for DNF/DNS assignment
+      const menOnTeams = new Set();
+      const womenOnTeams = new Set();
       
       teams.forEach(team => {
-        [...team.men, ...team.women].forEach(athlete => {
-          if (!athleteSet.has(athlete.id)) {
-            athleteSet.add(athlete.id);
-            allDemoAthletes.push(athlete);
-          }
-        });
+        team.men.forEach(athlete => menOnTeams.add(athlete.id));
+        team.women.forEach(athlete => womenOnTeams.add(athlete.id));
       });
       
-      console.log(`  Creating results for ${allDemoAthletes.length} unique athletes`);
+      const rosteredMen = Array.from(menOnTeams);
+      const rosteredWomen = Array.from(womenOnTeams);
       
-      // Sort athletes by marathon_rank for realistic placements
-      allDemoAthletes.sort((a, b) => {
-        const rankA = a.marathon_rank || 999;
-        const rankB = b.marathon_rank || 999;
-        return rankA - rankB;
-      });
+      // Select DNF/DNS athletes separately for each gender (for testing)
+      const shuffledMen = rosteredMen.sort(() => 0.5 - Math.random());
+      const shuffledWomen = rosteredWomen.sort(() => 0.5 - Math.random());
       
-      // Generate realistic finish times based on gender and ranking
-      for (let i = 0; i < allDemoAthletes.length; i++) {
-        const athlete = allDemoAthletes[i];
-        const placement = i + 1;
+      const dnfMaleAthlete = shuffledMen[0];
+      const dnsFemaleAthlete = shuffledWomen[0];
+      
+      console.log(`  Assigning DNF to male athlete ID ${dnfMaleAthlete} and female athlete ID ${dnsFemaleAthlete}`);
+      
+      // Separate finishers from DNF for MEN
+      const menFinishers = allNYCMen.filter(a => a.id !== dnfMaleAthlete);
+      const menDnf = allNYCMen.filter(a => a.id === dnfMaleAthlete);
+      
+      console.log(`  First 5 men in finishers array:`, menFinishers.slice(0, 5).map(a => `ID ${a.id} (${a.name}, rank ${a.marathon_rank})`));
+      
+      // Generate results for MEN FINISHERS
+      for (let i = 0; i < menFinishers.length; i++) {
+        const athlete = menFinishers[i];
+        const placement = i + 1; // Sequential placement for finishers only
         
-        // Base times: Men 2:05:00, Women 2:20:00
-        const baseSeconds = athlete.gender === 'men' 
-          ? (2 * 3600 + 5 * 60)   // 2:05:00
-          : (2 * 3600 + 20 * 60); // 2:20:00
+        // Base time for men: 2:05:00
+        const baseSeconds = 2 * 3600 + 5 * 60;
         
-        // Add time based on placement (10 seconds per place)
-        const placementPenalty = i * 10;
+        // Add time based on placement (MUST be strictly increasing for each placement)
+        // This ensures finish times match placements after scoring engine re-sorts
+        let placementPenalty;
+        if (placement <= 10) {
+          placementPenalty = (placement - 1) * 10;  // Top 10: 10 seconds per place (was 5)
+        } else if (placement <= 20) {
+          placementPenalty = 100 + (placement - 11) * 15;  // 11-20: 15 seconds per place (was 10)
+        } else {
+          placementPenalty = 250 + (placement - 21) * 25;  // 21+: 25 seconds per place (was 20)
+        }
         
-        // Add some randomness (±30 seconds)
-        const randomVariation = Math.floor(Math.random() * 60) - 30;
-        
-        const totalSeconds = baseSeconds + placementPenalty + randomVariation;
+        // NO random variation - times must be strictly sequential
+        const totalSeconds = baseSeconds + placementPenalty;
         
         // Convert to HH:MM:SS
         const hours = Math.floor(totalSeconds / 3600);
@@ -393,13 +438,13 @@ export default async function handler(req, res) {
         const seconds = totalSeconds % 60;
         const finishTime = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         
-        // Generate realistic splits (progressively slower)
-        const split5kSeconds = Math.floor(totalSeconds * 0.118);  // ~5K is 11.8% of marathon
-        const split10kSeconds = Math.floor(totalSeconds * 0.237); // ~10K is 23.7%
-        const splitHalfSeconds = Math.floor(totalSeconds * 0.502); // Half is 50.2%
-        const split30kSeconds = Math.floor(totalSeconds * 0.711); // 30K is 71.1%
-        const split35kSeconds = Math.floor(totalSeconds * 0.829); // 35K is 82.9%
-        const split40kSeconds = Math.floor(totalSeconds * 0.948); // 40K is 94.8%
+        // Generate realistic splits
+        const split5kSeconds = Math.floor(totalSeconds * 0.118);
+        const split10kSeconds = Math.floor(totalSeconds * 0.237);
+        const splitHalfSeconds = Math.floor(totalSeconds * 0.502);
+        const split30kSeconds = Math.floor(totalSeconds * 0.711);
+        const split35kSeconds = Math.floor(totalSeconds * 0.829);
+        const split40kSeconds = Math.floor(totalSeconds * 0.948);
         
         const formatSplit = (secs) => {
           const h = Math.floor(secs / 3600);
@@ -408,38 +453,115 @@ export default async function handler(req, res) {
           return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         };
         
-        // Insert race result with all fields
         await sql`
           INSERT INTO race_results (
-            game_id, 
-            athlete_id, 
-            finish_time,
-            split_5k,
-            split_10k,
-            split_half,
-            split_30k,
-            split_35k,
-            split_40k,
-            placement,
+            game_id, athlete_id, finish_time,
+            split_5k, split_10k, split_half, split_30k, split_35k, split_40k,
             is_final
           )
           VALUES (
-            ${DEMO_GAME_ID},
-            ${athlete.id},
-            ${finishTime},
-            ${formatSplit(split5kSeconds)},
-            ${formatSplit(split10kSeconds)},
-            ${formatSplit(splitHalfSeconds)},
-            ${formatSplit(split30kSeconds)},
-            ${formatSplit(split35kSeconds)},
-            ${formatSplit(split40kSeconds)},
-            ${placement},
+            ${DEMO_GAME_ID}, ${athlete.id}, ${finishTime},
+            ${formatSplit(split5kSeconds)}, ${formatSplit(split10kSeconds)},
+            ${formatSplit(splitHalfSeconds)}, ${formatSplit(split30kSeconds)},
+            ${formatSplit(split35kSeconds)}, ${formatSplit(split40kSeconds)},
             true
           )
         `;
       }
       
-      console.log(`✓ Created ${allDemoAthletes.length} race results with realistic splits`);
+      // Insert DNF for MEN (no placement, partial splits)
+      for (const athlete of menDnf) {
+        await sql`
+          INSERT INTO race_results (
+            game_id, athlete_id, finish_time, split_half, is_final
+          )
+          VALUES (
+            ${DEMO_GAME_ID}, ${athlete.id}, 'DNF', 
+            '1:02:30', true
+          )
+        `;
+        console.log(`  🚫 DNF: ${athlete.name} (Men)`);
+      }
+      
+      console.log(`  ✓ Generated results for ${menFinishers.length} men (${menDnf.length} DNF)`);
+      
+      // Separate finishers from DNF for WOMEN
+      const womenFinishers = allNYCWomen.filter(a => a.id !== dnsFemaleAthlete);
+      const womenDnf = allNYCWomen.filter(a => a.id === dnsFemaleAthlete);
+      
+      // Generate results for WOMEN FINISHERS
+      for (let i = 0; i < womenFinishers.length; i++) {
+        const athlete = womenFinishers[i];
+        const placement = i + 1; // Sequential placement for finishers only
+        
+        // Base time for women: 2:20:00
+        const baseSeconds = 2 * 3600 + 20 * 60;
+        
+        // Add time based on placement (MUST be strictly increasing for each placement)
+        // This ensures finish times match placements after scoring engine re-sorts
+        let placementPenalty;
+        if (placement <= 10) {
+          placementPenalty = (placement - 1) * 10;  // Top 10: 10 seconds per place (was 5)
+        } else if (placement <= 20) {
+          placementPenalty = 100 + (placement - 11) * 15;  // 11-20: 15 seconds per place (was 10)
+        } else {
+          placementPenalty = 250 + (placement - 21) * 25;  // 21+: 25 seconds per place (was 20)
+        }
+        
+        // NO random variation - times must be strictly sequential
+        const totalSeconds = baseSeconds + placementPenalty;
+        
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const finishTime = `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        const split5kSeconds = Math.floor(totalSeconds * 0.118);
+        const split10kSeconds = Math.floor(totalSeconds * 0.237);
+        const splitHalfSeconds = Math.floor(totalSeconds * 0.502);
+        const split30kSeconds = Math.floor(totalSeconds * 0.711);
+        const split35kSeconds = Math.floor(totalSeconds * 0.829);
+        const split40kSeconds = Math.floor(totalSeconds * 0.948);
+        
+        const formatSplit = (secs) => {
+          const h = Math.floor(secs / 3600);
+          const m = Math.floor((secs % 3600) / 60);
+          const s = secs % 60;
+          return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        };
+        
+        await sql`
+          INSERT INTO race_results (
+            game_id, athlete_id, finish_time,
+            split_5k, split_10k, split_half, split_30k, split_35k, split_40k,
+            is_final
+          )
+          VALUES (
+            ${DEMO_GAME_ID}, ${athlete.id}, ${finishTime},
+            ${formatSplit(split5kSeconds)}, ${formatSplit(split10kSeconds)},
+            ${formatSplit(splitHalfSeconds)}, ${formatSplit(split30kSeconds)},
+            ${formatSplit(split35kSeconds)}, ${formatSplit(split40kSeconds)},
+            true
+          )
+        `;
+      }
+      
+      // Insert DNF for WOMEN (no placement, partial splits)
+      for (const athlete of womenDnf) {
+        await sql`
+          INSERT INTO race_results (
+            game_id, athlete_id, finish_time, split_half, is_final
+          )
+          VALUES (
+            ${DEMO_GAME_ID}, ${athlete.id}, 'DNF', 
+            '1:10:00', true
+          )
+        `;
+        console.log(`  🚫 DNF: ${athlete.name} (Women)`);
+      }
+      
+      console.log(`  ✓ Generated results for ${womenFinishers.length} women (${womenDnf.length} DNF)`);
+      console.log(`  ✓ Total results: ${menFinishers.length + womenFinishers.length + menDnf.length + womenDnf.length} (${menFinishers.length + womenFinishers.length} finishers, ${menDnf.length + womenDnf.length} DNF)`);
       
       // Optionally trigger automatic scoring
       try {
@@ -465,6 +587,8 @@ export default async function handler(req, res) {
     }
     
     // Step 8: Return comprehensive summary
+    const totalResultsCount = includeResults ? (allNYCMen.length + allNYCWomen.length) : 0;
+    
     const summary = {
       success: true,
       message: 'Demo data created successfully!',
@@ -491,13 +615,16 @@ export default async function handler(req, res) {
         athletesPerTeam: 6,
         totalAthletes: teams.length * 6,
         uniqueAthletes: new Set(teams.flatMap(t => [...t.men, ...t.women].map(a => a.id))).size,
-        resultsCount: includeResults ? new Set(teams.flatMap(t => [...t.men, ...t.women].map(a => a.id))).size : 0
+        resultsCount: totalResultsCount,
+        menResults: includeResults ? allNYCMen.length : 0,
+        womenResults: includeResults ? allNYCWomen.length : 0
       },
       instructions: [
         '✅ Demo game created with ID: demo-game',
         `✅ ${teams.length} teams created, each with 3 men + 3 women`,
         `✅ All teams comply with $${SALARY_CAP/1000}K salary cap`,
-        includeResults ? '✅ Race results with splits created and scored' : '⏳ No race results yet',
+        includeResults ? `✅ Race results created for ALL ${totalResultsCount} NYC Marathon athletes (${allNYCMen.length} men, ${allNYCWomen.length} women)` : '⏳ No race results yet',
+        includeResults ? '✅ Includes 1 DNF and 1 DNS for testing' : '',
         '',
         '📋 NEXT STEPS:',
         '1. Copy a session URL below',
@@ -511,7 +638,7 @@ export default async function handler(req, res) {
     console.log(`   Game ID: ${DEMO_GAME_ID}`);
     console.log(`   Teams: ${summary.stats.totalTeams}`);
     console.log(`   Athletes: ${summary.stats.uniqueAthletes} unique across ${summary.stats.totalAthletes} roster slots`);
-    console.log(`   Results: ${summary.stats.resultsCount}`);
+    console.log(`   Results: ${summary.stats.resultsCount} (${summary.stats.menResults} men, ${summary.stats.womenResults} women)`);
     
     return res.status(200).json(summary);
     
