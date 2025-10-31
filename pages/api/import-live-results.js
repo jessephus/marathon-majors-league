@@ -160,7 +160,9 @@ export default async function handler(req, res) {
         });
 
       } catch (error) {
-        console.error(`Error processing athlete ${name}:`, error);
+        // Sanitize name for logging to prevent format string issues
+        const safeName = String(name).replace(/[^\w\s-]/g, '');
+        console.error(`Error processing athlete ${safeName}:`, error);
         failedAthletes.push({ 
           name, 
           reason: `Database error: ${error.message}` 
