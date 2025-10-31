@@ -1667,12 +1667,31 @@ async function displayRaceResultsLeaderboard() {
 
         // Create a map of athletes by ID for faster lookup
         const athletesById = new Map();
-        gameState.athletes.men.forEach(a => athletesById.set(a.id, { ...a, gender: 'men' }));
-        gameState.athletes.women.forEach(a => athletesById.set(a.id, { ...a, gender: 'women' }));
+        gameState.athletes.men.forEach(a => athletesById.set(a.id, { ...a, gender: a.gender || 'men' }));
+        gameState.athletes.women.forEach(a => athletesById.set(a.id, { ...a, gender: a.gender || 'women' }));
+
+        // Merge in fallback athlete info from results API to cover athletes not in local cache
+        scoredResults.forEach(result => {
+            const existing = athletesById.get(result.athlete_id);
+            const merged = {
+                id: result.athlete_id,
+                name: result.athlete_name || existing?.name || `Athlete #${result.athlete_id}`,
+                gender: (existing?.gender || result.gender || 'unknown').toLowerCase(),
+                country: result.country || existing?.country || '--',
+                pb: result.personal_best || existing?.pb || existing?.personal_best,
+                personal_best: result.personal_best || existing?.personal_best,
+                headshotUrl: result.headshot_url || existing?.headshotUrl || existing?.headshot_url,
+                headshot_url: result.headshot_url || existing?.headshot_url || existing?.headshotUrl
+            };
+
+            // Preserve any additional fields already stored (e.g., rankings)
+            athletesById.set(result.athlete_id, existing ? { ...existing, ...merged } : merged);
+        });
         
         // Separate men and women results using the map
         const menResults = [];
         const womenResults = [];
+        const otherResults = [];
         
         scoredResults.forEach(result => {
             const athlete = athletesById.get(result.athlete_id);
@@ -1681,6 +1700,8 @@ async function displayRaceResultsLeaderboard() {
                     menResults.push(result);
                 } else if (athlete.gender === 'women') {
                     womenResults.push(result);
+                } else {
+                    otherResults.push(result);
                 }
             }
         });
@@ -1688,6 +1709,7 @@ async function displayRaceResultsLeaderboard() {
         // Sort by placement (already sorted from API, but ensure it)
         menResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
         womenResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
+        otherResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
 
         // Build race results HTML
         let resultsHTML = '<div class="race-results-container">';
@@ -1721,6 +1743,19 @@ async function displayRaceResultsLeaderboard() {
                 }
             });
             
+            resultsHTML += '</div></div>';
+        }
+
+        if (otherResults.length > 0) {
+            resultsHTML += '<div class="race-gender-section">';
+            resultsHTML += '<h3 class="gender-header">Additional Results</h3>';
+            resultsHTML += '<div class="race-results-list">';
+            otherResults.forEach(result => {
+                const athlete = athletesById.get(result.athlete_id);
+                if (athlete) {
+                    resultsHTML += createRaceResultRow(result, athlete);
+                }
+            });
             resultsHTML += '</div></div>';
         }
 
@@ -1777,7 +1812,9 @@ function createRaceResultRow(result, athlete) {
     }
 
     const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
-    const fallbackImg = getRunnerSvg(athlete.gender || 'men');
+    const fallbackImg = getRunnerSvg((athlete.gender || 'men').toLowerCase());
+    const countryCode = (athlete.country || '').toUpperCase();
+    const personalBest = athlete.pb || athlete.personal_best || athlete.personalBest || '';
 
     return `
         <div class="race-result-row" onclick="openAthleteModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
@@ -1789,8 +1826,8 @@ function createRaceResultRow(result, athlete) {
                 <div class="athlete-details">
                     <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                     <div class="athlete-meta">
-                        <span class="athlete-country">${getCountryFlagEmoji(athlete.country)} ${athlete.country}</span>
-                        ${athlete.pb ? `<span class="athlete-pb">PB: ${athlete.pb}</span>` : ''}
+                        <span class="athlete-country">${getCountryFlagEmoji(countryCode)} ${countryCode || 'N/A'}</span>
+                        ${personalBest ? `<span class="athlete-pb">PB: ${personalBest}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -3395,6 +3432,8 @@ async function openAthleteModal(athleteIdOrData) {
  */
 function getCountryFlagEmoji(countryCode) {
     if (!countryCode || countryCode.length < 2) return '🏁';
+    const sanitized = countryCode.replace(/[^A-Za-z]/g, '').toUpperCase();
+    if (sanitized.length < 2) return '🏁';
     
     // Map of common alpha-3 to alpha-2 codes for marathon countries
     const alpha3ToAlpha2 = {
@@ -3410,7 +3449,7 @@ function getCountryFlagEmoji(countryCode) {
         'FIN': 'FI', 'ISL': 'IS', 'IRL': 'IE', 'POR': 'PT', 'TUR': 'TR'
     };
     
-    const alpha2 = alpha3ToAlpha2[countryCode.toUpperCase()] || countryCode.slice(0, 2).toUpperCase();
+    const alpha2 = alpha3ToAlpha2[sanitized] || sanitized.slice(0, 2);
     const codePoints = alpha2.split('').map(char => 127397 + char.charCodeAt());
     return String.fromCodePoint(...codePoints);
 }
