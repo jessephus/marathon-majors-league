@@ -301,6 +301,7 @@ function getMainHTML() {
                     <div class="action-card">
                         <h3>Player Links</h3>
                         <div id="player-codes-display"></div>
+                        <button id="manage-teams-btn" class="btn btn-primary" style="margin-top: 16px;">Manage Players/Teams</button>
                     </div>
 
                     <div class="action-card">
@@ -338,6 +339,32 @@ function getMainHTML() {
                     </div>
                 </div>
                 <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
+            </div>
+
+            <!-- Manage Players/Teams Page -->
+            <div id="manage-teams-page" class="page">
+                <h2>Manage Players/Teams</h2>
+                <p class="page-description">View and manage all players and their team status</p>
+                
+                <div class="manage-teams-container">
+                    <table id="teams-status-table" class="teams-status-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Team Name</th>
+                                <th>Player Link</th>
+                                <th>Rankings</th>
+                                <th class="draft-status-column">Draft Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teams-status-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button id="back-to-commissioner-from-teams" class="btn btn-secondary">Back to Dashboard</button>
             </div>
 
             <!-- Athlete Management Page -->

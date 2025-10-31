@@ -4064,3 +4064,130 @@ footer .btn {
         max-height: 85vh;
     }
 }
+
+/* Manage Players/Teams Page Styles */
+.manage-teams-container {
+    margin: 24px 0;
+    overflow-x: auto;
+}
+
+.teams-status-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.teams-status-table thead {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, #1e2a6e 100%);
+    color: white;
+}
+
+.teams-status-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.teams-status-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s;
+}
+
+.teams-status-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.teams-status-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.teams-status-table td {
+    padding: 16px 12px;
+    font-size: 14px;
+}
+
+.team-row-submitted {
+    background-color: #f0fdf4;
+}
+
+.team-row-pending {
+    background-color: #fefce8;
+}
+
+.badge-success {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #10b981;
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-pending {
+    display: inline-block;
+    padding: 4px 12px;
+    background-color: #94a3b8;
+    color: white;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.btn-copy-mini {
+    background: none;
+    border: 1px solid #e5e7eb;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-copy-mini:hover {
+    background-color: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.btn-mini {
+    background-color: var(--primary-blue);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-mini:hover {
+    background-color: #1e2a6e;
+}
+
+.btn-mini:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #94a3b8;
+}
+
+/* Mobile responsiveness for teams table */
+@media (max-width: 768px) {
+    .teams-status-table {
+        font-size: 12px;
+    }
+    
+    .teams-status-table th,
+    .teams-status-table td {
+        padding: 12px 8px;
+    }
+    
+    .draft-status-column {
+        display: none; /* Hide draft status on mobile */
+    }
+}
