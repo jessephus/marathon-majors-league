@@ -115,60 +115,41 @@ export default async function handler(req, res) {
         const athleteId = athlete[0].id;
         const athleteName = athlete[0].name;
 
+        // Helper function to execute upsert query for a specific split column
+        const upsertResult = async (columnName, includeePlacement) => {
+          const columns = includeePlacement 
+            ? `game_id, athlete_id, ${columnName}, placement, updated_at`
+            : `game_id, athlete_id, ${columnName}, updated_at`;
+          
+          const values = includeePlacement
+            ? [gameId, athleteId, time, parseInt(rank), 'NOW()']
+            : [gameId, athleteId, time, 'NOW()'];
+          
+          const updateSet = includeePlacement
+            ? `${columnName} = EXCLUDED.${columnName}, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`
+            : `${columnName} = EXCLUDED.${columnName}, updated_at = EXCLUDED.updated_at`;
+          
+          // Build and execute the query
+          if (includeePlacement) {
+            const placementValue = parseInt(rank);
+            await sql`INSERT INTO race_results (game_id, athlete_id, ${sql.unsafe(columnName)}, placement, updated_at) 
+                      VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) 
+                      ON CONFLICT (game_id, athlete_id) 
+                      DO UPDATE SET ${sql.unsafe(columnName)} = EXCLUDED.${sql.unsafe(columnName)}, 
+                                    placement = EXCLUDED.placement, 
+                                    updated_at = EXCLUDED.updated_at`;
+          } else {
+            await sql`INSERT INTO race_results (game_id, athlete_id, ${sql.unsafe(columnName)}, updated_at) 
+                      VALUES (${gameId}, ${athleteId}, ${time}, NOW()) 
+                      ON CONFLICT (game_id, athlete_id) 
+                      DO UPDATE SET ${sql.unsafe(columnName)} = EXCLUDED.${sql.unsafe(columnName)}, 
+                                    updated_at = EXCLUDED.updated_at`;
+          }
+        };
+
         // Insert or update race result
-        // Build the query dynamically based on split type
-        if (splitType.toLowerCase() === 'finish' && rank) {
-          // Finish time with placement
-          const placementValue = parseInt(rank);
-          switch (splitColumn) {
-            case 'split_5k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_5k, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_5k = EXCLUDED.split_5k, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_10k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_10k, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_10k = EXCLUDED.split_10k, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_half':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_half, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_half = EXCLUDED.split_half, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_30k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_30k, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_30k = EXCLUDED.split_30k, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_35k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_35k, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_35k = EXCLUDED.split_35k, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_40k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_40k, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_40k = EXCLUDED.split_40k, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'finish_time':
-              await sql`INSERT INTO race_results (game_id, athlete_id, finish_time, placement, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, ${placementValue}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET finish_time = EXCLUDED.finish_time, placement = EXCLUDED.placement, updated_at = EXCLUDED.updated_at`;
-              break;
-          }
-        } else {
-          // Split time without placement
-          switch (splitColumn) {
-            case 'split_5k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_5k, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_5k = EXCLUDED.split_5k, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_10k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_10k, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_10k = EXCLUDED.split_10k, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_half':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_half, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_half = EXCLUDED.split_half, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_30k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_30k, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_30k = EXCLUDED.split_30k, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_35k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_35k, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_35k = EXCLUDED.split_35k, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'split_40k':
-              await sql`INSERT INTO race_results (game_id, athlete_id, split_40k, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET split_40k = EXCLUDED.split_40k, updated_at = EXCLUDED.updated_at`;
-              break;
-            case 'finish_time':
-              await sql`INSERT INTO race_results (game_id, athlete_id, finish_time, updated_at) VALUES (${gameId}, ${athleteId}, ${time}, NOW()) ON CONFLICT (game_id, athlete_id) DO UPDATE SET finish_time = EXCLUDED.finish_time, updated_at = EXCLUDED.updated_at`;
-              break;
-          }
-        }
+        const includesPlacement = splitType.toLowerCase() === 'finish' && rank;
+        await upsertResult(splitColumn, includesPlacement);
 
         successCount++;
         updatedAthletes.push({

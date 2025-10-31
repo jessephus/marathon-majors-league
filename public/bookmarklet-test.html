@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet Test Page - NYRR Leaderboard Simulator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #1e3a8a;
+            margin: 0 0 10px 0;
+        }
+        
+        .info {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .leaderboard {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #1e3a8a;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .rank {
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+        
+        .country {
+            font-family: monospace;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .time {
+            font-weight: 600;
+            color: #059669;
+        }
+        
+        .instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .bookmarklet-test {
+            background: #fef3c7;
+            border: 2px dashed #f59e0b;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        code {
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏃‍♂️ NYRR Leaderboard Simulator</h1>
+        <p>Test page for Fantasy Marathon bookmarklet</p>
+    </div>
+    
+    <div class="info">
+        <strong>📋 Instructions:</strong> This page simulates the NYRR leaderboard structure. Use this to test 
+        your bookmarklet before race day.
+    </div>
+    
+    <div class="bookmarklet-test">
+        <strong>🧪 To Test the Bookmarklet:</strong>
+        <ol>
+            <li>Make sure you have installed the bookmarklet from <code>/bookmarklet</code></li>
+            <li>Stay on this page</li>
+            <li>Click the bookmarklet in your bookmarks bar</li>
+            <li>The bookmarklet should detect and extract the athlete data below</li>
+            <li>Configure settings and test the import process</li>
+        </ol>
+    </div>
+    
+    <div class="leaderboard">
+        <h2 style="padding: 20px; margin: 0; border-bottom: 2px solid #e5e7eb;">
+            Top Men Overall - Half Marathon Split
+        </h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Athlete</th>
+                    <th>Country</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <!-- Rows will be added dynamically -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="instructions">
+        <h3>About This Test Page</h3>
+        <p>
+            This page mimics the structure of the NYRR live results leaderboard. The bookmarklet 
+            looks for table rows and extracts athlete information using various selectors.
+        </p>
+        
+        <h4>What gets extracted:</h4>
+        <ul>
+            <li><strong>Rank:</strong> First column (number)</li>
+            <li><strong>Name:</strong> Second column (text)</li>
+            <li><strong>Country:</strong> Third column (3-letter code)</li>
+            <li><strong>Time:</strong> Fourth column (HH:MM:SS or MM:SS format)</li>
+        </ul>
+        
+        <h4>Expected Results:</h4>
+        <p>When you click the bookmarklet, it should:</p>
+        <ol>
+            <li>Detect that this is a "men" leaderboard (from the page title)</li>
+            <li>Find all athlete rows in the table</li>
+            <li>Extract data from each row</li>
+            <li>Show a dialog with configuration options</li>
+            <li>Allow you to select split type and confirm import</li>
+        </ol>
+    </div>
+    
+    <script>
+        // Sample athlete data for testing
+        const sampleAthletes = [
+            { rank: 1, name: "Eliud Kipchoge", country: "KEN", time: "1:00:30" },
+            { rank: 2, name: "Kenenisa Bekele", country: "ETH", time: "1:00:45" },
+            { rank: 3, name: "Geoffrey Kamworor", country: "KEN", time: "1:01:15" },
+            { rank: 4, name: "Lelisa Desisa", country: "ETH", time: "1:01:30" },
+            { rank: 5, name: "Abel Kirui", country: "KEN", time: "1:01:45" },
+            { rank: 6, name: "Wilson Kipsang", country: "KEN", time: "1:02:00" },
+            { rank: 7, name: "Dennis Kimetto", country: "KEN", time: "1:02:15" },
+            { rank: 8, name: "Emmanuel Mutai", country: "KEN", time: "1:02:30" },
+            { rank: 9, name: "Tsegaye Mekonnen", country: "ETH", time: "1:02:45" },
+            { rank: 10, name: "Stephen Kiprotich", country: "UGA", time: "1:03:00" },
+            { rank: 11, name: "Tamirat Tola", country: "ETH", time: "1:03:15" },
+            { rank: 12, name: "Shura Kitata", country: "ETH", time: "1:03:30" },
+            { rank: 13, name: "Mosinet Geremew", country: "ETH", time: "1:03:45" },
+            { rank: 14, name: "Leul Gebresilase", country: "ETH", time: "1:04:00" },
+            { rank: 15, name: "Birhanu Legese", country: "ETH", time: "1:04:15" },
+            { rank: 16, name: "Sisay Lemma", country: "ETH", time: "1:04:30" },
+            { rank: 17, name: "Andamlak Belihu", country: "ETH", time: "1:04:45" },
+            { rank: 18, name: "Sondre Nordstad Moen", country: "NOR", time: "1:05:00" },
+            { rank: 19, name: "Callum Hawkins", country: "GBR", time: "1:05:15" },
+            { rank: 20, name: "Galen Rupp", country: "USA", time: "1:05:30" }
+        ];
+        
+        // Populate the table
+        const tbody = document.getElementById('leaderboard-body');
+        
+        sampleAthletes.forEach(athlete => {
+            const row = document.createElement('tr');
+            row.className = 'leaderboard-row'; // Important: class for bookmarklet to find
+            
+            row.innerHTML = `
+                <td class="rank">${athlete.rank}</td>
+                <td>${athlete.name}</td>
+                <td><span class="country">${athlete.country}</span></td>
+                <td class="time">${athlete.time}</td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+        
+        // Add console message for debugging
+        console.log('📊 NYRR Leaderboard Test Page Loaded');
+        console.log(`Found ${sampleAthletes.length} athletes in the leaderboard`);
+        console.log('Click the bookmarklet to test data extraction!');
+    </script>
+</body>
+</html>

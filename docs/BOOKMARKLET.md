@@ -56,8 +56,9 @@ Supports all standard marathon splits:
 
 Visit the bookmarklet installation page:
 ```
-https://your-app-url.vercel.app/bookmarklet
+https://marathon-majors-league.vercel.app/bookmarklet
 ```
+(Replace with your actual deployment URL)
 
 Drag the orange "Import NYRR Results" button to your bookmarks bar.
 

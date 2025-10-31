@@ -21,6 +21,14 @@
     sessionToken: null // Will prompt user to enter if needed
   };
 
+  // Constants for data extraction
+  const EXTRACTION_CONSTANTS = {
+    MIN_NAME_LENGTH: 5,
+    COUNTRY_CODE_LENGTH: 3,
+    COUNTRY_CODE_PATTERN: /^[A-Z]{3}$/,
+    TIME_PATTERN: /^\d{1,2}:\d{2}(:\d{2})?$/
+  };
+
   // Detect gender from URL or page content
   function detectGender() {
     const url = window.location.href.toLowerCase();
@@ -98,17 +106,17 @@
           }
           
           // Name is usually a longer text field
-          if (text.length > 5 && !time && !/^\d+$/.test(text) && !text.match(/^[A-Z]{3}$/)) {
+          if (text.length > EXTRACTION_CONSTANTS.MIN_NAME_LENGTH && !time && !EXTRACTION_CONSTANTS.TIME_PATTERN.test(text) && !EXTRACTION_CONSTANTS.COUNTRY_CODE_PATTERN.test(text)) {
             name = text;
           }
           
           // Country code (3 letters)
-          if (text.match(/^[A-Z]{3}$/)) {
+          if (EXTRACTION_CONSTANTS.COUNTRY_CODE_PATTERN.test(text)) {
             country = text;
           }
           
           // Time (HH:MM:SS or MM:SS format)
-          if (text.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
+          if (EXTRACTION_CONSTANTS.TIME_PATTERN.test(text)) {
             time = normalizeTime(text);
           }
         });
