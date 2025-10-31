@@ -425,6 +425,14 @@ async function handleTeamCreation(e) {
 // ========== COMMISSIONER TOTP MODAL FUNCTIONS ==========
 
 function showCommissionerTOTPModal() {
+    // Check if already authenticated
+    if (commissionerSession.isCommissioner) {
+        // Session exists, go directly to commissioner page
+        handleCommissionerMode();
+        return;
+    }
+    
+    // No session, show TOTP login modal
     document.getElementById('commissioner-totp-modal').style.display = 'flex';
     document.getElementById('totp-code').focus();
 }

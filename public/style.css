@@ -2828,6 +2828,11 @@ footer .btn {
     min-width: 60px;
 }
 
+/* Hide label when slot is filled */
+.draft-slot.filled .slot-label {
+    display: none;
+}
+
 .slot-content {
     flex: 1;
     display: flex;
