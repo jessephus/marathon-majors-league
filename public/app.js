@@ -51,6 +51,23 @@ function switchGame(gameId) {
     location.reload(); // Reload to fetch new game data
 }
 
+/**
+ * Get gender-specific runner SVG fallback for athletes without headshots
+ * @param {string} gender - 'men' or 'women'
+ * @returns {string} Data URI of SVG image
+ */
+function getRunnerSvg(gender) {
+    const isMale = gender === 'men';
+    
+    // Male runner SVG - running pose
+    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head --%3E%3Ccircle cx="0" cy="-22" r="8" fill="%236c757d"/%3E%3C!-- Body --%3E%3Cpath d="M-2-14 L-2 8" stroke="%236c757d" stroke-width="4" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-2-10 L-12-5 M-2-6 L8 2" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-2 8 L-8 22 M-2 8 L6 18" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    
+    // Female runner SVG - running pose with longer hair
+    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head with hair --%3E%3Cellipse cx="0" cy="-22" rx="9" ry="8" fill="%236c757d"/%3E%3Cpath d="M-9-22 Q-11-18 -9-14 M9-22 Q11-18 9-14" stroke="%236c757d" stroke-width="2" fill="none"/%3E%3C!-- Body --%3E%3Cpath d="M-1-14 L-1 8" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-1-10 L-11-5 M-1-6 L8 2" stroke="%236c757d" stroke-width="2.5" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-1 8 L-7 22 M-1 8 L6 18" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    
+    return isMale ? maleRunnerSvg : femaleRunnerSvg;
+}
+
 // Load game state from database
 async function loadGameState() {
     try {
@@ -3259,13 +3276,7 @@ function populateAthleteBasicInfo(athlete) {
     const photo = document.getElementById('modal-athlete-photo');
     const isMale = athlete.gender === 'men';
     
-    // Male runner SVG - running pose
-    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head --%3E%3Ccircle cx="0" cy="-22" r="8" fill="%236c757d"/%3E%3C!-- Body --%3E%3Cpath d="M-2-14 L-2 8" stroke="%236c757d" stroke-width="4" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-2-10 L-12-5 M-2-6 L8 2" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-2 8 L-8 22 M-2 8 L6 18" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
-    
-    // Female runner SVG - running pose with longer hair
-    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head with hair --%3E%3Cellipse cx="0" cy="-22" rx="9" ry="8" fill="%236c757d"/%3E%3Cpath d="M-9-22 Q-11-18 -9-14 M9-22 Q11-18 9-14" stroke="%236c757d" stroke-width="2" fill="none"/%3E%3C!-- Body --%3E%3Cpath d="M-1-14 L-1 8" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-1-10 L-11-5 M-1-6 L8 2" stroke="%236c757d" stroke-width="2.5" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-1 8 L-7 22 M-1 8 L6 18" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
-    
-    const defaultRunnerSvg = isMale ? maleRunnerSvg : femaleRunnerSvg;
+    const defaultRunnerSvg = getRunnerSvg(athlete.gender);
     
     if (athlete.headshotUrl) {
         photo.src = athlete.headshotUrl;
@@ -3787,16 +3798,16 @@ async function viewTeamDetails(playerCode) {
                     shorthand = parts.length > 0 ? parts.join('+') : '-';
                 }
                 
-                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || 'https://via.placeholder.com/60';
+                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('men');
                 
                 modalHTML += `
                     <div class="athlete-card">
                         <div class="athlete-card-left">
-                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" />
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${getRunnerSvg('men')}';" />
                             <div class="athlete-info">
                                 <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                                 <div class="athlete-meta">
-                                    <span class="athlete-country">${athlete.country}</span>
+                                    <span class="athlete-country">${getCountryFlagEmoji(athlete.country)} ${athlete.country}</span>
                                     <span class="athlete-salary">$${(athlete.salary / 1000).toFixed(1)}K</span>
                                 </div>
                             </div>
@@ -3861,16 +3872,16 @@ async function viewTeamDetails(playerCode) {
                     shorthand = parts.length > 0 ? parts.join('+') : '-';
                 }
                 
-                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || 'https://via.placeholder.com/60';
+                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('women');
                 
                 modalHTML += `
                     <div class="athlete-card">
                         <div class="athlete-card-left">
-                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" />
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${getRunnerSvg('women')}';" />
                             <div class="athlete-info">
                                 <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                                 <div class="athlete-meta">
-                                    <span class="athlete-country">${athlete.country}</span>
+                                    <span class="athlete-country">${getCountryFlagEmoji(athlete.country)} ${athlete.country}</span>
                                     <span class="athlete-salary">$${(athlete.salary / 1000).toFixed(1)}K</span>
                                 </div>
                             </div>

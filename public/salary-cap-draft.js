@@ -424,7 +424,14 @@ function updateSlot(slotId) {
         const rank = athlete.marathonRank || athlete.worldAthletes?.marathonRank;
         const rankDisplay = rank ? `#${rank}` : 'Unranked';
         
+        // Determine gender from slot ID (M1, M2, M3 = men; W1, W2, W3 = women)
+        const gender = slotId.startsWith('M') ? 'men' : 'women';
+        const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg(gender);
+        
         slotContent.innerHTML = `
+            <div class="slot-headshot">
+                <img src="${headshotUrl}" alt="${athlete.name}" class="slot-headshot-img" onerror="this.onerror=null; this.src='${getRunnerSvg(gender)}';" />
+            </div>
             <div class="slot-athlete-info">
                 <div class="slot-athlete-name">${athlete.name}</div>
                 <div class="slot-athlete-details">${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}</div>
