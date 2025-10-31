@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     }
 
     // Validate split type
-    const validSplits = ['5k', '10k', 'half', '30k', '35k', '40k', 'finish'];
+    const validSplits = ['5k', '10k', '15k', '20k', 'half', '25k', '30k', '35k', '40k', 'finish'];
     if (!validSplits.includes(splitType.toLowerCase())) {
       return res.status(400).json({ 
         error: 'Invalid split type',
@@ -59,7 +59,10 @@ export default async function handler(req, res) {
     const splitColumnMap = {
       '5k': 'split_5k',
       '10k': 'split_10k',
+      '15k': 'split_15k',
+      '20k': 'split_20k',
       'half': 'split_half',
+      '25k': 'split_25k',
       '30k': 'split_30k',
       '35k': 'split_35k',
       '40k': 'split_40k',

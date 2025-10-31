@@ -139,7 +139,10 @@ race_results (
   athlete_id,
   split_5k,      -- ← Updated by "5K" import
   split_10k,     -- ← Updated by "10K" import
+  split_15k,     -- ← Updated by "15K" import
+  split_20k,     -- ← Updated by "20K" import
   split_half,    -- ← Updated by "Half" import
+  split_25k,     -- ← Updated by "25K" import
   split_30k,     -- ← Updated by "30K" import
   split_35k,     -- ← Updated by "35K" import
   split_40k,     -- ← Updated by "40K" import
@@ -149,7 +152,7 @@ race_results (
 )
 ```
 
-No schema changes were needed!
+Schema expanded to support 10 different splits for engaging live updates!
 
 ### API Request Example
 

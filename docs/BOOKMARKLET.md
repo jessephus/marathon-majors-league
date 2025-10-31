@@ -24,8 +24,11 @@ A bookmarklet is a special bookmark that contains JavaScript code. When you clic
 ### Multiple Split Support
 Supports all standard marathon splits:
 - 5K split
-- 10K split  
+- 10K split
+- 15K split
+- 20K split
 - Half marathon (21.1K)
+- 25K split
 - 30K split
 - 35K split
 - 40K split
@@ -191,7 +194,10 @@ CREATE TABLE race_results (
     finish_time VARCHAR(10),
     split_5k VARCHAR(10),
     split_10k VARCHAR(10),
+    split_15k VARCHAR(10),
+    split_20k VARCHAR(10),
     split_half VARCHAR(10),
+    split_25k VARCHAR(10),
     split_30k VARCHAR(10),
     split_35k VARCHAR(10),
     split_40k VARCHAR(10),
@@ -252,7 +258,10 @@ This handles variations in name formatting between the NYRR leaderboard and your
 const splitColumnMap = {
   '5k': 'split_5k',
   '10k': 'split_10k',
+  '15k': 'split_15k',
+  '20k': 'split_20k',
   'half': 'split_half',
+  '25k': 'split_25k',
   '30k': 'split_30k',
   '35k': 'split_35k',
   '40k': 'split_40k',

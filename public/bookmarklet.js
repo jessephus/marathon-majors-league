@@ -211,7 +211,10 @@
             style="width: 100%; padding: 10px; border: 2px solid #d1d5db; border-radius: 5px; font-size: 14px;">
             <option value="5k">5K Split</option>
             <option value="10k">10K Split</option>
+            <option value="15k">15K Split</option>
+            <option value="20k">20K Split</option>
             <option value="half">Half Marathon (21.1K)</option>
+            <option value="25k">25K Split</option>
             <option value="30k">30K Split</option>
             <option value="35k">35K Split</option>
             <option value="40k">40K Split</option>

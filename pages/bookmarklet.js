@@ -131,7 +131,7 @@ export default function Bookmarklet() {
                   </p>
                   <ul className="list-disc ml-5 text-gray-600 space-y-1">
                     <li><strong>Game ID:</strong> Your game's unique identifier (e.g., "default")</li>
-                    <li><strong>Split Type:</strong> Which split you're capturing (5K, 10K, Half, 30K, 35K, 40K, or Finish)</li>
+                    <li><strong>Split Type:</strong> Which split you're capturing (5K, 10K, 15K, 20K, Half, 25K, 30K, 35K, 40K, or Finish)</li>
                     <li><strong>Division:</strong> Men's or Women's race (usually auto-detected)</li>
                     <li><strong>Session Token:</strong> Optional - only needed if commissioner authentication is required</li>
                   </ul>
