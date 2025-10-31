@@ -43,6 +43,21 @@ async function ensureResultsScored(gameId) {
   }
 }
 
+/**
+ * Generate ETag for response data
+ */
+function generateETag(data) {
+  const str = JSON.stringify(data);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
+}
+
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
@@ -111,10 +126,23 @@ export default async function handler(req, res) {
         legacyResults[r.athlete_id] = r.finish_time;
       });
       
-      res.status(200).json({
+      // Generate ETag for caching
+      const responseData = {
         results: legacyResults,
         scored: results
-      });
+      };
+      const etag = generateETag(responseData);
+      
+      // Set caching headers
+      res.setHeader('ETag', `"${etag}"`);
+      res.setHeader('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60');
+      
+      // Check if client has current version
+      if (req.headers['if-none-match'] === `"${etag}"`) {
+        return res.status(304).end();
+      }
+      
+      res.status(200).json(responseData);
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
       // Verify commissioner access for results entry

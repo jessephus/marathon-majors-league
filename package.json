@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "start": "next start",
     "deploy": "vercel --prod",
     "postbuild": "node scripts/init-db.js",
@@ -25,7 +26,8 @@
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "speakeasy": "^2.0.0"
+    "speakeasy": "^2.0.0",
+    "swr": "^2.3.6"
   },
   "keywords": [
     "fantasy",
@@ -34,5 +36,11 @@
     "new-york"
   ],
   "author": "Jesse Geraci",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@next/bundle-analyzer": "^16.0.1",
+    "@types/node": "^24.9.2",
+    "@types/react": "^19.2.2",
+    "typescript": "^5.9.3"
+  }
 }
