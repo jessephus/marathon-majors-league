@@ -1540,13 +1540,6 @@ async function displayLeaderboard() {
         
         leaderboardHTML += '</div>';
         
-        // Add refresh notice (results are always live for now)
-        leaderboardHTML = `
-            <div class="live-results-notice">
-                <span class="live-indicator">●</span> Live Results - Pull down to refresh
-            </div>
-        ` + leaderboardHTML;
-        
         container.innerHTML = leaderboardHTML;
         
     } catch (error) {
@@ -3743,16 +3736,12 @@ async function viewTeamDetails(playerCode) {
                     </div>
                     <div class="team-details-summary">
                         <div class="summary-stat">
-                            <span class="stat-label">Total Points</span>
-                            <span class="stat-value">${totalPoints}</span>
+                            <div class="stat-label">Total Points</div>
+                            <div class="stat-value">${totalPoints}</div>
                         </div>
                         <div class="summary-stat">
-                            <span class="stat-label">Athletes</span>
-                            <span class="stat-value">${team.menCount + team.womenCount}</span>
-                        </div>
-                        <div class="summary-stat">
-                            <span class="stat-label">Spent</span>
-                            <span class="stat-value">$${(team.totalSpent / 1000).toFixed(1)}K</span>
+                            <div class="stat-label">Salary</div>
+                            <div class="stat-value">$${(team.totalSpent / 1000).toFixed(1)}K</div>
                         </div>
                     </div>
                     <div class="team-details-athletes">
@@ -3760,48 +3749,151 @@ async function viewTeamDetails(playerCode) {
         
         // Show men
         if (team.men && team.men.length > 0) {
-            modalHTML += '<h3>Men</h3>';
+            modalHTML += '<div class="gender-section"><h3>MEN</h3>';
             team.men.forEach(athlete => {
                 const result = scoredResults.find(r => r.athlete_id === athlete.id);
                 const points = result ? result.total_points || 0 : 0;
-                const placement = result ? result.placement : '-';
+                const placement = result ? result.placement : null;
+                const breakdown = result ? result.breakdown : null;
+                const finishTime = result ? result.finish_time : null;
+                
+                // Calculate gap from first place
+                let gapFromFirst = '';
+                if (result && breakdown && breakdown.time_gap) {
+                    const gapSeconds = breakdown.time_gap.gap_seconds || 0;
+                    if (gapSeconds > 0) {
+                        const minutes = Math.floor(gapSeconds / 60);
+                        const seconds = Math.floor(gapSeconds % 60);
+                        gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }
+                
+                // Create shorthand notation: P=placement, G=time gap, B=bonuses
+                let shorthand = '';
+                if (breakdown) {
+                    const parts = [];
+                    if (breakdown.placement && breakdown.placement.points > 0) {
+                        parts.push(`P${breakdown.placement.points}`);
+                    }
+                    if (breakdown.time_gap && breakdown.time_gap.points > 0) {
+                        parts.push(`G${breakdown.time_gap.points}`);
+                    }
+                    const perfBonus = breakdown.performance_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const recBonus = breakdown.record_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const totalBonus = perfBonus + recBonus;
+                    if (totalBonus > 0) {
+                        parts.push(`B${totalBonus}`);
+                    }
+                    shorthand = parts.length > 0 ? parts.join('+') : '-';
+                }
+                
+                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || 'https://via.placeholder.com/60';
                 
                 modalHTML += `
-                    <div class="athlete-detail-row">
-                        <div class="athlete-info">
-                            <span class="athlete-name">${escapeHtml(athlete.name)}</span>
-                            <span class="athlete-country">${athlete.country}</span>
+                    <div class="athlete-card">
+                        <div class="athlete-card-left">
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" />
+                            <div class="athlete-info">
+                                <div class="athlete-name">${escapeHtml(athlete.name)}</div>
+                                <div class="athlete-meta">
+                                    <span class="athlete-country">${athlete.country}</span>
+                                    <span class="athlete-salary">$${(athlete.salary / 1000).toFixed(1)}K</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="athlete-result">
-                            <span class="placement">#${placement}</span>
-                            <span class="points">${points} pts</span>
+                        <div class="athlete-card-center">
+                            <div class="race-time">${finishTime || '-'}</div>
+                            <div class="race-details">
+                                ${placement ? `<span class="race-placement">#${placement}</span>` : ''}
+                                ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="athlete-card-right">
+                            <div class="points-value">${points} pts</div>
+                            <div class="points-notation">
+                                <span class="breakdown-code">${shorthand}</span>
+                                <button class="info-icon" onclick="event.stopPropagation(); showPointsInfo();" title="Points breakdown">ⓘ</button>
+                            </div>
                         </div>
                     </div>
                 `;
             });
+            modalHTML += '</div>';
         }
         
         // Show women
         if (team.women && team.women.length > 0) {
-            modalHTML += '<h3>Women</h3>';
+            modalHTML += '<div class="gender-section"><h3>WOMEN</h3>';
             team.women.forEach(athlete => {
                 const result = scoredResults.find(r => r.athlete_id === athlete.id);
                 const points = result ? result.total_points || 0 : 0;
-                const placement = result ? result.placement : '-';
+                const placement = result ? result.placement : null;
+                const breakdown = result ? result.breakdown : null;
+                const finishTime = result ? result.finish_time : null;
+                
+                // Calculate gap from first place
+                let gapFromFirst = '';
+                if (result && breakdown && breakdown.time_gap) {
+                    const gapSeconds = breakdown.time_gap.gap_seconds || 0;
+                    if (gapSeconds > 0) {
+                        const minutes = Math.floor(gapSeconds / 60);
+                        const seconds = Math.floor(gapSeconds % 60);
+                        gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }
+                
+                // Create shorthand notation
+                let shorthand = '';
+                if (breakdown) {
+                    const parts = [];
+                    if (breakdown.placement && breakdown.placement.points > 0) {
+                        parts.push(`P${breakdown.placement.points}`);
+                    }
+                    if (breakdown.time_gap && breakdown.time_gap.points > 0) {
+                        parts.push(`G${breakdown.time_gap.points}`);
+                    }
+                    const perfBonus = breakdown.performance_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const recBonus = breakdown.record_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const totalBonus = perfBonus + recBonus;
+                    if (totalBonus > 0) {
+                        parts.push(`B${totalBonus}`);
+                    }
+                    shorthand = parts.length > 0 ? parts.join('+') : '-';
+                }
+                
+                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || 'https://via.placeholder.com/60';
                 
                 modalHTML += `
-                    <div class="athlete-detail-row">
-                        <div class="athlete-info">
-                            <span class="athlete-name">${escapeHtml(athlete.name)}</span>
-                            <span class="athlete-country">${athlete.country}</span>
+                    <div class="athlete-card">
+                        <div class="athlete-card-left">
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" />
+                            <div class="athlete-info">
+                                <div class="athlete-name">${escapeHtml(athlete.name)}</div>
+                                <div class="athlete-meta">
+                                    <span class="athlete-country">${athlete.country}</span>
+                                    <span class="athlete-salary">$${(athlete.salary / 1000).toFixed(1)}K</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="athlete-result">
-                            <span class="placement">#${placement}</span>
-                            <span class="points">${points} pts</span>
+                        <div class="athlete-card-center">
+                            <div class="race-time">${finishTime || '-'}</div>
+                            <div class="race-details">
+                                ${placement ? `<span class="race-placement">#${placement}</span>` : ''}
+                                ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="athlete-card-right">
+                            <div class="points-value">${points} pts</div>
+                            <div class="points-notation">
+                                <span class="breakdown-code">${shorthand}</span>
+                                <button class="info-icon" onclick="event.stopPropagation(); showPointsInfo();" title="Points breakdown">ⓘ</button>
+                            </div>
+                            <div class="points-total">${points} pts</div>
                         </div>
                     </div>
                 `;
             });
+            modalHTML += '</div>';
         }
         
         modalHTML += `
@@ -3826,9 +3918,61 @@ function closeTeamDetails() {
     }
 }
 
-// Make viewTeamDetails available globally
+function showPointsInfo() {
+    const infoHTML = `
+        <div class="points-info-modal-overlay" id="points-info-overlay" onclick="closePointsInfo()">
+            <div class="points-info-modal" onclick="event.stopPropagation()">
+                <div class="points-info-header">
+                    <h3>Points Breakdown Notation</h3>
+                    <button class="modal-close-btn" onclick="closePointsInfo()">×</button>
+                </div>
+                <div class="points-info-content">
+                    <div class="notation-explanation">
+                        <div class="notation-row">
+                            <span class="notation-code">P#</span>
+                            <span class="notation-desc"><strong>Placement Points</strong> - 10 pts for 1st down to 1 pt for 10th</span>
+                        </div>
+                        <div class="notation-row">
+                            <span class="notation-code">G#</span>
+                            <span class="notation-desc"><strong>Time Gap Bonus</strong> - +5 pts within 60s of winner, +4 within 2min, +3 within 3min, +2 within 5min, +1 within 10min</span>
+                        </div>
+                        <div class="notation-row">
+                            <span class="notation-code">B#</span>
+                            <span class="notation-desc"><strong>Performance Bonuses</strong> - +2 pts for negative split (faster 2nd half), +1 pt for even pace, +1 pt for fast finish kick</span>
+                        </div>
+                        <div class="notation-row">
+                            <span class="notation-code">R#</span>
+                            <span class="notation-desc"><strong>Record Bonuses</strong> - +15 pts for world record, +5 pts for course record (provisional until confirmed)</span>
+                        </div>
+                    </div>
+                    <div class="notation-example">
+                        <strong>Example:</strong> "P10+G5+B2" = 17 total points
+                        <ul>
+                            <li>10 pts for 1st place finish</li>
+                            <li>+5 pts for finishing within 60 seconds of winner</li>
+                            <li>+2 pts for performance bonuses (negative split)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', infoHTML);
+}
+
+function closePointsInfo() {
+    const modal = document.getElementById('points-info-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Make functions available globally
 window.viewTeamDetails = viewTeamDetails;
 window.closeTeamDetails = closeTeamDetails;
+window.showPointsInfo = showPointsInfo;
+window.closePointsInfo = closePointsInfo;
 }
 
 // Initialize when DOM is loaded
