@@ -2869,40 +2869,31 @@ async function handleResetResults() {
 }
 
 async function handleResetGame() {
-    if (confirm('Are you sure you want to reset the entire game? This cannot be undone.')) {
+    if (confirm('Are you sure you want to reset the entire game? This will delete ALL data including teams, rosters, rankings, results, and scores. This cannot be undone!')) {
+        console.log('[Reset Game] User confirmed complete game reset');
+        
         try {
-            // Clear database by deleting all records for this game
-            await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`, {
+            // Show loading state
+            const resetBtn = document.getElementById('reset-game');
+            const originalText = resetBtn.textContent;
+            resetBtn.textContent = 'Resetting...';
+            resetBtn.disabled = true;
+
+            // Call comprehensive reset API endpoint
+            const response = await fetch(`${API_BASE}/api/reset-game?gameId=${GAME_ID}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    players: [],
-                    draftComplete: false
-                })
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            // Clear rankings from database
-            await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rankings: {} })
-            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.details || error.error || 'Reset failed');
+            }
 
-            // Clear teams (draft results) from database
-            await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ teams: {} })
-            });
+            const result = await response.json();
+            console.log('[Reset Game] Reset successful:', result);
 
-            // Clear results from database
-            await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ results: {} })
-            });
-
-            // Update local game state
+            // Update local game state to match reset database
             gameState.players = [];
             gameState.currentPlayer = null;
             gameState.rankings = {};
@@ -2911,19 +2902,42 @@ async function handleResetGame() {
             gameState.draftComplete = false;
             gameState.resultsFinalized = false;
 
-            // Clear any displayed data
+            // Clear localStorage team session (user might have been on a team)
+            // Note: Commissioner session is preserved
+            localStorage.removeItem(TEAM_SESSION_KEY);
+            anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+
+            // Clear any displayed data in commissioner dashboard
             document.getElementById('player-codes-display').innerHTML = '';
             document.getElementById('draft-status').innerHTML = '';
             document.getElementById('results-form').innerHTML = '';
             document.getElementById('winner-display').innerHTML = '';
             document.getElementById('live-standings').innerHTML = '';
             
-            alert('Game has been reset.');
+            // Show success message with details
+            alert(`Game reset complete!\n\nDeleted:\n- ${result.deleted.draftTeams} team rosters\n- ${result.deleted.playerRankings} player rankings\n- ${result.deleted.raceResults} race results\n- ${result.deleted.leagueStandings} standings entries\n- ${result.deleted.anonymousSessions} team sessions\n\nAll athlete data has been preserved.`);
+            
+            // Reload game state from database
+            await loadGameState();
+            
+            // Navigate to landing page
             showPage('landing-page');
+            
+            // Restore button
+            resetBtn.textContent = originalText;
+            resetBtn.disabled = false;
+            
         } catch (error) {
-            console.error('Error resetting game:', error);
-            alert('Error resetting game. Please try again.');
+            console.error('[Reset Game] Error resetting game:', error);
+            alert(`Error resetting game: ${error.message}\n\nPlease try again or contact support.`);
+            
+            // Restore button
+            const resetBtn = document.getElementById('reset-game');
+            resetBtn.textContent = 'Reset Game';
+            resetBtn.disabled = false;
         }
+    } else {
+        console.log('[Reset Game] User cancelled reset');
     }
 }
 
