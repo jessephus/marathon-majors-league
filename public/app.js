@@ -1731,7 +1731,7 @@ function createLeaderboardRow(standing, isCurrentPlayer = false) {
 
 // Display race results (actual athlete performance)
 async function displayRaceResultsLeaderboard() {
-    console.log('🔥 displayRaceResultsLeaderboard v1.0 called');
+    console.log('🔥 displayRaceResultsLeaderboard v2.0 called');
     const container = document.getElementById('race-results-display');
     container.innerHTML = '<div class="loading-spinner">Loading race results...</div>';
 
@@ -1789,79 +1789,25 @@ async function displayRaceResultsLeaderboard() {
             athletesById.set(result.athlete_id, existing ? { ...existing, ...merged } : merged);
         });
         
-        // Separate men and women results using the map
-        const menResults = [];
-        const womenResults = [];
-        const otherResults = [];
+        // Store data for filtering
+        window.raceResultsData = {
+            scoredResults,
+            athletesById,
+            menResults: scoredResults.filter(r => {
+                const athlete = athletesById.get(r.athlete_id);
+                return athlete && athlete.gender === 'men';
+            }).sort((a, b) => (a.placement || 999) - (b.placement || 999)),
+            womenResults: scoredResults.filter(r => {
+                const athlete = athletesById.get(r.athlete_id);
+                return athlete && athlete.gender === 'women';
+            }).sort((a, b) => (a.placement || 999) - (b.placement || 999))
+        };
+
+        // Initial render with men's results and finish time
+        renderFilteredRaceResults('men', 'finish');
         
-        scoredResults.forEach(result => {
-            const athlete = athletesById.get(result.athlete_id);
-            if (athlete) {
-                if (athlete.gender === 'men') {
-                    menResults.push(result);
-                } else if (athlete.gender === 'women') {
-                    womenResults.push(result);
-                } else {
-                    otherResults.push(result);
-                }
-            }
-        });
-
-        // Sort by placement (already sorted from API, but ensure it)
-        menResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
-        womenResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
-        otherResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
-
-        // Build race results HTML
-        let resultsHTML = '<div class="race-results-container">';
-        
-        // Men's Results
-        if (menResults.length > 0) {
-            resultsHTML += '<div class="race-gender-section">';
-            resultsHTML += '<h3 class="gender-header">Men\'s Results</h3>';
-            resultsHTML += '<div class="race-results-list">';
-            
-            menResults.forEach(result => {
-                const athlete = athletesById.get(result.athlete_id);
-                if (athlete) {
-                    resultsHTML += createRaceResultRow(result, athlete);
-                }
-            });
-            
-            resultsHTML += '</div></div>';
-        }
-
-        // Women's Results
-        if (womenResults.length > 0) {
-            resultsHTML += '<div class="race-gender-section">';
-            resultsHTML += '<h3 class="gender-header">Women\'s Results</h3>';
-            resultsHTML += '<div class="race-results-list">';
-            
-            womenResults.forEach(result => {
-                const athlete = athletesById.get(result.athlete_id);
-                if (athlete) {
-                    resultsHTML += createRaceResultRow(result, athlete);
-                }
-            });
-            
-            resultsHTML += '</div></div>';
-        }
-
-        if (otherResults.length > 0) {
-            resultsHTML += '<div class="race-gender-section">';
-            resultsHTML += '<h3 class="gender-header">Additional Results</h3>';
-            resultsHTML += '<div class="race-results-list">';
-            otherResults.forEach(result => {
-                const athlete = athletesById.get(result.athlete_id);
-                if (athlete) {
-                    resultsHTML += createRaceResultRow(result, athlete);
-                }
-            });
-            resultsHTML += '</div></div>';
-        }
-
-        resultsHTML += '</div>';
-        container.innerHTML = resultsHTML;
+        // Set up event listeners for controls
+        setupRaceResultsControls();
         
     } catch (error) {
         console.error('Error displaying leaderboard race results:', error);
@@ -1875,16 +1821,119 @@ async function displayRaceResultsLeaderboard() {
     }
 }
 
+// Setup event listeners for race results controls
+function setupRaceResultsControls() {
+    // Gender toggle buttons
+    const genderButtons = document.querySelectorAll('.gender-toggle-btn');
+    genderButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all buttons
+            genderButtons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            
+            // Get current split selection
+            const splitSelect = document.getElementById('split-select');
+            const currentSplit = splitSelect ? splitSelect.value : 'finish';
+            
+            // Re-render with selected gender
+            renderFilteredRaceResults(btn.dataset.gender, currentSplit);
+        });
+    });
+    
+    // Split selector dropdown
+    const splitSelect = document.getElementById('split-select');
+    if (splitSelect) {
+        splitSelect.addEventListener('change', () => {
+            // Get current gender selection
+            const activeGenderBtn = document.querySelector('.gender-toggle-btn.active');
+            const currentGender = activeGenderBtn ? activeGenderBtn.dataset.gender : 'men';
+            
+            // Re-render with selected split
+            renderFilteredRaceResults(currentGender, splitSelect.value);
+        });
+    }
+}
+
+// Render filtered race results based on gender and split
+function renderFilteredRaceResults(gender, splitType) {
+    const container = document.getElementById('race-results-display');
+    
+    if (!window.raceResultsData) {
+        container.innerHTML = '<p>No race results data available</p>';
+        return;
+    }
+    
+    const { menResults, womenResults, athletesById } = window.raceResultsData;
+    const results = gender === 'men' ? menResults : womenResults;
+    const genderLabel = gender === 'men' ? 'Men' : 'Women';
+    
+    if (results.length === 0) {
+        container.innerHTML = `<p>No ${genderLabel.toLowerCase()}'s results available yet.</p>`;
+        return;
+    }
+    
+    // Build race results HTML
+    let resultsHTML = '<div class="race-results-container">';
+    resultsHTML += '<div class="race-gender-section">';
+    resultsHTML += `<h3 class="gender-header">${genderLabel}'s Results</h3>`;
+    resultsHTML += '<div class="race-results-list">';
+    
+    results.forEach(result => {
+        const athlete = athletesById.get(result.athlete_id);
+        if (athlete) {
+            resultsHTML += createRaceResultRow(result, athlete, splitType);
+        }
+    });
+    
+    resultsHTML += '</div></div></div>';
+    container.innerHTML = resultsHTML;
+}
+
 // Create a single race result row
-function createRaceResultRow(result, athlete) {
+function createRaceResultRow(result, athlete, splitType = 'finish') {
     const placement = result.placement || '-';
-    const finishTime = result.finish_time || 'DNF';
     const points = result.total_points || 0;
     const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
     
-    // Calculate gap from winner if available
+    // Determine which time to display based on splitType
+    let displayTime = 'N/A';
+    let timeLabel = 'Finish';
+    
+    switch(splitType) {
+        case 'finish':
+            displayTime = result.finish_time || 'DNF';
+            timeLabel = 'Finish';
+            break;
+        case '5k':
+            displayTime = result.split_5k || 'N/A';
+            timeLabel = '5K';
+            break;
+        case '10k':
+            displayTime = result.split_10k || 'N/A';
+            timeLabel = '10K';
+            break;
+        case 'half':
+            displayTime = result.split_half || 'N/A';
+            timeLabel = 'Half';
+            break;
+        case '30k':
+            displayTime = result.split_30k || 'N/A';
+            timeLabel = '30K';
+            break;
+        case '35k':
+            displayTime = result.split_35k || 'N/A';
+            timeLabel = '35K';
+            break;
+        case '40k':
+            displayTime = result.split_40k || 'N/A';
+            timeLabel = '40K';
+            break;
+    }
+    
+    // Calculate gap from winner if available (only for finish time)
     let gapFromFirst = '';
-    if (result.breakdown && result.breakdown.time_gap) {
+    if (splitType === 'finish' && result.breakdown && result.breakdown.time_gap) {
         const gapSeconds = result.breakdown.time_gap.gap_seconds || 0;
         if (gapSeconds > 0) {
             const minutes = Math.floor(gapSeconds / 60);
@@ -1933,8 +1982,8 @@ function createRaceResultRow(result, athlete) {
                 </div>
             </div>
             <div class="race-result-performance">
-                <div class="finish-time">${finishTime}</div>
-                ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : ''}
+                <div class="finish-time">${displayTime}</div>
+                ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : (splitType !== 'finish' ? `<div class="time-gap">${timeLabel} Split</div>` : '')}
             </div>
             <div class="race-result-points">
                 <div class="points-value">${points} pts</div>
@@ -3641,8 +3690,11 @@ function populateAthleteBasicInfo(athlete) {
     
     const defaultRunnerSvg = getRunnerSvg(athlete.gender);
     
-    if (athlete.headshotUrl) {
-        photo.src = athlete.headshotUrl;
+    // Handle both headshot_url (from database) and headshotUrl (camelCase)
+    const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
+    
+    if (headshotUrl) {
+        photo.src = headshotUrl;
         photo.alt = athlete.name;
         // Handle 404 errors by falling back to gender-specific runner icon
         photo.onerror = function() {

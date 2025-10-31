@@ -286,6 +286,24 @@ function getMainHTML() {
                 
                 <!-- Race Results Tab Content -->
                 <div id="race-results-tab" class="leaderboard-tab-content">
+                    <div class="race-results-controls">
+                        <div class="gender-toggle">
+                            <button class="gender-toggle-btn active" data-gender="men">Men</button>
+                            <button class="gender-toggle-btn" data-gender="women">Women</button>
+                        </div>
+                        <div class="split-selector">
+                            <label for="split-select">Show:</label>
+                            <select id="split-select" class="split-select">
+                                <option value="finish">Finish Time</option>
+                                <option value="5k">5K Split</option>
+                                <option value="10k">10K Split</option>
+                                <option value="half">Half Marathon</option>
+                                <option value="30k">30K Split</option>
+                                <option value="35k">35K Split</option>
+                                <option value="40k">40K Split</option>
+                            </select>
+                        </div>
+                    </div>
                     <div id="race-results-display"></div>
                 </div>
                 
