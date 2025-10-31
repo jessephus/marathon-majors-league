@@ -24,12 +24,21 @@ async function calculateStandings(gameId) {
   
   // Calculate stats for each player
   for (const playerCode of players) {
-    // Get player's team
-    const team = await sql`
+    // Get player's team - try both salary_cap_teams and draft_teams
+    let team = await sql`
       SELECT athlete_id
-      FROM draft_teams
+      FROM salary_cap_teams
       WHERE game_id = ${gameId} AND player_code = ${playerCode}
     `;
+    
+    // Fallback to legacy draft_teams if not found
+    if (team.length === 0) {
+      team = await sql`
+        SELECT athlete_id
+        FROM draft_teams
+        WHERE game_id = ${gameId} AND player_code = ${playerCode}
+      `;
+    }
     
     if (team.length === 0) {
       continue;
@@ -107,23 +116,28 @@ async function calculateStandings(gameId) {
  * Update standings in database
  */
 async function updateStandingsCache(gameId, standings) {
-  // Clear existing standings
-  await sql`
-    DELETE FROM league_standings WHERE game_id = ${gameId}
-  `;
-  
-  // Insert new standings
-  for (const standing of standings) {
+  try {
+    // Clear existing standings
     await sql`
-      INSERT INTO league_standings 
-        (game_id, player_code, races_count, wins, top3, total_points, 
-         average_points, world_records, course_records, last_race_points, last_updated_at)
-      VALUES 
-        (${gameId}, ${standing.player_code}, ${standing.races_count}, ${standing.wins},
-         ${standing.top3}, ${standing.total_points}, ${standing.average_points},
-         ${standing.world_records}, ${standing.course_records}, ${standing.last_race_points},
-         CURRENT_TIMESTAMP)
+      DELETE FROM league_standings WHERE game_id = ${gameId}
     `;
+    
+    // Insert new standings
+    for (const standing of standings) {
+      await sql`
+        INSERT INTO league_standings 
+          (game_id, player_code, races_count, wins, top3, total_points, 
+           average_points, world_records, course_records, last_race_points, last_updated_at)
+        VALUES 
+          (${gameId}, ${standing.player_code}, ${standing.races_count}, ${standing.wins},
+           ${standing.top3}, ${standing.total_points}, ${standing.average_points},
+           ${standing.world_records}, ${standing.course_records}, ${standing.last_race_points},
+           CURRENT_TIMESTAMP)
+      `;
+    }
+  } catch (error) {
+    // If league_standings table doesn't exist, just skip caching
+    console.log('Standings cache not available:', error.message);
   }
 }
 
@@ -146,36 +160,42 @@ export default async function handler(req, res) {
       let standings;
       
       if (useCache) {
-        // Try to get from cache
-        standings = await sql`
-          SELECT 
-            player_code,
-            races_count,
-            wins,
-            top3,
-            total_points,
-            average_points,
-            world_records,
-            course_records,
-            last_race_points,
-            last_updated_at
-          FROM league_standings
-          WHERE game_id = ${gameId}
-          ORDER BY total_points DESC, player_code ASC
-        `;
-        
-        // Add ranks
-        let currentRank = 1;
-        let prevPoints = null;
-        standings.forEach((standing, index) => {
-          if (prevPoints !== null && standing.total_points === prevPoints) {
-            standing.rank = currentRank;
-          } else {
-            currentRank = index + 1;
-            standing.rank = currentRank;
-            prevPoints = standing.total_points;
-          }
-        });
+        try {
+          // Try to get from cache
+          standings = await sql`
+            SELECT 
+              player_code,
+              races_count,
+              wins,
+              top3,
+              total_points,
+              average_points,
+              world_records,
+              course_records,
+              last_race_points,
+              last_updated_at
+            FROM league_standings
+            WHERE game_id = ${gameId}
+            ORDER BY total_points DESC, player_code ASC
+          `;
+          
+          // Add ranks
+          let currentRank = 1;
+          let prevPoints = null;
+          standings.forEach((standing, index) => {
+            if (prevPoints !== null && standing.total_points === prevPoints) {
+              standing.rank = currentRank;
+            } else {
+              currentRank = index + 1;
+              standing.rank = currentRank;
+              prevPoints = standing.total_points;
+            }
+          });
+        } catch (error) {
+          // Cache not available, will calculate fresh
+          console.log('Cache not available:', error.message);
+          standings = [];
+        }
       }
       
       if (!standings || standings.length === 0) {
