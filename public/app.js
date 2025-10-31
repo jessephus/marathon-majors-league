@@ -39,6 +39,11 @@ const API_BASE = window.location.origin === 'null' ? '' : window.location.origin
 // Game ID - can be switched between default and demo
 let GAME_ID = localStorage.getItem('current_game_id') || 'default';
 
+// Function to get current game ID
+function getCurrentGameId() {
+    return GAME_ID;
+}
+
 // Function to switch games
 function switchGame(gameId) {
     GAME_ID = gameId;
@@ -1559,19 +1564,28 @@ async function displayLeaderboard() {
 // Create a single leaderboard row
 function createLeaderboardRow(standing, isCurrentPlayer = false) {
     const rank = standing.rank;
-    const displayRank = rank <= 3 ? '' : rank; // Don't show number for medal positions
+    const displayRank = rank <= 3 ? '' : `#${rank}`; // Don't show number for medal positions
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
     
     const rowClass = isCurrentPlayer ? 'leaderboard-row leaderboard-row-highlight' : 'leaderboard-row';
     
+    // Stats summary
+    const stats = `${standing.wins} wins, ${standing.top3} top-3`;
+    
     return `
-        <div class="${rowClass}">
-            <div class="leaderboard-rank">
+        <div class="${rowClass}" data-player-code="${escapeHtml(standing.player_code)}" onclick="viewTeamDetails('${escapeHtml(standing.player_code)}')">
+            <div class="leaderboard-rank-section">
                 <span class="rank-medal">${medal}</span>
                 <span class="rank-number">${displayRank}</span>
             </div>
-            <div class="leaderboard-team-name">${escapeHtml(standing.player_code)}</div>
-            <div class="leaderboard-score">${standing.total_points}</div>
+            <div class="leaderboard-team-section">
+                <div class="leaderboard-team-name">${escapeHtml(standing.player_code)}</div>
+                <div class="leaderboard-team-stats">${stats}</div>
+            </div>
+            <div class="leaderboard-score-section">
+                <div class="leaderboard-total-points">${standing.total_points}</div>
+                <div class="leaderboard-points-label">pts</div>
+            </div>
         </div>
     `;
 }
@@ -3686,6 +3700,135 @@ function setupAthleteModal() {
             switchModalTab(tab.dataset.tab);
         });
     });
+
+/**
+ * View team details from leaderboard
+ */
+async function viewTeamDetails(playerCode) {
+    try {
+        // Fetch team data
+        const response = await fetch(`${API_BASE}/api/salary-cap-draft?gameId=${getCurrentGameId()}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch team data');
+        }
+        
+        const teamData = await response.json();
+        const team = teamData[playerCode];
+        
+        if (!team) {
+            showErrorNotification(`Team ${playerCode} not found`);
+            return;
+        }
+        
+        // Fetch results to show points breakdown
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${getCurrentGameId()}`);
+        const resultsData = await resultsResponse.json();
+        const scoredResults = resultsData.scored || [];
+        
+        // Calculate total points for this team
+        const teamAthleteIds = [
+            ...(team.men || []).map(a => a.id),
+            ...(team.women || []).map(a => a.id)
+        ];
+        const teamResults = scoredResults.filter(r => teamAthleteIds.includes(r.athlete_id));
+        const totalPoints = teamResults.reduce((sum, r) => sum + (r.total_points || 0), 0);
+        
+        // Build modal content
+        let modalHTML = `
+            <div class="team-details-modal-overlay" id="team-details-overlay" onclick="closeTeamDetails()">
+                <div class="team-details-modal" onclick="event.stopPropagation()">
+                    <div class="team-details-header">
+                        <h2>${escapeHtml(playerCode)}</h2>
+                        <button class="modal-close-btn" onclick="closeTeamDetails()">×</button>
+                    </div>
+                    <div class="team-details-summary">
+                        <div class="summary-stat">
+                            <span class="stat-label">Total Points</span>
+                            <span class="stat-value">${totalPoints}</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label">Athletes</span>
+                            <span class="stat-value">${team.menCount + team.womenCount}</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label">Spent</span>
+                            <span class="stat-value">$${(team.totalSpent / 1000).toFixed(1)}K</span>
+                        </div>
+                    </div>
+                    <div class="team-details-athletes">
+        `;
+        
+        // Show men
+        if (team.men && team.men.length > 0) {
+            modalHTML += '<h3>Men</h3>';
+            team.men.forEach(athlete => {
+                const result = scoredResults.find(r => r.athlete_id === athlete.id);
+                const points = result ? result.total_points || 0 : 0;
+                const placement = result ? result.placement : '-';
+                
+                modalHTML += `
+                    <div class="athlete-detail-row">
+                        <div class="athlete-info">
+                            <span class="athlete-name">${escapeHtml(athlete.name)}</span>
+                            <span class="athlete-country">${athlete.country}</span>
+                        </div>
+                        <div class="athlete-result">
+                            <span class="placement">#${placement}</span>
+                            <span class="points">${points} pts</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        // Show women
+        if (team.women && team.women.length > 0) {
+            modalHTML += '<h3>Women</h3>';
+            team.women.forEach(athlete => {
+                const result = scoredResults.find(r => r.athlete_id === athlete.id);
+                const points = result ? result.total_points || 0 : 0;
+                const placement = result ? result.placement : '-';
+                
+                modalHTML += `
+                    <div class="athlete-detail-row">
+                        <div class="athlete-info">
+                            <span class="athlete-name">${escapeHtml(athlete.name)}</span>
+                            <span class="athlete-country">${athlete.country}</span>
+                        </div>
+                        <div class="athlete-result">
+                            <span class="placement">#${placement}</span>
+                            <span class="points">${points} pts</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        modalHTML += `
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add to document
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+    } catch (error) {
+        console.error('Error viewing team details:', error);
+        showErrorNotification('Failed to load team details');
+    }
+}
+
+function closeTeamDetails() {
+    const modal = document.getElementById('team-details-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Make viewTeamDetails available globally
+window.viewTeamDetails = viewTeamDetails;
+window.closeTeamDetails = closeTeamDetails;
 }
 
 // Initialize when DOM is loaded
