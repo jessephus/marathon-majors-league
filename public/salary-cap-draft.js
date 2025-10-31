@@ -4,16 +4,14 @@
  */
 
 /**
- * Get runner SVG fallback based on gender
+ * Get runner image fallback based on gender
  */
 function getRunnerSvg(gender) {
-    // Male runner SVG (broader torso, no ponytail)
-    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 width=%2264%22 height=%2264%22%3E%3Cg fill=%22%23666%22%3E%3Ccircle cx=%2238%22 cy=%2212%22 r=%225%22/%3E%3Crect x=%2228%22 y=%2218%22 width=%2218%22 height=%2210%22 rx=%225%22 transform=%22rotate(-20 37 23)%22/%3E%3Crect x=%2238%22 y=%2216%22 width=%2214%22 height=%224%22 rx=%222%22 transform=%22rotate(-35 38 18)%22/%3E%3Crect x=%2224%22 y=%2220%22 width=%2212%22 height=%224%22 rx=%222%22 transform=%22rotate(40 24 22)%22/%3E%3Crect x=%2234%22 y=%2228%22 width=%2216%22 height=%225%22 rx=%222.5%22 transform=%22rotate(25 34 30)%22/%3E%3Crect x=%2244%22 y=%2238%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-5 44 40)%22/%3E%3Crect x=%2224%22 y=%2230%22 width=%2214%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-35 24 32)%22/%3E%3Crect x=%2216%22 y=%2238%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-75 16 40)%22/%3E%3Cellipse cx=%2254%22 cy=%2244%22 rx=%225%22 ry=%222%22/%3E%3Cellipse cx=%2212%22 cy=%2244%22 rx=%225%22 ry=%222%22 transform=%22rotate(-10 12 44)%22/%3E%3C/g%3E%3C/svg%3E';
-    
-    // Female runner SVG (narrower torso, ponytail)
-    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 width=%2264%22 height=%2264%22%3E%3Cg fill=%22%23666%22%3E%3Ccircle cx=%2231%22 cy=%2213%22 r=%223%22/%3E%3Cpath d=%22M33 12 L36 13 L33 15 Z%22/%3E%3Ccircle cx=%2238%22 cy=%2212%22 r=%225%22/%3E%3Crect x=%2229%22 y=%2218%22 width=%2216%22 height=%2210%22 rx=%225%22 transform=%22rotate(-20 37 23)%22/%3E%3Crect x=%2239%22 y=%2216%22 width=%2214%22 height=%224%22 rx=%222%22 transform=%22rotate(-38 39 18)%22/%3E%3Crect x=%2223%22 y=%2221%22 width=%2212%22 height=%224%22 rx=%222%22 transform=%22rotate(42 23 23)%22/%3E%3Crect x=%2234%22 y=%2229%22 width=%2216%22 height=%225%22 rx=%222.5%22 transform=%22rotate(27 34 31)%22/%3E%3Crect x=%2245%22 y=%2239%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-8 45 41)%22/%3E%3Crect x=%2223%22 y=%2230%22 width=%2214%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-37 23 32)%22/%3E%3Crect x=%2215%22 y=%2239%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-78 15 41)%22/%3E%3Cellipse cx=%2255%22 cy=%2245%22 rx=%225%22 ry=%222%22/%3E%3Cellipse cx=%2211%22 cy=%2244%22 rx=%225%22 ry=%222%22 transform=%22rotate(-12 11 44)%22/%3E%3C/g%3E%3C/svg%3E';
-    
-    return gender === 'men' || gender === 'M' ? maleRunnerSvg : femaleRunnerSvg;
+    // Return image URLs for default runner avatars
+    const maleRunnerImg = '/images/man-runner.png';
+    const femaleRunnerImg = '/images/woman-runner.png';
+
+    return gender === 'men' || gender === 'M' ? maleRunnerImg : femaleRunnerImg;
 }
 
 // Salary cap configuration
@@ -312,7 +310,8 @@ function createModalAthleteItem(athlete, selectedAthleteIds) {
         item.classList.add('disabled');
     }
     
-    const rank = athlete.marathonRank || athlete.worldAthletics?.marathonRank;
+    // Check multiple possible rank field names
+    const rank = athlete.marathonRank || athlete.marathon_rank || athlete.worldAthletics?.marathonRank || athlete.worldAthletics?.marathon_rank;
     const rankDisplay = rank ? `Rank: #${rank}` : 'Unranked';
     
     item.innerHTML = `
@@ -434,18 +433,19 @@ function updateSlot(slotId) {
         slotElement.classList.add('filled');
         
         const athleteSalary = athlete.salary || 5000;
-        const rank = athlete.marathonRank || athlete.worldAthletes?.marathonRank;
+        // Check multiple possible rank field names
+        const rank = athlete.marathonRank || athlete.marathon_rank || athlete.worldAthletics?.marathonRank || athlete.worldAthletics?.marathon_rank;
         const rankDisplay = rank ? `#${rank}` : 'Unranked';
         
         // Determine gender from slot ID (M1, M2, M3 = men; W1, W2, W3 = women)
         const gender = slotId.startsWith('M') ? 'men' : 'women';
         const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
-        const fallbackSvg = getRunnerSvg(gender).replace(/'/g, '&apos;');
-        const displayUrl = headshotUrl || fallbackSvg;
+        const fallbackImg = getRunnerSvg(gender);
+        const displayUrl = headshotUrl || fallbackImg;
         
         slotContent.innerHTML = `
             <div class="slot-headshot">
-                <img src="${displayUrl}" alt="${athlete.name}" class="slot-headshot-img" onerror="this.onerror=null; this.src='${fallbackSvg}';" />
+                <img src="${displayUrl}" alt="${athlete.name}" class="slot-headshot-img" onerror="this.onerror=null; this.src='${fallbackImg}';" />
             </div>
             <div class="slot-athlete-info">
                 <div class="slot-athlete-name">${athlete.name}</div>

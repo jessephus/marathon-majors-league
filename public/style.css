@@ -3264,6 +3264,48 @@ footer .btn {
    LEADERBOARD STYLES
    ============================================================================ */
 
+/* Leaderboard Tabs */
+.leaderboard-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.leaderboard-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--dark-gray);
+    font-weight: 500;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    bottom: -2px; /* Overlap the container border */
+}
+
+.leaderboard-tab:hover {
+    color: var(--primary-orange);
+    background: rgba(255, 105, 0, 0.05);
+}
+
+.leaderboard-tab.active {
+    color: var(--primary-orange);
+    border-bottom-color: var(--primary-orange);
+    font-weight: 600;
+}
+
+.leaderboard-tab-content {
+    display: none;
+}
+
+.leaderboard-tab-content.active {
+    display: block;
+}
+
 .leaderboard-container {
     display: flex;
     flex-direction: column;
@@ -3390,6 +3432,194 @@ footer .btn {
     padding: 8px;
     font-size: 20px;
     font-weight: bold;
+}
+
+/* Race Results Styles */
+.race-results-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px 20px;
+}
+
+.race-gender-section {
+    margin-bottom: 30px;
+}
+
+.gender-header {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--primary-blue);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-orange);
+}
+
+.race-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.race-result-row {
+    display: grid;
+    grid-template-columns: 50px 1fr auto auto;
+    gap: 12px;
+    align-items: center;
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.race-result-row:hover {
+    border-color: var(--primary-orange);
+    box-shadow: 0 2px 8px rgba(255, 105, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.race-result-placement {
+    text-align: center;
+}
+
+.placement-medal {
+    font-size: 24px;
+}
+
+.placement-number {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--dark-gray);
+}
+
+.race-result-athlete {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.race-result-headshot {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+}
+
+.athlete-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.athlete-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+.athlete-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.athlete-country {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.athlete-pb {
+    color: #95a5a6;
+}
+
+.race-result-performance {
+    text-align: right;
+}
+
+.finish-time {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+.time-gap {
+    font-size: 13px;
+    color: #95a5a6;
+    margin-top: 2px;
+}
+
+.race-result-points {
+    text-align: right;
+    min-width: 80px;
+}
+
+.points-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--primary-orange);
+}
+
+.points-breakdown {
+    font-size: 11px;
+    color: #95a5a6;
+    margin-top: 2px;
+}
+
+/* Mobile Responsive for Race Results */
+@media (max-width: 768px) {
+    .race-result-row {
+        grid-template-columns: 40px 1fr;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .race-result-placement {
+        grid-row: 1 / 3;
+    }
+    
+    .race-result-athlete {
+        grid-column: 2;
+    }
+    
+    .race-result-performance {
+        grid-column: 2;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .race-result-points {
+        grid-column: 2;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 8px;
+        margin-top: 4px;
+    }
+    
+    .race-result-headshot {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .athlete-name {
+        font-size: 14px;
+    }
+    
+    .finish-time {
+        font-size: 16px;
+    }
+    
+    .points-value {
+        font-size: 18px;
+    }
 }
 
 /* Team Details Modal */

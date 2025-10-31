@@ -59,13 +59,11 @@ function switchGame(gameId) {
 function getRunnerSvg(gender) {
     const isMale = gender === 'men';
     
-    // Male runner SVG (broader torso, no ponytail)
-    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 width=%2264%22 height=%2264%22%3E%3Cg fill=%22%23666%22%3E%3Ccircle cx=%2238%22 cy=%2212%22 r=%225%22/%3E%3Crect x=%2228%22 y=%2218%22 width=%2218%22 height=%2210%22 rx=%225%22 transform=%22rotate(-20 37 23)%22/%3E%3Crect x=%2238%22 y=%2216%22 width=%2214%22 height=%224%22 rx=%222%22 transform=%22rotate(-35 38 18)%22/%3E%3Crect x=%2224%22 y=%2220%22 width=%2212%22 height=%224%22 rx=%222%22 transform=%22rotate(40 24 22)%22/%3E%3Crect x=%2234%22 y=%2228%22 width=%2216%22 height=%225%22 rx=%222.5%22 transform=%22rotate(25 34 30)%22/%3E%3Crect x=%2244%22 y=%2238%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-5 44 40)%22/%3E%3Crect x=%2224%22 y=%2230%22 width=%2214%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-35 24 32)%22/%3E%3Crect x=%2216%22 y=%2238%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-75 16 40)%22/%3E%3Cellipse cx=%2254%22 cy=%2244%22 rx=%225%22 ry=%222%22/%3E%3Cellipse cx=%2212%22 cy=%2244%22 rx=%225%22 ry=%222%22 transform=%22rotate(-10 12 44)%22/%3E%3C/g%3E%3C/svg%3E';
+    // Return image URLs for default runner avatars
+    const maleRunnerImg = '/images/man-runner.png';
+    const femaleRunnerImg = '/images/woman-runner.png';
     
-    // Female runner SVG (narrower torso, ponytail)
-    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 width=%2264%22 height=%2264%22%3E%3Cg fill=%22%23666%22%3E%3Ccircle cx=%2231%22 cy=%2213%22 r=%223%22/%3E%3Cpath d=%22M33 12 L36 13 L33 15 Z%22/%3E%3Ccircle cx=%2238%22 cy=%2212%22 r=%225%22/%3E%3Crect x=%2229%22 y=%2218%22 width=%2216%22 height=%2210%22 rx=%225%22 transform=%22rotate(-20 37 23)%22/%3E%3Crect x=%2239%22 y=%2216%22 width=%2214%22 height=%224%22 rx=%222%22 transform=%22rotate(-38 39 18)%22/%3E%3Crect x=%2223%22 y=%2221%22 width=%2212%22 height=%224%22 rx=%222%22 transform=%22rotate(42 23 23)%22/%3E%3Crect x=%2234%22 y=%2229%22 width=%2216%22 height=%225%22 rx=%222.5%22 transform=%22rotate(27 34 31)%22/%3E%3Crect x=%2245%22 y=%2239%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-8 45 41)%22/%3E%3Crect x=%2223%22 y=%2230%22 width=%2214%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-37 23 32)%22/%3E%3Crect x=%2215%22 y=%2239%22 width=%2212%22 height=%225%22 rx=%222.5%22 transform=%22rotate(-78 15 41)%22/%3E%3Cellipse cx=%2255%22 cy=%2245%22 rx=%225%22 ry=%222%22/%3E%3Cellipse cx=%2211%22 cy=%2244%22 rx=%225%22 ry=%222%22 transform=%22rotate(-12 11 44)%22/%3E%3C/g%3E%3C/svg%3E';
-    
-    return isMale ? maleRunnerSvg : femaleRunnerSvg;
+    return isMale ? maleRunnerImg : femaleRunnerImg;
 }
 
 // Load game state from database
@@ -290,6 +288,28 @@ function setupEventListeners() {
         showPage('leaderboard-page');
     });
     document.getElementById('back-to-roster')?.addEventListener('click', () => showPage('salary-cap-draft-page'));
+    
+    // Leaderboard tab switching
+    document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+        tab.addEventListener('click', async (e) => {
+            const tabType = e.target.dataset.tab;
+            
+            // Update active tab
+            document.querySelectorAll('.leaderboard-tab').forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            // Update active content
+            document.querySelectorAll('.leaderboard-tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tabType === 'fantasy') {
+                document.getElementById('fantasy-results-tab').classList.add('active');
+                await displayLeaderboard();
+            } else if (tabType === 'race') {
+                document.getElementById('race-results-tab').classList.add('active');
+                await displayRaceResultsLeaderboard();
+            }
+        });
+    });
 
     // Commissioner page
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
@@ -1603,6 +1623,184 @@ function createLeaderboardRow(standing, isCurrentPlayer = false) {
             <div class="leaderboard-score-section">
                 <div class="leaderboard-total-points">${standing.total_points}</div>
                 <div class="leaderboard-points-label">pts</div>
+            </div>
+        </div>
+    `;
+}
+
+// Display race results (actual athlete performance)
+async function displayRaceResultsLeaderboard() {
+    console.log('🔥 displayRaceResultsLeaderboard v1.0 called');
+    const container = document.getElementById('race-results-display');
+    container.innerHTML = '<div class="loading-spinner">Loading race results...</div>';
+
+    try {
+        // Ensure athletes are loaded
+        if (!gameState.athletes || !gameState.athletes.men || !gameState.athletes.women) {
+            console.log('Athletes not loaded, loading now...');
+            await loadAthletes();
+            console.log('After loadAthletes, gameState.athletes:', gameState.athletes);
+        }
+        
+        // Double-check athletes loaded successfully
+        if (!gameState.athletes || !gameState.athletes.men || !gameState.athletes.women) {
+            console.error('Athletes still not loaded after loadAthletes()');
+            throw new Error('Athletes data failed to load. Please refresh the page and try again.');
+        }
+        
+        console.log(`Athletes loaded: ${gameState.athletes.men.length} men, ${gameState.athletes.women.length} women`);
+        
+        // Fetch race results
+        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch race results');
+        }
+        
+        const resultsData = await response.json();
+        console.log('Results data:', resultsData);
+        const scoredResults = resultsData.scored || [];
+        
+        if (scoredResults.length === 0) {
+            container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
+            return;
+        }
+
+        // Create a map of athletes by ID for faster lookup
+        const athletesById = new Map();
+        gameState.athletes.men.forEach(a => athletesById.set(a.id, { ...a, gender: 'men' }));
+        gameState.athletes.women.forEach(a => athletesById.set(a.id, { ...a, gender: 'women' }));
+        
+        // Separate men and women results using the map
+        const menResults = [];
+        const womenResults = [];
+        
+        scoredResults.forEach(result => {
+            const athlete = athletesById.get(result.athlete_id);
+            if (athlete) {
+                if (athlete.gender === 'men') {
+                    menResults.push(result);
+                } else if (athlete.gender === 'women') {
+                    womenResults.push(result);
+                }
+            }
+        });
+
+        // Sort by placement (already sorted from API, but ensure it)
+        menResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
+        womenResults.sort((a, b) => (a.placement || 999) - (b.placement || 999));
+
+        // Build race results HTML
+        let resultsHTML = '<div class="race-results-container">';
+        
+        // Men's Results
+        if (menResults.length > 0) {
+            resultsHTML += '<div class="race-gender-section">';
+            resultsHTML += '<h3 class="gender-header">Men\'s Results</h3>';
+            resultsHTML += '<div class="race-results-list">';
+            
+            menResults.forEach(result => {
+                const athlete = athletesById.get(result.athlete_id);
+                if (athlete) {
+                    resultsHTML += createRaceResultRow(result, athlete);
+                }
+            });
+            
+            resultsHTML += '</div></div>';
+        }
+
+        // Women's Results
+        if (womenResults.length > 0) {
+            resultsHTML += '<div class="race-gender-section">';
+            resultsHTML += '<h3 class="gender-header">Women\'s Results</h3>';
+            resultsHTML += '<div class="race-results-list">';
+            
+            womenResults.forEach(result => {
+                const athlete = athletesById.get(result.athlete_id);
+                if (athlete) {
+                    resultsHTML += createRaceResultRow(result, athlete);
+                }
+            });
+            
+            resultsHTML += '</div></div>';
+        }
+
+        resultsHTML += '</div>';
+        container.innerHTML = resultsHTML;
+        
+    } catch (error) {
+        console.error('Error displaying leaderboard race results:', error);
+        container.innerHTML = `
+            <div class="error-message">
+                <p>Unable to load race results</p>
+                <p style="font-size: 0.9em; color: var(--dark-gray);">${error.message}</p>
+                <button onclick="displayRaceResultsLeaderboard()" class="btn btn-secondary">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+// Create a single race result row
+function createRaceResultRow(result, athlete) {
+    const placement = result.placement || '-';
+    const finishTime = result.finish_time || 'DNF';
+    const points = result.total_points || 0;
+    const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+    
+    // Calculate gap from winner if available
+    let gapFromFirst = '';
+    if (result.breakdown && result.breakdown.time_gap) {
+        const gapSeconds = result.breakdown.time_gap.gap_seconds || 0;
+        if (gapSeconds > 0) {
+            const minutes = Math.floor(gapSeconds / 60);
+            const seconds = Math.floor(gapSeconds % 60);
+            gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    // Points breakdown shorthand
+    let shorthand = '-';
+    if (result.breakdown) {
+        const parts = [];
+        if (result.breakdown.placement && result.breakdown.placement.points > 0) {
+            parts.push(`P${result.breakdown.placement.points}`);
+        }
+        if (result.breakdown.time_gap && result.breakdown.time_gap.points > 0) {
+            parts.push(`G${result.breakdown.time_gap.points}`);
+        }
+        const perfBonus = result.breakdown.performance_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+        const recBonus = result.breakdown.record_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+        const totalBonus = perfBonus + recBonus;
+        if (totalBonus > 0) {
+            parts.push(`B${totalBonus}`);
+        }
+        shorthand = parts.length > 0 ? parts.join('+') : '-';
+    }
+
+    const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
+    const fallbackImg = getRunnerSvg(athlete.gender || 'men');
+
+    return `
+        <div class="race-result-row" onclick="openAthleteModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
+            <div class="race-result-placement">
+                ${medal ? `<span class="placement-medal">${medal}</span>` : `<span class="placement-number">#${placement}</span>`}
+            </div>
+            <div class="race-result-athlete">
+                <img src="${headshotUrl || fallbackImg}" alt="${escapeHtml(athlete.name)}" class="race-result-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
+                <div class="athlete-details">
+                    <div class="athlete-name">${escapeHtml(athlete.name)}</div>
+                    <div class="athlete-meta">
+                        <span class="athlete-country">${getCountryFlagEmoji(athlete.country)} ${athlete.country}</span>
+                        ${athlete.pb ? `<span class="athlete-pb">PB: ${athlete.pb}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="race-result-performance">
+                <div class="finish-time">${finishTime}</div>
+                ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : ''}
+            </div>
+            <div class="race-result-points">
+                <div class="points-value">${points} pts</div>
+                <div class="points-breakdown">${shorthand}</div>
             </div>
         </div>
     `;
@@ -3807,12 +4005,12 @@ async function viewTeamDetails(playerCode) {
                 }
                 
                 const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('men');
-                const fallbackSvg = getRunnerSvg('men').replace(/'/g, '&apos;');
+                const fallbackImg = getRunnerSvg('men');
                 
                 modalHTML += `
                     <div class="athlete-card">
                         <div class="athlete-card-left">
-                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackSvg}';" />
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
                             <div class="athlete-info">
                                 <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                                 <div class="athlete-meta">
@@ -3882,12 +4080,12 @@ async function viewTeamDetails(playerCode) {
                 }
                 
                 const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('women');
-                const fallbackSvg = getRunnerSvg('women').replace(/'/g, '&apos;');
+                const fallbackImg = getRunnerSvg('women');
                 
                 modalHTML += `
                     <div class="athlete-card">
                         <div class="athlete-card-left">
-                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackSvg}';" />
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
                             <div class="athlete-info">
                                 <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                                 <div class="athlete-meta">

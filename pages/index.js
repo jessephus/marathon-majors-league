@@ -272,7 +272,23 @@ function getMainHTML() {
             <!-- Leaderboard Page -->
             <div id="leaderboard-page" class="page">
                 <h2>Leaderboard</h2>
-                <div id="leaderboard-display"></div>
+                
+                <!-- Leaderboard Tabs -->
+                <div class="leaderboard-tabs">
+                    <button class="leaderboard-tab active" data-tab="fantasy">Fantasy Results</button>
+                    <button class="leaderboard-tab" data-tab="race">Race Results</button>
+                </div>
+                
+                <!-- Fantasy Results Tab Content (default) -->
+                <div id="fantasy-results-tab" class="leaderboard-tab-content active">
+                    <div id="leaderboard-display"></div>
+                </div>
+                
+                <!-- Race Results Tab Content -->
+                <div id="race-results-tab" class="leaderboard-tab-content">
+                    <div id="race-results-display"></div>
+                </div>
+                
                 <div class="page-actions">
                     <button id="back-to-roster" class="btn btn-secondary">Back to Roster</button>
                 </div>
