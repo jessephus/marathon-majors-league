@@ -246,6 +246,13 @@ function setupEventListeners() {
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
     document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
     
+    // Manage Teams page
+    document.getElementById('manage-teams-btn').addEventListener('click', () => {
+        showPage('manage-teams-page');
+        displayTeamsTable();
+    });
+    document.getElementById('back-to-commissioner-from-teams').addEventListener('click', () => showPage('commissioner-page'));
+    
     // Athlete Management modal
     const addAthleteModal = document.getElementById('add-athlete-modal');
     document.getElementById('add-athlete-btn').addEventListener('click', () => {
@@ -1364,6 +1371,121 @@ async function displayPlayerCodes() {
     summary.className = 'rankings-summary';
     summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
     display.appendChild(summary);
+}
+
+async function displayTeamsTable() {
+    const tableBody = document.getElementById('teams-status-table-body');
+    tableBody.innerHTML = '';
+    
+    for (const code of gameState.players) {
+        const hasSubmitted = hasPlayerSubmittedRankings(code);
+        const hasDraftedTeam = gameState.teams && gameState.teams[code] && gameState.teams[code].length > 0;
+        
+        const row = document.createElement('tr');
+        row.className = hasSubmitted ? 'team-row-submitted' : 'team-row-pending';
+        
+        // Status icon column
+        const statusCell = document.createElement('td');
+        const statusIcon = document.createElement('span');
+        statusIcon.className = 'status-icon-table';
+        statusIcon.textContent = hasSubmitted ? '✓' : '○';
+        statusIcon.style.color = hasSubmitted ? '#10b981' : '#94a3b8';
+        statusIcon.style.fontSize = '20px';
+        statusCell.appendChild(statusIcon);
+        row.appendChild(statusCell);
+        
+        // Team name column
+        const nameCell = document.createElement('td');
+        nameCell.textContent = code;
+        nameCell.style.fontWeight = '600';
+        row.appendChild(nameCell);
+        
+        // Player link column with copy button
+        const linkCell = document.createElement('td');
+        try {
+            const response = await fetch(`${API_BASE}/api/session/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sessionType: 'player',
+                    displayName: code,
+                    gameId: GAME_ID,
+                    playerCode: code,
+                    expiryDays: 90
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const uniqueURL = data.uniqueUrl;
+                const sessionToken = uniqueURL.split('?session=')[1];
+                
+                const linkWrapper = document.createElement('div');
+                linkWrapper.style.display = 'flex';
+                linkWrapper.style.alignItems = 'center';
+                linkWrapper.style.gap = '8px';
+                
+                const urlLink = document.createElement('a');
+                urlLink.href = uniqueURL;
+                urlLink.target = '_blank';
+                urlLink.textContent = sessionToken.substring(0, 8) + '...';
+                urlLink.style.color = '#2C39A2';
+                urlLink.style.textDecoration = 'none';
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn-copy-mini';
+                copyBtn.textContent = '📋';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(uniqueURL).then(() => {
+                        copyBtn.textContent = '✅';
+                        setTimeout(() => {
+                            copyBtn.textContent = '📋';
+                        }, 2000);
+                    });
+                };
+                
+                linkWrapper.appendChild(urlLink);
+                linkWrapper.appendChild(copyBtn);
+                linkCell.appendChild(linkWrapper);
+            } else {
+                linkCell.textContent = 'Error';
+            }
+        } catch (error) {
+            console.error('Error creating player session:', error);
+            linkCell.textContent = 'Error';
+        }
+        row.appendChild(linkCell);
+        
+        // Rankings status column
+        const rankingsCell = document.createElement('td');
+        const rankingsBadge = document.createElement('span');
+        rankingsBadge.className = hasSubmitted ? 'badge-success' : 'badge-pending';
+        rankingsBadge.textContent = hasSubmitted ? 'Submitted' : 'Pending';
+        rankingsCell.appendChild(rankingsBadge);
+        row.appendChild(rankingsCell);
+        
+        // Draft status column
+        const draftCell = document.createElement('td');
+        const draftBadge = document.createElement('span');
+        draftBadge.className = hasDraftedTeam ? 'badge-success' : 'badge-pending';
+        draftBadge.textContent = hasDraftedTeam ? 'Drafted' : 'Not Drafted';
+        draftCell.appendChild(draftBadge);
+        row.appendChild(draftCell);
+        
+        // Actions column
+        const actionsCell = document.createElement('td');
+        const viewButton = document.createElement('button');
+        viewButton.className = 'btn-mini';
+        viewButton.textContent = 'View';
+        viewButton.onclick = () => {
+            // TODO: Future enhancement to view team details
+            alert(`Team details for ${code} will be shown here in a future update.`);
+        };
+        actionsCell.appendChild(viewButton);
+        row.appendChild(actionsCell);
+        
+        tableBody.appendChild(row);
+    }
 }
 
 // Snake draft algorithm
