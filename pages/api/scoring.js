@@ -7,6 +7,38 @@ import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);
 
+async function ensureResultsScored(gameId) {
+  const [status] = await sql`
+    SELECT 
+      COUNT(*) FILTER (WHERE finish_time IS NOT NULL) AS finished_count,
+      COUNT(*) FILTER (WHERE finish_time IS NOT NULL AND (total_points IS NULL OR points_version IS DISTINCT FROM 2)) AS needs_update
+    FROM race_results
+    WHERE game_id = ${gameId}
+  `;
+
+  if (!status) {
+    return false;
+  }
+
+  const finishedCount = parseInt(status.finished_count ?? '0', 10);
+  const needsUpdate = parseInt(status.needs_update ?? '0', 10);
+
+  if (finishedCount === 0 || needsUpdate === 0) {
+    return false;
+  }
+
+  const [activeRace] = await sql`
+    SELECT id FROM races WHERE is_active = true LIMIT 1
+  `;
+
+  if (!activeRace) {
+    return false;
+  }
+
+  await scoreRace(gameId, activeRace.id, 2);
+  return true;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
@@ -21,6 +53,10 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      await ensureResultsScored(gameId).catch(err => {
+        console.error('Auto-scoring on GET /api/scoring failed:', err);
+      });
+
       // Get current scoring version and results
       const results = await sql`
         SELECT 

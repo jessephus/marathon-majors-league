@@ -4,6 +4,45 @@ import { neon } from '@neondatabase/serverless';
 
 const sql = neon(process.env.DATABASE_URL);
 
+async function ensureResultsScored(gameId) {
+  // Check if any recorded results are missing points or use legacy version
+  const [status] = await sql`
+    SELECT 
+      COUNT(*) FILTER (WHERE finish_time IS NOT NULL) AS finished_count,
+      COUNT(*) FILTER (WHERE finish_time IS NOT NULL AND total_points IS NOT NULL) AS scored_count,
+      COUNT(*) FILTER (WHERE finish_time IS NOT NULL AND (total_points IS NULL OR points_version IS DISTINCT FROM 2)) AS needs_update
+    FROM race_results
+    WHERE game_id = ${gameId}
+  `;
+
+  if (!status) {
+    return false;
+  }
+
+  const finishedCount = parseInt(status.finished_count ?? '0', 10);
+  const needsUpdate = parseInt(status.needs_update ?? '0', 10);
+
+  if (finishedCount === 0 || needsUpdate === 0) {
+    return false;
+  }
+
+  const [activeRace] = await sql`
+    SELECT id FROM races WHERE is_active = true LIMIT 1
+  `;
+
+  if (!activeRace) {
+    return false;
+  }
+
+  try {
+    await scoreRace(gameId, activeRace.id, 2);
+    return true;
+  } catch (error) {
+    console.error('Auto-scoring on GET /api/results failed:', error);
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
@@ -23,24 +62,48 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       // Get all race results with scoring data - no authentication required for viewing
-      const results = await sql`
-        SELECT 
-          rr.athlete_id,
-          rr.finish_time,
-          rr.split_5k,
-          rr.split_10k,
-          rr.split_half,
-          rr.split_30k,
-          rr.split_35k,
-          rr.split_40k,
-          rr.placement,
-          rr.total_points,
-          rr.breakdown,
-          rr.record_type,
-          rr.record_status
-        FROM race_results rr
-        WHERE rr.game_id = ${gameId}
-      `;
+      async function fetchResults() {
+        return sql`
+          SELECT 
+            rr.athlete_id,
+            rr.finish_time,
+            rr.finish_time_ms,
+            rr.split_5k,
+            rr.split_10k,
+            rr.split_half,
+            rr.split_30k,
+            rr.split_35k,
+            rr.split_40k,
+            rr.placement,
+            rr.placement_points,
+            rr.time_gap_seconds,
+            rr.time_gap_points,
+            rr.performance_bonus_points,
+            rr.record_bonus_points,
+            rr.total_points,
+            rr.points_version,
+            rr.breakdown,
+            rr.record_type,
+            rr.record_status,
+            rr.updated_at,
+            a.name AS athlete_name,
+            a.country,
+            a.gender,
+            a.personal_best AS personal_best,
+            a.headshot_url AS headshot_url
+          FROM race_results rr
+          LEFT JOIN athletes a ON rr.athlete_id = a.id
+          WHERE rr.game_id = ${gameId}
+          ORDER BY a.gender NULLS LAST, rr.placement NULLS LAST, rr.finish_time ASC
+        `;
+      }
+
+      let results = await fetchResults();
+
+      const rescored = await ensureResultsScored(gameId);
+      if (rescored) {
+        results = await fetchResults();
+      }
       
       // Transform to legacy format for compatibility
       const legacyResults = {};

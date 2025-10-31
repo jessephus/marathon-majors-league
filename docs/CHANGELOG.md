@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `/api/results` now tolerates legacy payloads and stores expanded scoring data, and `race_results` schema is auto-migrated to include all scoring columns.
+- Fixed a regression where fantasy standings and team detail cards always showed 0 pts by auto-triggering the points engine on results/standings fetches and enriching responses with athlete metadata so every recorded finisher appears in Race Results.
 
 ## [Previous Releases]
 

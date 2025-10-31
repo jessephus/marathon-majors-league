@@ -213,6 +213,11 @@ function getMainHTML() {
                     <button id="edit-salary-cap-team" class="btn btn-secondary btn-large" onclick="unlockRoster()" style="display: none; margin-left: 12px;">Edit Roster</button>
                 </div>
 
+                <!-- Navigation Buttons (shown after roster is locked) -->
+                <div id="roster-navigation" class="page-actions" style="display: none; margin-top: 20px;">
+                    <button id="view-leaderboard-from-roster" class="btn btn-primary">View Leaderboard</button>
+                </div>
+
                 <!-- Athlete Selection Modal (slides in from right) -->
                 <div id="athlete-selection-modal" class="selection-modal">
                     <div class="modal-header">
@@ -258,7 +263,35 @@ function getMainHTML() {
             <div id="teams-page" class="page">
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
-                <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                <div class="page-actions">
+                    <button id="view-leaderboard-btn" class="btn btn-primary">View Leaderboard</button>
+                    <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                </div>
+            </div>
+
+            <!-- Leaderboard Page -->
+            <div id="leaderboard-page" class="page">
+                <h2>Leaderboard</h2>
+                
+                <!-- Leaderboard Tabs -->
+                <div class="leaderboard-tabs">
+                    <button class="leaderboard-tab active" data-tab="fantasy">Fantasy Results</button>
+                    <button class="leaderboard-tab" data-tab="race">Race Results</button>
+                </div>
+                
+                <!-- Fantasy Results Tab Content (default) -->
+                <div id="fantasy-results-tab" class="leaderboard-tab-content active">
+                    <div id="leaderboard-display"></div>
+                </div>
+                
+                <!-- Race Results Tab Content -->
+                <div id="race-results-tab" class="leaderboard-tab-content">
+                    <div id="race-results-display"></div>
+                </div>
+                
+                <div class="page-actions">
+                    <button id="back-to-roster" class="btn btn-secondary">Back to Roster</button>
+                </div>
             </div>
 
             <!-- Commissioner Page -->
@@ -268,6 +301,7 @@ function getMainHTML() {
                     <div class="action-card">
                         <h3>Player Links</h3>
                         <div id="player-codes-display"></div>
+                        <button id="manage-teams-btn" class="btn btn-primary" style="margin-top: 16px;">Manage Players/Teams</button>
                     </div>
 
                     <div class="action-card">
@@ -292,11 +326,45 @@ function getMainHTML() {
                     </div>
 
                     <div class="action-card">
+                        <h3>Development Tools</h3>
+                        <button id="load-demo-data" class="btn btn-primary">🎭 Load Demo Data</button>
+                        <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+                            Creates 3 fake teams with rosters and optional results for testing
+                        </p>
+                    </div>
+
+                    <div class="action-card">
                         <h3>Game State</h3>
                         <button id="reset-game" class="btn btn-danger">Reset Game</button>
                     </div>
                 </div>
                 <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
+            </div>
+
+            <!-- Manage Players/Teams Page -->
+            <div id="manage-teams-page" class="page">
+                <h2>Manage Players/Teams</h2>
+                <p class="page-description">View and manage all players and their team status</p>
+                
+                <div class="manage-teams-container">
+                    <table id="teams-status-table" class="teams-status-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Team Name</th>
+                                <th>Player Link</th>
+                                <th>Rankings</th>
+                                <th class="draft-status-column">Draft Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teams-status-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button id="back-to-commissioner-from-teams" class="btn btn-secondary">Back to Dashboard</button>
             </div>
 
             <!-- Athlete Management Page -->
@@ -565,8 +633,17 @@ function getMainHTML() {
 
         <footer>
             <p>Marathon Majors League &copy; 2025</p>
-            <button id="home-button" class="btn btn-secondary">Home</button>
-            <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+            <div class="footer-actions">
+                <button id="home-button" class="btn btn-secondary">Home</button>
+                <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+                <div class="game-switcher">
+                    <label for="game-select">Game: </label>
+                    <select id="game-select" class="game-select">
+                        <option value="default">Default Game</option>
+                        <option value="demo-game">Demo Game</option>
+                    </select>
+                </div>
+            </div>
         </footer>
     </div>
   `;
