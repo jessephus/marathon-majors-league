@@ -3298,6 +3298,12 @@ footer .btn {
     background-color: #1e2a6e;
 }
 
+.btn-mini:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #94a3b8;
+}
+
 /* Mobile responsiveness for teams table */
 @media (max-width: 768px) {
     .teams-status-table {

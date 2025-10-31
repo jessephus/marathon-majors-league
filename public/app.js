@@ -1448,6 +1448,12 @@ async function displayTeamsTable() {
                     setTimeout(() => {
                         copyBtn.textContent = '📋';
                     }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy to clipboard:', err);
+                    copyBtn.textContent = '❌';
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋';
+                    }, 2000);
                 });
             };
             
@@ -1482,8 +1488,6 @@ async function displayTeamsTable() {
         viewButton.className = 'btn-mini';
         viewButton.textContent = 'View';
         viewButton.disabled = true; // Disable until feature is implemented
-        viewButton.style.opacity = '0.5';
-        viewButton.style.cursor = 'not-allowed';
         viewButton.title = 'Team details coming in a future update';
         actionsCell.appendChild(viewButton);
         row.appendChild(actionsCell);
