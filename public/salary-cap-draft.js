@@ -3,6 +3,17 @@
  * Six slots (M1, M2, M3, W1, W2, W3) that open selection modals
  */
 
+/**
+ * Get runner image fallback based on gender
+ */
+function getRunnerSvg(gender) {
+    // Return image URLs for default runner avatars
+    const maleRunnerImg = '/images/man-runner.png';
+    const femaleRunnerImg = '/images/woman-runner.png';
+
+    return gender === 'men' || gender === 'M' ? maleRunnerImg : femaleRunnerImg;
+}
+
 // Salary cap configuration
 const SALARY_CAP_CONFIG = {
     totalCap: 30000,
@@ -25,7 +36,8 @@ let salaryCapState = {
     currentGender: null,
     currentSort: 'salary',
     totalSpent: 0,
-    isLocked: false  // Track if team is submitted and locked
+    isLocked: false,  // Track if team is submitted and locked
+    permanentlyLocked: false  // Track if roster is permanently locked due to race results
 };
 
 /**
@@ -77,6 +89,7 @@ async function setupSalaryCapDraft() {
     salaryCapState.currentSort = 'salary';
     salaryCapState.totalSpent = 0;
     salaryCapState.isLocked = false;
+    salaryCapState.permanentlyLocked = false;
     
     // Try to load existing team if user has a session
     const session = loadSession();
@@ -119,6 +132,22 @@ async function setupSalaryCapDraft() {
             console.error('Error loading existing team:', error);
             // Continue with empty slots if loading fails
         }
+    }
+    
+    // Check if results have been entered (permanent lock)
+    try {
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        if (resultsResponse.ok) {
+            const resultsData = await resultsResponse.json();
+            const hasResults = resultsData && Object.keys(resultsData).length > 0;
+            
+            if (hasResults) {
+                salaryCapState.isLocked = true;
+                salaryCapState.permanentlyLocked = true; // Can't unlock after results exist
+            }
+        }
+    } catch (error) {
+        console.error('Error checking for results:', error);
     }
     
     // Setup event listeners
@@ -180,7 +209,7 @@ function handleSlotClick(slotElement) {
     if (salaryCapState.isLocked) {
         const athlete = salaryCapState.slots[slotId];
         if (athlete) {
-            openDetailModal(athlete);
+            openAthleteModal(athlete);
         }
         return;
     }
@@ -281,7 +310,8 @@ function createModalAthleteItem(athlete, selectedAthleteIds) {
         item.classList.add('disabled');
     }
     
-    const rank = athlete.marathonRank || athlete.worldAthletics?.marathonRank;
+    // Check multiple possible rank field names
+    const rank = athlete.marathonRank || athlete.marathon_rank || athlete.worldAthletics?.marathonRank || athlete.worldAthletics?.marathon_rank;
     const rankDisplay = rank ? `Rank: #${rank}` : 'Unranked';
     
     item.innerHTML = `
@@ -403,10 +433,20 @@ function updateSlot(slotId) {
         slotElement.classList.add('filled');
         
         const athleteSalary = athlete.salary || 5000;
-        const rank = athlete.marathonRank || athlete.worldAthletes?.marathonRank;
+        // Check multiple possible rank field names
+        const rank = athlete.marathonRank || athlete.marathon_rank || athlete.worldAthletics?.marathonRank || athlete.worldAthletics?.marathon_rank;
         const rankDisplay = rank ? `#${rank}` : 'Unranked';
         
+        // Determine gender from slot ID (M1, M2, M3 = men; W1, W2, W3 = women)
+        const gender = slotId.startsWith('M') ? 'men' : 'women';
+        const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
+        const fallbackImg = getRunnerSvg(gender);
+        const displayUrl = headshotUrl || fallbackImg;
+        
         slotContent.innerHTML = `
+            <div class="slot-headshot">
+                <img src="${displayUrl}" alt="${athlete.name}" class="slot-headshot-img" onerror="this.onerror=null; this.src='${fallbackImg}';" />
+            </div>
             <div class="slot-athlete-info">
                 <div class="slot-athlete-name">${athlete.name}</div>
                 <div class="slot-athlete-details">${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}</div>
@@ -686,13 +726,29 @@ function lockRoster() {
     // Disable submit button and change to locked state
     const submitBtn = document.getElementById('submit-salary-cap-team');
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Roster Locked ✓';
-    submitBtn.style.opacity = '0.6';
     
-    // Show edit button
+    if (salaryCapState.permanentlyLocked) {
+        submitBtn.textContent = '🔒 Locked - Race Started';
+        submitBtn.style.opacity = '0.5';
+    } else {
+        submitBtn.textContent = 'Roster Locked ✓';
+        submitBtn.style.opacity = '0.6';
+    }
+    
+    // Show/hide edit button based on permanent lock
     const editBtn = document.getElementById('edit-salary-cap-team');
     if (editBtn) {
-        editBtn.style.display = 'inline-block';
+        if (salaryCapState.permanentlyLocked) {
+            editBtn.style.display = 'none'; // Hide edit button when permanently locked
+        } else {
+            editBtn.style.display = 'inline-block';
+        }
+    }
+    
+    // Show navigation buttons (leaderboard, etc.)
+    const navDiv = document.getElementById('roster-navigation');
+    if (navDiv) {
+        navDiv.style.display = 'flex';
     }
     
     // Disable all slot interactions - update slots to show locked state
@@ -703,6 +759,12 @@ function lockRoster() {
  * Unlock the roster for editing
  */
 function unlockRoster() {
+    // Check if roster is permanently locked due to race results
+    if (salaryCapState.permanentlyLocked) {
+        showErrorNotification('Cannot edit roster - race results have already been entered. Rosters are permanently locked once the race begins.');
+        return;
+    }
+    
     salaryCapState.isLocked = false;
     
     // Re-enable submit button
@@ -715,6 +777,12 @@ function unlockRoster() {
     const editBtn = document.getElementById('edit-salary-cap-team');
     if (editBtn) {
         editBtn.style.display = 'none';
+    }
+    
+    // Hide navigation buttons
+    const navDiv = document.getElementById('roster-navigation');
+    if (navDiv) {
+        navDiv.style.display = 'none';
     }
     
     // Re-enable slot interactions
@@ -735,7 +803,7 @@ function updateAllSlotsLocked() {
                 // Only allow viewing details, not removing
                 const athlete = salaryCapState.slots[slotId];
                 if (athlete && e.target.classList.contains('athlete-name')) {
-                    openDetailModal(athlete);
+                    openAthleteModal(athlete);
                 }
             };
             

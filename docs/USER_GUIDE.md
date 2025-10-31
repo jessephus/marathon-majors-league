@@ -111,6 +111,18 @@ You'll see the ranking interface with:
 - See your 3 men and 3 women (6 total athletes)
 - Watch live updates as results come in
 
+#### Viewing the Leaderboard
+Once race results start coming in:
+1. **Access the Leaderboard**: Click **"View Leaderboard"** button on the teams page
+2. **See Your Ranking**: The leaderboard shows:
+   - Top 3 teams with medal indicators (🥇 🥈 🥉)
+   - Your team's position (highlighted in orange if not in top 3)
+   - Total points for each team
+3. **Live Updates**: Refresh the page to see latest standings
+4. **Return to Team**: Click **"Back to Your Team"** to view athlete details
+
+The leaderboard is designed for quick glances during the race - perfect for checking standings while watching the marathon!
+
 #### Following Results
 - **Refresh the page** to see latest updates
 - **Team ranking**: See if you're 🥇, 🥈, 🥉, or #4

@@ -17,6 +17,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 - 📱 **Mobile-First Design**: Optimized for watching and managing on your phone
 - 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
 - ⚡ **Live Results Updates**: Real-time standings throughout the race with split times
+- 🏆 **Live Leaderboard**: Dedicated race day view showing team rankings with your position highlighted
 - 👑 **Commissioner Dashboard**: Complete game management and result entry tools
 - 💾 **Cloud Storage**: Reliable game state persistence with Neon Postgres database
 - 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
@@ -63,6 +64,9 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 
 3. **Follow the Action**
    - View your drafted team after the snake draft completes
+   - Click **"View Leaderboard"** to see live rankings during the race
+   - Check where you stand against the competition
+   - Your team is highlighted so you can quickly find your position
    - Watch live standings update as the commissioner enters race progress
    - Celebrate when your team takes the lead! 🎉
 

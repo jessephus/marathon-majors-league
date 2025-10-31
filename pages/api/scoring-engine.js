@@ -55,8 +55,27 @@ export async function getLatestScoringRules() {
 /**
  * Assign placements with tie handling (standard competition ranking)
  * If two tie for 2nd, both get 2nd place, next is 4th
+ * Placements are assigned separately per gender
  */
 function assignPlacements(results) {
+  // Separate results by gender
+  const menResults = results.filter(r => r.gender === 'men');
+  const womenResults = results.filter(r => r.gender === 'women');
+  
+  // Assign placements for men
+  const rankedMen = assignPlacementsByGender(menResults);
+  
+  // Assign placements for women
+  const rankedWomen = assignPlacementsByGender(womenResults);
+  
+  // Combine and return
+  return [...rankedMen, ...rankedWomen];
+}
+
+/**
+ * Helper function to assign placements within a single gender
+ */
+function assignPlacementsByGender(results) {
   // Sort by finish_time_ms ascending (fastest first)
   const sorted = [...results].sort((a, b) => {
     if (a.finish_time_ms === null) return 1;
@@ -450,14 +469,18 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     }
   });
   
-  // Step 1: Assign placements with tie handling
+  // Step 1: Assign placements with tie handling (separated by gender)
   const rankedResults = assignPlacements(results);
   
-  // Step 2: Get winner time for gap calculation
-  const winnerTime = rankedResults[0]?.finish_time_ms;
+  // Step 2: Get winner times per gender for gap calculation
+  const menResults = rankedResults.filter(r => r.gender === 'men' && r.finish_time_ms);
+  const womenResults = rankedResults.filter(r => r.gender === 'women' && r.finish_time_ms);
   
-  if (!winnerTime) {
-    throw new Error('No valid winner time found');
+  const menWinnerTime = menResults.length > 0 ? menResults[0].finish_time_ms : null;
+  const womenWinnerTime = womenResults.length > 0 ? womenResults[0].finish_time_ms : null;
+  
+  if (!menWinnerTime && !womenWinnerTime) {
+    throw new Error('No valid winner times found');
   }
   
   // Step 3: Calculate points for each result
@@ -469,10 +492,18 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
       continue;
     }
     
+    // Get the winner time for this athlete's gender
+    const winnerTime = result.gender === 'men' ? menWinnerTime : womenWinnerTime;
+    
+    if (!winnerTime) {
+      console.warn(`No winner time for gender ${result.gender}, skipping athlete ${result.athlete_id}`);
+      continue;
+    }
+    
     // Calculate placement points
     const placementPoints = calculatePlacementPoints(result.placement, rules);
     
-    // Calculate time gap
+    // Calculate time gap (relative to gender winner)
     const gapSeconds = Math.floor((result.finish_time_ms - winnerTime) / 1000);
     const timeGapPoints = calculateTimeGapPoints(gapSeconds, rules.time_gap_windows);
     
