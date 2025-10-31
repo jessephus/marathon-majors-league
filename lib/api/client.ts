@@ -37,8 +37,10 @@ export async function cachedFetch<T = any>(
     }
     
     // Stale cache - use ETag for conditional request
-    if (cached.etag && !fetchOptions.headers) {
+    if (cached.etag) {
+      // Merge with existing headers if present
       fetchOptions.headers = {
+        ...(fetchOptions.headers || {}),
         'If-None-Match': cached.etag,
       };
     }

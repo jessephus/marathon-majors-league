@@ -13,8 +13,17 @@ let sessionRestorationCache = {
 /**
  * Cached version of restoreSession
  * Only performs full restoration if cache is stale
+ * 
+ * Note: This assumes restoreSession is defined in the global scope (app.js)
+ * Include this script AFTER app.js in your HTML
  */
 async function restoreSessionCached() {
+  // Check if restoreSession is available
+  if (typeof restoreSession !== 'function') {
+    console.warn('[Session Cache] restoreSession not found, skipping cache');
+    return false;
+  }
+  
   const now = Date.now();
   
   // Return cached result if still valid

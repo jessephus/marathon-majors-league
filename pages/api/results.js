@@ -1,6 +1,7 @@
 import { getRaceResults, saveRaceResults, hasCommissionerAccess } from './db';
 import { scoreRace } from './scoring-engine';
 import { neon } from '@neondatabase/serverless';
+import { generateETag, setCacheHeaders, checkETag, send304 } from './lib/cache-utils.js';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -41,20 +42,6 @@ async function ensureResultsScored(gameId) {
     console.error('Auto-scoring on GET /api/results failed:', error);
     return false;
   }
-}
-
-/**
- * Generate ETag for response data
- */
-function generateETag(data) {
-  const str = JSON.stringify(data);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(36);
 }
 
 
@@ -135,11 +122,15 @@ export default async function handler(req, res) {
       
       // Set caching headers
       res.setHeader('ETag', `"${etag}"`);
-      res.setHeader('Cache-Control', 'public, max-age=10, s-maxage=30, stale-while-revalidate=60');
+      setCacheHeaders(res, {
+        maxAge: 10,
+        sMaxAge: 30,
+        staleWhileRevalidate: 60,
+      });
       
       // Check if client has current version
-      if (req.headers['if-none-match'] === `"${etag}"`) {
-        return res.status(304).end();
+      if (checkETag(req, etag)) {
+        return send304(res);
       }
       
       res.status(200).json(responseData);
