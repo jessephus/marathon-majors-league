@@ -1,6 +1,7 @@
 import { getRaceResults, saveRaceResults, hasCommissionerAccess } from './db';
 import { scoreRace } from './scoring-engine';
 import { neon } from '@neondatabase/serverless';
+import { generateETag, setCacheHeaders, checkETag, send304 } from './lib/cache-utils.js';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -42,6 +43,7 @@ async function ensureResultsScored(gameId) {
     return false;
   }
 }
+
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -111,10 +113,27 @@ export default async function handler(req, res) {
         legacyResults[r.athlete_id] = r.finish_time;
       });
       
-      res.status(200).json({
+      // Generate ETag for caching
+      const responseData = {
         results: legacyResults,
         scored: results
+      };
+      const etag = generateETag(responseData);
+      
+      // Set caching headers
+      res.setHeader('ETag', `"${etag}"`);
+      setCacheHeaders(res, {
+        maxAge: 10,
+        sMaxAge: 30,
+        staleWhileRevalidate: 60,
       });
+      
+      // Check if client has current version
+      if (checkETag(req, etag)) {
+        return send304(res);
+      }
+      
+      res.status(200).json(responseData);
 
     } else if (req.method === 'POST' || req.method === 'PUT') {
       // Verify commissioner access for results entry

@@ -3,6 +3,7 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { generateETag, setCacheHeaders, checkETag, send304 } from './lib/cache-utils.js';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -206,6 +207,20 @@ export default async function handler(req, res) {
         if (standings.length > 0) {
           await updateStandingsCache(gameId, standings);
         }
+      }
+      
+      // Generate ETag for client-side caching
+      const etag = generateETag(standings);
+      res.setHeader('ETag', `"${etag}"`);
+      setCacheHeaders(res, {
+        maxAge: 30,
+        sMaxAge: 60,
+        staleWhileRevalidate: 300,
+      });
+      
+      // Check if client has current version
+      if (checkETag(req, etag)) {
+        return send304(res);
       }
       
       res.status(200).json({
