@@ -1415,113 +1415,8 @@ function hasPlayerSubmittedRankings(playerCode) {
 
 async function displayPlayerCodes() {
     const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Share these unique URLs with your players:</h4>';
-    
-    for (const code of gameState.players) {
-        const hasSubmitted = hasPlayerSubmittedRankings(code);
-        
-        const item = document.createElement('div');
-        item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
-        
-        const statusIcon = document.createElement('span');
-        statusIcon.className = 'status-icon';
-        statusIcon.textContent = hasSubmitted ? '✓' : '○';
-        
-        // Create anonymous session for player
-        try {
-            const response = await fetch(`${API_BASE}/api/session/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sessionType: 'player',
-                    displayName: code,
-                    gameId: GAME_ID,
-                    playerCode: code,
-                    expiryDays: 90
-                })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                const uniqueURL = data.uniqueUrl;
-                const sessionToken = uniqueURL.split('?session=')[1];
-                
-                const contentWrapper = document.createElement('div');
-                contentWrapper.className = 'player-code-content';
-                
-                // First row: Team name and clickable UUID
-                const topRow = document.createElement('div');
-                topRow.className = 'player-code-top-row';
-                
-                const codeLabel = document.createElement('strong');
-                codeLabel.textContent = `${code}: `;
-                
-                const urlLink = document.createElement('a');
-                urlLink.className = 'session-link';
-                urlLink.href = uniqueURL;
-                urlLink.target = '_blank';
-                urlLink.textContent = sessionToken;
-                
-                topRow.appendChild(codeLabel);
-                topRow.appendChild(urlLink);
-                
-                // Second row: Copy button and status
-                const bottomRow = document.createElement('div');
-                bottomRow.className = 'player-code-bottom-row';
-                
-                const copyButton = document.createElement('button');
-                copyButton.className = 'btn-copy-small';
-                copyButton.textContent = '📋 Copy Link';
-                copyButton.onclick = () => {
-                    navigator.clipboard.writeText(uniqueURL).then(() => {
-                        copyButton.textContent = '✅ Copied!';
-                        setTimeout(() => {
-                            copyButton.textContent = '📋 Copy Link';
-                        }, 2000);
-                    }).catch(err => {
-                        console.error('Failed to copy:', err);
-                        alert('Failed to copy URL. Please copy manually.');
-                    });
-                };
-                
-                const statusText = document.createElement('span');
-                statusText.className = 'status-text';
-                statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
-                
-                bottomRow.appendChild(copyButton);
-                bottomRow.appendChild(statusText);
-                
-                contentWrapper.appendChild(topRow);
-                contentWrapper.appendChild(bottomRow);
-                
-                item.appendChild(statusIcon);
-                item.appendChild(contentWrapper);
-            } else {
-                // Fallback to legacy code display
-                const codeText = document.createElement('span');
-                codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
-                item.appendChild(statusIcon);
-                item.appendChild(codeText);
-            }
-        } catch (error) {
-            console.error('Error creating player session:', error);
-            // Fallback to legacy code display
-            const codeText = document.createElement('span');
-            codeText.textContent = `${code}`;
-            item.appendChild(statusIcon);
-            item.appendChild(codeText);
-        }
-        
-        display.appendChild(item);
-    }
-    
-    // Add summary
-    const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
-    
-    const summary = document.createElement('div');
-    summary.className = 'rankings-summary';
-    summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
-    display.appendChild(summary);
+    // Hide player links - only show "Manage Players/Teams" button
+    display.innerHTML = '';
 }
 
 async function displayTeamsTable() {
@@ -2637,20 +2532,23 @@ async function updateLiveStandings() {
         return;
     }
 
-    try {
-        // Fetch standings from API (includes points calculations)
-        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
-        if (response.ok) {
-            const data = await response.json();
-            displayPointsStandings(data.standings, display);
-        } else {
-            // Fallback to legacy time-based standings
-            displayLegacyStandings(display);
-        }
-    } catch (error) {
-        console.error('Error fetching standings:', error);
-        // Fallback to legacy time-based standings
-        displayLegacyStandings(display);
+    // Show link to leaderboard instead of full standings list
+    display.innerHTML = `
+        <div style="margin-top: 20px; padding: 15px; background: var(--light-gray); border-radius: 5px; text-align: center;">
+            <p style="margin: 0 0 10px 0; font-weight: 500;">Results have been entered</p>
+            <button id="view-leaderboard-from-commissioner" class="btn btn-primary">
+                📊 View Full Leaderboard
+            </button>
+        </div>
+    `;
+    
+    // Add event listener to the button
+    const viewLeaderboardBtn = document.getElementById('view-leaderboard-from-commissioner');
+    if (viewLeaderboardBtn) {
+        viewLeaderboardBtn.addEventListener('click', () => {
+            showPage('leaderboard-page');
+            loadLeaderboard();
+        });
     }
 }
 

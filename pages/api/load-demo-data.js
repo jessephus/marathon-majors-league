@@ -20,6 +20,7 @@ const sql = neon(process.env.DATABASE_URL);
 const DEMO_GAME_ID = 'demo-game';
 const SALARY_CAP = 30000;
 const NUM_TEAMS = 25; // Create 25 DFS-style teams
+const NYC_MARATHON_RACE_ID = 1; // NYC Marathon 2025
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -58,20 +59,28 @@ export default async function handler(req, res) {
       console.log('✓ Cleaned up old demo data');
     }
     
-    // Step 2: Get athletes with salaries for team building (DFS style - all available)
+    // Step 2: Get athletes CONFIRMED for NYC Marathon with salaries for team building
     const menWithSalaryRaw = await sql`
-      SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
-      FROM athletes 
-      WHERE gender = 'men' AND salary IS NOT NULL AND salary > 0
-      ORDER BY salary ASC
+      SELECT DISTINCT a.id, a.name, a.country, a.personal_best as pb, a.salary, a.marathon_rank, a.headshot_url, a.gender
+      FROM athletes a
+      INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+      WHERE a.gender = 'men' 
+        AND a.salary IS NOT NULL 
+        AND a.salary > 0
+        AND ar.race_id = ${NYC_MARATHON_RACE_ID}
+      ORDER BY a.salary ASC
       LIMIT 100
     `;
     
     const womenWithSalaryRaw = await sql`
-      SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
-      FROM athletes 
-      WHERE gender = 'women' AND salary IS NOT NULL AND salary > 0
-      ORDER BY salary ASC
+      SELECT DISTINCT a.id, a.name, a.country, a.personal_best as pb, a.salary, a.marathon_rank, a.headshot_url, a.gender
+      FROM athletes a
+      INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+      WHERE a.gender = 'women' 
+        AND a.salary IS NOT NULL 
+        AND a.salary > 0
+        AND ar.race_id = ${NYC_MARATHON_RACE_ID}
+      ORDER BY a.salary ASC
       LIMIT 100
     `;
     
