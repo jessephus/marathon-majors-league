@@ -3799,11 +3799,12 @@ async function viewTeamDetails(playerCode) {
                 }
                 
                 const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('men');
+                const fallbackSvg = getRunnerSvg('men').replace(/'/g, '&apos;');
                 
                 modalHTML += `
                     <div class="athlete-card">
                         <div class="athlete-card-left">
-                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${getRunnerSvg('men')}';" />
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackSvg}';" />
                             <div class="athlete-info">
                                 <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                                 <div class="athlete-meta">
@@ -3873,11 +3874,12 @@ async function viewTeamDetails(playerCode) {
                 }
                 
                 const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('women');
+                const fallbackSvg = getRunnerSvg('women').replace(/'/g, '&apos;');
                 
                 modalHTML += `
                     <div class="athlete-card">
                         <div class="athlete-card-left">
-                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${getRunnerSvg('women')}';" />
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackSvg}';" />
                             <div class="athlete-info">
                                 <div class="athlete-name">${escapeHtml(athlete.name)}</div>
                                 <div class="athlete-meta">

@@ -427,10 +427,11 @@ function updateSlot(slotId) {
         // Determine gender from slot ID (M1, M2, M3 = men; W1, W2, W3 = women)
         const gender = slotId.startsWith('M') ? 'men' : 'women';
         const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg(gender);
+        const fallbackSvg = getRunnerSvg(gender).replace(/'/g, '&apos;');
         
         slotContent.innerHTML = `
             <div class="slot-headshot">
-                <img src="${headshotUrl}" alt="${athlete.name}" class="slot-headshot-img" onerror="this.onerror=null; this.src='${getRunnerSvg(gender)}';" />
+                <img src="${headshotUrl}" alt="${athlete.name}" class="slot-headshot-img" onerror="this.onerror=null; this.src='${fallbackSvg}';" />
             </div>
             <div class="slot-athlete-info">
                 <div class="slot-athlete-name">${athlete.name}</div>
