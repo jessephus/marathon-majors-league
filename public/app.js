@@ -21,12 +21,16 @@ let anonymousSession = {
 // Commissioner Session (TOTP-based)
 let commissionerSession = {
     isCommissioner: false,
-    loginTime: null
+    loginTime: null,
+    expiresAt: null
 };
 
 // Session Storage Keys
 const TEAM_SESSION_KEY = 'marathon_fantasy_team';
 const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
+
+// Session Timeout (30 days in milliseconds)
+const COMMISSIONER_SESSION_TIMEOUT = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // View state for ranking page
 let rankingViewState = {
@@ -166,6 +170,11 @@ async function loadAthletes() {
 
 // Initialize the app
 async function init() {
+    console.log('[App Init] Starting application initialization...');
+    console.log('[App Init] Current localStorage keys:', Object.keys(localStorage));
+    console.log('[App Init] Team session key exists:', !!localStorage.getItem(TEAM_SESSION_KEY));
+    console.log('[App Init] Commissioner session key exists:', !!localStorage.getItem(COMMISSIONER_SESSION_KEY));
+    
     // Setup UI immediately for faster perceived load time
     setupEventListeners();
     setupAthleteModal();
@@ -180,6 +189,8 @@ async function init() {
     await gameStatePromise;
     const hasSession = await restoreSession();
     
+    console.log('[App Init] Session restoration complete. Has session:', hasSession);
+    
     // Load athletes in background (only needed for ranking page)
     loadAthletes().catch(error => {
         console.error('Failed to load athletes:', error);
@@ -187,7 +198,10 @@ async function init() {
     
     // If no session restored, show welcome card
     if (!hasSession) {
+        console.log('[App Init] No session found, showing welcome card');
         showWelcomeCard();
+    } else {
+        console.log('[App Init] Session restored, welcome card hidden');
     }
 }
 
@@ -486,13 +500,25 @@ async function handleCommissionerTOTPLogin(e) {
         if (response.ok) {
             const data = await response.json();
             
-            // Save commissioner session
+            // Save commissioner session with 30-day expiration
+            const now = new Date();
+            const expiresAt = new Date(now.getTime() + COMMISSIONER_SESSION_TIMEOUT);
+            
             commissionerSession = {
                 isCommissioner: true,
-                loginTime: new Date().toISOString()
+                loginTime: now.toISOString(),
+                expiresAt: expiresAt.toISOString()
             };
             
+            console.log('[Commissioner Login] Saving new commissioner session:', {
+                loginTime: commissionerSession.loginTime,
+                expiresAt: commissionerSession.expiresAt,
+                timeoutDays: COMMISSIONER_SESSION_TIMEOUT / (24 * 60 * 60 * 1000)
+            });
+            
             localStorage.setItem(COMMISSIONER_SESSION_KEY, JSON.stringify(commissionerSession));
+            
+            console.log('[Commissioner Login] Commissioner session saved to localStorage');
             
             hideWelcomeCard();  // Hide welcome card after commissioner login
             
@@ -608,56 +634,87 @@ async function verifyAndLoadSession(token) {
 
 // Restore session from localStorage
 async function restoreSession() {
+    console.log('[Session Restore] Starting session restoration...');
+    
+    let hasTeamSession = false;
+    let hasCommissionerSession = false;
+    
     // Priority 1: Check URL for session token (cross-device sharing)
     const hasURLSession = await checkURLForSession();
     if (hasURLSession) {
+        console.log('[Session Restore] URL session found and loaded');
         hideWelcomeCard();  // Hide welcome card for sessions from URL
         updateFooterButtons();  // Update UI after session restored
         return true;  // verifyAndLoadSession handles navigation
     }
     
-    // Priority 2: Check for team session in localStorage
+    // Load both team and commissioner sessions (they can coexist!)
     try {
-        const teamSession = localStorage.getItem(TEAM_SESSION_KEY);
-        if (teamSession) {
-            const session = JSON.parse(teamSession);
+        // Check for team session in localStorage
+        const teamSessionData = localStorage.getItem(TEAM_SESSION_KEY);
+        if (teamSessionData) {
+            console.log('[Session Restore] Found team session in localStorage:', teamSessionData);
+            const session = JSON.parse(teamSessionData);
             
             // Check if expired
             if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+                console.warn('[Session Restore] Team session EXPIRED at:', session.expiresAt);
                 localStorage.removeItem(TEAM_SESSION_KEY);
-                return false;
+                anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+            } else {
+                console.log('[Session Restore] Team session is valid, expires at:', session.expiresAt);
+                anonymousSession = session;
+                gameState.currentPlayer = session.teamName;
+                document.getElementById('player-name').textContent = session.teamName;
+                hasTeamSession = true;
             }
-            
-            anonymousSession = session;
-            gameState.currentPlayer = session.teamName;
-            document.getElementById('player-name').textContent = session.teamName;
-            
-            hideWelcomeCard();  // Hide welcome card for restored team session
-            
-            // Always go to salary cap draft page (it shows roster when locked)
-            await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page');
-            
-            updateFooterButtons();  // Update UI after session restored
-            return true;
+        } else {
+            console.log('[Session Restore] No team session found in localStorage');
         }
         
-        // Priority 3: Check for commissioner session
+        // Check for commissioner session (independent of team session)
         const commissionerSessionData = localStorage.getItem(COMMISSIONER_SESSION_KEY);
         if (commissionerSessionData) {
+            console.log('[Session Restore] Found commissioner session in localStorage:', commissionerSessionData);
             const session = JSON.parse(commissionerSessionData);
-            if (session.isCommissioner) {
+            
+            // Check if session has expired
+            if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+                console.warn('[Session Restore] Commissioner session EXPIRED at:', session.expiresAt);
+                localStorage.removeItem(COMMISSIONER_SESSION_KEY);
+                commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+            } else if (session.isCommissioner) {
+                console.log('[Session Restore] Commissioner session is valid, expires at:', session.expiresAt);
                 commissionerSession = session;
-                hideWelcomeCard();  // Hide welcome card for commissioner
-                handleCommissionerMode();  // Auto-navigate to commissioner page
-                updateFooterButtons();  // Update UI after commissioner session restored
-                return true;
+                hasCommissionerSession = true;
             }
+        } else {
+            console.log('[Session Restore] No commissioner session found in localStorage');
+        }
+        
+        // Determine which view to show based on what sessions exist
+        if (hasTeamSession || hasCommissionerSession) {
+            hideWelcomeCard();
+            
+            // If user is both commissioner and has a team, prioritize team view
+            // (they can switch to commissioner mode via the button)
+            if (hasTeamSession) {
+                console.log('[Session Restore] Navigating to salary cap draft page (team session)');
+                await setupSalaryCapDraft();
+                showPage('salary-cap-draft-page');
+            } else if (hasCommissionerSession) {
+                console.log('[Session Restore] Navigating to commissioner page (commissioner-only session)');
+                handleCommissionerMode();
+            }
+            
+            updateFooterButtons();
+            return true;
         }
     } catch (error) {
-        console.error('Error restoring session:', error);
+        console.error('[Session Restore] Error restoring session:', error);
     }
     
+    console.log('[Session Restore] No valid sessions found');
     return false;
 }
 
@@ -730,25 +787,39 @@ function updateFooterButtons() {
 // Handle team logout
 function handleLogout() {
     if (confirm('Are you sure you want to logout? Make sure you have saved your team URL!')) {
-        // Clear team session
+        console.log('[Team Logout] User confirmed team logout');
+        console.log('[Team Logout] Clearing team session, preserving commissioner session');
+        
+        // Clear team session ONLY (don't touch commissioner session)
         localStorage.removeItem(TEAM_SESSION_KEY);
         anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
         gameState.currentPlayer = null;
         
+        console.log('[Team Logout] Team session cleared, commissioner session still active:', commissionerSession.isCommissioner);
+        
         updateFooterButtons();
         showPage('landing-page');
+    } else {
+        console.log('[Team Logout] User cancelled logout');
     }
 }
 
 // Handle commissioner logout
 function handleCommissionerLogout() {
     if (confirm('Are you sure you want to logout from Commissioner mode?')) {
-        // Clear commissioner session
+        console.log('[Commissioner Logout] User confirmed commissioner logout');
+        console.log('[Commissioner Logout] Current session before clearing:', commissionerSession);
+        
+        // Clear commissioner session ONLY (don't touch team session)
         localStorage.removeItem(COMMISSIONER_SESSION_KEY);
-        commissionerSession = { isCommissioner: false, loginTime: null };
+        commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+        
+        console.log('[Commissioner Logout] Commissioner session cleared, team session still active:', !!anonymousSession.token);
         
         updateFooterButtons();
         showPage('landing-page');
+    } else {
+        console.log('[Commissioner Logout] User cancelled logout');
     }
 }
 
@@ -840,8 +911,12 @@ async function handleCreateNewGame() {
 
 // Handle commissioner mode
 function handleCommissionerMode() {
+    console.log('[Commissioner Mode] Attempting to access commissioner mode');
+    console.log('[Commissioner Mode] Current commissionerSession:', commissionerSession);
+    
     // Check if already authenticated via TOTP
     if (commissionerSession.isCommissioner) {
+        console.log('[Commissioner Mode] Commissioner authenticated, showing page');
         // Already authenticated, just show the page
         showPage('commissioner-page');
         // Refresh player codes display if players exist
@@ -870,6 +945,7 @@ function handleCommissionerMode() {
         }
     } else {
         // Not authenticated - show TOTP login modal instead of password prompt
+        console.warn('[Commissioner Mode] User not authenticated, session state:', commissionerSession);
         alert('Please log in with your TOTP code using the "Commissioner Mode" button in the footer.');
     }
 }
