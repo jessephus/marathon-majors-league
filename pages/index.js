@@ -313,7 +313,7 @@ function getMainHTML() {
                                 <th>Team Name</th>
                                 <th>Player Link</th>
                                 <th>Rankings</th>
-                                <th>Draft Status</th>
+                                <th class="draft-status-column">Draft Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>

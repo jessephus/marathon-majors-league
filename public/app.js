@@ -1377,9 +1377,30 @@ async function displayTeamsTable() {
     const tableBody = document.getElementById('teams-status-table-body');
     tableBody.innerHTML = '';
     
-    for (const code of gameState.players) {
+    // Batch create sessions for all players concurrently
+    const sessionPromises = gameState.players.map(code => 
+        fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType: 'player',
+                displayName: code,
+                gameId: GAME_ID,
+                playerCode: code,
+                expiryDays: 90
+            })
+        })
+        .then(response => response.ok ? response.json() : null)
+        .catch(() => null)
+    );
+    
+    const sessionResults = await Promise.all(sessionPromises);
+    
+    // Build table rows with session data
+    gameState.players.forEach((code, index) => {
         const hasSubmitted = hasPlayerSubmittedRankings(code);
         const hasDraftedTeam = gameState.teams && gameState.teams[code] && gameState.teams[code].length > 0;
+        const sessionData = sessionResults[index];
         
         const row = document.createElement('tr');
         row.className = hasSubmitted ? 'team-row-submitted' : 'team-row-pending';
@@ -1402,56 +1423,38 @@ async function displayTeamsTable() {
         
         // Player link column with copy button
         const linkCell = document.createElement('td');
-        try {
-            const response = await fetch(`${API_BASE}/api/session/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    sessionType: 'player',
-                    displayName: code,
-                    gameId: GAME_ID,
-                    playerCode: code,
-                    expiryDays: 90
-                })
-            });
+        if (sessionData && sessionData.uniqueUrl) {
+            const uniqueURL = sessionData.uniqueUrl;
+            const sessionToken = uniqueURL.split('?session=')[1];
             
-            if (response.ok) {
-                const data = await response.json();
-                const uniqueURL = data.uniqueUrl;
-                const sessionToken = uniqueURL.split('?session=')[1];
-                
-                const linkWrapper = document.createElement('div');
-                linkWrapper.style.display = 'flex';
-                linkWrapper.style.alignItems = 'center';
-                linkWrapper.style.gap = '8px';
-                
-                const urlLink = document.createElement('a');
-                urlLink.href = uniqueURL;
-                urlLink.target = '_blank';
-                urlLink.textContent = sessionToken.substring(0, 8) + '...';
-                urlLink.style.color = '#2C39A2';
-                urlLink.style.textDecoration = 'none';
-                
-                const copyBtn = document.createElement('button');
-                copyBtn.className = 'btn-copy-mini';
-                copyBtn.textContent = '📋';
-                copyBtn.onclick = () => {
-                    navigator.clipboard.writeText(uniqueURL).then(() => {
-                        copyBtn.textContent = '✅';
-                        setTimeout(() => {
-                            copyBtn.textContent = '📋';
-                        }, 2000);
-                    });
-                };
-                
-                linkWrapper.appendChild(urlLink);
-                linkWrapper.appendChild(copyBtn);
-                linkCell.appendChild(linkWrapper);
-            } else {
-                linkCell.textContent = 'Error';
-            }
-        } catch (error) {
-            console.error('Error creating player session:', error);
+            const linkWrapper = document.createElement('div');
+            linkWrapper.style.display = 'flex';
+            linkWrapper.style.alignItems = 'center';
+            linkWrapper.style.gap = '8px';
+            
+            const urlLink = document.createElement('a');
+            urlLink.href = uniqueURL;
+            urlLink.target = '_blank';
+            urlLink.textContent = sessionToken.substring(0, 8) + '...';
+            urlLink.style.color = '#2C39A2';
+            urlLink.style.textDecoration = 'none';
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn-copy-mini';
+            copyBtn.textContent = '📋';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(uniqueURL).then(() => {
+                    copyBtn.textContent = '✅';
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋';
+                    }, 2000);
+                });
+            };
+            
+            linkWrapper.appendChild(urlLink);
+            linkWrapper.appendChild(copyBtn);
+            linkCell.appendChild(linkWrapper);
+        } else {
             linkCell.textContent = 'Error';
         }
         row.appendChild(linkCell);
@@ -1466,6 +1469,7 @@ async function displayTeamsTable() {
         
         // Draft status column
         const draftCell = document.createElement('td');
+        draftCell.className = 'draft-status-column';
         const draftBadge = document.createElement('span');
         draftBadge.className = hasDraftedTeam ? 'badge-success' : 'badge-pending';
         draftBadge.textContent = hasDraftedTeam ? 'Drafted' : 'Not Drafted';
@@ -1477,15 +1481,15 @@ async function displayTeamsTable() {
         const viewButton = document.createElement('button');
         viewButton.className = 'btn-mini';
         viewButton.textContent = 'View';
-        viewButton.onclick = () => {
-            // TODO: Future enhancement to view team details
-            alert(`Team details for ${code} will be shown here in a future update.`);
-        };
+        viewButton.disabled = true; // Disable until feature is implemented
+        viewButton.style.opacity = '0.5';
+        viewButton.style.cursor = 'not-allowed';
+        viewButton.title = 'Team details coming in a future update';
         actionsCell.appendChild(viewButton);
         row.appendChild(actionsCell);
         
         tableBody.appendChild(row);
-    }
+    });
 }
 
 // Snake draft algorithm

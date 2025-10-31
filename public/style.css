@@ -3309,8 +3309,7 @@ footer .btn {
         padding: 12px 8px;
     }
     
-    .teams-status-table th:nth-child(5),
-    .teams-status-table td:nth-child(5) {
+    .draft-status-column {
         display: none; /* Hide draft status on mobile */
     }
 }
