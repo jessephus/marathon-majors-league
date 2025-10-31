@@ -14,6 +14,7 @@ let gameState = {
 let anonymousSession = {
     token: null,
     teamName: null,
+    playerCode: null,
     ownerName: null,
     expiresAt: null
 };
@@ -420,11 +421,13 @@ async function handleTeamCreation(e) {
         }
         
         const data = await response.json();
-        
-        // Save session to state and localStorage
+        const playerCode = data.session?.playerCode || teamName;
+
+        // Persist both the display name and the canonical player code
         anonymousSession = {
             token: data.session.token,
             teamName: teamName,
+            playerCode,
             ownerName: ownerName || null,
             expiresAt: data.session.expiresAt
         };
@@ -432,12 +435,12 @@ async function handleTeamCreation(e) {
         localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
         
         // Set as current player
-        gameState.currentPlayer = teamName;
+        gameState.currentPlayer = playerCode;
         document.getElementById('player-name').textContent = teamName;
         
         // Add to players list if not already there
-        if (!gameState.players.includes(teamName)) {
-            gameState.players.push(teamName);
+        if (!gameState.players.includes(playerCode)) {
+            gameState.players.push(playerCode);
             await saveGameState();
         }
         
@@ -602,11 +605,15 @@ async function verifyAndLoadSession(token) {
         if (response.ok) {
             const data = await response.json();
             console.log('Session verified:', data);
+
+            const playerCode = data.session.playerCode || data.session.displayName;
+            const displayName = data.session.displayName || playerCode;
             
             // Save session to state and localStorage
             anonymousSession = {
                 token: token,
-                teamName: data.session.displayName,
+                teamName: displayName,
+                playerCode,
                 ownerName: null,
                 expiresAt: data.session.expiresAt
             };
@@ -614,14 +621,14 @@ async function verifyAndLoadSession(token) {
             localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
             
             // Set as current player
-            gameState.currentPlayer = anonymousSession.teamName;
-            document.getElementById('player-name').textContent = anonymousSession.teamName;
+            gameState.currentPlayer = playerCode;
+            document.getElementById('player-name').textContent = displayName;
             
             hideWelcomeCard();  // Hide welcome card after session verified
             
             console.log('Game state:', gameState);
             console.log('Draft complete?', gameState.draftComplete);
-            console.log('Has rankings?', !!gameState.rankings[anonymousSession.teamName]);
+            console.log('Has rankings?', !!gameState.rankings[playerCode]);
             
             // Always navigate to salary cap draft page (shows roster when locked)
             console.log('Navigating to salary cap draft page');
@@ -667,12 +674,31 @@ async function restoreSession() {
             if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
                 console.warn('[Session Restore] Team session EXPIRED at:', session.expiresAt);
                 localStorage.removeItem(TEAM_SESSION_KEY);
-                anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+                anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
             } else {
                 console.log('[Session Restore] Team session is valid, expires at:', session.expiresAt);
-                anonymousSession = session;
-                gameState.currentPlayer = session.teamName;
-                document.getElementById('player-name').textContent = session.teamName;
+
+                const normalizedSession = {
+                    token: session.token || null,
+                    teamName: session.teamName || session.playerCode || null,
+                    playerCode: session.playerCode || session.teamName || null,
+                    ownerName: session.ownerName || null,
+                    expiresAt: session.expiresAt || null
+                };
+
+                anonymousSession = normalizedSession;
+
+                if (normalizedSession.playerCode) {
+                    gameState.currentPlayer = normalizedSession.playerCode;
+                }
+                if (normalizedSession.teamName) {
+                    document.getElementById('player-name').textContent = normalizedSession.teamName;
+                }
+
+                // Backfill playerCode for legacy sessions stored without it
+                if (!session.playerCode && normalizedSession.playerCode) {
+                    localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(normalizedSession));
+                }
                 hasTeamSession = true;
             }
         } else {
@@ -799,7 +825,7 @@ function handleLogout() {
         
         // Clear team session ONLY (don't touch commissioner session)
         localStorage.removeItem(TEAM_SESSION_KEY);
-        anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+    anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
         gameState.currentPlayer = null;
         
         console.log('[Team Logout] Team session cleared, commissioner session still active:', commissionerSession.isCommissioner);
@@ -1657,7 +1683,7 @@ async function displayLeaderboard() {
         }
 
         // Find current player's rank
-        const currentPlayerCode = anonymousSession.teamName || gameState.currentPlayer;
+    const currentPlayerCode = anonymousSession.playerCode || gameState.currentPlayer || anonymousSession.teamName;
         const currentPlayerStanding = standings.find(s => s.player_code === currentPlayerCode);
         const currentPlayerRank = currentPlayerStanding ? currentPlayerStanding.rank : null;
 
@@ -2968,7 +2994,7 @@ async function handleResetGame() {
             // Clear localStorage team session (user might have been on a team)
             // Note: Commissioner session is preserved
             localStorage.removeItem(TEAM_SESSION_KEY);
-            anonymousSession = { token: null, teamName: null, ownerName: null, expiresAt: null };
+            anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
 
             // Clear any displayed data in commissioner dashboard
             document.getElementById('player-codes-display').innerHTML = '';
