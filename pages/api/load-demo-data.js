@@ -3,11 +3,12 @@
  * 
  * POST /api/load-demo-data - Creates fake game data for testing
  * 
- * This endpoint creates a COMPLETE game following actual game rules:
- * - Demo game with 3 teams (each with 3M + 3W = 6 athletes)
- * - Respects $30K salary cap per team
+ * This endpoint creates a COMPLETE game following DFS (Daily Fantasy Sports) rules:
+ * - Creates 25 teams (each with 3M + 3W = 6 athletes)
+ * - Athletes CAN appear on multiple teams (DFS-style)
+ * - Each team must stay under $30K salary cap
  * - Creates proper salary_cap_teams entries
- * - Optional: Realistic race results with splits and scoring
+ * - Generates realistic race results with splits and scoring
  * - Test sessions for each team that work with the actual UI
  */
 
@@ -18,6 +19,7 @@ const sql = neon(process.env.DATABASE_URL);
 
 const DEMO_GAME_ID = 'demo-game';
 const SALARY_CAP = 30000;
+const NUM_TEAMS = 25; // Create 25 DFS-style teams
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
       console.log('✓ Cleaned up old demo data');
     }
     
-    // Step 2: Get athletes with salaries for team building
+    // Step 2: Get athletes with salaries for team building (DFS style - all available)
     const menWithSalaryRaw = await sql`
       SELECT id, name, country, personal_best as pb, salary, marathon_rank, headshot_url, gender
       FROM athletes 
@@ -118,7 +120,7 @@ export default async function handler(req, res) {
     }
     console.log(`✓ Sanity check passed: Cheapest 3 athletes are affordable`);
     
-    // Step 3: SMART TEAM BUILDING - Flexible strategy that GUARANTEES cap compliance
+    // Step 3: BUILD 25 DFS-STYLE TEAMS with varied strategies
     const teams = [];
     
     /**
@@ -126,8 +128,6 @@ export default async function handler(req, res) {
      * Uses expanding search ranges to guarantee success
      */
     function pickThreeUnderBudget(athletes, maxBudget, preferenceOrder, teamName) {
-      console.log(`  ${teamName}: Budget $${maxBudget}, ${athletes.length} athletes available`);
-      
       // Sort athletes by preference (could be expensive-first, cheap-first, or ranked)
       const sorted = athletes.slice().sort(preferenceOrder);
       
@@ -147,7 +147,6 @@ export default async function handler(req, res) {
       
       // If greedy didn't work, try 3 absolute cheapest
       if (selected.length < 3) {
-        console.log(`    ⚠️  Greedy failed, trying 3 cheapest...`);
         const cheapest = athletes.slice().sort((a, b) => a.salary - b.salary);
         selected.length = 0;
         runningTotal = 0;
@@ -165,111 +164,84 @@ export default async function handler(req, res) {
       if (selected.length < 3) {
         const cheapestThree = athletes.slice().sort((a, b) => a.salary - b.salary).slice(0, 3);
         const minNeeded = cheapestThree.reduce((sum, a) => sum + a.salary, 0);
-        // Debug: Show what's actually available
-        const allSalaries = athletes.slice().sort((a, b) => a.salary - b.salary).map(a => a.salary);
-        const allNames = athletes.slice().sort((a, b) => a.salary - b.salary).map(a => `${a.name}:$${a.salary}`);
-        console.log(`    ❌ DEBUG: ${athletes.length} athletes available`);
-        console.log(`    ❌ DEBUG: Cheapest 10 salaries: ${allSalaries.slice(0, 10).join(', ')}`);
-        console.log(`    ❌ DEBUG: Cheapest 10 athletes: ${allNames.slice(0, 10).join(' | ')}`);
-        console.log(`    ❌ DEBUG: Selected so far: ${selected.length} athletes for $${runningTotal}`);
-        console.log(`    ❌ DEBUG: Cheapest 3 would cost: $${minNeeded}`);
         throw new Error(
           `${teamName}: Impossible to fit 3 athletes in $${maxBudget} budget. ` +
-          `Cheapest 3 cost $${minNeeded}. Need at least $${Math.ceil(minNeeded/1000)}K budget.`
+          `Cheapest 3 cost $${minNeeded}.`
         );
       }
       
-      console.log(`    ✓ Selected 3 athletes: $${runningTotal} (${((runningTotal/maxBudget)*100).toFixed(0)}% of budget)`);
       return selected;
     }
     
-    // TEAM 1: Men-heavy (spend ~55% on men, ~45% on women)
-    console.log('Building Team 1: Men-Heavy Strategy');
-    const team1MenBudget = 16500; // Leave enough for women
-    const team1Men = pickThreeUnderBudget(
-      menWithSalary,
-      team1MenBudget,
-      (a, b) => b.salary - a.salary, // Prefer expensive
-      'Team 1 Men'
-    );
-    const team1MenSpent = team1Men.reduce((sum, a) => sum + a.salary, 0);
+    // Define 25 varied team strategies (DFS-style - athletes can repeat across teams)
+    const teamStrategies = [
+      { name: 'Ultra Premium Men', code: 'ULTRA_M', menBudget: 18000, menPref: (a,b) => b.salary - a.salary },
+      { name: 'Ultra Premium Women', code: 'ULTRA_W', menBudget: 12000, womenPref: (a,b) => b.salary - a.salary },
+      { name: 'Men Heavy Value', code: 'MEN_VAL', menBudget: 16500, menPref: (a,b) => b.salary - a.salary },
+      { name: 'Women Heavy Value', code: 'WOM_VAL', menBudget: 13500, womenPref: (a,b) => b.salary - a.salary },
+      { name: 'Balanced Elite', code: 'BAL_ELT', menBudget: 15000, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Balanced Budget', code: 'BAL_BUD', menBudget: 15000, menPref: (a,b) => a.salary - b.salary },
+      { name: 'Men Rank Focused', code: 'MEN_RNK', menBudget: 16000, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Women Rank Focused', code: 'WOM_RNK', menBudget: 14000, womenPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Value Hunter', code: 'VALUE', menBudget: 14500, menPref: (a,b) => a.salary - b.salary, womenPref: (a,b) => a.salary - b.salary },
+      { name: 'Top Heavy', code: 'TOP_HVY', menBudget: 17000, menPref: (a,b) => b.salary - a.salary },
+      { name: 'Sleeper Squad', code: 'SLEEPER', menBudget: 13000, menPref: (a,b) => a.salary - b.salary },
+      { name: 'Contrarian Pick', code: 'CONTRA', menBudget: 14000, menPref: (a,b) => Math.random() - 0.5 },
+      { name: 'Safe Balanced', code: 'SAFE', menBudget: 15000, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Men Elite', code: 'M_ELITE', menBudget: 17500, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Women Elite', code: 'W_ELITE', menBudget: 12500, womenPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Mid-Range Mix', code: 'MIDMIX', menBudget: 15000, menPref: (a,b) => Math.abs(a.salary - 5000) - Math.abs(b.salary - 5000) },
+      { name: 'Budget Beaters', code: 'BUDGET', menBudget: 13500, menPref: (a,b) => a.salary - b.salary },
+      { name: 'Star & Scrubs M', code: 'STAR_M', menBudget: 17000, menPref: (a,b) => b.salary - a.salary },
+      { name: 'Star & Scrubs W', code: 'STAR_W', menBudget: 13000, womenPref: (a,b) => b.salary - a.salary },
+      { name: 'All-Around', code: 'ALLARND', menBudget: 15000, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Upside Play', code: 'UPSIDE', menBudget: 16000, menPref: (a,b) => b.salary - a.salary },
+      { name: 'GPP Chalk', code: 'CHALK', menBudget: 15500, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'GPP Leverage', code: 'LEVER', menBudget: 14500, menPref: (a,b) => Math.random() - 0.5 },
+      { name: 'Cash Game Safe', code: 'CASH', menBudget: 15000, menPref: (a,b) => (a.marathon_rank||999) - (b.marathon_rank||999) },
+      { name: 'Variance Play', code: 'VARIANCE', menBudget: 16500, menPref: (a,b) => Math.random() - 0.5 }
+    ];
     
-    // Remaining budget for women
-    const team1WomenBudget = SALARY_CAP - team1MenSpent;
-    const team1Women = pickThreeUnderBudget(
-      womenWithSalary,
-      team1WomenBudget,
-      (a, b) => a.salary - b.salary, // Prefer cheap to fit in remaining budget
-      'Team 1 Women'
-    );
-    const team1Total = team1MenSpent + team1Women.reduce((sum, a) => sum + a.salary, 0);
+    console.log(`\n🎲 Building ${NUM_TEAMS} DFS-style teams (athletes can repeat across teams)...`);
     
-    teams.push({
-      name: 'Team Men-Heavy',
-      playerCode: 'MEN_HEAVY',
-      men: team1Men,
-      women: team1Women,
-      totalSpent: team1Total,
-      strategy: `${(team1MenSpent/1000).toFixed(1)}K men / ${((team1Total-team1MenSpent)/1000).toFixed(1)}K women`
-    });
+    for (let i = 0; i < NUM_TEAMS; i++) {
+      const strategy = teamStrategies[i];
+      console.log(`\nTeam ${i+1}/${NUM_TEAMS}: ${strategy.name}`);
+      
+      // Pick men with their strategy
+      const menBudget = strategy.menBudget;
+      const men = pickThreeUnderBudget(
+        menWithSalary,
+        menBudget,
+        strategy.menPref || ((a,b) => b.salary - a.salary),
+        `${strategy.name} Men`
+      );
+      const menSpent = men.reduce((sum, a) => sum + a.salary, 0);
+      
+      // Remaining budget for women
+      const womenBudget = SALARY_CAP - menSpent;
+      const women = pickThreeUnderBudget(
+        womenWithSalary,
+        womenBudget,
+        strategy.womenPref || ((a,b) => a.salary - b.salary),
+        `${strategy.name} Women`
+      );
+      const womenSpent = women.reduce((sum, a) => sum + a.salary, 0);
+      const totalSpent = menSpent + womenSpent;
+      
+      teams.push({
+        name: strategy.name,
+        playerCode: strategy.code,
+        men,
+        women,
+        totalSpent,
+        strategy: `${(menSpent/1000).toFixed(1)}K men / ${(womenSpent/1000).toFixed(1)}K women`
+      });
+      
+      console.log(`  ✓ ${strategy.name}: $${totalSpent} total (${men.map(a => a.name).join(', ')} + ${women.map(a => a.name).join(', ')})`);
+    }
     
-    // TEAM 2: Balanced (50/50 split)
-    console.log('Building Team 2: Balanced Strategy');
-    const team2MenBudget = 15000;
-    const team2Men = pickThreeUnderBudget(
-      menWithSalary,
-      team2MenBudget,
-      (a, b) => (a.marathon_rank || 999) - (b.marathon_rank || 999), // Prefer best ranked
-      'Team 2 Men'
-    );
-    const team2MenSpent = team2Men.reduce((sum, a) => sum + a.salary, 0);
-    
-    const team2WomenBudget = SALARY_CAP - team2MenSpent;
-    const team2Women = pickThreeUnderBudget(
-      womenWithSalary,
-      team2WomenBudget,
-      (a, b) => (a.marathon_rank || 999) - (b.marathon_rank || 999),
-      'Team 2 Women'
-    );
-    const team2Total = team2MenSpent + team2Women.reduce((sum, a) => sum + a.salary, 0);
-    
-    teams.push({
-      name: 'Team Balanced',
-      playerCode: 'BALANCED',
-      men: team2Men,
-      women: team2Women,
-      totalSpent: team2Total,
-      strategy: `${(team2MenSpent/1000).toFixed(1)}K men / ${((team2Total-team2MenSpent)/1000).toFixed(1)}K women`
-    });
-    
-    // TEAM 3: Women-heavy (spend ~45% on men, ~55% on women)
-    console.log('Building Team 3: Women-Heavy Strategy');
-    const team3MenBudget = Math.max(minMenCost + 1000, 13500); // Ensure we can afford 3 men
-    const team3Men = pickThreeUnderBudget(
-      menWithSalary,
-      team3MenBudget,
-      (a, b) => a.salary - b.salary, // Prefer cheap
-      'Team 3 Men'
-    );
-    const team3MenSpent = team3Men.reduce((sum, a) => sum + a.salary, 0);
-    
-    const team3WomenBudget = SALARY_CAP - team3MenSpent;
-    const team3Women = pickThreeUnderBudget(
-      womenWithSalary,
-      team3WomenBudget,
-      (a, b) => b.salary - a.salary, // Prefer expensive
-      'Team 3 Women'
-    );
-    const team3Total = team3MenSpent + team3Women.reduce((sum, a) => sum + a.salary, 0);
-    
-    teams.push({
-      name: 'Team Women-Heavy',
-      playerCode: 'WOMEN_HEAVY',
-      men: team3Men,
-      women: team3Women,
-      totalSpent: team3Total,
-      strategy: `${(team3MenSpent/1000).toFixed(1)}K men / ${((team3Total-team3MenSpent)/1000).toFixed(1)}K women`
-    });
+    console.log(`\n✓ All ${NUM_TEAMS} teams built successfully`);
     
     // Verify all teams meet requirements
     for (const team of teams) {
@@ -280,7 +252,7 @@ export default async function handler(req, res) {
           men: team.men.length,
           women: team.women.length,
           required: '3 men and 3 women',
-          message: 'Not enough athletes with appropriate salaries. Try running athlete sync first.'
+          message: 'Not enough athletes with appropriate salaries.'
         });
       }
       
@@ -293,11 +265,9 @@ export default async function handler(req, res) {
           overage: team.totalSpent - SALARY_CAP
         });
       }
-      
-      console.log(`  ✓ ${team.name}: ${team.men.length}M + ${team.women.length}W = $${team.totalSpent} (${((team.totalSpent/SALARY_CAP)*100).toFixed(0)}% of cap)`);
     }
     
-    console.log(`✓ All 3 teams validated and ready`);
+    console.log(`\n✓ All ${NUM_TEAMS} teams validated successfully`);
     
     // Step 4: Create the demo game with proper state
     await sql`
