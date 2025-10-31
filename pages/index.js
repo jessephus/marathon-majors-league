@@ -43,6 +43,15 @@ function getMainHTML() {
                         <p>Create your team and draft elite runners - no registration required!</p>
                         <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
                     </div>
+                    
+                    <!-- Commissioner Tools -->
+                    <div class="commissioner-tools-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
+                        <h3>👑 Commissioner Tools</h3>
+                        <p style="margin-bottom: 1rem;">Manage your game and import live race results</p>
+                        <a href="/bookmarklet" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">
+                            📊 Live Results Bookmarklet
+                        </a>
+                    </div>
                 </div>
             </div>
             
@@ -567,6 +576,7 @@ function getMainHTML() {
             <p>Marathon Majors League &copy; 2025</p>
             <button id="home-button" class="btn btn-secondary">Home</button>
             <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+            <a href="/bookmarklet" class="btn btn-secondary" style="text-decoration: none;">📊 Live Results Tool</a>
         </footer>
     </div>
   `;

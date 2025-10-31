@@ -17,6 +17,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 - 📱 **Mobile-First Design**: Optimized for watching and managing on your phone
 - 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
 - ⚡ **Live Results Updates**: Real-time standings throughout the race with split times
+- 📊 **Semi-Automated Import**: Bookmarklet tool to quickly import results from NYRR leaderboard
 - 👑 **Commissioner Dashboard**: Complete game management and result entry tools
 - 💾 **Cloud Storage**: Reliable game state persistence with Neon Postgres database
 - 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
@@ -41,7 +42,12 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
    - Each player gets 3 men and 3 women based on their rankings
 
 4. **Live Results Management**
-   - Enter split times throughout the race (5K, 10K, half-marathon, etc.)
+   - **Option 1 - Semi-Automated (Recommended)**: Use the [Live Results Bookmarklet](/bookmarklet) to quickly import results from NYRR
+     - Install the bookmarklet in your browser
+     - Navigate to NYRR leaderboard during the race
+     - Click bookmarklet to automatically import all visible results
+     - Select the split type (5K, 10K, Half, etc.) and confirm
+   - **Option 2 - Manual Entry**: Enter split times manually through the commissioner dashboard
    - Click **"Update Live Results"** to push updates to all players
    - Continue updating as the race progresses
 
@@ -239,6 +245,7 @@ Customizable options in the application:
 ### Quick Links
 
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
+- **[Live Results Bookmarklet](docs/BOOKMARKLET.md)** - Semi-automated result import from NYRR leaderboard
 - **[Salary Cap Draft Guide](docs/SALARY_CAP_DRAFT.md)** - Daily fantasy-style team building system
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy your own instance to Vercel
 - **[Development Guide](docs/DEVELOPMENT.md)** - Local development and code standards
