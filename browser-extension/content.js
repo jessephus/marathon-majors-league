@@ -1,0 +1,213 @@
+// Content script that runs on NYRR/RTRT pages
+console.log('🏃 Fantasy Marathon extension loaded');
+console.log('📍 URL:', window.location.href);
+console.log('🖼️  In iframe:', window !== window.top);
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'scrapeLeaderboard') {
+    console.log('📥 Received scrape request from popup');
+    try {
+      const athletes = scrapeLeaderboard();
+      console.log('✅ Scraped athletes:', athletes);
+      sendResponse({ success: true, athletes });
+    } catch (error) {
+      console.error('❌ Scraping error:', error);
+      sendResponse({ success: false, error: error.message });
+    }
+    return true; // Keep message channel open for async response
+  }
+  
+  if (request.action === 'detectGender') {
+    const gender = detectGender();
+    console.log('🔍 Detected gender:', gender);
+    sendResponse({ gender });
+    return true;
+  }
+});
+
+function detectGender() {
+  const url = window.location.href.toLowerCase();
+  const pageText = document.body.innerText.toLowerCase();
+  
+  console.log('🔍 Detecting gender from URL and page content...');
+  
+  if (url.includes('women') || url.includes('female') || pageText.includes('top women')) {
+    console.log('   → Detected: WOMEN');
+    return 'women';
+  } else if (url.includes('men') || url.includes('male') || pageText.includes('top men')) {
+    console.log('   → Detected: MEN');
+    return 'men';
+  }
+  
+  console.log('   → Could not auto-detect gender');
+  return null;
+}
+
+function normalizeTime(timeStr) {
+  if (!timeStr) return null;
+  
+  // Remove any non-time characters
+  timeStr = timeStr.trim().replace(/[^0-9:]/g, '');
+  const parts = timeStr.split(':');
+  
+  // Convert MM:SS to H:MM:SS format
+  if (parts.length === 2) {
+    return `0:${timeStr}`;
+  } else if (parts.length === 3) {
+    return timeStr;
+  }
+  
+  return timeStr;
+}
+
+function scrapeLeaderboard() {
+  const athletes = [];
+  
+  console.log('');
+  console.log('═══════════════════════════════════════');
+  console.log('🔍 Starting leaderboard scrape...');
+  console.log('═══════════════════════════════════════');
+  console.log('📍 URL:', window.location.href);
+  console.log('📄 Page title:', document.title);
+  console.log('🖼️  In iframe:', window !== window.top);
+  console.log('');
+  
+  // Try multiple selectors to find leaderboard rows
+  const selectors = [
+    'div[class*="leaderboard"] div[class*="row"]',
+    'div[class*="result-row"]',
+    'div[class*="result"] div[class*="row"]',
+    'table tbody tr',
+    'tr',
+    '[role="row"]',
+    'div[class*="athlete"]',
+    'div[class*="competitor"]'
+  ];
+  
+  let rows = [];
+  let successfulSelector = null;
+  
+  for (const selector of selectors) {
+    rows = Array.from(document.querySelectorAll(selector));
+    console.log(`🔎 Trying selector "${selector}": found ${rows.length} elements`);
+    
+    // We want at least 10 rows (typical leaderboard has many more)
+    if (rows.length >= 10) {
+      successfulSelector = selector;
+      console.log(`✅ Using selector "${selector}" (${rows.length} rows found)`);
+      break;
+    }
+  }
+  
+  if (rows.length === 0) {
+    console.error('❌ No leaderboard rows found with any selector!');
+    console.log('');
+    console.log('📋 Page HTML preview (first 1000 chars):');
+    console.log(document.body.innerHTML.substring(0, 1000));
+    throw new Error('No leaderboard rows found. Make sure you\'re on the leaderboard page.');
+  }
+  
+  console.log('');
+  console.log(`📊 Processing ${rows.length} rows...`);
+  console.log('');
+  
+  let processedCount = 0;
+  let skippedCount = 0;
+  
+  rows.forEach((row, index) => {
+    try {
+      // Get all text content from the row
+      const text = row.innerText || row.textContent;
+      if (!text || text.trim().length === 0) {
+        skippedCount++;
+        return;
+      }
+      
+      // Log first few rows for debugging
+      if (index < 3) {
+        console.log(`📝 Row ${index + 1} text:`, text.substring(0, 200));
+      }
+      
+      // Try to parse structured data from cells
+      const cells = row.querySelectorAll('td, div[class*="cell"], span[class*="cell"], div[class*="col"]');
+      let rank = null, name = null, country = null, time = null;
+      
+      cells.forEach((cell) => {
+        const cellText = (cell.innerText || cell.textContent || '').trim();
+        if (!cellText) return;
+        
+        // Rank (number only, typically 1-100)
+        if (/^\d+$/.test(cellText) && parseInt(cellText) <= 500 && !rank) {
+          rank = parseInt(cellText);
+        }
+        
+        // Country code (3 uppercase letters like USA, KEN, ETH)
+        if (/^[A-Z]{3}$/.test(cellText)) {
+          country = cellText;
+        }
+        
+        // Time (HH:MM:SS or MM:SS or H:MM:SS)
+        if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(cellText)) {
+          time = normalizeTime(cellText);
+        }
+        
+        // Name (longer text, not time, not country, not just a number)
+        if (cellText.length > 5 && 
+            !/^\d+$/.test(cellText) && 
+            !/^[A-Z]{3}$/.test(cellText) && 
+            !/^\d{1,2}:\d{2}/.test(cellText) &&
+            !name) {
+          name = cellText;
+        }
+      });
+      
+      // Only add if we found at least name and time
+      if (name && time) {
+        const athlete = {
+          rank: rank || (processedCount + 1),
+          name,
+          country: country || 'UNK',
+          time
+        };
+        
+        athletes.push(athlete);
+        processedCount++;
+        
+        // Log first 5 athletes for verification
+        if (processedCount <= 5) {
+          console.log(`✅ Athlete ${processedCount}:`, athlete);
+        }
+      } else {
+        skippedCount++;
+        if (index < 5) {
+          console.log(`⚠️  Row ${index + 1} skipped (missing data): name=${!!name}, time=${!!time}`);
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️  Error processing row ${index + 1}:`, err.message);
+      skippedCount++;
+    }
+  });
+  
+  console.log('');
+  console.log('═══════════════════════════════════════');
+  console.log('📊 SCRAPING RESULTS:');
+  console.log('═══════════════════════════════════════');
+  console.log(`✅ Successfully scraped: ${processedCount} athletes`);
+  console.log(`⚠️  Skipped rows: ${skippedCount}`);
+  console.log(`📋 Total rows processed: ${rows.length}`);
+  console.log('');
+  console.log('📦 Sample of scraped data (first 10):');
+  console.table(athletes.slice(0, 10));
+  console.log('');
+  console.log('📦 Full scraped data:');
+  console.log(JSON.stringify(athletes, null, 2));
+  console.log('═══════════════════════════════════════');
+  
+  if (athletes.length === 0) {
+    throw new Error('No athletes found. Data extraction may need adjustment for this page format.');
+  }
+  
+  return athletes;
+}

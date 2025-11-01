@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 400px;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+    }
+    
+    h1 {
+      font-size: 18px;
+      margin: 0 0 15px 0;
+      color: #1e3a8a;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 14px;
+      color: #374151;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #d1d5db;
+      border-radius: 5px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    
+    button:hover {
+      background: #2563eb;
+    }
+    
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+    
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+    
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #3b82f6;
+    }
+    
+    small {
+      color: #6b7280;
+      font-size: 12px;
+    }
+    
+    .debug-mode {
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    
+    .debug-mode strong {
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏃 Fantasy Marathon - Import Results</h1>
+  
+  <div class="debug-mode">
+    <strong>🔧 DEBUG MODE</strong><br>
+    <small>Results will be logged to console (F12) instead of being sent to API</small>
+  </div>
+  
+  <div class="form-group">
+    <label for="gameId">Game ID:</label>
+    <input type="text" id="gameId" value="demo-game" placeholder="e.g., default">
+  </div>
+  
+  <div class="form-group">
+    <label for="splitType">Split Type:</label>
+    <select id="splitType">
+      <option value="5k">5K Split</option>
+      <option value="10k">10K Split</option>
+      <option value="15k">15K Split</option>
+      <option value="20k">20K Split</option>
+      <option value="half">Half Marathon</option>
+      <option value="25k">25K Split</option>
+      <option value="30k">30K Split</option>
+      <option value="35k">35K Split</option>
+      <option value="40k">40K Split</option>
+      <option value="finish" selected>Finish Time</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label for="gender">Division:</label>
+    <select id="gender">
+      <option value="men">Men</option>
+      <option value="women">Women</option>
+    </select>
+  </div>
+  
+  <button id="scrapeBtn">🔍 Scrape to Console (Debug)</button>
+  
+  <div id="status" style="display: none;"></div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
