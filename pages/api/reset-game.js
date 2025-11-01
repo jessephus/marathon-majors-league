@@ -46,28 +46,35 @@ export default async function handler(req, res) {
         `;
         console.log(`[Reset Game] Deleted ${standingsDeleted.length} league standings entries`);
 
-        // 3. Delete draft teams (player rosters)
+        // 3. Delete salary cap teams (salary cap draft rosters)
+        const salaryCapTeamsDeleted = await sql`
+            DELETE FROM salary_cap_teams 
+            WHERE game_id = ${gameId}
+        `;
+        console.log(`[Reset Game] Deleted ${salaryCapTeamsDeleted.length} salary cap team entries`);
+
+        // 4. Delete draft teams (player rosters from old snake draft system)
         const teamsDeleted = await sql`
             DELETE FROM draft_teams 
             WHERE game_id = ${gameId}
         `;
         console.log(`[Reset Game] Deleted ${teamsDeleted.length} draft team entries`);
 
-        // 4. Delete player rankings (draft preferences)
+        // 5. Delete player rankings (draft preferences)
         const rankingsDeleted = await sql`
             DELETE FROM player_rankings 
             WHERE game_id = ${gameId}
         `;
         console.log(`[Reset Game] Deleted ${rankingsDeleted.length} player rankings`);
 
-        // 5. Delete anonymous sessions for this game (team sessions)
+        // 6. Delete anonymous sessions for this game (team sessions)
         const sessionsDeleted = await sql`
             DELETE FROM anonymous_sessions 
             WHERE game_id = ${gameId}
         `;
         console.log(`[Reset Game] Deleted ${sessionsDeleted.length} anonymous sessions`);
 
-        // 6. Reset the game state (but keep the game record for history)
+        // 7. Reset the game state (but keep the game record for history)
         const gameUpdated = await sql`
             UPDATE games 
             SET 
@@ -87,6 +94,7 @@ export default async function handler(req, res) {
             deleted: {
                 raceResults: resultsDeleted.length,
                 leagueStandings: standingsDeleted.length,
+                salaryCapTeams: salaryCapTeamsDeleted.length,
                 draftTeams: teamsDeleted.length,
                 playerRankings: rankingsDeleted.length,
                 anonymousSessions: sessionsDeleted.length

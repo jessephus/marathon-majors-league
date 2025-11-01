@@ -7,7 +7,10 @@ let gameState = {
     teams: {},
     results: {},
     draftComplete: false,
-    resultsFinalized: false
+    resultsFinalized: false,
+    // Caching for API optimization
+    resultsCache: null,
+    gameStateCache: null
 };
 
 // Anonymous Session Management (for teams)
@@ -33,6 +36,10 @@ const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
 // Session Timeout (30 days in milliseconds)
 const COMMISSIONER_SESSION_TIMEOUT = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// Cache TTL settings (in milliseconds)
+const RESULTS_CACHE_TTL = 30000; // 30 seconds - short TTL for live results
+const GAME_STATE_CACHE_TTL = 60000; // 60 seconds - moderate TTL for game state
+
 // View state for ranking page
 let rankingViewState = {
     currentGender: 'men'
@@ -40,6 +47,16 @@ let rankingViewState = {
 
 // API base URL - will be relative in production
 const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
+
+// Development mode (reduce console noise in production)
+const IS_DEV = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// Helper for dev-only logging
+function devLog(...args) {
+    if (IS_DEV) {
+        console.log(...args);
+    }
+}
 
 // Game ID - can be switched between default and demo
 let GAME_ID = localStorage.getItem('current_game_id') || 'default';
@@ -53,6 +70,11 @@ function getCurrentGameId() {
 function switchGame(gameId) {
     GAME_ID = gameId;
     localStorage.setItem('current_game_id', gameId);
+    
+    // Invalidate all caches when switching games
+    invalidateResultsCache();
+    gameState.gameStateCache = null;
+    
     location.reload(); // Reload to fetch new game data
 }
 
@@ -106,94 +128,184 @@ async function saveGameState() {
     }
 }
 
-// Load athletes data
-async function loadAthletes() {
-    try {
-        // Load from database API (will auto-seed if empty)
-        const response = await fetch(`${API_BASE}/api/athletes`);
-
-        // If a preview is protected by Vercel SSO, the response will be an HTML page
-        // with a 401/403 status. Detect that and show a clearer message.
-        const contentType = response.headers.get('content-type') || '';
-        if (response.status === 401 || response.status === 403 || contentType.includes('text/html')) {
-            // Provide a useful message to the user about signing into Vercel or using the share token
-            const message = 'This deployment is protected by Vercel Preview Authentication. Please sign in to Vercel or use a preview share link to access API endpoints.';
-            console.error('Preview protected:', response.status, response.statusText);
-            alert(message);
-            throw new Error(message);
-        }
-
-        if (!response.ok) {
-            throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
-        }
-
-        const athletes = await response.json();
-        
-        // Validate we got data
-        if (!athletes || !athletes.men || !athletes.women) {
-            throw new Error('Invalid athletes data structure received from API');
-        }
-        
-        if (athletes.men.length === 0 && athletes.women.length === 0) {
-            throw new Error('No athletes data available - database may not be initialized');
-        }
-        
-        gameState.athletes = athletes;
-        console.log(`Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes from database`);
-        
-    } catch (error) {
-        console.error('Error loading athletes:', error);
-        
-        // Show user-friendly error message
-        const errorMessage = `
-            <div style="padding: 20px; background: #fee; border: 2px solid #c33; border-radius: 8px; margin: 20px;">
-                <h3 style="color: #c33; margin-top: 0;">⚠️ Unable to Load Athletes</h3>
-                <p><strong>Error:</strong> ${error.message}</p>
-                <p>The database may not be initialized yet. Please try one of the following:</p>
-                <ol>
-                    <li>Wait a few moments and refresh the page</li>
-                    <li>Contact the commissioner to initialize the database</li>
-                    <li>Visit <code>/api/init-db</code> to manually initialize</li>
-                </ol>
-            </div>
-        `;
-        
-        // Display error in the UI
-        const mainContent = document.querySelector('main') || document.body;
-        const errorDiv = document.createElement('div');
-        errorDiv.innerHTML = errorMessage;
-        mainContent.insertBefore(errorDiv, mainContent.firstChild);
-        
-        // Set empty arrays to prevent further errors
-        gameState.athletes = { men: [], women: [] };
+// Cached fetch for race results
+async function fetchResultsCached() {
+    const now = Date.now();
+    
+    // Return cached data if still valid
+    if (gameState.resultsCache && 
+        gameState.resultsCache.gameId === GAME_ID &&
+        (now - gameState.resultsCache.timestamp) < RESULTS_CACHE_TTL) {
+        devLog('📦 Using cached results data');
+        return gameState.resultsCache.data;
     }
+    
+    // Fetch fresh data
+    devLog('🌐 Fetching fresh results data');
+    const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch results');
+    }
+    
+    const data = await response.json();
+    
+    // Cache the results
+    gameState.resultsCache = {
+        data,
+        timestamp: now,
+        gameId: GAME_ID
+    };
+    
+    return data;
+}
+
+// Invalidate results cache (call when commissioner updates results)
+function invalidateResultsCache() {
+    devLog('🗑️ Invalidating results cache');
+    gameState.resultsCache = null;
+}
+
+// Cached fetch for game state with ETag-like optimization
+async function loadGameStateCached(forceRefresh = false) {
+    const now = Date.now();
+    
+    // Return cached data if still valid and not forcing refresh
+    if (!forceRefresh && 
+        gameState.gameStateCache && 
+        gameState.gameStateCache.gameId === GAME_ID &&
+        (now - gameState.gameStateCache.timestamp) < GAME_STATE_CACHE_TTL) {
+        devLog('📦 Using cached game state');
+        return;
+    }
+    
+    // Fetch fresh data
+    devLog('🌐 Fetching fresh game state');
+    try {
+        const response = await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        if (response.ok) {
+            const data = await response.json();
+            gameState.players = data.players || [];
+            gameState.draftComplete = data.draftComplete || false;
+            gameState.resultsFinalized = data.resultsFinalized || false;
+            gameState.rankings = data.rankings || {};
+            gameState.teams = data.teams || {};
+            gameState.results = data.results || {};
+            
+            // Cache the game state
+            gameState.gameStateCache = {
+                timestamp: now,
+                gameId: GAME_ID
+            };
+        }
+    } catch (error) {
+        console.error('Error loading game state:', error);
+    }
+}
+
+// Promise cache for athletes loading to prevent concurrent duplicate loads
+let athletesLoadPromise = null;
+
+// Load athletes data with promise caching
+async function loadAthletes() {
+    // If already loaded, return immediately
+    if (gameState.athletes?.men?.length > 0 && gameState.athletes?.women?.length > 0) {
+        console.log('✅ Athletes already loaded in memory, skipping fetch');
+        return gameState.athletes;
+    }
+    
+    // If currently loading, wait for existing promise
+    if (athletesLoadPromise) {
+        console.log('⏳ Athletes load already in progress, waiting...');
+        return athletesLoadPromise;
+    }
+    
+    // Start new load
+    console.log('🌐 Starting fresh athletes load');
+    athletesLoadPromise = (async () => {
+        try {
+            // Load from database API (will auto-seed if empty)
+            const response = await fetch(`${API_BASE}/api/athletes`);
+
+            // If a preview is protected by Vercel SSO, the response will be an HTML page
+            // with a 401/403 status. Detect that and show a clearer message.
+            const contentType = response.headers.get('content-type') || '';
+            if (response.status === 401 || response.status === 403 || contentType.includes('text/html')) {
+                // Provide a useful message to the user about signing into Vercel or using the share token
+                const message = 'This deployment is protected by Vercel Preview Authentication. Please sign in to Vercel or use a preview share link to access API endpoints.';
+                console.error('Preview protected:', response.status, response.statusText);
+                alert(message);
+                throw new Error(message);
+            }
+
+            if (!response.ok) {
+                throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
+            }
+
+            const athletes = await response.json();
+            
+            // Validate we got data
+            if (!athletes || !athletes.men || !athletes.women) {
+                throw new Error('Invalid athletes data structure received from API');
+            }
+            
+            if (athletes.men.length === 0 && athletes.women.length === 0) {
+                throw new Error('No athletes data available - database may not be initialized');
+            }
+            
+            gameState.athletes = athletes;
+            console.log(`✅ Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes from database`);
+            
+            return athletes;
+        } catch (error) {
+            console.error('Error loading athletes:', error);
+            throw error;
+        } finally {
+            // Clear the promise cache after completion (success or failure)
+            athletesLoadPromise = null;
+        }
+    })();
+    
+    return athletesLoadPromise;
 }
 
 // Initialize the app
 async function init() {
+    const initStartTime = performance.now();
+    console.log('⏱️ [PERF] App initialization started');
+    
     console.log('[App Init] Starting application initialization...');
     console.log('[App Init] Current localStorage keys:', Object.keys(localStorage));
     console.log('[App Init] Team session key exists:', !!localStorage.getItem(TEAM_SESSION_KEY));
     console.log('[App Init] Commissioner session key exists:', !!localStorage.getItem(COMMISSIONER_SESSION_KEY));
     
     // Setup UI immediately for faster perceived load time
+    const uiStartTime = performance.now();
     setupEventListeners();
     setupAthleteModal();
+    console.log(`⏱️ [PERF] UI setup complete: ${(performance.now() - uiStartTime).toFixed(2)}ms`);
     
     // Show landing page immediately (will be hidden if session exists)
     showPage('landing-page');
     
-    // Load critical data in parallel
-    const gameStatePromise = loadGameState();
+    // Load critical data in parallel (with caching)
+    const gameStateStartTime = performance.now();
+    const gameStatePromise = loadGameStateCached();
     
     // Try to restore session immediately (only needs gameState, not athletes)
     await gameStatePromise;
+    console.log(`⏱️ [PERF] Game state loaded: ${(performance.now() - gameStateStartTime).toFixed(2)}ms`);
+    
+    const sessionStartTime = performance.now();
     const hasSession = await restoreSession();
+    console.log(`⏱️ [PERF] Session restoration: ${(performance.now() - sessionStartTime).toFixed(2)}ms`);
     
     console.log('[App Init] Session restoration complete. Has session:', hasSession);
     
     // Load athletes in background (only needed for ranking page)
-    loadAthletes().catch(error => {
+    const athletesStartTime = performance.now();
+    loadAthletes().then(() => {
+        console.log(`⏱️ [PERF] Athletes loaded (background): ${(performance.now() - athletesStartTime).toFixed(2)}ms`);
+    }).catch(error => {
         console.error('Failed to load athletes:', error);
     });
     
@@ -203,6 +315,18 @@ async function init() {
         showWelcomeCard();
     } else {
         console.log('[App Init] Session restored, welcome card hidden');
+    }
+    
+    console.log(`⏱️ [PERF] Total init time: ${(performance.now() - initStartTime).toFixed(2)}ms`);
+    
+    // Hide loading overlay after initialization
+    const loadingOverlay = document.getElementById('app-loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.opacity = '0';
+        loadingOverlay.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+            loadingOverlay.remove();
+        }, 300);
     }
 }
 
@@ -284,8 +408,8 @@ function setupEventListeners() {
 
     // Draft page
     document.getElementById('view-teams').addEventListener('click', async () => {
-        // Reload game state to get latest results
-        await loadGameState();
+        // Reload game state to get latest results (use cache)
+        await loadGameStateCached();
         displayTeams();
         showPage('teams-page');
     });
@@ -294,34 +418,87 @@ function setupEventListeners() {
     document.getElementById('back-to-landing').addEventListener('click', () => showPage('landing-page'));
     
     // Leaderboard page
-    document.getElementById('view-leaderboard-btn')?.addEventListener('click', async () => {
-        await displayLeaderboard();
-        showPage('leaderboard-page');
+    document.getElementById('view-leaderboard-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const originalText = btn.textContent;
+        
+        // Disable button and show loading state
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        
+        try {
+            // Show page immediately with loading state
+            showPage('leaderboard-page');
+            // Then load the data
+            await displayLeaderboard();
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            // Error is already handled in displayLeaderboard()
+        } finally {
+            // Re-enable button
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     });
-    document.getElementById('view-leaderboard-from-roster')?.addEventListener('click', async () => {
-        await displayLeaderboard();
-        showPage('leaderboard-page');
+    document.getElementById('view-leaderboard-from-roster')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const originalText = btn.textContent;
+        
+        // Disable button and show loading state
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        
+        try {
+            // Show page immediately with loading state
+            showPage('leaderboard-page');
+            // Then load the data
+            await displayLeaderboard();
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            // Error is already handled in displayLeaderboard()
+        } finally {
+            // Re-enable button
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     });
     document.getElementById('back-to-roster')?.addEventListener('click', () => showPage('salary-cap-draft-page'));
     
     // Leaderboard tab switching
     document.querySelectorAll('.leaderboard-tab').forEach(tab => {
         tab.addEventListener('click', async (e) => {
-            const tabType = e.target.dataset.tab;
+            const clickedTab = e.target;
+            const tabType = clickedTab.dataset.tab;
+            
+            // Prevent switching if already active or loading
+            if (clickedTab.classList.contains('active') || clickedTab.disabled) {
+                return;
+            }
+            
+            // Disable all tabs during loading
+            const allTabs = document.querySelectorAll('.leaderboard-tab');
+            allTabs.forEach(t => t.disabled = true);
             
             // Update active tab
-            document.querySelectorAll('.leaderboard-tab').forEach(t => t.classList.remove('active'));
-            e.target.classList.add('active');
+            allTabs.forEach(t => t.classList.remove('active'));
+            clickedTab.classList.add('active');
             
             // Update active content
             document.querySelectorAll('.leaderboard-tab-content').forEach(c => c.classList.remove('active'));
             
-            if (tabType === 'fantasy') {
-                document.getElementById('fantasy-results-tab').classList.add('active');
-                await displayLeaderboard();
-            } else if (tabType === 'race') {
-                document.getElementById('race-results-tab').classList.add('active');
-                await displayRaceResultsLeaderboard();
+            try {
+                if (tabType === 'fantasy') {
+                    document.getElementById('fantasy-results-tab').classList.add('active');
+                    await displayLeaderboard();
+                } else if (tabType === 'race') {
+                    document.getElementById('race-results-tab').classList.add('active');
+                    await displayRaceResultsLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error switching leaderboard tabs:', error);
+            } finally {
+                // Re-enable all tabs
+                allTabs.forEach(t => t.disabled = false);
             }
         });
     });
@@ -754,6 +931,7 @@ async function restoreSession() {
 // Update footer buttons based on session state
 function updateFooterButtons() {
     const footer = document.querySelector('footer');
+    const footerActions = footer ? footer.querySelector('.footer-actions') : null;
     
     console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
     console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
@@ -767,7 +945,7 @@ function updateFooterButtons() {
     if (anonymousSession.token) {
         console.log('Adding logout and copy URL buttons for team session');
         // User has an active team session - show logout and copy URL buttons
-        const logoutBtn = document.createElement('button');
+    const logoutBtn = document.createElement('button');
         logoutBtn.id = 'logout-button';
         logoutBtn.className = 'btn btn-secondary';
         logoutBtn.textContent = 'Logout';
@@ -780,20 +958,14 @@ function updateFooterButtons() {
         copyUrlBtn.addEventListener('click', handleCopyUrl);
         
         // Find the commissioner mode button
-        const commissionerBtn = footer.querySelector('.btn[onclick*="showCommissionerTOTPModal"]') || 
-                                 footer.querySelector('.btn:last-child');
-        
-        if (commissionerBtn) {
-            // Insert before the commissioner button
-            commissionerBtn.insertAdjacentElement('beforebegin', copyUrlBtn);
-            commissionerBtn.insertAdjacentElement('beforebegin', logoutBtn);
-            console.log('Buttons inserted before commissioner button');
+        if (footerActions) {
+            footerActions.appendChild(logoutBtn);
+            footerActions.appendChild(copyUrlBtn);
         } else {
-            // Fallback: append to footer
             footer.appendChild(logoutBtn);
             footer.appendChild(copyUrlBtn);
-            console.log('Buttons appended to footer (fallback)');
         }
+        console.log('Session buttons appended to footer actions');
     } else if (commissionerSession.isCommissioner) {
         console.log('Adding logout button for commissioner session');
         // Commissioner is logged in - show logout button
@@ -803,17 +975,12 @@ function updateFooterButtons() {
         logoutBtn.textContent = 'Logout';
         logoutBtn.addEventListener('click', handleCommissionerLogout);
         
-        // Insert before the commissioner mode button
-        const commissionerBtn = footer.querySelector('.btn[onclick*="showCommissionerTOTPModal"]') || 
-                                 footer.querySelector('.btn:last-child');
-        
-        if (commissionerBtn) {
-            commissionerBtn.insertAdjacentElement('beforebegin', logoutBtn);
-            console.log('Commissioner logout button inserted');
+        if (footerActions) {
+            footerActions.appendChild(logoutBtn);
         } else {
             footer.appendChild(logoutBtn);
-            console.log('Commissioner logout button appended (fallback)');
         }
+        console.log('Commissioner logout button appended to footer actions');
     }
 }
 
@@ -1657,24 +1824,21 @@ async function displayLeaderboard() {
     container.innerHTML = '<div class="loading-spinner">Loading leaderboard...</div>';
 
     try {
-        // First check if there are any race results for this game
-        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
-        const resultsData = await resultsResponse.json();
-        
-        const hasResults = resultsData && Object.keys(resultsData).length > 0;
-        
-        if (!hasResults) {
-            container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
-            return;
-        }
-
-        // Fetch standings from API
+        // Fetch standings from API (single optimized call)
+        // The API will return hasResults flag if no results exist
         const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
         if (!response.ok) {
             throw new Error('Failed to fetch standings');
         }
         
         const data = await response.json();
+        
+        // Check if results exist via API response
+        if (data.hasResults === false) {
+            container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
+            return;
+        }
+        
         const standings = data.standings || [];
         
         if (standings.length === 0) {
@@ -1683,7 +1847,7 @@ async function displayLeaderboard() {
         }
 
         // Find current player's rank
-    const currentPlayerCode = anonymousSession.playerCode || gameState.currentPlayer || anonymousSession.teamName;
+        const currentPlayerCode = anonymousSession.playerCode || gameState.currentPlayer || anonymousSession.teamName;
         const currentPlayerStanding = standings.find(s => s.player_code === currentPlayerCode);
         const currentPlayerRank = currentPlayerStanding ? currentPlayerStanding.rank : null;
 
@@ -1763,13 +1927,8 @@ async function displayRaceResultsLeaderboard() {
         
         console.log(`Athletes loaded: ${gameState.athletes.men.length} men, ${gameState.athletes.women.length} women`);
         
-        // Fetch race results
-        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch race results');
-        }
-        
-        const resultsData = await response.json();
+        // Fetch race results with caching
+        const resultsData = await fetchResultsCached();
         console.log('Results data:', resultsData);
         const scoredResults = resultsData.scored || [];
         
@@ -2523,6 +2682,9 @@ async function handleUpdateResults() {
             body: JSON.stringify({ results: gameState.results })
         });
         
+        // Invalidate results cache so players see fresh data
+        invalidateResultsCache();
+        
         alert('Live results updated! Players can now see the current standings.');
     } catch (error) {
         console.error('Error saving results:', error);
@@ -2579,6 +2741,9 @@ async function handleFinalizeResults() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ results: gameState.results })
         });
+        
+        // Invalidate results cache after finalizing
+        invalidateResultsCache();
     } catch (error) {
         console.error('Error saving results:', error);
     }
@@ -2935,6 +3100,9 @@ async function handleResetResults() {
 
         // Update local game state
         gameState.results = {};
+        
+        // Invalidate results cache after reset
+        invalidateResultsCache();
 
         // Clear displayed data
         document.getElementById('live-standings').innerHTML = '';
@@ -3006,8 +3174,11 @@ async function handleResetGame() {
             // Show success message with details
             alert(`Game reset complete!\n\nDeleted:\n- ${result.deleted.draftTeams} team rosters\n- ${result.deleted.playerRankings} player rankings\n- ${result.deleted.raceResults} race results\n- ${result.deleted.leagueStandings} standings entries\n- ${result.deleted.anonymousSessions} team sessions\n\nAll athlete data has been preserved.`);
             
-            // Reload game state from database
-            await loadGameState();
+            // Reload game state from database (force refresh, don't use cache)
+            await loadGameStateCached(true);
+            
+            // Invalidate results cache since we just reset
+            invalidateResultsCache();
             
             // Navigate to landing page
             showPage('landing-page');
@@ -4131,6 +4302,7 @@ function setupAthleteModal() {
             switchModalTab(tab.dataset.tab);
         });
     });
+}
 
 /**
  * View team details from leaderboard
@@ -4413,7 +4585,6 @@ window.viewTeamDetails = viewTeamDetails;
 window.closeTeamDetails = closeTeamDetails;
 window.showPointsInfo = showPointsInfo;
 window.closePointsInfo = closePointsInfo;
-}
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {

@@ -55,7 +55,7 @@ header h1 {
 
 footer {
     text-align: center;
-    padding: 20px;
+    padding: 16px 20px 8px;
     margin-top: 40px;
     color: var(--dark-gray);
     font-size: 0.9rem;
@@ -64,24 +64,31 @@ footer {
 footer .footer-actions {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
-    margin-top: 10px;
+    margin-bottom: 16px;
+}
+
+footer .footer-copyright {
+    margin: 0;
+    padding-top: 12px;
+    font-size: 0.75rem;
+    color: #999;
 }
 
 footer .game-switcher {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
+    gap: 6px;
+    font-size: 0.85rem;
 }
 
 footer .game-select {
-    padding: 6px 12px;
+    padding: 4px 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: white;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     cursor: pointer;
 }
 
@@ -91,13 +98,15 @@ footer .game-select:hover {
 
 footer .btn {
     margin-top: 0;
+    padding: 6px 16px;
+    font-size: 0.85rem;
 }
 
 @media (min-width: 768px) {
     footer .footer-actions {
         flex-direction: row;
         justify-content: center;
-        gap: 15px;
+        gap: 12px;
     }
 }
 
@@ -153,8 +162,8 @@ footer .btn {
 }
 
 .btn-large {
-    padding: 16px 40px;
-    font-size: 1.1rem;
+    padding: 12px 24px;
+    font-size: 1rem;
 }
 
 /* Commissioner Login Section */
@@ -1261,7 +1270,6 @@ footer .btn {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    animation: fadeIn 0.3s ease;
 }
 
 .modal.active {
@@ -1276,6 +1284,7 @@ footer .btn {
     bottom: 0;
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease;
 }
 
 /* Modal Content (for team creation and TOTP modals) */
@@ -1497,10 +1506,11 @@ footer .btn {
     color: white;
 }
 
-.athlete-name {
+.masthead-bio-section .athlete-name {
     font-size: 24px;
     font-weight: 800;
     margin: 0 0 12px 0;
+    color: white !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     line-height: 1.2;
 }
@@ -1989,6 +1999,34 @@ footer .btn {
 .loading-indicator::after {
     content: '...';
     animation: dots 1.5s steps(4, end) infinite;
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--primary-orange);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.loading-spinner::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 20px;
+    border: 4px solid rgba(255, 105, 0, 0.2);
+    border-top-color: var(--primary-orange);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
 @keyframes dots {
@@ -2904,18 +2942,18 @@ footer .btn {
 
 /* Submit Container */
 .draft-submit-container {
-    padding: 20px;
+    padding: 16px 20px;
     text-align: center;
 }
 
 .draft-submit-container button {
     width: 100%;
-    max-width: 400px;
+    max-width: 350px;
 }
 
 /* Roster Navigation (shown after lock) */
 #roster-navigation {
-    padding: 0 20px 20px;
+    padding: 0 20px 16px;
     text-align: center;
     justify-content: center;
     gap: 12px;
@@ -2923,7 +2961,7 @@ footer .btn {
 
 #roster-navigation button {
     flex: 1;
-    max-width: 250px;
+    max-width: 220px;
 }
 
 /* Selection Modal (slides in from right) */
@@ -3040,6 +3078,22 @@ footer .btn {
     cursor: not-allowed;
 }
 
+.modal-athlete-headshot {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f0f0f0;
+    border: 2px solid #e0e0e0;
+}
+
+.modal-athlete-headshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
 .modal-athlete-info {
     flex: 1;
     display: flex;
@@ -3091,97 +3145,9 @@ footer .btn {
     transform: none;
 }
 
-/* Detail Modal (slides up from bottom) */
-.detail-modal {
-    position: fixed;
-    bottom: -100%;
-    left: 0;
-    right: 0;
-    height: 80%;
-    background: rgba(0,0,0,0.5);
-    z-index: 2000;
-    transition: bottom 0.3s ease;
-}
+/* Athlete Detail Modal in Salary Cap Draft uses same styling as main athlete modal */
+/* The modal slides up from bottom using .modal and .athlete-card-container classes */
 
-.detail-modal.active {
-    bottom: 0;
-}
-
-.detail-modal-content {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100%;
-    background: white;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    overflow-y: auto;
-}
-
-.detail-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #e0e0e0;
-    position: sticky;
-    top: 0;
-    background: white;
-    z-index: 10;
-}
-
-.modal-close-btn {
-    background: none;
-    border: none;
-    font-size: 32px;
-    cursor: pointer;
-    color: #666;
-    line-height: 1;
-    padding: 0;
-}
-
-#athlete-detail-content {
-    padding: 20px;
-}
-
-.detail-athlete-header {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.detail-athlete-headshot {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin: 0 auto 16px;
-    display: block;
-    border: 4px solid var(--primary-orange);
-}
-
-.detail-athlete-name {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: var(--text-dark);
-    margin-bottom: 8px;
-}
-
-.detail-athlete-country {
-    font-size: 1.1em;
-    color: #666;
-    margin-bottom: 12px;
-}
-
-.detail-athlete-salary {
-    font-size: 1.8em;
-    font-weight: bold;
-    color: var(--primary-orange);
-}
-
-.detail-stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
-}
 
 .detail-stat {
     background: #f8f9fa;

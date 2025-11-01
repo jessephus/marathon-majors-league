@@ -158,6 +158,25 @@ export default async function handler(req, res) {
       // Get standings (calculate fresh or return cached)
       const useCache = req.query.cached === 'true';
       
+      // Check if any results exist for this game
+      const resultsCount = await sql`
+        SELECT COUNT(*) as count
+        FROM race_results
+        WHERE game_id = ${gameId}
+      `;
+      const hasResults = resultsCount.length > 0 && resultsCount[0].count > 0;
+      
+      // If no results, return early
+      if (!hasResults) {
+        res.status(200).json({
+          gameId,
+          standings: [],
+          hasResults: false,
+          cached: false
+        });
+        return;
+      }
+      
       let standings;
       
       if (useCache) {
@@ -226,6 +245,7 @@ export default async function handler(req, res) {
       res.status(200).json({
         gameId,
         standings,
+        hasResults: true,
         cached: useCache && standings.length > 0
       });
 
