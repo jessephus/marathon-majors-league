@@ -258,22 +258,139 @@ The application uses event listeners for user interactions:
 
 ## Security Architecture
 
-### Authentication Model
-- **No traditional user accounts**: Simplified player code system
-- **Commissioner access**: Single password ("kipchoge") for admin functions
+### Authentication Model (Post-Migration 003)
+
+The application supports both legacy and modern authentication:
+
+#### Legacy System (Backward Compatible)
+- **Team codes**: Simple code-based player identification
+- **Commissioner password**: Single password ("kipchoge") for admin functions
 - **Game isolation**: Separate data namespaces prevent cross-game access
 
+#### Modern User Account System (New)
+- **Multi-factor authentication**: TOTP, SMS OTP, and Magic Links
+- **Email-based accounts**: Primary identifier with optional phone number
+- **Session management**: Secure token-based authentication
+- **Role-based access**: Commissioner, player, and spectator roles
+- **Invite system**: Admin-controlled account creation for preview phase
+
+### Authentication Methods
+
+#### 1. TOTP (Time-Based One-Time Password)
+- **Setup**: User scans QR code with Google Authenticator or similar app
+- **Login**: User enters 6-digit code from authenticator app
+- **Backup**: 5-10 recovery codes generated for lost access
+- **Storage**: TOTP secrets encrypted at application layer
+- **Standard**: RFC 6238 compliant
+
+#### 2. SMS One-Time Password
+- **Delivery**: 6-digit code sent via SMS (Twilio integration)
+- **Expiration**: 5-minute validity window
+- **Rate limiting**: Prevents abuse with attempt tracking
+- **Fallback**: Available when TOTP is unavailable
+
+#### 3. Magic Links (Email)
+- **Delivery**: Secure token sent via email
+- **Expiration**: 15-minute validity window
+- **Purposes**: Login, email verification, TOTP reset, invitations
+- **Security**: Cryptographically secure random tokens (256-bit)
+
+### User Account Architecture
+
+```
+User Account Structure:
+├── users (core account)
+│   ├── email (primary identifier)
+│   ├── phone_number (optional, for SMS OTP)
+│   ├── totp_secret (encrypted)
+│   ├── verification status
+│   └── admin/staff flags
+├── user_profiles (extended information)
+│   ├── avatar, bio, location
+│   ├── preferred auth method
+│   └── notification preferences
+├── Authentication Tokens
+│   ├── one_time_passwords (SMS/email OTPs)
+│   ├── magic_links (passwordless auth)
+│   ├── totp_backup_codes (recovery)
+│   └── user_sessions (active sessions)
+└── League Associations
+    └── user_games (membership, roles, teams)
+```
+
+### League Permission Model
+
+#### Roles
+1. **Commissioner**
+   - Create and manage league
+   - Invite players
+   - Execute draft
+   - Enter results
+   - Finalize games
+
+2. **Player**
+   - Submit rankings
+   - View team
+   - Track results
+   - Customize team name/sponsor
+
+3. **Spectator**
+   - View league standings
+   - Follow live results
+   - No team ownership
+
+### Invite System (Preview Phase)
+
+During initial rollout, new account creation requires an invite code:
+
+```
+Invite Flow:
+1. Admin creates invite code
+2. Code shared with prospective user
+3. User registers with invite code
+4. Code usage tracked and incremented
+5. Account created with normal permissions
+```
+
+**Invite Code Types:**
+- **Admin codes**: Created by super admin, single or multi-use
+- **League codes**: Generated when creating a league (future)
+- **Friend codes**: User-generated referral codes (future)
+
 ### Data Security
-- **Public blob access**: Matches the casual, friend-to-friend use case
-- **HTTPS encryption**: All data in transit is encrypted
-- **No sensitive data**: Only fantasy sports information is stored
+
+- **Encryption**: TOTP secrets encrypted at application layer (AES-256)
+- **Hashing**: Backup codes hashed with bcrypt (cost factor 12)
+- **Tokens**: Cryptographically secure random generation (crypto.randomBytes)
+- **HTTPS**: All data in transit encrypted with TLS 1.3
+- **SQL injection**: Prevented via parameterized queries
+- **Session security**: Secure, httpOnly cookies with SameSite=Strict
+
+### Audit and Compliance
+
+#### Audit Logging
+All authentication events are logged:
+- Login attempts (success/failure)
+- Token generation and usage
+- Account modifications
+- Permission changes
+- Session creation/revocation
+
+#### Stored Information
+- User ID and action
+- Resource type and ID
+- IP address and user agent
+- Timestamp and details (JSONB)
 
 ### Security Trade-offs
-The application prioritizes simplicity over security for several reasons:
-1. **Casual use case**: Friends playing together, not commercial application
-2. **Non-sensitive data**: No personal information, payment data, or secrets
-3. **Ease of use**: No registration barriers or complex authentication
-4. **Rapid deployment**: Minimal configuration required
+
+The application balances security with usability:
+
+1. **No passwords**: Reduces attack surface (no password breaches)
+2. **Multiple auth methods**: Accommodates different user preferences
+3. **Soft deletes**: Preserves audit trail while removing access
+4. **Session expiry**: 30-day default with activity tracking
+5. **Rate limiting**: Application layer protection (not database)
 
 ## Performance Architecture
 

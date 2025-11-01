@@ -29,6 +29,7 @@ export async function getAllAthletes(confirmedOnly = false) {
         a.age,
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
+        a.salary,
         COALESCE(
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
@@ -64,6 +65,7 @@ export async function getAllAthletes(confirmedOnly = false) {
         a.age,
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
+        a.salary,
         COALESCE(
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
@@ -1222,3 +1224,991 @@ export async function getRecordsAudit(gameId = null, athleteId = null) {
   
   return audit;
 }
+
+// ============================================================================
+// USER ACCOUNTS (Migration 003)
+// ============================================================================
+
+/**
+ * Get user by email
+ * @param {string} email - User email address
+ * @returns {Promise<Object|null>} User object or null if not found
+ */
+export async function getUserByEmail(email) {
+  const [user] = await sql`
+    SELECT 
+      id,
+      email,
+      phone_number as "phoneNumber",
+      display_name as "displayName",
+      totp_enabled as "totpEnabled",
+      totp_verified_at as "totpVerifiedAt",
+      is_active as "isActive",
+      is_admin as "isAdmin",
+      is_staff as "isStaff",
+      email_verified as "emailVerified",
+      email_verified_at as "emailVerifiedAt",
+      phone_verified as "phoneVerified",
+      phone_verified_at as "phoneVerifiedAt",
+      created_at as "createdAt",
+      updated_at as "updatedAt",
+      last_login as "lastLogin"
+    FROM users
+    WHERE email = ${email} 
+      AND deleted_at IS NULL
+  `;
+  return user || null;
+}
+
+/**
+ * Get user by ID
+ * @param {number} userId - User ID
+ * @returns {Promise<Object|null>} User object or null if not found
+ */
+export async function getUserById(userId) {
+  const [user] = await sql`
+    SELECT 
+      id,
+      email,
+      phone_number as "phoneNumber",
+      display_name as "displayName",
+      totp_enabled as "totpEnabled",
+      totp_verified_at as "totpVerifiedAt",
+      is_active as "isActive",
+      is_admin as "isAdmin",
+      is_staff as "isStaff",
+      email_verified as "emailVerified",
+      email_verified_at as "emailVerifiedAt",
+      phone_verified as "phoneVerified",
+      phone_verified_at as "phoneVerifiedAt",
+      created_at as "createdAt",
+      updated_at as "updatedAt",
+      last_login as "lastLogin"
+    FROM users
+    WHERE id = ${userId}
+      AND deleted_at IS NULL
+  `;
+  return user || null;
+}
+
+/**
+ * Get user by phone number
+ * @param {string} phoneNumber - User phone number (E.164 format)
+ * @returns {Promise<Object|null>} User object or null if not found
+ */
+export async function getUserByPhone(phoneNumber) {
+  const [user] = await sql`
+    SELECT 
+      id,
+      email,
+      phone_number as "phoneNumber",
+      display_name as "displayName",
+      totp_enabled as "totpEnabled",
+      is_active as "isActive",
+      is_admin as "isAdmin",
+      email_verified as "emailVerified",
+      phone_verified as "phoneVerified",
+      created_at as "createdAt",
+      last_login as "lastLogin"
+    FROM users
+    WHERE phone_number = ${phoneNumber}
+      AND deleted_at IS NULL
+  `;
+  return user || null;
+}
+
+/**
+ * Create a new user account
+ * @param {Object} userData - User data
+ * @returns {Promise<Object>} Created user object
+ */
+export async function createUser(userData) {
+  const {
+    email,
+    phoneNumber = null,
+    displayName = null,
+    isAdmin = false,
+    isStaff = false
+  } = userData;
+
+  const [user] = await sql`
+    INSERT INTO users (
+      email,
+      phone_number,
+      display_name,
+      is_admin,
+      is_staff,
+      is_active
+    ) VALUES (
+      ${email},
+      ${phoneNumber},
+      ${displayName},
+      ${isAdmin},
+      ${isStaff},
+      TRUE
+    )
+    RETURNING 
+      id,
+      email,
+      phone_number as "phoneNumber",
+      display_name as "displayName",
+      is_active as "isActive",
+      is_admin as "isAdmin",
+      is_staff as "isStaff",
+      created_at as "createdAt"
+  `;
+
+  // Create default user profile
+  await sql`
+    INSERT INTO user_profiles (user_id)
+    VALUES (${user.id})
+  `;
+
+  return user;
+}
+
+/**
+ * Update user information
+ * @param {number} userId - User ID
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<Object>} Updated user object
+ */
+export async function updateUser(userId, updates) {
+  const {
+    displayName,
+    phoneNumber,
+    totpSecret,
+    totpEnabled,
+    emailVerified,
+    phoneVerified
+  } = updates;
+
+  // Build update query
+  if (displayName !== undefined) {
+    await sql`UPDATE users SET display_name = ${displayName}, updated_at = CURRENT_TIMESTAMP WHERE id = ${userId}`;
+  }
+  if (phoneNumber !== undefined) {
+    await sql`UPDATE users SET phone_number = ${phoneNumber}, updated_at = CURRENT_TIMESTAMP WHERE id = ${userId}`;
+  }
+  if (totpSecret !== undefined) {
+    await sql`UPDATE users SET totp_secret = ${totpSecret}, updated_at = CURRENT_TIMESTAMP WHERE id = ${userId}`;
+  }
+  if (totpEnabled !== undefined) {
+    const verifiedAt = totpEnabled ? new Date() : null;
+    await sql`
+      UPDATE users 
+      SET totp_enabled = ${totpEnabled}, 
+          totp_verified_at = ${verifiedAt},
+          updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ${userId}
+    `;
+  }
+  if (emailVerified !== undefined) {
+    const verifiedAt = emailVerified ? new Date() : null;
+    await sql`
+      UPDATE users 
+      SET email_verified = ${emailVerified},
+          email_verified_at = ${verifiedAt},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${userId}
+    `;
+  }
+  if (phoneVerified !== undefined) {
+    const verifiedAt = phoneVerified ? new Date() : null;
+    await sql`
+      UPDATE users 
+      SET phone_verified = ${phoneVerified},
+          phone_verified_at = ${verifiedAt},
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${userId}
+    `;
+  }
+
+  return await getUserById(userId);
+}
+
+/**
+ * Record user login
+ * @param {number} userId - User ID
+ * @returns {Promise<void>}
+ */
+export async function recordUserLogin(userId) {
+  await sql`
+    UPDATE users
+    SET last_login = CURRENT_TIMESTAMP
+    WHERE id = ${userId}
+  `;
+}
+
+// ============================================================================
+// ONE-TIME PASSWORDS
+// ============================================================================
+
+/**
+ * Create OTP for user
+ * @param {number} userId - User ID
+ * @param {string} otpCode - 6-digit OTP code
+ * @param {string} deliveryMethod - 'sms' or 'email'
+ * @param {number} expiryMinutes - Minutes until expiration (default: 5)
+ * @returns {Promise<Object>} Created OTP object
+ */
+export async function createOTP(userId, otpCode, deliveryMethod, expiryMinutes = 5) {
+  const [otp] = await sql`
+    INSERT INTO one_time_passwords (
+      user_id,
+      otp_code,
+      delivery_method,
+      expires_at
+    ) VALUES (
+      ${userId},
+      ${otpCode},
+      ${deliveryMethod},
+      CURRENT_TIMESTAMP + INTERVAL '${expiryMinutes} minutes'
+    )
+    RETURNING 
+      id,
+      user_id as "userId",
+      otp_code as "otpCode",
+      delivery_method as "deliveryMethod",
+      expires_at as "expiresAt",
+      created_at as "createdAt"
+  `;
+  return otp;
+}
+
+/**
+ * Verify OTP code
+ * @param {number} userId - User ID
+ * @param {string} otpCode - OTP code to verify
+ * @param {string} deliveryMethod - 'sms' or 'email'
+ * @returns {Promise<boolean>} True if valid, false otherwise
+ */
+export async function verifyOTP(userId, otpCode, deliveryMethod) {
+  const [otp] = await sql`
+    SELECT id, expires_at, used
+    FROM one_time_passwords
+    WHERE user_id = ${userId}
+      AND otp_code = ${otpCode}
+      AND delivery_method = ${deliveryMethod}
+      AND used = FALSE
+      AND expires_at > CURRENT_TIMESTAMP
+    ORDER BY created_at DESC
+    LIMIT 1
+  `;
+
+  if (!otp) {
+    return false;
+  }
+
+  // Mark as used
+  await sql`
+    UPDATE one_time_passwords
+    SET used = TRUE, used_at = CURRENT_TIMESTAMP
+    WHERE id = ${otp.id}
+  `;
+
+  return true;
+}
+
+// ============================================================================
+// MAGIC LINKS
+// ============================================================================
+
+/**
+ * Create magic link for user
+ * @param {number} userId - User ID
+ * @param {string} token - Secure random token
+ * @param {string} purpose - 'login', 'verify_email', 'reset_totp', 'invite'
+ * @param {number} expiryMinutes - Minutes until expiration (default: 15)
+ * @param {Object} metadata - Optional metadata
+ * @returns {Promise<Object>} Created magic link object
+ */
+export async function createMagicLink(userId, token, purpose, expiryMinutes = 15, metadata = null) {
+  const [link] = await sql`
+    INSERT INTO magic_links (
+      user_id,
+      token,
+      purpose,
+      expires_at,
+      metadata
+    ) VALUES (
+      ${userId},
+      ${token},
+      ${purpose},
+      CURRENT_TIMESTAMP + INTERVAL '${expiryMinutes} minutes',
+      ${metadata ? JSON.stringify(metadata) : null}
+    )
+    RETURNING 
+      id,
+      user_id as "userId",
+      token,
+      purpose,
+      expires_at as "expiresAt",
+      metadata,
+      created_at as "createdAt"
+  `;
+  return link;
+}
+
+/**
+ * Verify and consume magic link
+ * @param {string} token - Magic link token
+ * @returns {Promise<Object|null>} Magic link object if valid, null otherwise
+ */
+export async function verifyMagicLink(token) {
+  const [link] = await sql`
+    SELECT 
+      id,
+      user_id as "userId",
+      token,
+      purpose,
+      metadata,
+      expires_at as "expiresAt",
+      used,
+      created_at as "createdAt"
+    FROM magic_links
+    WHERE token = ${token}
+      AND used = FALSE
+      AND expires_at > CURRENT_TIMESTAMP
+  `;
+
+  if (!link) {
+    return null;
+  }
+
+  // Mark as used
+  await sql`
+    UPDATE magic_links
+    SET used = TRUE, used_at = CURRENT_TIMESTAMP
+    WHERE id = ${link.id}
+  `;
+
+  return link;
+}
+
+// ============================================================================
+// USER SESSIONS
+// ============================================================================
+
+/**
+ * Create user session
+ * @param {number} userId - User ID
+ * @param {string} sessionToken - Secure session token
+ * @param {number} expiryDays - Days until expiration (default: 30)
+ * @returns {Promise<Object>} Created session object
+ */
+export async function createSession(userId, sessionToken, expiryDays = 30) {
+  const [session] = await sql`
+    INSERT INTO user_sessions (
+      user_id,
+      session_token,
+      expires_at
+    ) VALUES (
+      ${userId},
+      ${sessionToken},
+      CURRENT_TIMESTAMP + INTERVAL '${expiryDays} days'
+    )
+    RETURNING 
+      id,
+      user_id as "userId",
+      session_token as "sessionToken",
+      expires_at as "expiresAt",
+      created_at as "createdAt"
+  `;
+  return session;
+}
+
+/**
+ * Verify session token
+ * @param {string} sessionToken - Session token to verify
+ * @returns {Promise<Object|null>} Session with user info if valid, null otherwise
+ */
+export async function verifySession(sessionToken) {
+  const [session] = await sql`
+    SELECT 
+      s.id,
+      s.user_id as "userId",
+      s.session_token as "sessionToken",
+      s.expires_at as "expiresAt",
+      s.last_activity as "lastActivity",
+      u.email,
+      u.display_name as "displayName",
+      u.is_active as "isActive"
+    FROM user_sessions s
+    JOIN users u ON s.user_id = u.id
+    WHERE s.session_token = ${sessionToken}
+      AND s.revoked = FALSE
+      AND s.expires_at > CURRENT_TIMESTAMP
+      AND u.deleted_at IS NULL
+  `;
+
+  if (!session) {
+    return null;
+  }
+
+  // Update last activity
+  await sql`
+    UPDATE user_sessions
+    SET last_activity = CURRENT_TIMESTAMP
+    WHERE id = ${session.id}
+  `;
+
+  return session;
+}
+
+/**
+ * Revoke session
+ * @param {string} sessionToken - Session token to revoke
+ * @returns {Promise<void>}
+ */
+export async function revokeSession(sessionToken) {
+  await sql`
+    UPDATE user_sessions
+    SET revoked = TRUE, revoked_at = CURRENT_TIMESTAMP
+    WHERE session_token = ${sessionToken}
+  `;
+}
+
+/**
+ * Revoke all sessions for user
+ * @param {number} userId - User ID
+ * @returns {Promise<void>}
+ */
+export async function revokeAllUserSessions(userId) {
+  await sql`
+    UPDATE user_sessions
+    SET revoked = TRUE, revoked_at = CURRENT_TIMESTAMP
+    WHERE user_id = ${userId}
+      AND revoked = FALSE
+  `;
+}
+
+// ============================================================================
+// USER PROFILES
+// ============================================================================
+
+/**
+ * Get user profile
+ * @param {number} userId - User ID
+ * @returns {Promise<Object|null>} User profile or null
+ */
+export async function getUserProfile(userId) {
+  const [profile] = await sql`
+    SELECT 
+      id,
+      user_id as "userId",
+      avatar_url as "avatarUrl",
+      bio,
+      location,
+      timezone,
+      preferred_auth_method as "preferredAuthMethod",
+      notification_preferences as "notificationPreferences",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM user_profiles
+    WHERE user_id = ${userId}
+  `;
+  return profile || null;
+}
+
+/**
+ * Update user profile
+ * @param {number} userId - User ID
+ * @param {Object} updates - Profile fields to update
+ * @returns {Promise<Object>} Updated profile
+ */
+export async function updateUserProfile(userId, updates) {
+  const {
+    avatarUrl,
+    bio,
+    location,
+    timezone,
+    preferredAuthMethod,
+    notificationPreferences
+  } = updates;
+
+  if (avatarUrl !== undefined) {
+    await sql`UPDATE user_profiles SET avatar_url = ${avatarUrl}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}`;
+  }
+  if (bio !== undefined) {
+    await sql`UPDATE user_profiles SET bio = ${bio}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}`;
+  }
+  if (location !== undefined) {
+    await sql`UPDATE user_profiles SET location = ${location}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}`;
+  }
+  if (timezone !== undefined) {
+    await sql`UPDATE user_profiles SET timezone = ${timezone}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}`;
+  }
+  if (preferredAuthMethod !== undefined) {
+    await sql`UPDATE user_profiles SET preferred_auth_method = ${preferredAuthMethod}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}`;
+  }
+  if (notificationPreferences !== undefined) {
+    await sql`UPDATE user_profiles SET notification_preferences = ${JSON.stringify(notificationPreferences)}, updated_at = CURRENT_TIMESTAMP WHERE user_id = ${userId}`;
+  }
+
+  return await getUserProfile(userId);
+}
+
+// ============================================================================
+// USER GAMES (League Membership)
+// ============================================================================
+
+/**
+ * Get user's game memberships
+ * @param {number} userId - User ID
+ * @returns {Promise<Array>} Array of game memberships
+ */
+export async function getUserGames(userId) {
+  const memberships = await sql`
+    SELECT 
+      ug.id,
+      ug.user_id as "userId",
+      ug.game_id as "gameId",
+      ug.role,
+      ug.player_code as "playerCode",
+      ug.team_name as "teamName",
+      ug.team_sponsor as "teamSponsor",
+      ug.owner_name as "ownerName",
+      ug.status,
+      ug.invited_by as "invitedBy",
+      ug.invited_at as "invitedAt",
+      ug.joined_at as "joinedAt",
+      g.draft_complete as "draftComplete",
+      g.results_finalized as "resultsFinalized"
+    FROM user_games ug
+    JOIN games g ON ug.game_id = g.game_id
+    WHERE ug.user_id = ${userId}
+    ORDER BY ug.joined_at DESC
+  `;
+  return memberships;
+}
+
+/**
+ * Get game members
+ * @param {string} gameId - Game ID
+ * @returns {Promise<Array>} Array of game members
+ */
+export async function getGameMembers(gameId) {
+  const members = await sql`
+    SELECT 
+      ug.id,
+      ug.user_id as "userId",
+      ug.role,
+      ug.player_code as "playerCode",
+      ug.team_name as "teamName",
+      ug.team_sponsor as "teamSponsor",
+      ug.owner_name as "ownerName",
+      ug.status,
+      ug.joined_at as "joinedAt",
+      u.email,
+      u.display_name as "displayName"
+    FROM user_games ug
+    JOIN users u ON ug.user_id = u.id
+    WHERE ug.game_id = ${gameId}
+      AND u.deleted_at IS NULL
+    ORDER BY 
+      CASE ug.role WHEN 'commissioner' THEN 1 WHEN 'player' THEN 2 ELSE 3 END,
+      ug.joined_at
+  `;
+  return members;
+}
+
+/**
+ * Add user to game
+ * @param {number} userId - User ID
+ * @param {string} gameId - Game ID
+ * @param {string} role - 'commissioner', 'player', or 'spectator'
+ * @param {Object} options - Additional options (playerCode, teamName, etc.)
+ * @returns {Promise<Object>} Created membership
+ */
+export async function addUserToGame(userId, gameId, role, options = {}) {
+  const {
+    playerCode = null,
+    teamName = null,
+    teamSponsor = null,
+    ownerName = null,
+    status = 'active',
+    invitedBy = null
+  } = options;
+
+  const [membership] = await sql`
+    INSERT INTO user_games (
+      user_id,
+      game_id,
+      role,
+      player_code,
+      team_name,
+      team_sponsor,
+      owner_name,
+      status,
+      invited_by
+    ) VALUES (
+      ${userId},
+      ${gameId},
+      ${role},
+      ${playerCode},
+      ${teamName},
+      ${teamSponsor},
+      ${ownerName},
+      ${status},
+      ${invitedBy}
+    )
+    RETURNING 
+      id,
+      user_id as "userId",
+      game_id as "gameId",
+      role,
+      player_code as "playerCode",
+      team_name as "teamName",
+      team_sponsor as "teamSponsor",
+      owner_name as "ownerName",
+      status,
+      joined_at as "joinedAt"
+  `;
+  return membership;
+}
+
+/**
+ * Update user's game membership
+ * @param {number} membershipId - Membership ID
+ * @param {Object} updates - Fields to update
+ * @returns {Promise<void>}
+ */
+export async function updateUserGameMembership(membershipId, updates) {
+  const {
+    teamName,
+    teamSponsor,
+    ownerName,
+    status
+  } = updates;
+
+  if (teamName !== undefined) {
+    await sql`UPDATE user_games SET team_name = ${teamName}, updated_at = CURRENT_TIMESTAMP WHERE id = ${membershipId}`;
+  }
+  if (teamSponsor !== undefined) {
+    await sql`UPDATE user_games SET team_sponsor = ${teamSponsor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${membershipId}`;
+  }
+  if (ownerName !== undefined) {
+    await sql`UPDATE user_games SET owner_name = ${ownerName}, updated_at = CURRENT_TIMESTAMP WHERE id = ${membershipId}`;
+  }
+  if (status !== undefined) {
+    await sql`UPDATE user_games SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${membershipId}`;
+  }
+}
+
+// ============================================================================
+// INVITE CODES
+// ============================================================================
+
+/**
+ * Create invite code
+ * @param {Object} codeData - Invite code data
+ * @returns {Promise<Object>} Created invite code
+ */
+export async function createInviteCode(codeData) {
+  const {
+    code,
+    codeType = 'admin',
+    maxUses = 1,
+    createdBy,
+    expiryDays = null,
+    metadata = null
+  } = codeData;
+
+  const expiresAt = expiryDays 
+    ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
+    : null;
+
+  const [inviteCode] = await sql`
+    INSERT INTO invite_codes (
+      code,
+      code_type,
+      max_uses,
+      created_by,
+      expires_at,
+      metadata
+    ) VALUES (
+      ${code},
+      ${codeType},
+      ${maxUses},
+      ${createdBy},
+      ${expiresAt},
+      ${metadata ? JSON.stringify(metadata) : null}
+    )
+    RETURNING 
+      id,
+      code,
+      code_type as "codeType",
+      max_uses as "maxUses",
+      current_uses as "currentUses",
+      created_by as "createdBy",
+      expires_at as "expiresAt",
+      is_active as "isActive",
+      created_at as "createdAt"
+  `;
+  return inviteCode;
+}
+
+/**
+ * Verify and consume invite code
+ * @param {string} code - Invite code to verify
+ * @param {number} userId - User ID consuming the code
+ * @returns {Promise<Object|null>} Invite code object if valid, null otherwise
+ */
+export async function verifyInviteCode(code, userId) {
+  const [inviteCode] = await sql`
+    SELECT 
+      id,
+      code,
+      code_type as "codeType",
+      max_uses as "maxUses",
+      current_uses as "currentUses",
+      metadata
+    FROM invite_codes
+    WHERE code = ${code}
+      AND is_active = TRUE
+      AND current_uses < max_uses
+      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+  `;
+
+  if (!inviteCode) {
+    return null;
+  }
+
+  // Record usage
+  await sql`
+    INSERT INTO invite_code_usage (invite_code_id, user_id)
+    VALUES (${inviteCode.id}, ${userId})
+    ON CONFLICT (invite_code_id, user_id) DO NOTHING
+  `;
+
+  // Increment usage counter
+  await sql`
+    UPDATE invite_codes
+    SET current_uses = current_uses + 1
+    WHERE id = ${inviteCode.id}
+  `;
+
+  return inviteCode;
+}
+
+// ============================================================================
+// AUDIT LOG
+// ============================================================================
+
+/**
+ * Log user action to audit trail
+ * @param {Object} auditData - Audit log data
+ * @returns {Promise<void>}
+ */
+export async function logAudit(auditData) {
+  const {
+    userId = null,
+    action,
+    resourceType = null,
+    resourceId = null,
+    details = null,
+    ipAddress = null,
+    userAgent = null
+  } = auditData;
+
+  await sql`
+    INSERT INTO audit_log (
+      user_id,
+      action,
+      resource_type,
+      resource_id,
+      details,
+      ip_address,
+      user_agent
+    ) VALUES (
+      ${userId},
+      ${action},
+      ${resourceType},
+      ${resourceId},
+      ${details ? JSON.stringify(details) : null},
+      ${ipAddress},
+      ${userAgent}
+    )
+  `;
+}
+
+// ============================================================================
+// ANONYMOUS SESSIONS
+// ============================================================================
+
+/**
+ * Verify an anonymous session token
+ * @param {string} sessionToken - The session token to verify
+ * @returns {Promise<Object|null>} Session details if valid, null otherwise
+ */
+export async function verifyAnonymousSession(sessionToken) {
+  if (!sessionToken) {
+    return null;
+  }
+  
+  const result = await sql`
+    SELECT * FROM verify_anonymous_session(${sessionToken})
+  `;
+  
+  if (!result || result.length === 0) {
+    return null;
+  }
+  
+  const session = result[0];
+  
+  // Return null if session is invalid
+  if (!session.is_valid) {
+    return null;
+  }
+  
+  return {
+    id: session.session_id,
+    type: session.session_type,
+    gameId: session.game_id,
+    playerCode: session.player_code,
+    displayName: session.display_name,
+    expiresAt: session.expires_at,
+    daysUntilExpiry: session.days_until_expiry
+  };
+}
+
+/**
+ * Get game state with anonymous session validation
+ * @param {string} gameId - The game ID
+ * @param {string} sessionToken - Optional anonymous session token
+ * @returns {Promise<Object|null>} Game state if accessible, null otherwise
+ */
+export async function getGameStateWithSession(gameId, sessionToken = null) {
+  // Get base game state
+  const gameState = await getGameState(gameId);
+  
+  if (!gameState) {
+    return null;
+  }
+  
+  // If no session token provided, return game state (backward compatibility)
+  if (!sessionToken) {
+    return gameState;
+  }
+  
+  // Verify session has access to this game
+  const session = await verifyAnonymousSession(sessionToken);
+  
+  if (!session) {
+    return null;
+  }
+  
+  // Check if session is associated with this game
+  if (session.gameId && session.gameId !== gameId) {
+    return null;
+  }
+  
+  return {
+    ...gameState,
+    sessionType: session.type,
+    sessionDisplayName: session.displayName
+  };
+}
+
+/**
+ * Check if a session token has commissioner access to a game
+ * @param {string} gameId - The game ID
+ * @param {string} sessionToken - The session token
+ * @returns {Promise<boolean>} True if session has commissioner access
+ */
+export async function hasCommissionerAccess(gameId, sessionToken) {
+  if (!sessionToken) {
+    return false;
+  }
+  
+  // Verify session
+  const session = await verifyAnonymousSession(sessionToken);
+  
+  if (!session) {
+    return false;
+  }
+  
+  // Check if session type is commissioner
+  if (session.type !== 'commissioner') {
+    return false;
+  }
+  
+  // Check if session is associated with this game
+  if (session.gameId && session.gameId !== gameId) {
+    return false;
+  }
+  
+  // Check if game has this session token as commissioner
+  const [game] = await sql`
+    SELECT anonymous_session_token
+    FROM games
+    WHERE game_id = ${gameId}
+      AND (anonymous_session_token = ${sessionToken} OR anonymous_session_token IS NULL)
+  `;
+  
+  if (!game) {
+    return false;
+  }
+  
+  // If game doesn't have a session token yet, allow this commissioner session to claim it
+  if (!game.anonymous_session_token) {
+    await sql`
+      UPDATE games
+      SET anonymous_session_token = ${sessionToken},
+          allow_anonymous_access = true,
+          anonymous_access_enabled_at = CURRENT_TIMESTAMP
+      WHERE game_id = ${gameId}
+    `;
+    return true;
+  }
+  
+  return game.anonymous_session_token === sessionToken;
+}
+
+/**
+ * Check if a session token has player access to a game
+ * @param {string} gameId - The game ID
+ * @param {string} playerCode - The player code
+ * @param {string} sessionToken - The session token
+ * @returns {Promise<boolean>} True if session has player access
+ */
+export async function hasPlayerAccess(gameId, playerCode, sessionToken) {
+  if (!sessionToken || !playerCode) {
+    return false;
+  }
+  
+  // Verify session
+  const session = await verifyAnonymousSession(sessionToken);
+  
+  if (!session) {
+    return false;
+  }
+  
+  // Check if session is associated with this game and player code
+  const [sessionRecord] = await sql`
+    SELECT id, game_id, player_code
+    FROM anonymous_sessions
+    WHERE session_token = ${sessionToken}
+      AND is_active = true
+      AND (game_id = ${gameId} OR game_id IS NULL)
+      AND (player_code = ${playerCode} OR player_code IS NULL)
+  `;
+  
+  if (!sessionRecord) {
+    return false;
+  }
+  
+  // Update session with game and player code if not set
+  if (!sessionRecord.game_id || !sessionRecord.player_code) {
+    await sql`
+      UPDATE anonymous_sessions
+      SET game_id = ${gameId},
+          player_code = ${playerCode}
+      WHERE session_token = ${sessionToken}
+    `;
+  }
+  
+  return true;
+}
+

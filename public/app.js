@@ -7,8 +7,38 @@ let gameState = {
     teams: {},
     results: {},
     draftComplete: false,
-    resultsFinalized: false
+    resultsFinalized: false,
+    // Caching for API optimization
+    resultsCache: null,
+    gameStateCache: null
 };
+
+// Anonymous Session Management (for teams)
+let anonymousSession = {
+    token: null,
+    teamName: null,
+    playerCode: null,
+    ownerName: null,
+    expiresAt: null
+};
+
+// Commissioner Session (TOTP-based)
+let commissionerSession = {
+    isCommissioner: false,
+    loginTime: null,
+    expiresAt: null
+};
+
+// Session Storage Keys
+const TEAM_SESSION_KEY = 'marathon_fantasy_team';
+const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
+
+// Session Timeout (30 days in milliseconds)
+const COMMISSIONER_SESSION_TIMEOUT = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// Cache TTL settings (in milliseconds)
+const RESULTS_CACHE_TTL = 30000; // 30 seconds - short TTL for live results
+const GAME_STATE_CACHE_TTL = 60000; // 60 seconds - moderate TTL for game state
 
 // View state for ranking page
 let rankingViewState = {
@@ -17,7 +47,51 @@ let rankingViewState = {
 
 // API base URL - will be relative in production
 const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
-const GAME_ID = 'default'; // Can be made configurable if multiple games needed
+
+// Development mode (reduce console noise in production)
+const IS_DEV = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// Helper for dev-only logging
+function devLog(...args) {
+    if (IS_DEV) {
+        console.log(...args);
+    }
+}
+
+// Game ID - can be switched between default and demo
+let GAME_ID = localStorage.getItem('current_game_id') || 'default';
+
+// Function to get current game ID
+function getCurrentGameId() {
+    return GAME_ID;
+}
+
+// Function to switch games
+function switchGame(gameId) {
+    GAME_ID = gameId;
+    localStorage.setItem('current_game_id', gameId);
+    
+    // Invalidate all caches when switching games
+    invalidateResultsCache();
+    gameState.gameStateCache = null;
+    
+    location.reload(); // Reload to fetch new game data
+}
+
+/**
+ * Get gender-specific runner SVG fallback for athletes without headshots
+ * @param {string} gender - 'men' or 'women'
+ * @returns {string} Data URI of SVG image
+ */
+function getRunnerSvg(gender) {
+    const isMale = gender === 'men';
+    
+    // Return image URLs for default runner avatars
+    const maleRunnerImg = '/images/man-runner.png';
+    const femaleRunnerImg = '/images/woman-runner.png';
+    
+    return isMale ? maleRunnerImg : femaleRunnerImg;
+}
 
 // Load game state from database
 async function loadGameState() {
@@ -54,86 +128,277 @@ async function saveGameState() {
     }
 }
 
-// Load athletes data
-async function loadAthletes() {
-    try {
-        // Load from database API (will auto-seed if empty)
-        const response = await fetch(`${API_BASE}/api/athletes`);
-
-        // If a preview is protected by Vercel SSO, the response will be an HTML page
-        // with a 401/403 status. Detect that and show a clearer message.
-        const contentType = response.headers.get('content-type') || '';
-        if (response.status === 401 || response.status === 403 || contentType.includes('text/html')) {
-            // Provide a useful message to the user about signing into Vercel or using the share token
-            const message = 'This deployment is protected by Vercel Preview Authentication. Please sign in to Vercel or use a preview share link to access API endpoints.';
-            console.error('Preview protected:', response.status, response.statusText);
-            alert(message);
-            throw new Error(message);
-        }
-
-        if (!response.ok) {
-            throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
-        }
-
-        const athletes = await response.json();
-        
-        // Validate we got data
-        if (!athletes || !athletes.men || !athletes.women) {
-            throw new Error('Invalid athletes data structure received from API');
-        }
-        
-        if (athletes.men.length === 0 && athletes.women.length === 0) {
-            throw new Error('No athletes data available - database may not be initialized');
-        }
-        
-        gameState.athletes = athletes;
-        console.log(`Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes from database`);
-        
-    } catch (error) {
-        console.error('Error loading athletes:', error);
-        
-        // Show user-friendly error message
-        const errorMessage = `
-            <div style="padding: 20px; background: #fee; border: 2px solid #c33; border-radius: 8px; margin: 20px;">
-                <h3 style="color: #c33; margin-top: 0;">⚠️ Unable to Load Athletes</h3>
-                <p><strong>Error:</strong> ${error.message}</p>
-                <p>The database may not be initialized yet. Please try one of the following:</p>
-                <ol>
-                    <li>Wait a few moments and refresh the page</li>
-                    <li>Contact the commissioner to initialize the database</li>
-                    <li>Visit <code>/api/init-db</code> to manually initialize</li>
-                </ol>
-            </div>
-        `;
-        
-        // Display error in the UI
-        const mainContent = document.querySelector('main') || document.body;
-        const errorDiv = document.createElement('div');
-        errorDiv.innerHTML = errorMessage;
-        mainContent.insertBefore(errorDiv, mainContent.firstChild);
-        
-        // Set empty arrays to prevent further errors
-        gameState.athletes = { men: [], women: [] };
+// Cached fetch for race results
+async function fetchResultsCached() {
+    const now = Date.now();
+    
+    // Return cached data if still valid
+    if (gameState.resultsCache && 
+        gameState.resultsCache.gameId === GAME_ID &&
+        (now - gameState.resultsCache.timestamp) < RESULTS_CACHE_TTL) {
+        devLog('📦 Using cached results data');
+        return gameState.resultsCache.data;
     }
+    
+    // Fetch fresh data
+    devLog('🌐 Fetching fresh results data');
+    const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch results');
+    }
+    
+    const data = await response.json();
+    
+    // Cache the results
+    gameState.resultsCache = {
+        data,
+        timestamp: now,
+        gameId: GAME_ID
+    };
+    
+    return data;
+}
+
+// Invalidate results cache (call when commissioner updates results)
+function invalidateResultsCache() {
+    devLog('🗑️ Invalidating results cache');
+    gameState.resultsCache = null;
+}
+
+// Cached fetch for game state with ETag-like optimization
+async function loadGameStateCached(forceRefresh = false) {
+    const now = Date.now();
+    
+    // Return cached data if still valid and not forcing refresh
+    if (!forceRefresh && 
+        gameState.gameStateCache && 
+        gameState.gameStateCache.gameId === GAME_ID &&
+        (now - gameState.gameStateCache.timestamp) < GAME_STATE_CACHE_TTL) {
+        devLog('📦 Using cached game state');
+        return;
+    }
+    
+    // Fetch fresh data
+    devLog('🌐 Fetching fresh game state');
+    try {
+        const response = await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        if (response.ok) {
+            const data = await response.json();
+            gameState.players = data.players || [];
+            gameState.draftComplete = data.draftComplete || false;
+            gameState.resultsFinalized = data.resultsFinalized || false;
+            gameState.rankings = data.rankings || {};
+            gameState.teams = data.teams || {};
+            gameState.results = data.results || {};
+            
+            // Cache the game state
+            gameState.gameStateCache = {
+                timestamp: now,
+                gameId: GAME_ID
+            };
+        }
+    } catch (error) {
+        console.error('Error loading game state:', error);
+    }
+}
+
+// Promise cache for athletes loading to prevent concurrent duplicate loads
+let athletesLoadPromise = null;
+
+// Load athletes data with promise caching
+async function loadAthletes() {
+    // If already loaded, return immediately
+    if (gameState.athletes?.men?.length > 0 && gameState.athletes?.women?.length > 0) {
+        console.log('✅ Athletes already loaded in memory, skipping fetch');
+        return gameState.athletes;
+    }
+    
+    // If currently loading, wait for existing promise
+    if (athletesLoadPromise) {
+        console.log('⏳ Athletes load already in progress, waiting...');
+        return athletesLoadPromise;
+    }
+    
+    // Start new load
+    console.log('🌐 Starting fresh athletes load');
+    athletesLoadPromise = (async () => {
+        try {
+            // Load from database API (will auto-seed if empty)
+            const response = await fetch(`${API_BASE}/api/athletes`);
+
+            // If a preview is protected by Vercel SSO, the response will be an HTML page
+            // with a 401/403 status. Detect that and show a clearer message.
+            const contentType = response.headers.get('content-type') || '';
+            if (response.status === 401 || response.status === 403 || contentType.includes('text/html')) {
+                // Provide a useful message to the user about signing into Vercel or using the share token
+                const message = 'This deployment is protected by Vercel Preview Authentication. Please sign in to Vercel or use a preview share link to access API endpoints.';
+                console.error('Preview protected:', response.status, response.statusText);
+                alert(message);
+                throw new Error(message);
+            }
+
+            if (!response.ok) {
+                throw new Error(`Failed to load athletes: ${response.status} ${response.statusText}`);
+            }
+
+            const athletes = await response.json();
+            
+            // Validate we got data
+            if (!athletes || !athletes.men || !athletes.women) {
+                throw new Error('Invalid athletes data structure received from API');
+            }
+            
+            if (athletes.men.length === 0 && athletes.women.length === 0) {
+                throw new Error('No athletes data available - database may not be initialized');
+            }
+            
+            gameState.athletes = athletes;
+            console.log(`✅ Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes from database`);
+            
+            return athletes;
+        } catch (error) {
+            console.error('Error loading athletes:', error);
+            throw error;
+        } finally {
+            // Clear the promise cache after completion (success or failure)
+            athletesLoadPromise = null;
+        }
+    })();
+    
+    return athletesLoadPromise;
 }
 
 // Initialize the app
 async function init() {
-    await loadAthletes();
-    await loadGameState();
+    const initStartTime = performance.now();
+    console.log('⏱️ [PERF] App initialization started');
+    
+    console.log('[App Init] Starting application initialization...');
+    console.log('[App Init] Current localStorage keys:', Object.keys(localStorage));
+    console.log('[App Init] Team session key exists:', !!localStorage.getItem(TEAM_SESSION_KEY));
+    console.log('[App Init] Commissioner session key exists:', !!localStorage.getItem(COMMISSIONER_SESSION_KEY));
+    
+    // Setup UI immediately for faster perceived load time
+    const uiStartTime = performance.now();
     setupEventListeners();
     setupAthleteModal();
+    console.log(`⏱️ [PERF] UI setup complete: ${(performance.now() - uiStartTime).toFixed(2)}ms`);
+    
+    // Show landing page immediately (will be hidden if session exists)
     showPage('landing-page');
+    
+    // Load critical data in parallel (with caching)
+    const gameStateStartTime = performance.now();
+    const gameStatePromise = loadGameStateCached();
+    
+    // Try to restore session immediately (only needs gameState, not athletes)
+    await gameStatePromise;
+    console.log(`⏱️ [PERF] Game state loaded: ${(performance.now() - gameStateStartTime).toFixed(2)}ms`);
+    
+    const sessionStartTime = performance.now();
+    const hasSession = await restoreSession();
+    console.log(`⏱️ [PERF] Session restoration: ${(performance.now() - sessionStartTime).toFixed(2)}ms`);
+    
+    console.log('[App Init] Session restoration complete. Has session:', hasSession);
+    
+    // Load athletes in background (only needed for ranking page)
+    const athletesStartTime = performance.now();
+    loadAthletes().then(() => {
+        console.log(`⏱️ [PERF] Athletes loaded (background): ${(performance.now() - athletesStartTime).toFixed(2)}ms`);
+    }).catch(error => {
+        console.error('Failed to load athletes:', error);
+    });
+    
+    // If no session restored, show welcome card
+    if (!hasSession) {
+        console.log('[App Init] No session found, showing welcome card');
+        showWelcomeCard();
+    } else {
+        console.log('[App Init] Session restored, welcome card hidden');
+    }
+    
+    console.log(`⏱️ [PERF] Total init time: ${(performance.now() - initStartTime).toFixed(2)}ms`);
+    
+    // Hide loading overlay after initialization
+    const loadingOverlay = document.getElementById('app-loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.opacity = '0';
+        loadingOverlay.style.transition = 'opacity 0.3s ease-out';
+        setTimeout(() => {
+            loadingOverlay.remove();
+        }, 300);
+    }
+}
+
+// Show/hide welcome card based on session state
+function showWelcomeCard() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.style.display = 'block';
+    }
+}
+
+function hideWelcomeCard() {
+    const welcomeCard = document.querySelector('.welcome-card');
+    if (welcomeCard) {
+        welcomeCard.style.display = 'none';
+    }
 }
 
 // Setup event listeners
 function setupEventListeners() {
     // Landing page
-    document.getElementById('enter-game').addEventListener('click', handleEnterGame);
-    document.getElementById('commissioner-mode').addEventListener('click', handleCommissionerMode);
+    document.getElementById('create-team-btn').addEventListener('click', showTeamCreationModal);
     
-    // Footer
-    document.getElementById('home-button').addEventListener('click', () => showPage('landing-page'));
+    // Team Creation Modal
+    document.getElementById('close-team-modal').addEventListener('click', hideTeamCreationModal);
+    document.getElementById('cancel-team-creation').addEventListener('click', hideTeamCreationModal);
+    document.getElementById('team-creation-form').addEventListener('submit', handleTeamCreation);
+    document.querySelector('#team-creation-modal .modal-overlay').addEventListener('click', hideTeamCreationModal);
+    
+    // Commissioner TOTP Modal
+    document.getElementById('close-totp-modal').addEventListener('click', hideCommissionerTOTPModal);
+    document.getElementById('cancel-totp-login').addEventListener('click', hideCommissionerTOTPModal);
+    document.getElementById('commissioner-totp-form').addEventListener('submit', handleCommissionerTOTPLogin);
+    document.querySelector('#commissioner-totp-modal .modal-overlay').addEventListener('click', hideCommissionerTOTPModal);
+    
+    // Footer buttons
+    document.getElementById('home-button').addEventListener('click', async () => {
+        // Navigate based on session state
+        if (anonymousSession.token) {
+            // Team session - always go to salary cap draft page (shows roster when locked)
+            await setupSalaryCapDraft();
+            showPage('salary-cap-draft-page');
+        } else if (commissionerSession.isCommissioner) {
+            // Commissioner session - go to commissioner page
+            handleCommissionerMode();
+        } else {
+            // No session - show landing page with welcome card
+            showWelcomeCard();
+            showPage('landing-page');
+        }
+    });
+    document.getElementById('commissioner-mode').addEventListener('click', showCommissionerTOTPModal);
+    
+    // Game switcher
+    const gameSelect = document.getElementById('game-select');
+    if (gameSelect) {
+        // Set current game in dropdown
+        gameSelect.value = GAME_ID;
+        
+        // Handle game switch
+        gameSelect.addEventListener('change', (e) => {
+            const newGameId = e.target.value;
+            if (newGameId !== GAME_ID) {
+                if (confirm(`Switch to ${newGameId === 'demo-game' ? 'Demo Game' : 'Default Game'}? This will reload the page.`)) {
+                    switchGame(newGameId);
+                } else {
+                    // Reset to current game if cancelled
+                    e.target.value = GAME_ID;
+                }
+            }
+        });
+    }
 
     // Ranking page
     document.querySelectorAll('.tab').forEach(tab => {
@@ -143,17 +408,102 @@ function setupEventListeners() {
 
     // Draft page
     document.getElementById('view-teams').addEventListener('click', async () => {
-        // Reload game state to get latest results
-        await loadGameState();
+        // Reload game state to get latest results (use cache)
+        await loadGameStateCached();
         displayTeams();
         showPage('teams-page');
     });
 
     // Teams page
     document.getElementById('back-to-landing').addEventListener('click', () => showPage('landing-page'));
+    
+    // Leaderboard page
+    document.getElementById('view-leaderboard-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const originalText = btn.textContent;
+        
+        // Disable button and show loading state
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        
+        try {
+            // Show page immediately with loading state
+            showPage('leaderboard-page');
+            // Then load the data
+            await displayLeaderboard();
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            // Error is already handled in displayLeaderboard()
+        } finally {
+            // Re-enable button
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+    document.getElementById('view-leaderboard-from-roster')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        const originalText = btn.textContent;
+        
+        // Disable button and show loading state
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        
+        try {
+            // Show page immediately with loading state
+            showPage('leaderboard-page');
+            // Then load the data
+            await displayLeaderboard();
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            // Error is already handled in displayLeaderboard()
+        } finally {
+            // Re-enable button
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    });
+    document.getElementById('back-to-roster')?.addEventListener('click', () => showPage('salary-cap-draft-page'));
+    
+    // Leaderboard tab switching
+    document.querySelectorAll('.leaderboard-tab').forEach(tab => {
+        tab.addEventListener('click', async (e) => {
+            const clickedTab = e.target;
+            const tabType = clickedTab.dataset.tab;
+            
+            // Prevent switching if already active or loading
+            if (clickedTab.classList.contains('active') || clickedTab.disabled) {
+                return;
+            }
+            
+            // Disable all tabs during loading
+            const allTabs = document.querySelectorAll('.leaderboard-tab');
+            allTabs.forEach(t => t.disabled = true);
+            
+            // Update active tab
+            allTabs.forEach(t => t.classList.remove('active'));
+            clickedTab.classList.add('active');
+            
+            // Update active content
+            document.querySelectorAll('.leaderboard-tab-content').forEach(c => c.classList.remove('active'));
+            
+            try {
+                if (tabType === 'fantasy') {
+                    document.getElementById('fantasy-results-tab').classList.add('active');
+                    await displayLeaderboard();
+                } else if (tabType === 'race') {
+                    document.getElementById('race-results-tab').classList.add('active');
+                    await displayRaceResultsLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error switching leaderboard tabs:', error);
+            } finally {
+                // Re-enable all tabs
+                allTabs.forEach(t => t.disabled = false);
+            }
+        });
+    });
 
     // Commissioner page
-    document.getElementById('generate-codes').addEventListener('click', handleGenerateCodes);
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
     document.getElementById('update-results').addEventListener('click', handleUpdateResults);
     document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
@@ -169,6 +519,16 @@ function setupEventListeners() {
     document.getElementById('sort-athletes').addEventListener('change', handleViewAthletes);
     document.getElementById('back-from-commissioner').addEventListener('click', () => showPage('landing-page'));
     document.getElementById('back-to-commissioner').addEventListener('click', () => showPage('commissioner-page'));
+    
+    // Demo Data button
+    document.getElementById('load-demo-data').addEventListener('click', handleLoadDemoData);
+    
+    // Manage Teams page
+    document.getElementById('manage-teams-btn').addEventListener('click', () => {
+        showPage('manage-teams-page');
+        displayTeamsTable();
+    });
+    document.getElementById('back-to-commissioner-from-teams').addEventListener('click', () => showPage('commissioner-page'));
     
     // Athlete Management modal
     const addAthleteModal = document.getElementById('add-athlete-modal');
@@ -196,8 +556,494 @@ function showPage(pageId) {
     document.getElementById(pageId).classList.add('active');
 }
 
+// ========== TEAM CREATION MODAL FUNCTIONS ==========
+
+function showTeamCreationModal() {
+    document.getElementById('team-creation-modal').style.display = 'flex';
+    document.getElementById('team-name').focus();
+}
+
+function hideTeamCreationModal() {
+    document.getElementById('team-creation-modal').style.display = 'none';
+    document.getElementById('team-creation-form').reset();
+}
+
+async function handleTeamCreation(e) {
+    e.preventDefault();
+    
+    const teamName = document.getElementById('team-name').value.trim();
+    const ownerName = document.getElementById('team-owner').value.trim();
+    
+    if (!teamName) {
+        alert('Please enter a team name');
+        return;
+    }
+    
+    try {
+        // Create anonymous session via API
+        const response = await fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType: 'player',
+                displayName: teamName,
+                gameId: GAME_ID,
+                playerCode: teamName,  // Use team name as player code
+                expiryDays: 90
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create session');
+        }
+        
+        const data = await response.json();
+        const playerCode = data.session?.playerCode || teamName;
+
+        // Persist both the display name and the canonical player code
+        anonymousSession = {
+            token: data.session.token,
+            teamName: teamName,
+            playerCode,
+            ownerName: ownerName || null,
+            expiresAt: data.session.expiresAt
+        };
+        
+        localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
+        
+        // Set as current player
+        gameState.currentPlayer = playerCode;
+        document.getElementById('player-name').textContent = teamName;
+        
+        // Add to players list if not already there
+        if (!gameState.players.includes(playerCode)) {
+            gameState.players.push(playerCode);
+            await saveGameState();
+        }
+        
+        // Show success message with unique URL
+        const uniqueURL = `${window.location.origin}/?session=${data.session.token}`;
+        alert(`✅ Team created!\n\n📋 Team: ${teamName}\n\n🔗 Your unique URL (save this to access your team from other devices):\n${uniqueURL}\n\nThis URL will be saved in your browser.`);
+        
+        hideWelcomeCard();  // Hide welcome card after team creation
+        
+        // Update footer buttons
+        updateFooterButtons();
+        
+        // Hide modal and go to salary cap draft page
+        hideTeamCreationModal();
+        
+        // Always go to salary cap draft page (it shows roster when locked)
+        await setupSalaryCapDraft();
+        showPage('salary-cap-draft-page');
+        
+    } catch (error) {
+        console.error('Error creating team:', error);
+        alert('Error creating team. Please try again.');
+    }
+}
+
+// ========== COMMISSIONER TOTP MODAL FUNCTIONS ==========
+
+function showCommissionerTOTPModal() {
+    // Check if already authenticated
+    if (commissionerSession.isCommissioner) {
+        // Session exists, go directly to commissioner page
+        handleCommissionerMode();
+        return;
+    }
+    
+    // No session, show TOTP login modal
+    document.getElementById('commissioner-totp-modal').style.display = 'flex';
+    document.getElementById('totp-code').focus();
+}
+
+function hideCommissionerTOTPModal() {
+    document.getElementById('commissioner-totp-modal').style.display = 'none';
+    document.getElementById('commissioner-totp-form').reset();
+}
+
+async function handleCommissionerTOTPLogin(e) {
+    e.preventDefault();
+    
+    const totpCode = document.getElementById('totp-code').value.trim();
+    
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
+        alert('Please enter a valid 6-digit code');
+        return;
+    }
+    
+    try {
+        // Verify TOTP with backend
+        const response = await fetch(`${API_BASE}/api/auth/totp/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'commissioner@marathonmajorsfantasy.com',
+                totpCode: totpCode
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Save commissioner session with 30-day expiration
+            const now = new Date();
+            const expiresAt = new Date(now.getTime() + COMMISSIONER_SESSION_TIMEOUT);
+            
+            commissionerSession = {
+                isCommissioner: true,
+                loginTime: now.toISOString(),
+                expiresAt: expiresAt.toISOString()
+            };
+            
+            console.log('[Commissioner Login] Saving new commissioner session:', {
+                loginTime: commissionerSession.loginTime,
+                expiresAt: commissionerSession.expiresAt,
+                timeoutDays: COMMISSIONER_SESSION_TIMEOUT / (24 * 60 * 60 * 1000)
+            });
+            
+            localStorage.setItem(COMMISSIONER_SESSION_KEY, JSON.stringify(commissionerSession));
+            
+            console.log('[Commissioner Login] Commissioner session saved to localStorage');
+            
+            hideWelcomeCard();  // Hide welcome card after commissioner login
+            
+            // Update footer buttons
+            updateFooterButtons();
+            
+            // Hide modal and go to commissioner page
+            hideCommissionerTOTPModal();
+            showPage('commissioner-page');
+            
+            // Refresh display if needed
+            if (gameState.players.length > 0) {
+                displayPlayerCodes();
+            }
+            if (gameState.draftComplete) {
+                setupResultsForm();
+                updateLiveStandings();
+                
+                // Update button states
+                if (gameState.resultsFinalized) {
+                    document.getElementById('update-results').textContent = 'Results Finalized';
+                    document.getElementById('update-results').disabled = true;
+                    document.getElementById('finalize-results').style.display = 'none';
+                } else {
+                    document.getElementById('update-results').textContent = 'Update Live Results';
+                    document.getElementById('update-results').disabled = false;
+                    if (Object.keys(gameState.results).length > 0) {
+                        document.getElementById('finalize-results').style.display = 'inline-block';
+                    }
+                }
+            }
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Invalid TOTP code. Please try again.');
+            document.getElementById('totp-code').value = '';
+            document.getElementById('totp-code').focus();
+        }
+    } catch (error) {
+        console.error('Error verifying TOTP:', error);
+        alert('Error logging in. Please try again.');
+    }
+}
+
+// ========== SESSION RESTORATION ==========
+
+// Check for session token in URL (for cross-device access)
+async function checkURLForSession() {
+    const params = new URLSearchParams(window.location.search);
+    const sessionToken = params.get('session');
+    
+    if (sessionToken) {
+        // Verify and load session from backend
+        const success = await verifyAndLoadSession(sessionToken);
+        
+        // Clean URL (remove session parameter)
+        const cleanURL = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanURL);
+        return success;
+    }
+    
+    return false;
+}
+
+// Verify session with backend and load it
+async function verifyAndLoadSession(token) {
+    console.log('Verifying session token:', token);
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/session/verify?token=${encodeURIComponent(token)}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Session verified:', data);
+
+            const playerCode = data.session.playerCode || data.session.displayName;
+            const displayName = data.session.displayName || playerCode;
+            
+            // Save session to state and localStorage
+            anonymousSession = {
+                token: token,
+                teamName: displayName,
+                playerCode,
+                ownerName: null,
+                expiresAt: data.session.expiresAt
+            };
+            
+            localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(anonymousSession));
+            
+            // Set as current player
+            gameState.currentPlayer = playerCode;
+            document.getElementById('player-name').textContent = displayName;
+            
+            hideWelcomeCard();  // Hide welcome card after session verified
+            
+            console.log('Game state:', gameState);
+            console.log('Draft complete?', gameState.draftComplete);
+            console.log('Has rankings?', !!gameState.rankings[playerCode]);
+            
+            // Always navigate to salary cap draft page (shows roster when locked)
+            console.log('Navigating to salary cap draft page');
+            await setupSalaryCapDraft();
+            showPage('salary-cap-draft-page');
+            
+            return true;
+        } else {
+            console.error('Session verification failed:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error verifying session:', error);
+        return false;
+    }
+}
+
+// Restore session from localStorage
+async function restoreSession() {
+    console.log('[Session Restore] Starting session restoration...');
+    
+    let hasTeamSession = false;
+    let hasCommissionerSession = false;
+    
+    // Priority 1: Check URL for session token (cross-device sharing)
+    const hasURLSession = await checkURLForSession();
+    if (hasURLSession) {
+        console.log('[Session Restore] URL session found and loaded');
+        hideWelcomeCard();  // Hide welcome card for sessions from URL
+        updateFooterButtons();  // Update UI after session restored
+        return true;  // verifyAndLoadSession handles navigation
+    }
+    
+    // Load both team and commissioner sessions (they can coexist!)
+    try {
+        // Check for team session in localStorage
+        const teamSessionData = localStorage.getItem(TEAM_SESSION_KEY);
+        if (teamSessionData) {
+            console.log('[Session Restore] Found team session in localStorage:', teamSessionData);
+            const session = JSON.parse(teamSessionData);
+            
+            // Check if expired
+            if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+                console.warn('[Session Restore] Team session EXPIRED at:', session.expiresAt);
+                localStorage.removeItem(TEAM_SESSION_KEY);
+                anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
+            } else {
+                console.log('[Session Restore] Team session is valid, expires at:', session.expiresAt);
+
+                const normalizedSession = {
+                    token: session.token || null,
+                    teamName: session.teamName || session.playerCode || null,
+                    playerCode: session.playerCode || session.teamName || null,
+                    ownerName: session.ownerName || null,
+                    expiresAt: session.expiresAt || null
+                };
+
+                anonymousSession = normalizedSession;
+
+                if (normalizedSession.playerCode) {
+                    gameState.currentPlayer = normalizedSession.playerCode;
+                }
+                if (normalizedSession.teamName) {
+                    document.getElementById('player-name').textContent = normalizedSession.teamName;
+                }
+
+                // Backfill playerCode for legacy sessions stored without it
+                if (!session.playerCode && normalizedSession.playerCode) {
+                    localStorage.setItem(TEAM_SESSION_KEY, JSON.stringify(normalizedSession));
+                }
+                hasTeamSession = true;
+            }
+        } else {
+            console.log('[Session Restore] No team session found in localStorage');
+        }
+        
+        // Check for commissioner session (independent of team session)
+        const commissionerSessionData = localStorage.getItem(COMMISSIONER_SESSION_KEY);
+        if (commissionerSessionData) {
+            console.log('[Session Restore] Found commissioner session in localStorage:', commissionerSessionData);
+            const session = JSON.parse(commissionerSessionData);
+            
+            // Check if session has expired
+            if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+                console.warn('[Session Restore] Commissioner session EXPIRED at:', session.expiresAt);
+                localStorage.removeItem(COMMISSIONER_SESSION_KEY);
+                commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+            } else if (session.isCommissioner) {
+                console.log('[Session Restore] Commissioner session is valid, expires at:', session.expiresAt);
+                commissionerSession = session;
+                hasCommissionerSession = true;
+            }
+        } else {
+            console.log('[Session Restore] No commissioner session found in localStorage');
+        }
+        
+        // Determine which view to show based on what sessions exist
+        if (hasTeamSession || hasCommissionerSession) {
+            hideWelcomeCard();
+            
+            // If user is both commissioner and has a team, prioritize team view
+            // (they can switch to commissioner mode via the button)
+            if (hasTeamSession) {
+                console.log('[Session Restore] Navigating to salary cap draft page (team session)');
+                await setupSalaryCapDraft();
+                showPage('salary-cap-draft-page');
+            } else if (hasCommissionerSession) {
+                console.log('[Session Restore] Navigating to commissioner page (commissioner-only session)');
+                handleCommissionerMode();
+            }
+            
+            updateFooterButtons();
+            return true;
+        }
+    } catch (error) {
+        console.error('[Session Restore] Error restoring session:', error);
+    }
+    
+    console.log('[Session Restore] No valid sessions found');
+    return false;
+}
+
+// Update footer buttons based on session state
+function updateFooterButtons() {
+    const footer = document.querySelector('footer');
+    const footerActions = footer ? footer.querySelector('.footer-actions') : null;
+    
+    console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
+    console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    
+    // Remove existing session buttons if they exist
+    const existingLogout = document.getElementById('logout-button');
+    const existingCopyUrl = document.getElementById('copy-url-button');
+    if (existingLogout) existingLogout.remove();
+    if (existingCopyUrl) existingCopyUrl.remove();
+    
+    if (anonymousSession.token) {
+        console.log('Adding logout and copy URL buttons for team session');
+        // User has an active team session - show logout and copy URL buttons
+    const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleLogout);
+        
+        const copyUrlBtn = document.createElement('button');
+        copyUrlBtn.id = 'copy-url-button';
+        copyUrlBtn.className = 'btn btn-secondary';
+        copyUrlBtn.textContent = 'Copy My URL';
+        copyUrlBtn.addEventListener('click', handleCopyUrl);
+        
+        // Find the commissioner mode button
+        if (footerActions) {
+            footerActions.appendChild(logoutBtn);
+            footerActions.appendChild(copyUrlBtn);
+        } else {
+            footer.appendChild(logoutBtn);
+            footer.appendChild(copyUrlBtn);
+        }
+        console.log('Session buttons appended to footer actions');
+    } else if (commissionerSession.isCommissioner) {
+        console.log('Adding logout button for commissioner session');
+        // Commissioner is logged in - show logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'logout-button';
+        logoutBtn.className = 'btn btn-secondary';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.addEventListener('click', handleCommissionerLogout);
+        
+        if (footerActions) {
+            footerActions.appendChild(logoutBtn);
+        } else {
+            footer.appendChild(logoutBtn);
+        }
+        console.log('Commissioner logout button appended to footer actions');
+    }
+}
+
+// Handle team logout
+function handleLogout() {
+    if (confirm('Are you sure you want to logout? Make sure you have saved your team URL!')) {
+        console.log('[Team Logout] User confirmed team logout');
+        console.log('[Team Logout] Clearing team session, preserving commissioner session');
+        
+        // Clear team session ONLY (don't touch commissioner session)
+        localStorage.removeItem(TEAM_SESSION_KEY);
+    anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
+        gameState.currentPlayer = null;
+        
+        console.log('[Team Logout] Team session cleared, commissioner session still active:', commissionerSession.isCommissioner);
+        
+        updateFooterButtons();
+        showPage('landing-page');
+    } else {
+        console.log('[Team Logout] User cancelled logout');
+    }
+}
+
+// Handle commissioner logout
+function handleCommissionerLogout() {
+    if (confirm('Are you sure you want to logout from Commissioner mode?')) {
+        console.log('[Commissioner Logout] User confirmed commissioner logout');
+        console.log('[Commissioner Logout] Current session before clearing:', commissionerSession);
+        
+        // Clear commissioner session ONLY (don't touch team session)
+        localStorage.removeItem(COMMISSIONER_SESSION_KEY);
+        commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+        
+        console.log('[Commissioner Logout] Commissioner session cleared, team session still active:', !!anonymousSession.token);
+        
+        updateFooterButtons();
+        showPage('landing-page');
+    } else {
+        console.log('[Commissioner Logout] User cancelled logout');
+    }
+}
+
+// Handle copy URL
+function handleCopyUrl() {
+    const gameId = GAME_ID;
+    const sessionUrl = `${window.location.origin}${window.location.pathname}?session=${anonymousSession.token}&game=${gameId}`;
+    
+    navigator.clipboard.writeText(sessionUrl).then(() => {
+        const originalText = document.getElementById('copy-url-button').textContent;
+        document.getElementById('copy-url-button').textContent = '✅ Copied!';
+        setTimeout(() => {
+            document.getElementById('copy-url-button').textContent = originalText;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert(`Copy this URL to access your team:\n\n${sessionUrl}`);
+    });
+}
+
+// ========== END SESSION FUNCTIONS ==========
+
 // Handle enter game
-function handleEnterGame() {
+async function handleEnterGame() {
     const code = document.getElementById('player-code').value.trim().toUpperCase();
     if (!code) {
         alert('Please enter a player code');
@@ -212,25 +1058,66 @@ function handleEnterGame() {
     gameState.currentPlayer = code;
     document.getElementById('player-name').textContent = code;
 
-    // Check if player has already submitted rankings
-    if (gameState.rankings[code]) {
-        if (gameState.draftComplete) {
-            displayTeams();
-            showPage('teams-page');
-        } else {
-            alert('You have already submitted your rankings. Waiting for draft...');
-            showPage('landing-page');
+    // Always go to salary cap draft page (it shows roster when locked)
+    await setupSalaryCapDraft();
+    showPage('salary-cap-draft-page');
+}
+
+// Handle create new game (Account-Free)
+async function handleCreateNewGame() {
+    try {
+        // Create anonymous commissioner session
+        const response = await fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType: 'commissioner',
+                displayName: 'Commissioner',
+                gameId: GAME_ID,
+                expiryDays: 90
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create session');
         }
-    } else {
-        setupRankingPage();
-        showPage('ranking-page');
+        
+        const data = await response.json();
+        
+        // Save session
+        const session = {
+            token: data.session.token,
+            type: 'commissioner',
+            expiresAt: data.session.expiresAt,
+            displayName: 'Commissioner',
+            gameId: GAME_ID
+        };
+        saveSession(session);
+        
+        // Show success message with unique URL
+        alert(`✅ Game Created Successfully!\n\n` +
+              `Your unique commissioner URL:\n${data.uniqueUrl}\n\n` +
+              `⚠️ IMPORTANT: Save this URL! You'll need it to return to your game.\n\n` +
+              `You can bookmark it or save it to your home screen.`);
+        
+        // Navigate to commissioner page
+        showPage('commissioner-page');
+        
+    } catch (error) {
+        console.error('Error creating game:', error);
+        alert('Failed to create game. Please try again.');
     }
 }
 
 // Handle commissioner mode
 function handleCommissionerMode() {
-    const password = prompt('Enter commissioner password:');
-    if (password === 'kipchoge') {
+    console.log('[Commissioner Mode] Attempting to access commissioner mode');
+    console.log('[Commissioner Mode] Current commissionerSession:', commissionerSession);
+    
+    // Check if already authenticated via TOTP
+    if (commissionerSession.isCommissioner) {
+        console.log('[Commissioner Mode] Commissioner authenticated, showing page');
+        // Already authenticated, just show the page
         showPage('commissioner-page');
         // Refresh player codes display if players exist
         if (gameState.players.length > 0) {
@@ -256,13 +1143,19 @@ function handleCommissionerMode() {
                 }
             }
         }
-    } else if (password !== null) {
-        alert('Incorrect password');
+    } else {
+        // Not authenticated - show TOTP login modal instead of password prompt
+        console.warn('[Commissioner Mode] User not authenticated, session state:', commissionerSession);
+        alert('Please log in with your TOTP code using the "Commissioner Mode" button in the footer.');
     }
 }
 
 // Setup ranking page
-function setupRankingPage() {
+async function setupRankingPage() {
+    // Ensure athletes are loaded before displaying
+    if (!gameState.athletes.men || gameState.athletes.men.length === 0) {
+        await loadAthletes();
+    }
     switchTab('men');
 }
 
@@ -704,34 +1597,6 @@ async function handleSubmitRankings() {
 }
 
 // Commissioner functions
-async function handleGenerateCodes() {
-    const numPlayers = parseInt(document.getElementById('num-players').value);
-    if (numPlayers < 2 || numPlayers > 4) {
-        alert('Please enter a number between 2 and 4');
-        return;
-    }
-
-    // Marathon-themed words for player codes
-    const marathonWords = [
-        'RUNNER', 'SPRINTER', 'PACER', 'CHAMPION', 
-        'FINISHER', 'STRIDE', 'ENDURANCE', 'VELOCITY',
-        'RACER', 'ATHLETE', 'DASHER', 'JOGGER',
-        'TRACKSTAR', 'SPEEDSTER', 'MARATHON', 'DISTANCE'
-    ];
-
-    // Fisher-Yates shuffle for better randomization
-    const shuffled = [...marathonWords];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    gameState.players = shuffled.slice(0, numPlayers);
-
-    displayPlayerCodes();
-
-    await saveGameState();
-}
-
 function hasPlayerSubmittedRankings(playerCode) {
     const ranking = gameState.rankings[playerCode];
     return ranking && 
@@ -741,40 +1606,133 @@ function hasPlayerSubmittedRankings(playerCode) {
            ranking.women.length === 10;
 }
 
-function displayPlayerCodes() {
+async function displayPlayerCodes() {
     const display = document.getElementById('player-codes-display');
-    display.innerHTML = '<h4>Player Codes (share these with your players):</h4>';
+    // Hide player links - only show "Manage Players/Teams" button
+    display.innerHTML = '';
+}
+
+async function displayTeamsTable() {
+    const tableBody = document.getElementById('teams-status-table-body');
+    tableBody.innerHTML = '';
     
-    gameState.players.forEach(code => {
+    // Batch create sessions for all players concurrently
+    const sessionPromises = gameState.players.map(code => 
+        fetch(`${API_BASE}/api/session/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sessionType: 'player',
+                displayName: code,
+                gameId: GAME_ID,
+                playerCode: code,
+                expiryDays: 90
+            })
+        })
+        .then(response => response.ok ? response.json() : null)
+        .catch(() => null)
+    );
+    
+    const sessionResults = await Promise.all(sessionPromises);
+    
+    // Build table rows with session data
+    gameState.players.forEach((code, index) => {
         const hasSubmitted = hasPlayerSubmittedRankings(code);
+        const hasDraftedTeam = gameState.teams && gameState.teams[code] && gameState.teams[code].length > 0;
+        const sessionData = sessionResults[index];
         
-        const item = document.createElement('div');
-        item.className = `player-code-item ${hasSubmitted ? 'submitted' : 'pending'}`;
+        const row = document.createElement('tr');
+        row.className = hasSubmitted ? 'team-row-submitted' : 'team-row-pending';
         
+        // Status icon column
+        const statusCell = document.createElement('td');
         const statusIcon = document.createElement('span');
-        statusIcon.className = 'status-icon';
+        statusIcon.className = 'status-icon-table';
         statusIcon.textContent = hasSubmitted ? '✓' : '○';
+        statusIcon.style.color = hasSubmitted ? '#10b981' : '#94a3b8';
+        statusIcon.style.fontSize = '20px';
+        statusCell.appendChild(statusIcon);
+        row.appendChild(statusCell);
         
-        const codeText = document.createElement('span');
-        codeText.textContent = `${code} - ${window.location.origin}${window.location.pathname}?player=${code}`;
+        // Team name column
+        const nameCell = document.createElement('td');
+        nameCell.textContent = code;
+        nameCell.style.fontWeight = '600';
+        row.appendChild(nameCell);
         
-        const statusText = document.createElement('span');
-        statusText.className = 'status-text';
-        statusText.textContent = hasSubmitted ? 'Rankings submitted' : 'Pending';
+        // Player link column with copy button
+        const linkCell = document.createElement('td');
+        if (sessionData && sessionData.uniqueUrl) {
+            const uniqueURL = sessionData.uniqueUrl;
+            const sessionToken = uniqueURL.split('?session=')[1];
+            
+            const linkWrapper = document.createElement('div');
+            linkWrapper.style.display = 'flex';
+            linkWrapper.style.alignItems = 'center';
+            linkWrapper.style.gap = '8px';
+            
+            const urlLink = document.createElement('a');
+            urlLink.href = uniqueURL;
+            urlLink.target = '_blank';
+            urlLink.textContent = sessionToken.substring(0, 8) + '...';
+            urlLink.style.color = '#2C39A2';
+            urlLink.style.textDecoration = 'none';
+            
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn-copy-mini';
+            copyBtn.textContent = '📋';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(uniqueURL).then(() => {
+                    copyBtn.textContent = '✅';
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋';
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy to clipboard:', err);
+                    copyBtn.textContent = '❌';
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋';
+                    }, 2000);
+                });
+            };
+            
+            linkWrapper.appendChild(urlLink);
+            linkWrapper.appendChild(copyBtn);
+            linkCell.appendChild(linkWrapper);
+        } else {
+            linkCell.textContent = 'Error';
+        }
+        row.appendChild(linkCell);
         
-        item.appendChild(statusIcon);
-        item.appendChild(codeText);
-        item.appendChild(statusText);
-        display.appendChild(item);
+        // Rankings status column
+        const rankingsCell = document.createElement('td');
+        const rankingsBadge = document.createElement('span');
+        rankingsBadge.className = hasSubmitted ? 'badge-success' : 'badge-pending';
+        rankingsBadge.textContent = hasSubmitted ? 'Submitted' : 'Pending';
+        rankingsCell.appendChild(rankingsBadge);
+        row.appendChild(rankingsCell);
+        
+        // Draft status column
+        const draftCell = document.createElement('td');
+        draftCell.className = 'draft-status-column';
+        const draftBadge = document.createElement('span');
+        draftBadge.className = hasDraftedTeam ? 'badge-success' : 'badge-pending';
+        draftBadge.textContent = hasDraftedTeam ? 'Drafted' : 'Not Drafted';
+        draftCell.appendChild(draftBadge);
+        row.appendChild(draftCell);
+        
+        // Actions column
+        const actionsCell = document.createElement('td');
+        const viewButton = document.createElement('button');
+        viewButton.className = 'btn-mini';
+        viewButton.textContent = 'View';
+        viewButton.disabled = true; // Disable until feature is implemented
+        viewButton.title = 'Team details coming in a future update';
+        actionsCell.appendChild(viewButton);
+        row.appendChild(actionsCell);
+        
+        tableBody.appendChild(row);
     });
-    
-    // Add summary
-    const submittedCount = gameState.players.filter(code => hasPlayerSubmittedRankings(code)).length;
-    
-    const summary = document.createElement('div');
-    summary.className = 'rankings-summary';
-    summary.innerHTML = `<strong>${submittedCount} of ${gameState.players.length} players have submitted rankings</strong>`;
-    display.appendChild(summary);
 }
 
 // Snake draft algorithm
@@ -858,6 +1816,352 @@ function displayDraftResults() {
         const card = createTeamCard(player, team);
         container.appendChild(card);
     });
+}
+
+// Display leaderboard with team rankings
+async function displayLeaderboard() {
+    const container = document.getElementById('leaderboard-display');
+    container.innerHTML = '<div class="loading-spinner">Loading leaderboard...</div>';
+
+    try {
+        // Fetch standings from API (single optimized call)
+        // The API will return hasResults flag if no results exist
+        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch standings');
+        }
+        
+        const data = await response.json();
+        
+        // Check if results exist via API response
+        if (data.hasResults === false) {
+            container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
+            return;
+        }
+        
+        const standings = data.standings || [];
+        
+        if (standings.length === 0) {
+            container.innerHTML = '<p>No standings available yet.</p>';
+            return;
+        }
+
+        // Find current player's rank
+        const currentPlayerCode = anonymousSession.playerCode || gameState.currentPlayer || anonymousSession.teamName;
+        const currentPlayerStanding = standings.find(s => s.player_code === currentPlayerCode);
+        const currentPlayerRank = currentPlayerStanding ? currentPlayerStanding.rank : null;
+
+        // Build leaderboard HTML
+        let leaderboardHTML = '<div class="leaderboard-container">';
+        
+        // Show ALL teams with sticky behavior for current player
+        standings.forEach((standing, index) => {
+            const isCurrentPlayer = standing.player_code === currentPlayerCode;
+            leaderboardHTML += createLeaderboardRow(standing, isCurrentPlayer);
+        });
+        
+        leaderboardHTML += '</div>';
+        
+        container.innerHTML = leaderboardHTML;
+        
+    } catch (error) {
+        console.error('Error displaying leaderboard:', error);
+        container.innerHTML = `
+            <div class="error-message">
+                <p>Unable to load leaderboard</p>
+                <p style="font-size: 0.9em; color: var(--dark-gray);">${error.message}</p>
+                <button onclick="displayLeaderboard()" class="btn btn-secondary">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+// Create a single leaderboard row
+function createLeaderboardRow(standing, isCurrentPlayer = false) {
+    const rank = standing.rank;
+    const displayRank = rank <= 3 ? '' : `#${rank}`; // Don't show number for medal positions
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+    
+    const rowClass = isCurrentPlayer ? 'leaderboard-row leaderboard-row-highlight' : 'leaderboard-row';
+    
+    // Stats summary
+    const stats = `${standing.wins} wins, ${standing.top3} top-3`;
+    
+    return `
+        <div class="${rowClass}" data-player-code="${escapeHtml(standing.player_code)}" onclick="viewTeamDetails('${escapeHtml(standing.player_code)}')">
+            <div class="leaderboard-rank-section">
+                <span class="rank-medal">${medal}</span>
+                <span class="rank-number">${displayRank}</span>
+            </div>
+            <div class="leaderboard-team-section">
+                <div class="leaderboard-team-name">${escapeHtml(standing.player_code)}</div>
+                <div class="leaderboard-team-stats">${stats}</div>
+            </div>
+            <div class="leaderboard-score-section">
+                <div class="leaderboard-total-points">${standing.total_points}</div>
+                <div class="leaderboard-points-label">pts</div>
+            </div>
+        </div>
+    `;
+}
+
+// Display race results (actual athlete performance)
+async function displayRaceResultsLeaderboard() {
+    console.log('🔥 displayRaceResultsLeaderboard v2.0 called');
+    const container = document.getElementById('race-results-display');
+    container.innerHTML = '<div class="loading-spinner">Loading race results...</div>';
+
+    try {
+        // Ensure athletes are loaded
+        if (!gameState.athletes || !gameState.athletes.men || !gameState.athletes.women) {
+            console.log('Athletes not loaded, loading now...');
+            await loadAthletes();
+            console.log('After loadAthletes, gameState.athletes:', gameState.athletes);
+        }
+        
+        // Double-check athletes loaded successfully
+        if (!gameState.athletes || !gameState.athletes.men || !gameState.athletes.women) {
+            console.error('Athletes still not loaded after loadAthletes()');
+            throw new Error('Athletes data failed to load. Please refresh the page and try again.');
+        }
+        
+        console.log(`Athletes loaded: ${gameState.athletes.men.length} men, ${gameState.athletes.women.length} women`);
+        
+        // Fetch race results with caching
+        const resultsData = await fetchResultsCached();
+        console.log('Results data:', resultsData);
+        const scoredResults = resultsData.scored || [];
+        
+        if (scoredResults.length === 0) {
+            container.innerHTML = '<p>No race results available yet. Check back once the race begins!</p>';
+            return;
+        }
+
+        // Create a map of athletes by ID for faster lookup
+        const athletesById = new Map();
+        gameState.athletes.men.forEach(a => athletesById.set(a.id, { ...a, gender: a.gender || 'men' }));
+        gameState.athletes.women.forEach(a => athletesById.set(a.id, { ...a, gender: a.gender || 'women' }));
+
+        // Merge in fallback athlete info from results API to cover athletes not in local cache
+        scoredResults.forEach(result => {
+            const existing = athletesById.get(result.athlete_id);
+            const merged = {
+                id: result.athlete_id,
+                name: result.athlete_name || existing?.name || `Athlete #${result.athlete_id}`,
+                gender: (existing?.gender || result.gender || 'unknown').toLowerCase(),
+                country: result.country || existing?.country || '--',
+                pb: result.personal_best || existing?.pb || existing?.personal_best,
+                personal_best: result.personal_best || existing?.personal_best,
+                headshotUrl: result.headshot_url || existing?.headshotUrl || existing?.headshot_url,
+                headshot_url: result.headshot_url || existing?.headshot_url || existing?.headshotUrl
+            };
+
+            // Preserve any additional fields already stored (e.g., rankings)
+            athletesById.set(result.athlete_id, existing ? { ...existing, ...merged } : merged);
+        });
+        
+        // Store data for filtering
+        window.raceResultsData = {
+            scoredResults,
+            athletesById,
+            menResults: scoredResults.filter(r => {
+                const athlete = athletesById.get(r.athlete_id);
+                return athlete && athlete.gender === 'men';
+            }).sort((a, b) => (a.placement || 999) - (b.placement || 999)),
+            womenResults: scoredResults.filter(r => {
+                const athlete = athletesById.get(r.athlete_id);
+                return athlete && athlete.gender === 'women';
+            }).sort((a, b) => (a.placement || 999) - (b.placement || 999))
+        };
+
+        // Initial render with men's results and finish time
+        renderFilteredRaceResults('men', 'finish');
+        
+        // Set up event listeners for controls
+        setupRaceResultsControls();
+        
+    } catch (error) {
+        console.error('Error displaying leaderboard race results:', error);
+        container.innerHTML = `
+            <div class="error-message">
+                <p>Unable to load race results</p>
+                <p style="font-size: 0.9em; color: var(--dark-gray);">${error.message}</p>
+                <button onclick="displayRaceResultsLeaderboard()" class="btn btn-secondary">Try Again</button>
+            </div>
+        `;
+    }
+}
+
+// Setup event listeners for race results controls
+function setupRaceResultsControls() {
+    // Gender toggle buttons
+    const genderButtons = document.querySelectorAll('.gender-toggle-btn');
+    genderButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all buttons
+            genderButtons.forEach(b => b.classList.remove('active'));
+            // Add active class to clicked button
+            btn.classList.add('active');
+            
+            // Get current split selection
+            const splitSelect = document.getElementById('split-select');
+            const currentSplit = splitSelect ? splitSelect.value : 'finish';
+            
+            // Re-render with selected gender
+            renderFilteredRaceResults(btn.dataset.gender, currentSplit);
+        });
+    });
+    
+    // Split selector dropdown
+    const splitSelect = document.getElementById('split-select');
+    if (splitSelect) {
+        splitSelect.addEventListener('change', () => {
+            // Get current gender selection
+            const activeGenderBtn = document.querySelector('.gender-toggle-btn.active');
+            const currentGender = activeGenderBtn ? activeGenderBtn.dataset.gender : 'men';
+            
+            // Re-render with selected split
+            renderFilteredRaceResults(currentGender, splitSelect.value);
+        });
+    }
+}
+
+// Render filtered race results based on gender and split
+function renderFilteredRaceResults(gender, splitType) {
+    const container = document.getElementById('race-results-display');
+    
+    if (!window.raceResultsData) {
+        container.innerHTML = '<p>No race results data available</p>';
+        return;
+    }
+    
+    const { menResults, womenResults, athletesById } = window.raceResultsData;
+    const results = gender === 'men' ? menResults : womenResults;
+    const genderLabel = gender === 'men' ? 'Men' : 'Women';
+    
+    if (results.length === 0) {
+        container.innerHTML = `<p>No ${genderLabel.toLowerCase()}'s results available yet.</p>`;
+        return;
+    }
+    
+    // Build race results HTML
+    let resultsHTML = '<div class="race-results-container">';
+    resultsHTML += '<div class="race-gender-section">';
+    resultsHTML += `<h3 class="gender-header">${genderLabel}'s Results</h3>`;
+    resultsHTML += '<div class="race-results-list">';
+    
+    results.forEach(result => {
+        const athlete = athletesById.get(result.athlete_id);
+        if (athlete) {
+            resultsHTML += createRaceResultRow(result, athlete, splitType);
+        }
+    });
+    
+    resultsHTML += '</div></div></div>';
+    container.innerHTML = resultsHTML;
+}
+
+// Create a single race result row
+function createRaceResultRow(result, athlete, splitType = 'finish') {
+    const placement = result.placement || '-';
+    const points = result.total_points || 0;
+    const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+    
+    // Determine which time to display based on splitType
+    let displayTime = 'N/A';
+    let timeLabel = 'Finish';
+    
+    switch(splitType) {
+        case 'finish':
+            displayTime = result.finish_time || 'DNF';
+            timeLabel = 'Finish';
+            break;
+        case '5k':
+            displayTime = result.split_5k || 'N/A';
+            timeLabel = '5K';
+            break;
+        case '10k':
+            displayTime = result.split_10k || 'N/A';
+            timeLabel = '10K';
+            break;
+        case 'half':
+            displayTime = result.split_half || 'N/A';
+            timeLabel = 'Half';
+            break;
+        case '30k':
+            displayTime = result.split_30k || 'N/A';
+            timeLabel = '30K';
+            break;
+        case '35k':
+            displayTime = result.split_35k || 'N/A';
+            timeLabel = '35K';
+            break;
+        case '40k':
+            displayTime = result.split_40k || 'N/A';
+            timeLabel = '40K';
+            break;
+    }
+    
+    // Calculate gap from winner if available (only for finish time)
+    let gapFromFirst = '';
+    if (splitType === 'finish' && result.breakdown && result.breakdown.time_gap) {
+        const gapSeconds = result.breakdown.time_gap.gap_seconds || 0;
+        if (gapSeconds > 0) {
+            const minutes = Math.floor(gapSeconds / 60);
+            const seconds = Math.floor(gapSeconds % 60);
+            gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    // Points breakdown shorthand
+    let shorthand = '-';
+    if (result.breakdown) {
+        const parts = [];
+        if (result.breakdown.placement && result.breakdown.placement.points > 0) {
+            parts.push(`P${result.breakdown.placement.points}`);
+        }
+        if (result.breakdown.time_gap && result.breakdown.time_gap.points > 0) {
+            parts.push(`G${result.breakdown.time_gap.points}`);
+        }
+        const perfBonus = result.breakdown.performance_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+        const recBonus = result.breakdown.record_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+        const totalBonus = perfBonus + recBonus;
+        if (totalBonus > 0) {
+            parts.push(`B${totalBonus}`);
+        }
+        shorthand = parts.length > 0 ? parts.join('+') : '-';
+    }
+
+    const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
+    const fallbackImg = getRunnerSvg((athlete.gender || 'men').toLowerCase());
+    const countryCode = (athlete.country || '').toUpperCase();
+    const personalBest = athlete.pb || athlete.personal_best || athlete.personalBest || '';
+
+    return `
+        <div class="race-result-row" onclick="openAthleteModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
+            <div class="race-result-placement">
+                ${medal ? `<span class="placement-medal">${medal}</span>` : `<span class="placement-number">#${placement}</span>`}
+            </div>
+            <div class="race-result-athlete">
+                <img src="${headshotUrl || fallbackImg}" alt="${escapeHtml(athlete.name)}" class="race-result-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
+                <div class="athlete-details">
+                    <div class="athlete-name">${escapeHtml(athlete.name)}</div>
+                    <div class="athlete-meta">
+                        <span class="athlete-country">${getCountryFlagEmoji(countryCode)} ${countryCode || 'N/A'}</span>
+                        ${personalBest ? `<span class="athlete-pb">PB: ${personalBest}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="race-result-performance">
+                <div class="finish-time">${displayTime}</div>
+                ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : (splitType !== 'finish' ? `<div class="time-gap">${timeLabel} Split</div>` : '')}
+            </div>
+            <div class="race-result-points">
+                <div class="points-value">${points} pts</div>
+                <div class="points-breakdown">${shorthand}</div>
+            </div>
+        </div>
+    `;
 }
 
 function displayTeams() {
@@ -1378,6 +2682,9 @@ async function handleUpdateResults() {
             body: JSON.stringify({ results: gameState.results })
         });
         
+        // Invalidate results cache so players see fresh data
+        invalidateResultsCache();
+        
         alert('Live results updated! Players can now see the current standings.');
     } catch (error) {
         console.error('Error saving results:', error);
@@ -1434,6 +2741,9 @@ async function handleFinalizeResults() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ results: gameState.results })
         });
+        
+        // Invalidate results cache after finalizing
+        invalidateResultsCache();
     } catch (error) {
         console.error('Error saving results:', error);
     }
@@ -1448,20 +2758,23 @@ async function updateLiveStandings() {
         return;
     }
 
-    try {
-        // Fetch standings from API (includes points calculations)
-        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
-        if (response.ok) {
-            const data = await response.json();
-            displayPointsStandings(data.standings, display);
-        } else {
-            // Fallback to legacy time-based standings
-            displayLegacyStandings(display);
-        }
-    } catch (error) {
-        console.error('Error fetching standings:', error);
-        // Fallback to legacy time-based standings
-        displayLegacyStandings(display);
+    // Show link to leaderboard instead of full standings list
+    display.innerHTML = `
+        <div style="margin-top: 20px; padding: 15px; background: var(--light-gray); border-radius: 5px; text-align: center;">
+            <p style="margin: 0 0 10px 0; font-weight: 500;">Results have been entered</p>
+            <button id="view-leaderboard-from-commissioner" class="btn btn-primary">
+                📊 View Full Leaderboard
+            </button>
+        </div>
+    `;
+    
+    // Add event listener to the button
+    const viewLeaderboardBtn = document.getElementById('view-leaderboard-from-commissioner');
+    if (viewLeaderboardBtn) {
+        viewLeaderboardBtn.addEventListener('click', () => {
+            showPage('leaderboard-page');
+            loadLeaderboard();
+        });
     }
 }
 
@@ -1787,6 +3100,9 @@ async function handleResetResults() {
 
         // Update local game state
         gameState.results = {};
+        
+        // Invalidate results cache after reset
+        invalidateResultsCache();
 
         // Clear displayed data
         document.getElementById('live-standings').innerHTML = '';
@@ -1810,40 +3126,31 @@ async function handleResetResults() {
 }
 
 async function handleResetGame() {
-    if (confirm('Are you sure you want to reset the entire game? This cannot be undone.')) {
+    if (confirm('Are you sure you want to reset the entire game? This will delete ALL data including teams, rosters, rankings, results, and scores. This cannot be undone!')) {
+        console.log('[Reset Game] User confirmed complete game reset');
+        
         try {
-            // Clear database by deleting all records for this game
-            await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`, {
+            // Show loading state
+            const resetBtn = document.getElementById('reset-game');
+            const originalText = resetBtn.textContent;
+            resetBtn.textContent = 'Resetting...';
+            resetBtn.disabled = true;
+
+            // Call comprehensive reset API endpoint
+            const response = await fetch(`${API_BASE}/api/reset-game?gameId=${GAME_ID}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    players: [],
-                    draftComplete: false
-                })
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            // Clear rankings from database
-            await fetch(`${API_BASE}/api/rankings?gameId=${GAME_ID}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rankings: {} })
-            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.details || error.error || 'Reset failed');
+            }
 
-            // Clear teams (draft results) from database
-            await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ teams: {} })
-            });
+            const result = await response.json();
+            console.log('[Reset Game] Reset successful:', result);
 
-            // Clear results from database
-            await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ results: {} })
-            });
-
-            // Update local game state
+            // Update local game state to match reset database
             gameState.players = [];
             gameState.currentPlayer = null;
             gameState.rankings = {};
@@ -1852,20 +3159,215 @@ async function handleResetGame() {
             gameState.draftComplete = false;
             gameState.resultsFinalized = false;
 
-            // Clear any displayed data
+            // Clear localStorage team session (user might have been on a team)
+            // Note: Commissioner session is preserved
+            localStorage.removeItem(TEAM_SESSION_KEY);
+            anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
+
+            // Clear any displayed data in commissioner dashboard
             document.getElementById('player-codes-display').innerHTML = '';
             document.getElementById('draft-status').innerHTML = '';
             document.getElementById('results-form').innerHTML = '';
             document.getElementById('winner-display').innerHTML = '';
             document.getElementById('live-standings').innerHTML = '';
             
-            alert('Game has been reset.');
+            // Show success message with details
+            alert(`Game reset complete!\n\nDeleted:\n- ${result.deleted.draftTeams} team rosters\n- ${result.deleted.playerRankings} player rankings\n- ${result.deleted.raceResults} race results\n- ${result.deleted.leagueStandings} standings entries\n- ${result.deleted.anonymousSessions} team sessions\n\nAll athlete data has been preserved.`);
+            
+            // Reload game state from database (force refresh, don't use cache)
+            await loadGameStateCached(true);
+            
+            // Invalidate results cache since we just reset
+            invalidateResultsCache();
+            
+            // Navigate to landing page
             showPage('landing-page');
+            
+            // Restore button
+            resetBtn.textContent = originalText;
+            resetBtn.disabled = false;
+            
         } catch (error) {
-            console.error('Error resetting game:', error);
-            alert('Error resetting game. Please try again.');
+            console.error('[Reset Game] Error resetting game:', error);
+            alert(`Error resetting game: ${error.message}\n\nPlease try again or contact support.`);
+            
+            // Restore button
+            const resetBtn = document.getElementById('reset-game');
+            resetBtn.textContent = 'Reset Game';
+            resetBtn.disabled = false;
         }
+    } else {
+        console.log('[Reset Game] User cancelled reset');
     }
+}
+
+// Handle load demo data
+async function handleLoadDemoData() {
+    const btn = document.getElementById('load-demo-data');
+    const originalText = btn.textContent;
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = '⏳ Loading demo data...';
+        
+        // Get checkbox value for including results
+        const includeResults = confirm('Include fake race results?\n\nClick OK to include results, Cancel for teams only.');
+        
+        const response = await fetch(`${API_BASE}/api/load-demo-data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ includeResults })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to load demo data');
+        }
+        
+        const data = await response.json();
+        
+        // Display results in modal
+        displayDemoDataResults(data);
+        
+        btn.textContent = '✓ Demo data loaded!';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Demo data error:', error);
+        alert(`Error loading demo data: ${error.message}`);
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Display demo data results in modal
+function displayDemoDataResults(data) {
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.id = 'demo-data-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 20px;
+    `;
+    
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 900px;
+        max-height: 80vh;
+        overflow-y: auto;
+        width: 100%;
+    `;
+    
+    const stats = data.stats || {};
+    
+    let html = `
+        <h2 style="margin-top: 0;">🎭 Demo Game Created Successfully!</h2>
+        <div style="background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <strong>Game ID:</strong> ${data.gameId}<br>
+            <strong>Teams:</strong> ${stats.totalTeams} teams × 6 athletes = ${stats.totalAthletes} roster slots<br>
+            <strong>Unique Athletes:</strong> ${stats.uniqueAthletes} (some may be on multiple teams)<br>
+            <strong>Salary Cap:</strong> $${(data.salaryCap / 1000).toFixed(0)}K per team<br>
+            <strong>Results:</strong> ${data.resultsCreated ? `✅ ${stats.resultsCount} athletes with finish times & splits` : '⏳ Not created (add via commissioner mode)'}
+        </div>
+        
+        <h3 style="margin-top: 20px;">📋 Team Details</h3>
+    `;
+    
+    data.teams.forEach(team => {
+        const url = team.sessionUrl;
+        const budgetPct = ((team.totalSpent / data.salaryCap) * 100).toFixed(0);
+        
+        html += `
+            <div style="border: 2px solid #2C39A2; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                    <div>
+                        <h3 style="margin: 0; color: #2C39A2;">${team.teamName}</h3>
+                        <div style="color: #666; font-size: 0.9em; margin-top: 5px;">${team.strategy}</div>
+                    </div>
+                    <div style="text-align: right; font-size: 0.9em;">
+                        <div><strong>Spent:</strong> $${(team.totalSpent / 1000).toFixed(1)}K (${budgetPct}%)</div>
+                        <div style="color: #28a745;"><strong>Left:</strong> $${(team.remaining / 1000).toFixed(1)}K</div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>Session URL:</strong>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                        <input 
+                            type="text" 
+                            value="${url}" 
+                            readonly 
+                            style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-family: monospace;"
+                        />
+                        <button 
+                            onclick="navigator.clipboard.writeText('${url}'); this.textContent = '✓ Copied'; setTimeout(() => this.textContent = 'Copy', 2000);"
+                            style="padding: 8px 16px; background: #2C39A2; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;"
+                        >
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                
+                <div>
+                    <strong>Roster (${team.athletes.length} athletes):</strong>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 8px; font-size: 0.9em;">
+                        ${team.athletes.map(a => `
+                            <div style="padding: 5px; background: ${a.gender === 'men' ? '#e3f2fd' : '#fce4ec'}; border-radius: 4px;">
+                                <strong>${a.name}</strong> (${a.country})<br>
+                                <span style="color: #666;">
+                                    ${a.gender === 'men' ? '👨' : '👩'} 
+                                    $${(a.salary / 1000).toFixed(1)}K
+                                    ${a.marathonRank ? ` • Rank #${a.marathonRank}` : ''}
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 0.9em;">
+            <strong>📝 Next Steps:</strong>
+            <ol style="margin: 10px 0 0 20px; padding: 0;">
+                ${data.instructions.map(i => `<li style="margin: 5px 0;">${i}</li>`).join('')}
+            </ol>
+        </div>
+        
+        <button 
+            onclick="document.getElementById('demo-data-modal').remove();"
+            style="width: 100%; padding: 12px; background: #ff6900; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 20px; font-weight: bold;"
+        >
+            Close
+        </button>
+    `;
+    
+    content.innerHTML = html;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
 }
 
 // Handle view athletes
@@ -2280,6 +3782,8 @@ async function openAthleteModal(athleteIdOrData) {
  */
 function getCountryFlagEmoji(countryCode) {
     if (!countryCode || countryCode.length < 2) return '🏁';
+    const sanitized = countryCode.replace(/[^A-Za-z]/g, '').toUpperCase();
+    if (sanitized.length < 2) return '🏁';
     
     // Map of common alpha-3 to alpha-2 codes for marathon countries
     const alpha3ToAlpha2 = {
@@ -2295,7 +3799,7 @@ function getCountryFlagEmoji(countryCode) {
         'FIN': 'FI', 'ISL': 'IS', 'IRL': 'IE', 'POR': 'PT', 'TUR': 'TR'
     };
     
-    const alpha2 = alpha3ToAlpha2[countryCode.toUpperCase()] || countryCode.slice(0, 2).toUpperCase();
+    const alpha2 = alpha3ToAlpha2[sanitized] || sanitized.slice(0, 2);
     const codePoints = alpha2.split('').map(char => 127397 + char.charCodeAt());
     return String.fromCodePoint(...codePoints);
 }
@@ -2367,16 +3871,13 @@ function populateAthleteBasicInfo(athlete) {
     const photo = document.getElementById('modal-athlete-photo');
     const isMale = athlete.gender === 'men';
     
-    // Male runner SVG - running pose
-    const maleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head --%3E%3Ccircle cx="0" cy="-22" r="8" fill="%236c757d"/%3E%3C!-- Body --%3E%3Cpath d="M-2-14 L-2 8" stroke="%236c757d" stroke-width="4" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-2-10 L-12-5 M-2-6 L8 2" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-2 8 L-8 22 M-2 8 L6 18" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    const defaultRunnerSvg = getRunnerSvg(athlete.gender);
     
-    // Female runner SVG - running pose with longer hair
-    const femaleRunnerSvg = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"%3E%3Crect fill="%23e9ecef" width="120" height="120"/%3E%3Cg transform="translate(60,60)"%3E%3C!-- Head with hair --%3E%3Cellipse cx="0" cy="-22" rx="9" ry="8" fill="%236c757d"/%3E%3Cpath d="M-9-22 Q-11-18 -9-14 M9-22 Q11-18 9-14" stroke="%236c757d" stroke-width="2" fill="none"/%3E%3C!-- Body --%3E%3Cpath d="M-1-14 L-1 8" stroke="%236c757d" stroke-width="3.5" stroke-linecap="round"/%3E%3C!-- Arms running position --%3E%3Cpath d="M-1-10 L-11-5 M-1-6 L8 2" stroke="%236c757d" stroke-width="2.5" stroke-linecap="round"/%3E%3C!-- Legs running position --%3E%3Cpath d="M-1 8 L-7 22 M-1 8 L6 18" stroke="%236c757d" stroke-width="3" stroke-linecap="round"/%3E%3C/g%3E%3C/svg%3E';
+    // Handle both headshot_url (from database) and headshotUrl (camelCase)
+    const headshotUrl = athlete.headshot_url || athlete.headshotUrl;
     
-    const defaultRunnerSvg = isMale ? maleRunnerSvg : femaleRunnerSvg;
-    
-    if (athlete.headshotUrl) {
-        photo.src = athlete.headshotUrl;
+    if (headshotUrl) {
+        photo.src = headshotUrl;
         photo.alt = athlete.name;
         // Handle 404 errors by falling back to gender-specific runner icon
         photo.onerror = function() {
@@ -2802,6 +4303,288 @@ function setupAthleteModal() {
         });
     });
 }
+
+/**
+ * View team details from leaderboard
+ */
+async function viewTeamDetails(playerCode) {
+    try {
+        // Fetch team data
+        const response = await fetch(`${API_BASE}/api/salary-cap-draft?gameId=${getCurrentGameId()}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch team data');
+        }
+        
+        const teamData = await response.json();
+        const team = teamData[playerCode];
+        
+        if (!team) {
+            showErrorNotification(`Team ${playerCode} not found`);
+            return;
+        }
+        
+        // Fetch results to show points breakdown
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${getCurrentGameId()}`);
+        const resultsData = await resultsResponse.json();
+        const scoredResults = resultsData.scored || [];
+        
+        // Calculate total points for this team
+        const teamAthleteIds = [
+            ...(team.men || []).map(a => a.id),
+            ...(team.women || []).map(a => a.id)
+        ];
+        const teamResults = scoredResults.filter(r => teamAthleteIds.includes(r.athlete_id));
+        const totalPoints = teamResults.reduce((sum, r) => sum + (r.total_points || 0), 0);
+        
+        // Build modal content
+        let modalHTML = `
+            <div class="team-details-modal-overlay" id="team-details-overlay" onclick="closeTeamDetails()">
+                <div class="team-details-modal" onclick="event.stopPropagation()">
+                    <div class="team-details-header">
+                        <h2>${escapeHtml(playerCode)}</h2>
+                        <button class="modal-close-btn" onclick="closeTeamDetails()">×</button>
+                    </div>
+                    <div class="team-details-summary">
+                        <div class="summary-stat">
+                            <div class="stat-label">Total Points</div>
+                            <div class="stat-value">${totalPoints}</div>
+                        </div>
+                        <div class="summary-stat">
+                            <div class="stat-label">Salary</div>
+                            <div class="stat-value">$${(team.totalSpent / 1000).toFixed(1)}K</div>
+                        </div>
+                    </div>
+                    <div class="team-details-athletes">
+        `;
+        
+        // Show men
+        if (team.men && team.men.length > 0) {
+            modalHTML += '<div class="gender-section"><h3>MEN</h3>';
+            team.men.forEach(athlete => {
+                const result = scoredResults.find(r => r.athlete_id === athlete.id);
+                const points = result ? result.total_points || 0 : 0;
+                const placement = result ? result.placement : null;
+                const breakdown = result ? result.breakdown : null;
+                const finishTime = result ? result.finish_time : null;
+                
+                // Calculate gap from first place
+                let gapFromFirst = '';
+                if (result && breakdown && breakdown.time_gap) {
+                    const gapSeconds = breakdown.time_gap.gap_seconds || 0;
+                    if (gapSeconds > 0) {
+                        const minutes = Math.floor(gapSeconds / 60);
+                        const seconds = Math.floor(gapSeconds % 60);
+                        gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }
+                
+                // Create shorthand notation: P=placement, G=time gap, B=bonuses
+                let shorthand = '';
+                if (breakdown) {
+                    const parts = [];
+                    if (breakdown.placement && breakdown.placement.points > 0) {
+                        parts.push(`P${breakdown.placement.points}`);
+                    }
+                    if (breakdown.time_gap && breakdown.time_gap.points > 0) {
+                        parts.push(`G${breakdown.time_gap.points}`);
+                    }
+                    const perfBonus = breakdown.performance_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const recBonus = breakdown.record_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const totalBonus = perfBonus + recBonus;
+                    if (totalBonus > 0) {
+                        parts.push(`B${totalBonus}`);
+                    }
+                    shorthand = parts.length > 0 ? parts.join('+') : '-';
+                }
+                
+                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('men');
+                const fallbackImg = getRunnerSvg('men');
+                
+                modalHTML += `
+                    <div class="athlete-card">
+                        <div class="athlete-card-left">
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
+                            <div class="athlete-info">
+                                <div class="athlete-name">${escapeHtml(athlete.name)}</div>
+                                <div class="athlete-meta">
+                                    <span class="athlete-country">${getCountryFlagEmoji(athlete.country)} ${athlete.country}</span>
+                                    <span class="athlete-salary">$${(athlete.salary / 1000).toFixed(1)}K</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="athlete-card-center">
+                            <div class="race-time">${finishTime || '-'}</div>
+                            <div class="race-details">
+                                ${placement ? `<span class="race-placement">#${placement}</span>` : ''}
+                                ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="athlete-card-right">
+                            <div class="points-value">${points} pts</div>
+                            <div class="points-notation">
+                                <span class="breakdown-code">${shorthand}</span>
+                                <button class="info-icon" onclick="event.stopPropagation(); showPointsInfo();" title="Points breakdown">ⓘ</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            modalHTML += '</div>';
+        }
+        
+        // Show women
+        if (team.women && team.women.length > 0) {
+            modalHTML += '<div class="gender-section"><h3>WOMEN</h3>';
+            team.women.forEach(athlete => {
+                const result = scoredResults.find(r => r.athlete_id === athlete.id);
+                const points = result ? result.total_points || 0 : 0;
+                const placement = result ? result.placement : null;
+                const breakdown = result ? result.breakdown : null;
+                const finishTime = result ? result.finish_time : null;
+                
+                // Calculate gap from first place
+                let gapFromFirst = '';
+                if (result && breakdown && breakdown.time_gap) {
+                    const gapSeconds = breakdown.time_gap.gap_seconds || 0;
+                    if (gapSeconds > 0) {
+                        const minutes = Math.floor(gapSeconds / 60);
+                        const seconds = Math.floor(gapSeconds % 60);
+                        gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }
+                
+                // Create shorthand notation
+                let shorthand = '';
+                if (breakdown) {
+                    const parts = [];
+                    if (breakdown.placement && breakdown.placement.points > 0) {
+                        parts.push(`P${breakdown.placement.points}`);
+                    }
+                    if (breakdown.time_gap && breakdown.time_gap.points > 0) {
+                        parts.push(`G${breakdown.time_gap.points}`);
+                    }
+                    const perfBonus = breakdown.performance_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const recBonus = breakdown.record_bonuses?.reduce((sum, b) => sum + b.points, 0) || 0;
+                    const totalBonus = perfBonus + recBonus;
+                    if (totalBonus > 0) {
+                        parts.push(`B${totalBonus}`);
+                    }
+                    shorthand = parts.length > 0 ? parts.join('+') : '-';
+                }
+                
+                const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('women');
+                const fallbackImg = getRunnerSvg('women');
+                
+                modalHTML += `
+                    <div class="athlete-card">
+                        <div class="athlete-card-left">
+                            <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
+                            <div class="athlete-info">
+                                <div class="athlete-name">${escapeHtml(athlete.name)}</div>
+                                <div class="athlete-meta">
+                                    <span class="athlete-country">${getCountryFlagEmoji(athlete.country)} ${athlete.country}</span>
+                                    <span class="athlete-salary">$${(athlete.salary / 1000).toFixed(1)}K</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="athlete-card-center">
+                            <div class="race-time">${finishTime || '-'}</div>
+                            <div class="race-details">
+                                ${placement ? `<span class="race-placement">#${placement}</span>` : ''}
+                                ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="athlete-card-right">
+                            <div class="points-value">${points} pts</div>
+                            <div class="points-notation">
+                                <span class="breakdown-code">${shorthand}</span>
+                                <button class="info-icon" onclick="event.stopPropagation(); showPointsInfo();" title="Points breakdown">ⓘ</button>
+                            </div>
+                            <div class="points-total">${points} pts</div>
+                        </div>
+                    </div>
+                `;
+            });
+            modalHTML += '</div>';
+        }
+        
+        modalHTML += `
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add to document
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+    } catch (error) {
+        console.error('Error viewing team details:', error);
+        showErrorNotification('Failed to load team details');
+    }
+}
+
+function closeTeamDetails() {
+    const modal = document.getElementById('team-details-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function showPointsInfo() {
+    const infoHTML = `
+        <div class="points-info-modal-overlay" id="points-info-overlay" onclick="closePointsInfo()">
+            <div class="points-info-modal" onclick="event.stopPropagation()">
+                <div class="points-info-header">
+                    <h3>Points Breakdown Notation</h3>
+                    <button class="modal-close-btn" onclick="closePointsInfo()">×</button>
+                </div>
+                <div class="points-info-content">
+                    <div class="notation-explanation">
+                        <div class="notation-row">
+                            <span class="notation-code">P#</span>
+                            <span class="notation-desc"><strong>Placement Points</strong> - 10 pts for 1st down to 1 pt for 10th</span>
+                        </div>
+                        <div class="notation-row">
+                            <span class="notation-code">G#</span>
+                            <span class="notation-desc"><strong>Time Gap Bonus</strong> - +5 pts within 60s of winner, +4 within 2min, +3 within 3min, +2 within 5min, +1 within 10min</span>
+                        </div>
+                        <div class="notation-row">
+                            <span class="notation-code">B#</span>
+                            <span class="notation-desc"><strong>Performance Bonuses</strong> - +2 pts for negative split (faster 2nd half), +1 pt for even pace, +1 pt for fast finish kick</span>
+                        </div>
+                        <div class="notation-row">
+                            <span class="notation-code">R#</span>
+                            <span class="notation-desc"><strong>Record Bonuses</strong> - +15 pts for world record, +5 pts for course record (provisional until confirmed)</span>
+                        </div>
+                    </div>
+                    <div class="notation-example">
+                        <strong>Example:</strong> "P10+G5+B2" = 17 total points
+                        <ul>
+                            <li>10 pts for 1st place finish</li>
+                            <li>+5 pts for finishing within 60 seconds of winner</li>
+                            <li>+2 pts for performance bonuses (negative split)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', infoHTML);
+}
+
+function closePointsInfo() {
+    const modal = document.getElementById('points-info-overlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Make functions available globally
+window.viewTeamDetails = viewTeamDetails;
+window.closeTeamDetails = closeTeamDetails;
+window.showPointsInfo = showPointsInfo;
+window.closePointsInfo = closePointsInfo;
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
