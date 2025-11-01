@@ -26,6 +26,12 @@ export default function Home() {
 function getMainHTML() {
   return `
     <div class="container">
+        <!-- Initial Loading Overlay -->
+        <div id="app-loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <h1 style="color: #ff6900; margin-bottom: 20px;">🗽 Fantasy NY Marathon</h1>
+            <div class="loading-spinner">Loading your experience...</div>
+        </div>
+        
         <header>
             <h1>🗽 Fantasy NY Marathon</h1>
         </header>
@@ -222,6 +228,11 @@ function getMainHTML() {
                     <button id="edit-salary-cap-team" class="btn btn-secondary btn-large" onclick="unlockRoster()" style="display: none; margin-left: 12px;">Edit Roster</button>
                 </div>
 
+                <!-- Navigation Buttons (shown after roster is locked) -->
+                <div id="roster-navigation" class="page-actions" style="display: none; margin-top: 20px;">
+                    <button id="view-leaderboard-from-roster" class="btn btn-primary">View Leaderboard</button>
+                </div>
+
                 <!-- Athlete Selection Modal (slides in from right) -->
                 <div id="athlete-selection-modal" class="selection-modal">
                     <div class="modal-header">
@@ -242,14 +253,164 @@ function getMainHTML() {
                     </div>
                 </div>
 
-                <!-- Athlete Detail Modal (slides up from bottom) -->
-                <div id="athlete-detail-modal" class="detail-modal">
-                    <div class="detail-modal-content">
-                        <div class="detail-header">
-                            <button class="modal-close-btn" id="close-detail-modal">×</button>
+                <!-- Athlete Detail Modal (full featured modal) -->
+                <div id="athlete-detail-modal" class="modal">
+                    <div class="modal-overlay" onclick="closeDetailModal()"></div>
+                    <div class="athlete-card-container detail-athlete-card" onclick="event.stopPropagation()">
+                        <button class="modal-close" aria-label="Close" id="close-detail-modal">&times;</button>
+                        
+                        <div id="detail-card-masthead" class="card-masthead">
+                            <div class="masthead-content">
+                                <div class="masthead-photo-section">
+                                    <div class="masthead-photo-wrapper">
+                                        <img id="detail-modal-athlete-photo" src="" alt="Athlete photo" class="masthead-photo">
+                                        <div class="masthead-flag">
+                                            <span id="detail-modal-athlete-country" class="flag-emoji"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="masthead-bio-section">
+                                    <h2 id="detail-modal-athlete-name" class="athlete-name"></h2>
+                                    <div class="bio-details">
+                                        <div class="bio-item">
+                                            <span id="detail-modal-athlete-gender" class="bio-value"></span>
+                                        </div>
+                                        <div class="bio-item">
+                                            <span id="detail-modal-athlete-age" class="bio-value"></span>
+                                        </div>
+                                    </div>
+                                    <div class="masthead-stats-grid">
+                                        <div class="masthead-stat">
+                                            <div class="masthead-stat-label">Marathon Rank</div>
+                                            <div id="detail-modal-athlete-marathon-rank" class="masthead-stat-value"></div>
+                                        </div>
+                                        <div class="masthead-stat">
+                                            <div class="masthead-stat-label">Personal Best</div>
+                                            <div id="detail-modal-athlete-pb" class="masthead-stat-value"></div>
+                                        </div>
+                                        <div class="masthead-stat">
+                                            <div class="masthead-stat-label">Salary</div>
+                                            <div id="detail-modal-athlete-salary" class="masthead-stat-value"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div id="athlete-detail-content">
-                            <!-- Populated by JavaScript -->
+
+                        <div class="tabs-container">
+                            <nav class="tabs-nav">
+                                <button class="tab-button active" data-tab="detail-overview">Overview</button>
+                                <button class="tab-button" data-tab="detail-results">Race Log</button>
+                                <button class="tab-button" data-tab="detail-progression">Progression</button>
+                                <button class="tab-button" data-tab="detail-news">News</button>
+                            </nav>
+                        </div>
+
+                        <div class="tab-content-container">
+                            <div id="tab-detail-overview" class="tab-panel active">
+                                <div class="overview-section">
+                                    <h3 class="section-title">Key Statistics</h3>
+                                    <div class="stats-grid">
+                                        <div class="stat-card">
+                                            <div class="stat-label">Personal Best</div>
+                                            <div id="detail-overview-pb" class="stat-value-large"></div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Season Best</div>
+                                            <div id="detail-modal-athlete-sb" class="stat-value-large"></div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Marathon Rank</div>
+                                            <div id="detail-overview-marathon-rank" class="stat-value-large"></div>
+                                        </div>
+                                        <div class="stat-card">
+                                            <div class="stat-label">Overall Rank</div>
+                                            <div id="detail-modal-athlete-overall-rank" class="stat-value-large"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="overview-section">
+                                    <h3 class="section-title">Profile Information</h3>
+                                    <div class="profile-grid">
+                                        <div class="profile-row">
+                                            <span class="profile-label">Date of Birth</span>
+                                            <span id="detail-modal-athlete-dob" class="profile-value">N/A</span>
+                                        </div>
+                                        <div class="profile-row">
+                                            <span class="profile-label">World Athletics ID</span>
+                                            <span id="detail-modal-athlete-wa-id" class="profile-value">N/A</span>
+                                        </div>
+                                        <div class="profile-row">
+                                            <span class="profile-label">Road Running Rank</span>
+                                            <span id="detail-modal-athlete-road-rank" class="profile-value">N/A</span>
+                                        </div>
+                                        <div id="detail-modal-athlete-sponsor-section" class="profile-row" style="display: none;">
+                                            <span class="profile-label">Sponsor</span>
+                                            <span id="detail-modal-athlete-sponsor" class="profile-value">N/A</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="overview-section">
+                                    <a id="detail-modal-wa-link" href="#" target="_blank" rel="noopener noreferrer" class="wa-link-button">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                        View Full World Athletics Profile
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div id="tab-detail-results" class="tab-panel">
+                                <div class="tab-content-header">
+                                    <h3 class="tab-content-title">2025 Race Results</h3>
+                                    <div id="detail-results-loading" class="loading-indicator">Loading...</div>
+                                </div>
+                                <div id="detail-results-list" class="results-list"></div>
+                                <div id="detail-results-empty" class="empty-state" style="display: none;">
+                                    <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                    <p>No 2025 race results available</p>
+                                </div>
+                            </div>
+
+                            <div id="tab-detail-progression" class="tab-panel">
+                                <div class="tab-content-header">
+                                    <h3 id="detail-progression-title" class="tab-content-title">Season's Best: Marathon</h3>
+                                    <div id="detail-progression-loading" class="loading-indicator">Loading...</div>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="detail-progression-chart-canvas"></canvas>
+                                </div>
+                                <select id="detail-discipline-selector" class="discipline-selector" style="display: none;">
+                                    <option value="Marathon">Marathon</option>
+                                </select>
+                                <div id="detail-selected-race-info" class="selected-race-info" style="display: none;">
+                                    <h4 class="race-info-title">Race Details</h4>
+                                    <div id="detail-race-info-content"></div>
+                                </div>
+                                <div id="detail-progression-empty" class="empty-state" style="display: none;">
+                                    <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p>No progression data available</p>
+                                </div>
+                            </div>
+
+                            <div id="tab-detail-news" class="tab-panel">
+                                <div class="tab-content-header">
+                                    <h3 class="tab-content-title">Latest News</h3>
+                                </div>
+                                <div class="empty-state">
+                                    <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                                    </svg>
+                                    <p>News feed coming soon</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -267,7 +428,53 @@ function getMainHTML() {
             <div id="teams-page" class="page">
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
-                <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                <div class="page-actions">
+                    <button id="view-leaderboard-btn" class="btn btn-primary">View Leaderboard</button>
+                    <button id="back-to-landing" class="btn btn-secondary">Back to Home</button>
+                </div>
+            </div>
+
+            <!-- Leaderboard Page -->
+            <div id="leaderboard-page" class="page">
+                <h2>Leaderboard</h2>
+                
+                <!-- Leaderboard Tabs -->
+                <div class="leaderboard-tabs">
+                    <button class="leaderboard-tab active" data-tab="fantasy">Fantasy Results</button>
+                    <button class="leaderboard-tab" data-tab="race">Race Results</button>
+                </div>
+                
+                <!-- Fantasy Results Tab Content (default) -->
+                <div id="fantasy-results-tab" class="leaderboard-tab-content active">
+                    <div id="leaderboard-display"></div>
+                </div>
+                
+                <!-- Race Results Tab Content -->
+                <div id="race-results-tab" class="leaderboard-tab-content">
+                    <div class="race-results-controls">
+                        <div class="gender-toggle">
+                            <button class="gender-toggle-btn active" data-gender="men">Men</button>
+                            <button class="gender-toggle-btn" data-gender="women">Women</button>
+                        </div>
+                        <div class="split-selector">
+                            <label for="split-select">Show:</label>
+                            <select id="split-select" class="split-select">
+                                <option value="finish">Finish Time</option>
+                                <option value="5k">5K Split</option>
+                                <option value="10k">10K Split</option>
+                                <option value="half">Half Marathon</option>
+                                <option value="30k">30K Split</option>
+                                <option value="35k">35K Split</option>
+                                <option value="40k">40K Split</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="race-results-display"></div>
+                </div>
+                
+                <div class="page-actions">
+                    <button id="back-to-roster" class="btn btn-secondary">Back to Roster</button>
+                </div>
             </div>
 
             <!-- Commissioner Page -->
@@ -277,6 +484,7 @@ function getMainHTML() {
                     <div class="action-card">
                         <h3>Player Links</h3>
                         <div id="player-codes-display"></div>
+                        <button id="manage-teams-btn" class="btn btn-primary" style="margin-top: 16px;">Manage Players/Teams</button>
                     </div>
 
                     <div class="action-card">
@@ -301,11 +509,45 @@ function getMainHTML() {
                     </div>
 
                     <div class="action-card">
+                        <h3>Development Tools</h3>
+                        <button id="load-demo-data" class="btn btn-primary">🎭 Load Demo Data</button>
+                        <p style="font-size: 0.85em; color: #666; margin-top: 10px;">
+                            Creates 3 fake teams with rosters and optional results for testing
+                        </p>
+                    </div>
+
+                    <div class="action-card">
                         <h3>Game State</h3>
                         <button id="reset-game" class="btn btn-danger">Reset Game</button>
                     </div>
                 </div>
                 <button id="back-from-commissioner" class="btn btn-secondary">Back to Home</button>
+            </div>
+
+            <!-- Manage Players/Teams Page -->
+            <div id="manage-teams-page" class="page">
+                <h2>Manage Players/Teams</h2>
+                <p class="page-description">View and manage all players and their team status</p>
+                
+                <div class="manage-teams-container">
+                    <table id="teams-status-table" class="teams-status-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Team Name</th>
+                                <th>Player Link</th>
+                                <th>Rankings</th>
+                                <th class="draft-status-column">Draft Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teams-status-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button id="back-to-commissioner-from-teams" class="btn btn-secondary">Back to Dashboard</button>
             </div>
 
             <!-- Athlete Management Page -->
@@ -573,10 +815,19 @@ function getMainHTML() {
         </div>
 
         <footer>
-            <p>Marathon Majors League &copy; 2025</p>
-            <button id="home-button" class="btn btn-secondary">Home</button>
-            <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+            <div class="footer-actions">
+                <button id="home-button" class="btn btn-secondary">Home</button>
+                <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
             <a href="/bookmarklet" class="btn btn-secondary" style="text-decoration: none;">📊 Live Results Tool</a>
+                <div class="game-switcher">
+                    <label for="game-select">Game: </label>
+                    <select id="game-select" class="game-select">
+                        <option value="default">Default Game</option>
+                        <option value="demo-game">Demo Game</option>
+                    </select>
+                </div>
+            </div>
+            <p class="footer-copyright">Marathon Majors League &copy; 2025</p>
         </footer>
     </div>
   `;

@@ -55,36 +55,56 @@ export async function getLatestScoringRules() {
 /**
  * Assign placements with tie handling (standard competition ranking)
  * If two tie for 2nd, both get 2nd place, next is 4th
+ * Placements are assigned separately per gender
  */
 function assignPlacements(results) {
-  // Sort by finish_time_ms ascending (fastest first)
-  const sorted = [...results].sort((a, b) => {
-    if (a.finish_time_ms === null) return 1;
-    if (b.finish_time_ms === null) return -1;
-    return a.finish_time_ms - b.finish_time_ms;
-  });
+  // Separate results by gender
+  const menResults = results.filter(r => r.gender === 'men');
+  const womenResults = results.filter(r => r.gender === 'women');
+  
+  // Assign placements for men
+  const rankedMen = assignPlacementsByGender(menResults);
+  
+  // Assign placements for women
+  const rankedWomen = assignPlacementsByGender(womenResults);
+  
+  // Combine and return
+  return [...rankedMen, ...rankedWomen];
+}
+
+/**
+ * Helper function to assign placements within a single gender
+ */
+function assignPlacementsByGender(results) {
+  // Separate finishers from DNF/DNS
+  const finishers = results.filter(r => r.finish_time_ms !== null);
+  const dnfDns = results.filter(r => r.finish_time_ms === null);
+  
+  // Sort finishers by finish_time_ms ascending (fastest first)
+  const sortedFinishers = [...finishers].sort((a, b) => a.finish_time_ms - b.finish_time_ms);
   
   let currentPlace = 1;
   let prevTime = null;
-  let tieCount = 0;
   
-  sorted.forEach((result, index) => {
-    if (result.finish_time_ms === null) {
-      result.placement = null;
-    } else if (prevTime !== null && result.finish_time_ms === prevTime) {
+  sortedFinishers.forEach((result, index) => {
+    if (prevTime !== null && result.finish_time_ms === prevTime) {
       // Tie - same placement as previous
       result.placement = currentPlace;
-      tieCount++;
     } else {
-      // New placement
+      // New placement - use finisher count, not total index
       currentPlace = index + 1;
       result.placement = currentPlace;
-      tieCount = 0;
       prevTime = result.finish_time_ms;
     }
   });
   
-  return sorted;
+  // Ensure DNF/DNS keep NULL placement
+  dnfDns.forEach(result => {
+    result.placement = null;
+  });
+  
+  // Combine finishers and DNF/DNS
+  return [...sortedFinishers, ...dnfDns];
 }
 
 /**
@@ -450,14 +470,24 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     }
   });
   
-  // Step 1: Assign placements with tie handling
+  console.log(`[SCORING] Sample result after conversion:`, {
+    id: results[0]?.athlete_id,
+    finish_time: results[0]?.finish_time,
+    finish_time_ms: results[0]?.finish_time_ms
+  });
+  
+  // Step 1: Assign placements with tie handling (separated by gender)
   const rankedResults = assignPlacements(results);
   
-  // Step 2: Get winner time for gap calculation
-  const winnerTime = rankedResults[0]?.finish_time_ms;
+  // Step 2: Get winner times per gender for gap calculation
+  const menResults = rankedResults.filter(r => r.gender === 'men' && r.finish_time_ms);
+  const womenResults = rankedResults.filter(r => r.gender === 'women' && r.finish_time_ms);
   
-  if (!winnerTime) {
-    throw new Error('No valid winner time found');
+  const menWinnerTime = menResults.length > 0 ? menResults[0].finish_time_ms : null;
+  const womenWinnerTime = womenResults.length > 0 ? womenResults[0].finish_time_ms : null;
+  
+  if (!menWinnerTime && !womenWinnerTime) {
+    throw new Error('No valid winner times found');
   }
   
   // Step 3: Calculate points for each result
@@ -469,10 +499,18 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
       continue;
     }
     
+    // Get the winner time for this athlete's gender
+    const winnerTime = result.gender === 'men' ? menWinnerTime : womenWinnerTime;
+    
+    if (!winnerTime) {
+      console.warn(`No winner time for gender ${result.gender}, skipping athlete ${result.athlete_id}`);
+      continue;
+    }
+    
     // Calculate placement points
     const placementPoints = calculatePlacementPoints(result.placement, rules);
     
-    // Calculate time gap
+    // Calculate time gap (relative to gender winner)
     const gapSeconds = Math.floor((result.finish_time_ms - winnerTime) / 1000);
     const timeGapPoints = calculateTimeGapPoints(gapSeconds, rules.time_gap_windows);
     
@@ -511,6 +549,7 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     scoredResults.push({
       id: result.id,
       athlete_id: result.athlete_id,
+      finish_time_ms: result.finish_time_ms,
       placement: result.placement,
       placement_points: placementPoints,
       time_gap_seconds: gapSeconds,
@@ -530,6 +569,7 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     await sql`
       UPDATE race_results
       SET 
+        finish_time_ms = ${scored.finish_time_ms},
         placement = ${scored.placement},
         placement_points = ${scored.placement_points},
         time_gap_seconds = ${scored.time_gap_seconds},
@@ -566,20 +606,35 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
 function timeStringToMs(timeStr) {
   if (!timeStr) return null;
   
-  const parts = timeStr.split(':');
-  let hours = 0, minutes = 0, seconds = 0;
-  
-  if (parts.length === 3) {
-    // H:MM:SS
-    hours = parseInt(parts[0]);
-    minutes = parseInt(parts[1]);
-    seconds = parseFloat(parts[2]);
-  } else if (parts.length === 2) {
-    // MM:SS
-    minutes = parseInt(parts[0]);
-    seconds = parseFloat(parts[1]);
+  const normalized = timeStr.trim().toUpperCase();
+
+  // Treat special result codes as non-finishers
+  if (['DNF', 'DNS', 'DQ', 'NA', 'NONE'].includes(normalized)) {
+    return null;
   }
-  
+
+  const parts = normalized.split(':');
+
+  if (parts.length < 2 || parts.length > 3) {
+    return null;
+  }
+
+  const numericParts = parts.map(part => Number(part));
+
+  if (numericParts.some(Number.isNaN)) {
+    return null;
+  }
+
+  let hours = 0;
+  let minutes = 0;
+  let seconds = 0;
+
+  if (numericParts.length === 3) {
+    [hours, minutes, seconds] = numericParts;
+  } else {
+    [minutes, seconds] = numericParts;
+  }
+
   return Math.floor((hours * 3600 + minutes * 60 + seconds) * 1000);
 }
 
