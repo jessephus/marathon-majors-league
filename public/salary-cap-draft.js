@@ -107,6 +107,10 @@ async function setupSalaryCapDraft() {
     
     const gameId = session.gameId;
     const playerCode = session.playerCode;
+    const teamName = session.teamName || session.playerCode;
+    
+    // Update header with team name
+    updateTeamHeader(teamName);
     
     // Fetch team data and check results in parallel
     const fetchStart = performance.now();

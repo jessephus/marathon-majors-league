@@ -292,6 +292,37 @@
       sessionToken
     };
     
+    // ========================================
+    // DEBUG MODE: Log to console instead of sending to API
+    // ========================================
+    console.log('=============================================');
+    console.log('📊 BOOKMARKLET DEBUG MODE - Data to be sent:');
+    console.log('=============================================');
+    console.log('Game ID:', gameId);
+    console.log('Split Type:', splitType);
+    console.log('Gender:', gender);
+    console.log('Session Token:', sessionToken ? '***provided***' : 'null');
+    console.log('Total Athletes:', athletes.length);
+    console.log('---------------------------------------------');
+    console.log('Athletes Data:');
+    console.table(athletes);
+    console.log('---------------------------------------------');
+    console.log('Full Payload:');
+    console.log(JSON.stringify(payload, null, 2));
+    console.log('=============================================');
+    
+    // Mock successful response
+    return {
+      message: 'DEBUG MODE: Data logged to console',
+      summary: {
+        total: athletes.length,
+        successful: athletes.length,
+        failed: 0
+      },
+      failedAthletes: []
+    };
+    
+    /* ORIGINAL CODE - COMMENTED OUT FOR DEBUG MODE
     const response = await fetch(CONFIG.apiEndpoint, {
       method: 'POST',
       headers: {
@@ -306,6 +337,7 @@
     }
     
     return await response.json();
+    */
   }
 
   // Show result message

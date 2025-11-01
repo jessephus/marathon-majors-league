@@ -47,7 +47,7 @@ async function ensureResultsScored(gameId) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -202,6 +202,32 @@ export default async function handler(req, res) {
         message: 'Results saved successfully',
         scoring: scoringResult ? 'completed' : 'skipped',
         scoringDetails: scoringResult
+      });
+    } else if (req.method === 'DELETE') {
+      // Clear all results for this game - requires commissioner access
+      if (!sessionToken) {
+        return res.status(401).json({ 
+          error: 'Unauthorized',
+          message: 'Session token required to delete results'
+        });
+      }
+
+      const hasAccess = await hasCommissionerAccess(gameId, sessionToken);
+      if (!hasAccess) {
+        return res.status(403).json({ 
+          error: 'Forbidden',
+          message: 'Only commissioners can delete race results'
+        });
+      }
+
+      // Delete all results for this game
+      await sql`
+        DELETE FROM race_results
+        WHERE game_id = ${gameId}
+      `;
+
+      res.status(200).json({ 
+        message: 'All results cleared successfully'
       });
     } else {
       res.status(405).json({ error: 'Method not allowed' });

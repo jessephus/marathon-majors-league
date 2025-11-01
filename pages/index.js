@@ -2,23 +2,25 @@ import Head from 'next/head'
 import Script from 'next/script'
 
 export default function Home() {
+  // Add cache-busting timestamp for dev mode
+  const isDev = process.env.NODE_ENV === 'development';
+  const cacheBuster = isDev ? `?v=${Date.now()}` : '';
+  
   return (
     <>
       <Head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Fantasy NY Marathon</title>
-        <link rel="stylesheet" href="/style.css" />
       </Head>
 
       {/* External scripts */}
-      <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
-      <Script src="/app.js" strategy="afterInteractive" />
-      <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
+      <Script src={`/app.js${cacheBuster}`} strategy="afterInteractive" />
+      <Script src={`/salary-cap-draft.js${cacheBuster}`} strategy="afterInteractive" />
 
       {/* Main HTML content from index.html */}
-      <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
+      <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} suppressHydrationWarning />
     </>
   )
 }
@@ -48,15 +50,6 @@ function getMainHTML() {
                         <h3>🏃‍♂️ Join the Competition</h3>
                         <p>Create your team and draft elite runners - no registration required!</p>
                         <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
-                    </div>
-                    
-                    <!-- Commissioner Tools -->
-                    <div class="commissioner-tools-section" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
-                        <h3>👑 Commissioner Tools</h3>
-                        <p style="margin-bottom: 1rem;">Manage your game and import live race results</p>
-                        <a href="/bookmarklet" class="btn btn-secondary" style="text-decoration: none; display: inline-block;">
-                            📊 Live Results Bookmarklet
-                        </a>
                     </div>
                 </div>
             </div>
@@ -504,6 +497,14 @@ function getMainHTML() {
                     </div>
 
                     <div class="action-card">
+                        <h3>Live Results Import</h3>
+                        <p style="margin-bottom: 1rem;">Semi-automated tool to import results from NYRR leaderboard</p>
+                        <a href="/bookmarklet.html" class="btn btn-primary" style="text-decoration: none; display: inline-block;">
+                            📊 Live Results Bookmarklet
+                        </a>
+                    </div>
+
+                    <div class="action-card">
                         <h3>Athlete Management</h3>
                         <button id="view-athletes" class="btn btn-primary">View All Athletes</button>
                     </div>
@@ -818,7 +819,6 @@ function getMainHTML() {
             <div class="footer-actions">
                 <button id="home-button" class="btn btn-secondary">Home</button>
                 <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
-            <a href="/bookmarklet" class="btn btn-secondary" style="text-decoration: none;">📊 Live Results Tool</a>
                 <div class="game-switcher">
                     <label for="game-select">Game: </label>
                     <select id="game-select" class="game-select">

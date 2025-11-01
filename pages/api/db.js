@@ -2038,6 +2038,39 @@ export async function logAudit(auditData) {
 // ============================================================================
 
 /**
+ * Create a new anonymous session
+ * @param {Object} params - Session parameters
+ * @param {string} params.type - Session type ('team' or 'commissioner')
+ * @param {string} params.displayName - Display name for the session
+ * @param {string} params.gameId - Game ID (optional)
+ * @param {string} params.playerCode - Player code (optional)
+ * @param {number} params.expiryDays - Days until expiration (default 90)
+ * @returns {Promise<Object>} Session token and expiration
+ */
+export async function createAnonymousSession({ type, displayName, gameId, playerCode, expiryDays = 90 }) {
+  const result = await sql`
+    SELECT * FROM create_anonymous_session(
+      ${type},
+      ${displayName || null},
+      ${gameId || null},
+      ${playerCode || null},
+      NULL,
+      NULL,
+      ${expiryDays}
+    )
+  `;
+  
+  if (!result || result.length === 0) {
+    throw new Error('Failed to create anonymous session');
+  }
+  
+  return {
+    token: result[0].session_token,
+    expiresAt: result[0].expires_at
+  };
+}
+
+/**
  * Verify an anonymous session token
  * @param {string} sessionToken - The session token to verify
  * @returns {Promise<Object|null>} Session details if valid, null otherwise

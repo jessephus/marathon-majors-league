@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Results Bookmarklet - Fantasy NY Marathon</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* Additional styles for bookmarklet page */
+        .bookmarklet-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .bookmarklet-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .bookmarklet-header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+        }
+        
+        .bookmarklet-header p {
+            font-size: 1.25rem;
+            color: #666;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            color: var(--primary-blue);
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.75rem;
+        }
+        
+        .section h3 {
+            color: var(--primary-blue);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+        }
+        
+        .install-box {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        
+        .install-box p {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        
+        .bookmarklet-button {
+            display: inline-block;
+            background: var(--primary-orange);
+            color: white;
+            font-weight: bold;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: move;
+            transition: background 0.2s;
+        }
+        
+        .bookmarklet-button:hover {
+            background: #e55f00;
+        }
+        
+        .install-box small {
+            display: block;
+            margin-top: 1rem;
+            color: #666;
+            font-size: 0.875rem;
+        }
+        
+        .step {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-number {
+            flex-shrink: 0;
+            width: 2rem;
+            height: 2rem;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .step-content h4 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .step-content p {
+            margin: 0;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid var(--primary-blue);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .info-box p {
+            margin: 0;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box p {
+            margin: 0;
+            color: #92400e;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        code {
+            background: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        
+        ul {
+            line-height: 1.8;
+        }
+        
+        strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="bookmarklet-container">
+        <div class="bookmarklet-header">
+            <h1>🏃 Live Results Bookmarklet</h1>
+            <p>Import race results from NYRR leaderboard with one click</p>
+        </div>
+
+        <!-- What is this section -->
+        <div class="section">
+            <h2>What is this?</h2>
+            <p>
+                The <strong>Live Results Bookmarklet</strong> is a special browser bookmark that lets you quickly 
+                import live marathon results from the NYRR leaderboard page directly into your Fantasy Marathon game. 
+                Instead of manually entering each athlete's time, you can capture all results with just a few clicks!
+            </p>
+            <div class="info-box">
+                <p>Perfect for commissioners who want to update results throughout the race!</p>
+            </div>
+        </div>
+
+        <!-- Installation section -->
+        <div class="section">
+            <h2>📥 Installation</h2>
+            
+            <div class="install-box">
+                <p>Drag this button to your bookmarks bar:</p>
+                <a 
+                    href="javascript:(function(){var s=document.createElement('script');s.src='http://localhost:3000/bookmarklet.js?v='+Date.now();document.body.appendChild(s);})();"
+                    class="bookmarklet-button"
+                    onclick="alert('Please drag this button to your bookmarks bar instead of clicking it!'); return false;"
+                >
+                    📊 Import NYRR Results
+                </a>
+                <small>(Don't click - drag it to your bookmarks bar!)</small>
+            </div>
+
+            <h3>Step-by-Step Guide:</h3>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Show your bookmarks bar</h4>
+                    <p>
+                        • <strong>Chrome/Edge:</strong> Press <code>Ctrl+Shift+B</code> (Windows) or <code>Cmd+Shift+B</code> (Mac)<br>
+                        • <strong>Firefox:</strong> Press <code>Ctrl+Shift+B</code> (Windows) or <code>Cmd+Shift+B</code> (Mac)<br>
+                        • <strong>Safari:</strong> View → Show Bookmarks Bar
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Drag the orange button</h4>
+                    <p>
+                        Click and hold the orange "Import NYRR Results" button above, then drag it to your bookmarks bar at the top of your browser.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>You're ready!</h4>
+                    <p>
+                        The bookmarklet is now installed and ready to use on NYRR leaderboard pages.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- How to use section -->
+        <div class="section">
+            <h2>🎯 How to Use</h2>
+            
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Go to the NYRR Leaderboard</h4>
+                    <p>
+                        Navigate to the live results page during the marathon (e.g., <code>liveresults.nyrr.org</code>)
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Click the bookmarklet</h4>
+                    <p>
+                        Click "Import NYRR Results" from your bookmarks bar. A dialog will appear.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Configure settings</h4>
+                    <p>
+                        • <strong>Game ID:</strong> Your game identifier (usually "default")<br>
+                        • <strong>Split Type:</strong> Choose which checkpoint (5K, 10K, Half, etc.)<br>
+                        • <strong>Division:</strong> Men or Women (usually auto-detected)
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>Import results</h4>
+                    <p>
+                        Click "Import Results" and wait for confirmation. Review the success/failure summary.
+                    </p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h4>Repeat for each split</h4>
+                    <p>
+                        As the race progresses, navigate to updated leaderboard pages and import new splits.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features section -->
+        <div class="section">
+            <h2>✨ Features</h2>
+            <ul>
+                <li><strong>Automatic data extraction</strong> from NYRR leaderboard tables</li>
+                <li><strong>Smart athlete matching</strong> with fuzzy name matching fallback</li>
+                <li><strong>Multiple split support</strong> (5K, 10K, 15K, 20K, Half, 25K, 30K, 35K, 40K, Finish)</li>
+                <li><strong>Visual confirmation dialog</strong> before importing</li>
+                <li><strong>Detailed error reporting</strong> for unmatched athletes</li>
+                <li><strong>Progress indication</strong> during import</li>
+            </ul>
+        </div>
+
+        <!-- Troubleshooting section -->
+        <div class="section">
+            <h2>🔧 Troubleshooting</h2>
+            
+            <h3>Bookmarklet doesn't work</h3>
+            <ul>
+                <li>Make sure you're on the NYRR leaderboard page</li>
+                <li>Check that JavaScript is enabled in your browser</li>
+                <li>Try refreshing the page and clicking the bookmarklet again</li>
+            </ul>
+
+            <h3>Athletes not matching</h3>
+            <div class="warning-box">
+                <p>
+                    If athletes aren't matching, their names in the database may differ from the NYRR leaderboard. 
+                    The bookmarklet uses fuzzy matching to help, but some manual entry may be needed.
+                </p>
+            </div>
+
+            <h3>Wrong division detected</h3>
+            <ul>
+                <li>The bookmarklet tries to auto-detect from the URL or page content</li>
+                <li>You can manually change the division in the dialog before importing</li>
+            </ul>
+        </div>
+
+        <a href="/" class="back-link">← Back to Fantasy Marathon</a>
+    </div>
+</body>
+</html>

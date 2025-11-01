@@ -687,17 +687,40 @@ async function handleCommissionerTOTPLogin(e) {
         if (response.ok) {
             const data = await response.json();
             
-            // Save commissioner session with 30-day expiration
+            // Create anonymous session for commissioner access
+            console.log('[Commissioner Login] Creating anonymous session...');
+            const sessionResponse = await fetch(`${API_BASE}/api/auth/anonymous-session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: 'commissioner',
+                    gameId: GAME_ID,
+                    displayName: 'Commissioner',
+                    expiryDays: 30
+                })
+            });
+            
+            if (!sessionResponse.ok) {
+                const errorData = await sessionResponse.json();
+                throw new Error(errorData.error || 'Failed to create commissioner session');
+            }
+            
+            const sessionData = await sessionResponse.json();
+            console.log('[Commissioner Login] Session created:', sessionData.token);
+            
+            // Save commissioner session with token and 30-day expiration
             const now = new Date();
             const expiresAt = new Date(now.getTime() + COMMISSIONER_SESSION_TIMEOUT);
             
             commissionerSession = {
                 isCommissioner: true,
+                token: sessionData.token, // Store the session token
                 loginTime: now.toISOString(),
                 expiresAt: expiresAt.toISOString()
             };
             
             console.log('[Commissioner Login] Saving new commissioner session:', {
+                hasToken: !!commissionerSession.token,
                 loginTime: commissionerSession.loginTime,
                 expiresAt: commissionerSession.expiresAt,
                 timeoutDays: COMMISSIONER_SESSION_TIMEOUT / (24 * 60 * 60 * 1000)
@@ -3087,12 +3110,30 @@ async function handleResetResults() {
     }
 
     try {
-        // Clear results from database
-        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ results: {} })
+        // Get commissioner session token for authentication
+        const commissionerSessionData = localStorage.getItem(COMMISSIONER_SESSION_KEY);
+        if (!commissionerSessionData) {
+            throw new Error('Commissioner session not found. Please log in again.');
+        }
+        
+        const session = JSON.parse(commissionerSessionData);
+        if (!session.token) {
+            throw new Error('Commissioner session token not found. Please log in again.');
+        }
+        
+        // Clear results from database using DELETE method with Authorization header
+        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+            method: 'DELETE',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.token}`
+            }
         });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to reset results');
+        }
 
         // Clear resultsFinalized flag
         gameState.resultsFinalized = false;
