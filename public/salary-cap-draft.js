@@ -58,8 +58,18 @@ function loadSession() {
     
     try {
         const parsed = JSON.parse(sessionData);
-        console.log('✅ loadSession: Parsed session:', parsed);
-        return parsed;
+        
+        // Get gameId from separate localStorage key
+        const gameId = localStorage.getItem('current_game_id') || 'default';
+        
+        // Add gameId to session object
+        const sessionWithGameId = {
+            ...parsed,
+            gameId
+        };
+        
+        console.log('✅ loadSession: Parsed session:', sessionWithGameId);
+        return sessionWithGameId;
     } catch (error) {
         console.error('❌ loadSession: Error parsing session:', error);
         return null;
@@ -110,12 +120,15 @@ async function setupSalaryCapDraft() {
         console.log(`⏱️ JSON parsing took ${(performance.now() - parseStart).toFixed(2)}ms`);
         console.log('🔍 Team data from API:', data);
         
-        if (data.team) {
+        // API returns all teams keyed by playerCode, get this player's team
+        const playerTeam = data[playerCode];
+        
+        if (playerTeam) {
             const loadStart = performance.now();
-            console.log('✅ Loading existing team:', data.team);
+            console.log('✅ Loading existing team:', playerTeam);
             
-            const men = data.team.filter(a => a.gender === 'men' || a.gender === 'M');
-            const women = data.team.filter(a => a.gender === 'women' || a.gender === 'W');
+            const men = playerTeam.men || [];
+            const women = playerTeam.women || [];
             
             // Load men into M1, M2, M3
             if (men[0]) salaryCapState.slots.M1 = men[0];
@@ -127,20 +140,23 @@ async function setupSalaryCapDraft() {
             if (women[1]) salaryCapState.slots.W2 = women[1];
             if (women[2]) salaryCapState.slots.W3 = women[2];
             
-            // Calculate total spent
-            salaryCapState.totalSpent = Object.values(salaryCapState.slots)
-                .filter(a => a !== null)
-                .reduce((sum, a) => sum + (a.salary || 5000), 0);
+            // Use totalSpent from API or calculate
+            salaryCapState.totalSpent = playerTeam.totalSpent || 
+                Object.values(salaryCapState.slots)
+                    .filter(a => a !== null)
+                    .reduce((sum, a) => sum + (a.salary || 5000), 0);
             
             // Mark as locked since they already submitted
             salaryCapState.isLocked = true;
             console.log(`⏱️ Team loading took ${(performance.now() - loadStart).toFixed(2)}ms`);
+        } else {
+            console.log('ℹ️ No existing team found for player:', playerCode);
         }
         
         // Check if results have been entered (permanently lock roster)
         const resultsStart = performance.now();
         console.log('🔍 Checking for race results...');
-        const resultsResponse = await fetch(`/api/results?gameId=${gameId}`);
+        const resultsResponse = await fetch(`/api/results?gameId=${gameId}&checkOnly=true`);
         const resultsData = await resultsResponse.json();
         console.log(`⏱️ Results check took ${(performance.now() - resultsStart).toFixed(2)}ms`);
         
@@ -813,6 +829,34 @@ function showSuccessNotification(message) {
         top: 80px;
         right: 20px;
         background: #10b981;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+/**
+ * Show subtle error notification
+ */
+function showErrorNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'error-notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: #ef4444;
         color: white;
         padding: 12px 24px;
         border-radius: 8px;

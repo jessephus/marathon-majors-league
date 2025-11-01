@@ -63,6 +63,17 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      // Quick check for existence only (used by salary-cap-draft to check if locked)
+      if (req.query.checkOnly === 'true') {
+        const [count] = await sql`
+          SELECT COUNT(*) as count
+          FROM race_results
+          WHERE game_id = ${gameId} AND finish_time IS NOT NULL
+        `;
+        const hasResults = parseInt(count?.count || '0') > 0;
+        return res.status(200).json({ hasResults });
+      }
+      
       // Get all race results with scoring data - no authentication required for viewing
       async function fetchResults() {
         return sql`
