@@ -108,15 +108,21 @@ async function setupSalaryCapDraft() {
     const gameId = session.gameId;
     const playerCode = session.playerCode;
     
-    // Try to load existing team from API
+    // Fetch team data and check results in parallel
     const fetchStart = performance.now();
-    console.log('🔍 Fetching team data from API...');
+    console.log('🔍 Fetching team data and checking results (parallel)...');
+    
     try {
-        const response = await fetch(`/api/salary-cap-draft?gameId=${gameId}&playerCode=${playerCode}`);
-        console.log(`⏱️ API fetch took ${(performance.now() - fetchStart).toFixed(2)}ms`);
+        const [teamResponse, resultsResponse] = await Promise.all([
+            fetch(`/api/salary-cap-draft?gameId=${gameId}&playerCode=${playerCode}`),
+            fetch(`/api/results?gameId=${gameId}&checkOnly=true`)
+        ]);
+        console.log(`⏱️ Parallel API fetches took ${(performance.now() - fetchStart).toFixed(2)}ms`);
         
+        // Parse team data
         const parseStart = performance.now();
-        const data = await response.json();
+        const data = await teamResponse.json();
+        const resultsData = await resultsResponse.json();
         console.log(`⏱️ JSON parsing took ${(performance.now() - parseStart).toFixed(2)}ms`);
         console.log('🔍 Team data from API:', data);
         
@@ -153,13 +159,7 @@ async function setupSalaryCapDraft() {
             console.log('ℹ️ No existing team found for player:', playerCode);
         }
         
-        // Check if results have been entered (permanently lock roster)
-        const resultsStart = performance.now();
-        console.log('🔍 Checking for race results...');
-        const resultsResponse = await fetch(`/api/results?gameId=${gameId}&checkOnly=true`);
-        const resultsData = await resultsResponse.json();
-        console.log(`⏱️ Results check took ${(performance.now() - resultsStart).toFixed(2)}ms`);
-        
+        // Check if results exist (permanently lock roster)
         if (resultsData.hasResults) {
             salaryCapState.permanentlyLocked = true;
             console.log('🔒 Race results exist - roster permanently locked');
