@@ -1,5 +1,6 @@
 import { getRaceResults, saveRaceResults, hasCommissionerAccess } from './db';
 import { scoreRace } from './scoring-engine';
+import { calculateTemporaryScores, hasTemporaryScores } from './lib/temporary-scoring.js';
 import { neon } from '@neondatabase/serverless';
 import { generateETag, setCacheHeaders, checkETag, send304 } from './lib/cache-utils.js';
 
@@ -118,6 +119,27 @@ export default async function handler(req, res) {
         results = await fetchResults();
       }
       
+      // Check if we should apply temporary scoring
+      // Get game state to check if finalized
+      const [game] = await sql`
+        SELECT results_finalized FROM games WHERE game_id = ${gameId}
+      `;
+      const isFinalized = game?.results_finalized || false;
+      
+      // Apply temporary scoring if appropriate
+      let scoredResultsWithTemp = results;
+      if (!isFinalized && results.length > 0) {
+        // Check if any results have splits without finish times
+        const hasSplitsWithoutFinish = results.some(r => 
+          !r.finish_time && (r.split_5k || r.split_10k || r.split_half || r.split_30k || r.split_35k || r.split_40k)
+        );
+        
+        if (hasSplitsWithoutFinish) {
+          // Apply temporary scoring
+          scoredResultsWithTemp = calculateTemporaryScores(results);
+        }
+      }
+      
       // Transform to legacy format for compatibility
       const legacyResults = {};
       results.forEach(r => {
@@ -127,7 +149,7 @@ export default async function handler(req, res) {
       // Generate ETag for caching
       const responseData = {
         results: legacyResults,
-        scored: results
+        scored: scoredResultsWithTemp
       };
       const etag = generateETag(responseData);
       

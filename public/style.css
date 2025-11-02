@@ -3857,6 +3857,37 @@ footer .btn {
     color: var(--primary-orange);
 }
 
+.team-details-temp-banner {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.team-details-temp-banner .banner-icon {
+    font-size: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.team-details-temp-banner .banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.team-details-temp-banner .banner-text strong {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.team-details-temp-banner .banner-text span {
+    font-size: 12px;
+    opacity: 0.95;
+}
+
 .modal-close-btn {
     background: none;
     border: none;
