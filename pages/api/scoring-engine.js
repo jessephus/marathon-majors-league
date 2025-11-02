@@ -463,9 +463,10 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     return { message: 'No results to score', scored: 0 };
   }
   
-  // Convert finish times to milliseconds if not already done
+  // Convert finish times to milliseconds (always recalculate from finish_time)
+  // finish_time is the source of truth, finish_time_ms is derived for sorting
   results.forEach(result => {
-    if (!result.finish_time_ms && result.finish_time) {
+    if (result.finish_time) {
       result.finish_time_ms = timeStringToMs(result.finish_time);
     }
   });
@@ -635,7 +636,9 @@ function timeStringToMs(timeStr) {
     [minutes, seconds] = numericParts;
   }
 
-  return Math.floor((hours * 3600 + minutes * 60 + seconds) * 1000);
+  // Use Math.round instead of Math.floor to handle floating-point precision
+  // Example: "2:08:09.03" → (2*3600 + 8*60 + 9.03) * 1000 = 7689030 ms
+  return Math.round((hours * 3600 + minutes * 60 + seconds) * 1000);
 }
 
 /**

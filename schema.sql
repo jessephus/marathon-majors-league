@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS race_results (
     game_id VARCHAR(255) NOT NULL,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
     finish_time VARCHAR(13),
+    finish_time_ms BIGINT,
     split_5k VARCHAR(13),
     split_10k VARCHAR(13),
     split_15k VARCHAR(13),
@@ -146,6 +147,7 @@ CREATE TABLE IF NOT EXISTS race_results (
 );
 
 CREATE INDEX idx_results_game_id ON race_results(game_id);
+CREATE INDEX IF NOT EXISTS idx_results_finish_time_ms ON race_results(game_id, finish_time_ms);
 CREATE INDEX idx_results_athlete_id ON race_results(athlete_id);
 
 -- Athlete progression table (year-by-year season's bests)
