@@ -4307,6 +4307,153 @@ footer .btn {
     background-color: #94a3b8;
 }
 
+/* Results Management Table Styles */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.results-table thead {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, #d95700 100%);
+    color: white;
+}
+
+.results-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.results-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s;
+}
+
+.results-table tbody tr:hover {
+    background-color: #fff7ed;
+}
+
+.results-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.results-table td {
+    padding: 16px 12px;
+    font-size: 14px;
+}
+
+.result-row {
+    background-color: white;
+}
+
+.results-management-container {
+    margin-top: 20px;
+}
+
+.results-view-controls {
+    margin-bottom: 20px;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.results-view-controls label {
+    font-weight: 600;
+    color: var(--dark-gray);
+}
+
+.view-selector {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 200px;
+}
+
+.view-selector:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.1);
+}
+
+.bonus-points-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bonus-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    user-select: none;
+}
+
+.bonus-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.results-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.results-actions button {
+    flex: 0 1 auto;
+}
+
+/* Mobile responsiveness for results table */
+@media (max-width: 768px) {
+    .results-table {
+        font-size: 12px;
+    }
+    
+    .results-table th,
+    .results-table td {
+        padding: 12px 8px;
+    }
+}
+
 /* Mobile responsiveness for teams table */
 @media (max-width: 768px) {
     .teams-status-table {
