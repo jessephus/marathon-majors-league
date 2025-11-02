@@ -1971,7 +1971,7 @@ async function displayResultsManagement() {
                         });
                         
                         // Reload data to show updated scores
-                        await loadCommissionerResultsData();
+                        await displayResultsManagement();
                     } else {
                         // Save time data
                         const timeInput = dataCell.querySelector('input[type="text"]');
@@ -2016,9 +2016,6 @@ async function displayResultsManagement() {
                         if (currentView === 'finish') {
                             gameState.results[result.athlete_id] = newTime;
                         }
-                        
-                        // Reload data to show updated scores
-                        await loadCommissionerResultsData();
                     }
                     
                     // Invalidate cache
