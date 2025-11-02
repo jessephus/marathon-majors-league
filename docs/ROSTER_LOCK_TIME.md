@@ -128,7 +128,9 @@ await fetch('/api/game-state?gameId=your-game-id', {
 - The frontend displays times in the user's local timezone
 - EST (Eastern Standard Time) is UTC-5
 - EDT (Eastern Daylight Time) is UTC-4
-- November 2, 2025 falls under EST (before daylight saving ends)
+- **Important**: Daylight Saving Time ends on November 2, 2025 at 2:00 AM
+- Since 8:35 AM is after the DST change, it is in EST (UTC-5), not EDT
+- Therefore: 8:35 AM EST = 13:35 UTC ✓
 
 ## Testing
 
