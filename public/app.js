@@ -2073,7 +2073,16 @@ async function populateAthleteSelect() {
         
         const data = await response.json();
         console.log('[Add Result] Athletes data received:', data);
-        const athletes = data.athletes || [];
+        
+        // Handle both formats: {athletes: [...]} or {men: [...], women: [...]}
+        let athletes = [];
+        if (data.athletes) {
+            athletes = data.athletes;
+        } else if (data.men || data.women) {
+            // Combine men and women arrays
+            athletes = [...(data.men || []), ...(data.women || [])];
+        }
+        
         console.log('[Add Result] Number of athletes:', athletes.length);
         
         if (athletes.length === 0) {
