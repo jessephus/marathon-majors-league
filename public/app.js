@@ -2289,6 +2289,20 @@ function displayDraftResults() {
     });
 }
 
+// Helper function to format split labels for display
+function formatSplitLabel(splitName) {
+    const splitLabels = {
+        '5k': '5K',
+        '10k': '10K',
+        'half': 'Half Marathon',
+        '30k': '30K',
+        '35k': '35K',
+        '40k': '40K'
+    };
+    
+    return splitLabels[splitName] || (splitName ? splitName.toUpperCase() : 'recent split');
+}
+
 // Display leaderboard with team rankings
 async function displayLeaderboard() {
     const container = document.getElementById('leaderboard-display');
@@ -2311,6 +2325,8 @@ async function displayLeaderboard() {
         }
         
         const standings = data.standings || [];
+        const isTemporary = data.isTemporary || false;
+        const projectionInfo = data.projectionInfo || null;
         
         if (standings.length === 0) {
             container.innerHTML = '<p>No standings available yet.</p>';
@@ -2325,6 +2341,20 @@ async function displayLeaderboard() {
         // Build leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container">';
         
+        // Add temporary score indicator if applicable
+        if (isTemporary && projectionInfo) {
+            const splitLabel = formatSplitLabel(projectionInfo.mostCommonSplit);
+            leaderboardHTML += `
+                <div class="temporary-scores-banner">
+                    <span class="banner-icon">⚡</span>
+                    <div class="banner-content">
+                        <strong>Live Projections</strong>
+                        <span class="banner-detail">Based on ${splitLabel} times • Scores will update as race progresses</span>
+                    </div>
+                </div>
+            `;
+        }
+        
         // Show ALL teams with sticky behavior for current player
         standings.forEach((standing, index) => {
             const isCurrentPlayer = standing.player_code === currentPlayerCode;
@@ -2337,6 +2367,11 @@ async function displayLeaderboard() {
         
         // Initialize bidirectional sticky behavior for highlighted row
         initLeaderboardStickyBehavior();
+        
+        // If showing temporary scores, set up auto-refresh
+        if (isTemporary) {
+            setupLeaderboardAutoRefresh();
+        }
         
     } catch (error) {
         console.error('Error displaying leaderboard:', error);
@@ -2479,6 +2514,34 @@ function createLeaderboardRow(standing, isCurrentPlayer = false) {
             </div>
         </div>
     `;
+}
+
+// Auto-refresh leaderboard during live race with temporary scoring
+let leaderboardRefreshInterval = null;
+
+function setupLeaderboardAutoRefresh() {
+    // Clear any existing refresh interval
+    if (leaderboardRefreshInterval) {
+        clearInterval(leaderboardRefreshInterval);
+        leaderboardRefreshInterval = null;
+    }
+    
+    // Set up auto-refresh every 30 seconds during live race
+    leaderboardRefreshInterval = setInterval(async () => {
+        try {
+            // Only refresh if we're still on the leaderboard page
+            const leaderboardPage = document.getElementById('leaderboard-page');
+            if (leaderboardPage && leaderboardPage.classList.contains('active')) {
+                await displayLeaderboard();
+            } else {
+                // Stop refreshing if we navigated away
+                clearInterval(leaderboardRefreshInterval);
+                leaderboardRefreshInterval = null;
+            }
+        } catch (error) {
+            console.error('Error during auto-refresh:', error);
+        }
+    }, 30000); // Refresh every 30 seconds
 }
 
 // Display race results (actual athlete performance)
@@ -5000,7 +5063,17 @@ async function viewTeamDetails(playerCode) {
             ...(team.women || []).map(a => a.id)
         ];
         const teamResults = scoredResults.filter(r => teamAthleteIds.includes(r.athlete_id));
-        const totalPoints = teamResults.reduce((sum, r) => sum + (r.total_points || 0), 0);
+        
+        // Check if we're using temporary scoring
+        const hasTemporaryScoring = teamResults.some(r => r.is_temporary === true);
+        
+        // Calculate total points (use temporary_points if available, otherwise total_points)
+        const totalPoints = teamResults.reduce((sum, r) => {
+            if (hasTemporaryScoring && r.is_temporary) {
+                return sum + (r.temporary_points || 0);
+            }
+            return sum + (r.total_points || 0);
+        }, 0);
         
         // Get display name for avatar and title
         const displayName = team.displayName || playerCode;
@@ -5021,10 +5094,26 @@ async function viewTeamDetails(playerCode) {
                         </div>
                         <button class="modal-close-btn" onclick="closeTeamDetails()">×</button>
                     </div>
+        `;
+        
+        // Add temporary scoring banner if applicable
+        if (hasTemporaryScoring) {
+            modalHTML += `
+                    <div class="team-details-temp-banner">
+                        <span class="banner-icon">⚡</span>
+                        <div class="banner-text">
+                            <strong>Live Projections</strong>
+                            <span>Points based on current pace from splits</span>
+                        </div>
+                    </div>
+            `;
+        }
+        
+        modalHTML += `
                     <div class="team-details-summary">
                         <div class="summary-stat">
                             <div class="stat-label">Total Points</div>
-                            <div class="stat-value">${totalPoints}</div>
+                            <div class="stat-value">${totalPoints}${hasTemporaryScoring ? '*' : ''}</div>
                         </div>
                         <div class="summary-stat">
                             <div class="stat-label">Salary</div>
@@ -5039,14 +5128,17 @@ async function viewTeamDetails(playerCode) {
             modalHTML += '<div class="gender-section"><h3>MEN</h3>';
             team.men.forEach(athlete => {
                 const result = scoredResults.find(r => r.athlete_id === athlete.id);
-                const points = result ? result.total_points || 0 : 0;
-                const placement = result ? result.placement : null;
-                const breakdown = result ? result.breakdown : null;
-                const finishTime = result ? result.finish_time : null;
                 
-                // Calculate gap from first place
+                // Use temporary data if available
+                const isTemporary = result && result.is_temporary === true;
+                const points = isTemporary ? (result.temporary_points || 0) : (result ? result.total_points || 0 : 0);
+                const placement = isTemporary ? (result.projected_placement || null) : (result ? result.placement : null);
+                const finishTime = isTemporary ? (result.projected_finish_time || null) : (result ? result.finish_time : null);
+                const breakdown = result ? result.breakdown : null;
+                
+                // Calculate gap from first place (only for final results)
                 let gapFromFirst = '';
-                if (result && breakdown && breakdown.time_gap) {
+                if (!isTemporary && result && breakdown && breakdown.time_gap) {
                     const gapSeconds = breakdown.time_gap.gap_seconds || 0;
                     if (gapSeconds > 0) {
                         const minutes = Math.floor(gapSeconds / 60);
@@ -5057,7 +5149,10 @@ async function viewTeamDetails(playerCode) {
                 
                 // Create shorthand notation: P=placement, G=time gap, B=bonuses
                 let shorthand = '';
-                if (breakdown) {
+                if (isTemporary) {
+                    // For temporary scoring, just show placement points
+                    shorthand = points > 0 ? `P${points}` : '-';
+                } else if (breakdown) {
                     const parts = [];
                     if (breakdown.placement && breakdown.placement.points > 0) {
                         parts.push(`P${breakdown.placement.points}`);
@@ -5092,7 +5187,7 @@ async function viewTeamDetails(playerCode) {
                         <div class="athlete-card-center">
                             <div class="race-time">${finishTime || '-'}</div>
                             <div class="race-details">
-                                ${placement ? `<span class="race-placement">#${placement}</span>` : ''}
+                                ${placement ? `<span class="race-placement">${isTemporary ? '~' : ''}#${placement}</span>` : ''}
                                 ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
                             </div>
                         </div>
@@ -5114,14 +5209,17 @@ async function viewTeamDetails(playerCode) {
             modalHTML += '<div class="gender-section"><h3>WOMEN</h3>';
             team.women.forEach(athlete => {
                 const result = scoredResults.find(r => r.athlete_id === athlete.id);
-                const points = result ? result.total_points || 0 : 0;
-                const placement = result ? result.placement : null;
-                const breakdown = result ? result.breakdown : null;
-                const finishTime = result ? result.finish_time : null;
                 
-                // Calculate gap from first place
+                // Use temporary data if available
+                const isTemporary = result && result.is_temporary === true;
+                const points = isTemporary ? (result.temporary_points || 0) : (result ? result.total_points || 0 : 0);
+                const placement = isTemporary ? (result.projected_placement || null) : (result ? result.placement : null);
+                const finishTime = isTemporary ? (result.projected_finish_time || null) : (result ? result.finish_time : null);
+                const breakdown = result ? result.breakdown : null;
+                
+                // Calculate gap from first place (only for final results)
                 let gapFromFirst = '';
-                if (result && breakdown && breakdown.time_gap) {
+                if (!isTemporary && result && breakdown && breakdown.time_gap) {
                     const gapSeconds = breakdown.time_gap.gap_seconds || 0;
                     if (gapSeconds > 0) {
                         const minutes = Math.floor(gapSeconds / 60);
@@ -5132,7 +5230,10 @@ async function viewTeamDetails(playerCode) {
                 
                 // Create shorthand notation
                 let shorthand = '';
-                if (breakdown) {
+                if (isTemporary) {
+                    // For temporary scoring, just show placement points
+                    shorthand = points > 0 ? `P${points}` : '-';
+                } else if (breakdown) {
                     const parts = [];
                     if (breakdown.placement && breakdown.placement.points > 0) {
                         parts.push(`P${breakdown.placement.points}`);
@@ -5167,7 +5268,7 @@ async function viewTeamDetails(playerCode) {
                         <div class="athlete-card-center">
                             <div class="race-time">${finishTime || '-'}</div>
                             <div class="race-details">
-                                ${placement ? `<span class="race-placement">#${placement}</span>` : ''}
+                                ${placement ? `<span class="race-placement">${isTemporary ? '~' : ''}#${placement}</span>` : ''}
                                 ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
                             </div>
                         </div>
