@@ -106,18 +106,19 @@
 <body>
   <h3>📊 Import Live Results</h3>
   
-  <div class="warning">
-    ⚠️ <strong>First time using?</strong> Refresh the NYRR page before clicking Import.
-  </div>
+      <div class="header">
+      <h1>🏃 Fantasy Marathon Live Results</h1>
+      <p class="subtitle">Import live split times from NYRR leaderboards</p>
+    </div>
 
   <div class="api-config">
-    ℹ️ <strong>API:</strong> <code id="apiEndpoint">localhost:3000</code><br>
-    Edit <code>popup.js</code> to change for production
+    <strong>API Configuration</strong>
+    <p>Configure the Fantasy Marathon API endpoint below</p>
   </div>
   
   <div class="form-group">
     <label for="gameId">Game ID:</label>
-    <input type="text" id="gameId" value="demo-game" placeholder="Enter game ID">
+    <input type="text" id="gameId" value="default" placeholder="Enter game ID">
   </div>
   
   <div class="form-group">

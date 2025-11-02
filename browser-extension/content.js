@@ -145,15 +145,30 @@ function scrapeLeaderboard() {
       
       // Try to parse structured data from cells
       const cells = row.querySelectorAll('td, div[class*="cell"], span[class*="cell"], div[class*="col"]');
-      let name = null, time = null;
+      let name = null;
+      let times = []; // Collect all time-like values
       
-      cells.forEach((cell) => {
+      // Debug: log cells for first few rows
+      if (index < 5) {
+        const cellTexts = Array.from(cells).map(c => (c.innerText || c.textContent || '').trim());
+        console.log(`📊 Row ${index + 1} cells:`, cellTexts);
+      }
+      
+      cells.forEach((cell, cellIndex) => {
         const cellText = (cell.innerText || cell.textContent || '').trim();
         if (!cellText) return;
         
-        // Time (HH:MM:SS or MM:SS or H:MM:SS)
-        if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(cellText)) {
-          time = normalizeTime(cellText);
+        // Time - look for time pattern even if there's extra text
+        // Match HH:MM:SS or MM:SS or H:MM:SS anywhere in the cell
+        const timeMatch = cellText.match(/(\d{1,2}:\d{2}:\d{2})/);
+        if (timeMatch) {
+          times.push({value: normalizeTime(timeMatch[1]), cellIndex, original: cellText});
+        } else {
+          // Also check for MM:SS format
+          const shortTimeMatch = cellText.match(/^(\d{1,2}:\d{2})$/);
+          if (shortTimeMatch) {
+            times.push({value: normalizeTime(shortTimeMatch[1]), cellIndex, original: cellText});
+          }
         }
         
         // Name (longer text, not time, not country code, not just a number)
@@ -179,19 +194,45 @@ function scrapeLeaderboard() {
         }
       });
       
+      // Pick the right time:
+      // Usually structure is: Place | Name | Time | Pace
+      // We want Time (first time value), not Pace (second time value)
+      // BUT if there's only one time, use it
+      let time = null;
+      if (times.length > 0) {
+        // Debug logging for first few rows
+        if (index < 5) {
+          console.log(`⏱️  Row ${index + 1} found ${times.length} times:`, times);
+        }
+        time = times[0].value;
+      }
+      
       // Only add if we found both name and time
       if (name && time) {
-        const athlete = {
-          name,
-          time
-        };
+        // Additional validation: skip header/junk rows
+        const lowerName = name.toLowerCase();
+        const isJunk = 
+          lowerName.includes('start time') ||
+          lowerName.includes('pro women') ||
+          lowerName.includes('pro men') ||
+          lowerName.includes('marathon') ||
+          lowerName.length < 5;
         
-        athletes.push(athlete);
-        processedCount++;
-        
-        // Log first 5 athletes for verification
-        if (processedCount <= 5) {
-          console.log(`✅ Athlete ${processedCount}:`, athlete);
+        if (!isJunk) {
+          const athlete = {
+            name,
+            time
+          };
+          
+          athletes.push(athlete);
+          processedCount++;
+          
+          // Log first 5 athletes for verification
+          if (processedCount <= 5) {
+            console.log(`✅ Athlete ${processedCount}:`, athlete);
+          }
+        } else {
+          skippedCount++;
         }
       } else {
         skippedCount++;
