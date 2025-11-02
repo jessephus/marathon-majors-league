@@ -45,6 +45,9 @@ let rankingViewState = {
     currentGender: 'men'
 };
 
+// Leaderboard sticky behavior cleanup function
+let leaderboardStickyCleanup = null;
+
 // API base URL - will be relative in production
 const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
 
@@ -1876,6 +1879,9 @@ async function displayLeaderboard() {
         
         container.innerHTML = leaderboardHTML;
         
+        // Initialize bidirectional sticky behavior for highlighted row
+        initLeaderboardStickyBehavior();
+        
     } catch (error) {
         console.error('Error displaying leaderboard:', error);
         container.innerHTML = `
@@ -1886,6 +1892,108 @@ async function displayLeaderboard() {
             </div>
         `;
     }
+}
+
+// Initialize bidirectional sticky behavior for leaderboard highlight
+function initLeaderboardStickyBehavior() {
+    const highlightedRow = document.querySelector('.leaderboard-row-highlight');
+    if (!highlightedRow) return; // No highlighted row
+    
+    // Remove any existing listeners to prevent memory leaks
+    if (leaderboardStickyCleanup) {
+        leaderboardStickyCleanup();
+        leaderboardStickyCleanup = null;
+    }
+    
+    // Track current sticky state to avoid unnecessary DOM updates
+    let currentStickyMode = null; // 'top', 'bottom', or null
+    
+    // Calculate the natural position of the highlighted row
+    function updateStickyBehavior() {
+        // Check if element still exists
+        if (!highlightedRow.isConnected) return;
+        
+        // Temporarily remove sticky classes to get true natural dimensions
+        const wasTop = highlightedRow.classList.contains('sticky-top');
+        const wasBottom = highlightedRow.classList.contains('sticky-bottom');
+        if (wasTop || wasBottom) {
+            highlightedRow.classList.remove('sticky-top', 'sticky-bottom');
+        }
+        
+        // Get natural dimensions and position
+        const rowNaturalTop = highlightedRow.offsetTop;
+        const rowNaturalHeight = highlightedRow.offsetHeight;
+        
+        // Restore previous state temporarily for consistent measurements
+        if (wasTop) highlightedRow.classList.add('sticky-top');
+        if (wasBottom) highlightedRow.classList.add('sticky-bottom');
+        
+        const viewportHeight = window.innerHeight;
+        const scrollTop = window.scrollY;
+        
+        // Header offset (accounting for page header)
+        const headerOffset = 80;
+        const bottomOffset = 20;
+        
+        // Calculate viewport boundaries
+        const viewportTop = scrollTop + headerOffset;
+        const viewportBottom = scrollTop + viewportHeight - bottomOffset;
+        
+        // Determine what sticky mode should be active
+        let newStickyMode = null;
+        if (rowNaturalTop < viewportTop) {
+            newStickyMode = 'top';
+        } else if (rowNaturalTop + rowNaturalHeight > viewportBottom) {
+            newStickyMode = 'bottom';
+        }
+        
+        // Only update DOM if sticky mode changed
+        if (newStickyMode !== currentStickyMode) {
+            highlightedRow.classList.remove('sticky-top', 'sticky-bottom');
+            if (newStickyMode === 'top') {
+                highlightedRow.classList.add('sticky-top');
+            } else if (newStickyMode === 'bottom') {
+                highlightedRow.classList.add('sticky-bottom');
+            }
+            currentStickyMode = newStickyMode;
+        }
+    }
+    
+    // Update on scroll with requestAnimationFrame throttling
+    let ticking = false;
+    function onScroll() {
+        if (!ticking) {
+            ticking = true;
+            window.requestAnimationFrame(() => {
+                try {
+                    if (highlightedRow.isConnected) {
+                        updateStickyBehavior();
+                    }
+                } finally {
+                    ticking = false;
+                }
+            });
+        }
+    }
+    
+    function onResize() {
+        if (highlightedRow.isConnected) {
+            currentStickyMode = null; // Force recalculation on resize
+            updateStickyBehavior();
+        }
+    }
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    
+    // Store cleanup function to prevent memory leaks
+    leaderboardStickyCleanup = () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onResize);
+    };
+    
+    // Initial update
+    updateStickyBehavior();
 }
 
 // Create a single leaderboard row
