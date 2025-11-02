@@ -4334,6 +4334,29 @@ footer .btn {
     margin-top: 20px;
 }
 
+.actions-cell {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
 /* Mobile responsiveness for results table */
 @media (max-width: 768px) {
     .results-table {

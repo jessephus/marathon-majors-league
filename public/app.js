@@ -1811,7 +1811,7 @@ async function displayResultsManagement() {
             
             // Gender column
             const genderCell = document.createElement('td');
-            genderCell.textContent = athlete.gender === 'men' ? 'Men' : 'Women';
+            genderCell.textContent = athlete.gender.charAt(0).toUpperCase() + athlete.gender.slice(1);
             row.appendChild(genderCell);
             
             // Finish time column with inline editing
@@ -1848,15 +1848,12 @@ async function displayResultsManagement() {
             
             // Actions column with Save and Delete buttons
             const actionsCell = document.createElement('td');
-            actionsCell.style.display = 'flex';
-            actionsCell.style.gap = '8px';
+            actionsCell.className = 'actions-cell';
             
             // Save button
             const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn-mini';
+            saveBtn.className = 'btn-mini btn-success';
             saveBtn.textContent = 'Save';
-            saveBtn.style.backgroundColor = '#28a745';
-            saveBtn.style.color = 'white';
             saveBtn.onclick = async () => {
                 const newTime = timeInput.value.trim();
                 if (newTime && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(newTime)) {
@@ -1885,7 +1882,7 @@ async function displayResultsManagement() {
                         displayResultsManagement();
                     } catch (error) {
                         console.error('Error saving result:', error);
-                        alert('Error saving result. Please try again.');
+                        alert(`Error saving result: ${error.message}. Please try again.`);
                     }
                 } else {
                     alert('Invalid time format. Please use HH:MM:SS format (e.g., 2:05:30)');
@@ -1894,10 +1891,8 @@ async function displayResultsManagement() {
             
             // Delete button
             const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn-mini';
+            deleteBtn.className = 'btn-mini btn-danger';
             deleteBtn.textContent = 'Delete';
-            deleteBtn.style.backgroundColor = '#dc3545';
-            deleteBtn.style.color = 'white';
             deleteBtn.onclick = async () => {
                 if (confirm(`Are you sure you want to delete the result for ${athlete.name}?`)) {
                     try {
@@ -1918,7 +1913,7 @@ async function displayResultsManagement() {
                         displayResultsManagement();
                     } catch (error) {
                         console.error('Error deleting result:', error);
-                        alert('Error deleting result. Please try again.');
+                        alert(`Error deleting result: ${error.message}. Please try again.`);
                     }
                 }
             };
