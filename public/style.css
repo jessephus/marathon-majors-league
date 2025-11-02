@@ -77,10 +77,14 @@ footer .footer-copyright {
 }
 
 footer .game-switcher {
-    display: flex;
+    display: none; /* Hidden by default, only shown for commissioners */
     align-items: center;
     gap: 6px;
     font-size: 0.85rem;
+}
+
+footer .game-switcher.visible {
+    display: flex; /* Show when commissioner is logged in */
 }
 
 footer .game-select {

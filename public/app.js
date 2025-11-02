@@ -932,9 +932,21 @@ async function restoreSession() {
 function updateFooterButtons() {
     const footer = document.querySelector('footer');
     const footerActions = footer ? footer.querySelector('.footer-actions') : null;
+    const gameSwitcher = document.querySelector('.game-switcher');
     
     console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
     console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    
+    // Update game-switcher visibility based on commissioner status
+    if (gameSwitcher) {
+        if (commissionerSession.isCommissioner) {
+            gameSwitcher.classList.add('visible');
+            console.log('Game switcher shown (commissioner logged in)');
+        } else {
+            gameSwitcher.classList.remove('visible');
+            console.log('Game switcher hidden (not a commissioner)');
+        }
+    }
     
     // Remove existing session buttons if they exist
     const existingLogout = document.getElementById('logout-button');
