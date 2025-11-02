@@ -5007,47 +5007,69 @@ function populateAthleteBasicInfo(athlete) {
     }
     
     // Basic info
-    document.getElementById('modal-athlete-name').textContent = athlete.name;
-    document.getElementById('modal-athlete-country').textContent = getCountryFlagEmoji(athlete.country);
-    document.getElementById('modal-athlete-gender').textContent = athlete.gender === 'men' ? 'Men' : 'Women';
-    document.getElementById('modal-athlete-age').textContent = athlete.age ? `${athlete.age}yo` : 'Age N/A';
+    const nameEl = document.getElementById('modal-athlete-name');
+    const countryEl = document.getElementById('modal-athlete-country');
+    const genderEl = document.getElementById('modal-athlete-gender');
+    const ageEl = document.getElementById('modal-athlete-age');
+    
+    if (nameEl) nameEl.textContent = athlete.name;
+    if (countryEl) countryEl.textContent = getCountryFlagEmoji(athlete.country);
+    if (genderEl) genderEl.textContent = athlete.gender === 'men' ? 'Men' : 'Women';
+    if (ageEl) ageEl.textContent = athlete.age ? `${athlete.age}yo` : 'Age N/A';
     
     // Masthead stats
-    document.getElementById('modal-athlete-pb').textContent = athlete.pb || 'N/A';
-    document.getElementById('modal-athlete-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
+    const pbEl = document.getElementById('modal-athlete-pb');
+    const marathonRankEl = document.getElementById('modal-athlete-marathon-rank');
+    
+    if (pbEl) pbEl.textContent = athlete.pb || 'N/A';
+    if (marathonRankEl) marathonRankEl.textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
     
     // Overview tab stats (duplicated for overview section)
-    document.getElementById('overview-pb').textContent = athlete.pb || 'N/A';
-    document.getElementById('modal-athlete-sb').textContent = athlete.seasonBest || athlete.pb || 'N/A';
-    document.getElementById('overview-marathon-rank').textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
-    document.getElementById('modal-athlete-overall-rank').textContent = athlete.overallRank ? `#${athlete.overallRank}` : 'N/A';
+    const overviewPbEl = document.getElementById('overview-pb');
+    const sbEl = document.getElementById('modal-athlete-sb');
+    const overviewMarathonRankEl = document.getElementById('overview-marathon-rank');
+    const overallRankEl = document.getElementById('modal-athlete-overall-rank');
+    
+    if (overviewPbEl) overviewPbEl.textContent = athlete.pb || 'N/A';
+    if (sbEl) sbEl.textContent = athlete.seasonBest || athlete.pb || 'N/A';
+    if (overviewMarathonRankEl) overviewMarathonRankEl.textContent = athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A';
+    if (overallRankEl) overallRankEl.textContent = athlete.overallRank ? `#${athlete.overallRank}` : 'N/A';
     
     // Sponsor
     const sponsorSection = document.getElementById('modal-athlete-sponsor-section');
-    if (athlete.sponsor) {
-        document.getElementById('modal-athlete-sponsor').textContent = athlete.sponsor;
-        sponsorSection.style.display = 'flex';
-    } else {
-        sponsorSection.style.display = 'none';
+    const sponsorEl = document.getElementById('modal-athlete-sponsor');
+    if (sponsorSection && sponsorEl) {
+        if (athlete.sponsor) {
+            sponsorEl.textContent = athlete.sponsor;
+            sponsorSection.style.display = 'flex';
+        } else {
+            sponsorSection.style.display = 'none';
+        }
     }
     
     // Profile tab
-    document.getElementById('modal-athlete-dob').textContent = athlete.dateOfBirth ? 
+    const dobEl = document.getElementById('modal-athlete-dob');
+    const waIdEl = document.getElementById('modal-athlete-wa-id');
+    const roadRankEl = document.getElementById('modal-athlete-road-rank');
+    
+    if (dobEl) dobEl.textContent = athlete.dateOfBirth ? 
         new Date(athlete.dateOfBirth).toLocaleDateString() : 'N/A';
-    document.getElementById('modal-athlete-wa-id').textContent = athlete.worldAthleticsId || 'N/A';
-    document.getElementById('modal-athlete-road-rank').textContent = athlete.roadRunningRank ? 
+    if (waIdEl) waIdEl.textContent = athlete.worldAthleticsId || 'N/A';
+    if (roadRankEl) roadRankEl.textContent = athlete.roadRunningRank ? 
         `#${athlete.roadRunningRank}` : 'N/A';
     
     // World Athletics link
     const waLink = document.getElementById('modal-wa-link');
-    if (athlete.worldAthleticsProfileUrl) {
-        waLink.href = athlete.worldAthleticsProfileUrl;
-        waLink.style.display = 'flex';
-    } else if (athlete.worldAthleticsId) {
-        waLink.href = `https://worldathletics.org/athletes/_/${athlete.worldAthleticsId}`;
-        waLink.style.display = 'flex';
-    } else {
-        waLink.style.display = 'none';
+    if (waLink) {
+        if (athlete.worldAthleticsProfileUrl) {
+            waLink.href = athlete.worldAthleticsProfileUrl;
+            waLink.style.display = 'flex';
+        } else if (athlete.worldAthleticsId) {
+            waLink.href = `https://worldathletics.org/athletes/_/${athlete.worldAthleticsId}`;
+            waLink.style.display = 'flex';
+        } else {
+            waLink.style.display = 'none';
+        }
     }
 }
 
