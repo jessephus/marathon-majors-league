@@ -50,6 +50,7 @@ async function calculateStandings(gameId) {
   const hasSplitsWithoutFinish = allResults.some(r => 
     !r.finish_time && (r.split_5k || r.split_10k || r.split_half || r.split_30k || r.split_35k || r.split_40k)
   );
+  const hasAnyFinishTimes = allResults.some(r => r.finish_time !== null);
   const useTemporaryScoring = hasAnyResults && !isFinalized && hasSplitsWithoutFinish;
   
   let resultsWithScores = allResults;
@@ -159,6 +160,7 @@ async function calculateStandings(gameId) {
   return {
     standings,
     isTemporary: useTemporaryScoring,
+    hasFinishTimes: hasAnyFinishTimes,
     projectionInfo: useTemporaryScoring ? projectionInfo : null
   };
 }
@@ -266,21 +268,25 @@ export default async function handler(req, res) {
             });
             
             // Check if we should use cached or recalculate for temporary scoring
-            // If there are splits without finish times, we need fresh calculation
-            const needsFreshCalc = await sql`
-              SELECT COUNT(*) as count
+            // Also check for finish times in a single query
+            const resultsCheck = await sql`
+              SELECT 
+                COUNT(*) FILTER (WHERE finish_time IS NULL AND 
+                  (split_5k IS NOT NULL OR split_10k IS NOT NULL OR split_half IS NOT NULL 
+                   OR split_30k IS NOT NULL OR split_35k IS NOT NULL OR split_40k IS NOT NULL)) as splits_without_finish,
+                COUNT(*) FILTER (WHERE finish_time IS NOT NULL) as finish_times
               FROM race_results
               WHERE game_id = ${gameId}
-                AND finish_time IS NULL
-                AND (split_5k IS NOT NULL OR split_10k IS NOT NULL OR split_half IS NOT NULL 
-                     OR split_30k IS NOT NULL OR split_35k IS NOT NULL OR split_40k IS NOT NULL)
             `;
             
-            if (needsFreshCalc[0]?.count > 0) {
+            const needsFreshCalc = resultsCheck[0]?.splits_without_finish > 0;
+            const hasFinishTimes = resultsCheck[0]?.finish_times > 0;
+            
+            if (needsFreshCalc) {
               // Recalculate for temporary scoring
               standingsData = null;
             } else {
-              standingsData = { standings: cached, isTemporary: false, projectionInfo: null };
+              standingsData = { standings: cached, isTemporary: false, hasFinishTimes, projectionInfo: null };
             }
           }
         } catch (error) {
@@ -299,10 +305,10 @@ export default async function handler(req, res) {
         }
       }
       
-      const { standings, isTemporary: isTempScoring, projectionInfo: projection } = standingsData;
+      const { standings, isTemporary: isTempScoring, hasFinishTimes, projectionInfo: projection } = standingsData;
       
       // Generate ETag for client-side caching
-      const etag = generateETag({ standings, isTemporary: isTempScoring, projectionInfo: projection });
+      const etag = generateETag({ standings, isTemporary: isTempScoring, hasFinishTimes, projectionInfo: projection });
       res.setHeader('ETag', `"${etag}"`);
       
       // Use shorter cache times for temporary scoring
@@ -331,6 +337,7 @@ export default async function handler(req, res) {
         hasResults: true,
         cached: useCache && standings.length > 0 && !isTempScoring,
         isTemporary: isTempScoring,
+        hasFinishTimes,
         projectionInfo: projection
       });
 
@@ -348,6 +355,7 @@ export default async function handler(req, res) {
         gameId,
         standings: standingsData.standings,
         isTemporary: standingsData.isTemporary,
+        hasFinishTimes: standingsData.hasFinishTimes,
         projectionInfo: standingsData.projectionInfo
       });
 
