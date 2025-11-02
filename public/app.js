@@ -1754,7 +1754,7 @@ async function displayResultsManagement() {
             throw new Error('Failed to fetch results');
         }
         const data = await response.json();
-        const results = data.results || {};
+        const results = data.results || {}; // Object: { athlete_id: finish_time }
         
         // Get all unique athletes from teams
         const allAthletes = new Set();
@@ -1768,8 +1768,7 @@ async function displayResultsManagement() {
         
         // Filter athletes that have results entered
         const athletesWithResults = athleteList.filter(athlete => {
-            const resultEntry = results.find(r => r.athlete_id === athlete.id);
-            return resultEntry && resultEntry.finish_time;
+            return results[athlete.id] && results[athlete.id].trim() !== '';
         });
         
         if (athletesWithResults.length === 0) {
@@ -1785,15 +1784,14 @@ async function displayResultsManagement() {
         
         // Sort athletes by finish time
         athletesWithResults.sort((a, b) => {
-            const timeA = results.find(r => r.athlete_id === a.id)?.finish_time || '';
-            const timeB = results.find(r => r.athlete_id === b.id)?.finish_time || '';
+            const timeA = results[a.id] || '';
+            const timeB = results[b.id] || '';
             return timeA.localeCompare(timeB);
         });
         
         // Build table rows
         athletesWithResults.forEach(athlete => {
-            const resultEntry = results.find(r => r.athlete_id === athlete.id);
-            const finishTime = resultEntry?.finish_time || '';
+            const finishTime = results[athlete.id] || '';
             
             const row = document.createElement('tr');
             row.className = 'result-row';
