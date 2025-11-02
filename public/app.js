@@ -1796,9 +1796,26 @@ async function displayResultsManagement() {
         // Use the scored array which has full athlete info
         const scoredResults = data.scored || [];
         
-        // Filter to only athletes with finish times
+        // Filter to only athletes with ANY results (finish time, splits, or bonus points)
         const athletesWithResults = scoredResults.filter(result => {
-            return result.finish_time && result.finish_time.trim() !== '';
+            // Check if athlete has finish time
+            if (result.finish_time && result.finish_time.trim() !== '') {
+                return true;
+            }
+            // Check if athlete has any split times
+            if ((result.split_5k && result.split_5k.trim() !== '') ||
+                (result.split_10k && result.split_10k.trim() !== '') ||
+                (result.split_half && result.split_half.trim() !== '') ||
+                (result.split_30k && result.split_30k.trim() !== '') ||
+                (result.split_35k && result.split_35k.trim() !== '') ||
+                (result.split_40k && result.split_40k.trim() !== '')) {
+                return true;
+            }
+            // Check if athlete has any bonus points
+            if (result.performance_bonus_points > 0 || result.record_bonus_points > 0) {
+                return true;
+            }
+            return false;
         });
         
         if (athletesWithResults.length === 0) {
