@@ -2060,19 +2060,13 @@ async function populateAthleteSelect() {
     }
     
     try {
-        // Fetch all athletes
+        // Fetch all athletes confirmed for NYC Marathon
         const response = await fetch(`${API_BASE}/api/athletes`);
         if (!response.ok) {
             throw new Error('Failed to fetch athletes');
         }
         const data = await response.json();
         const athletes = data.athletes || [];
-        
-        // Get current results to filter out athletes that already have results
-        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
-        const resultsData = await resultsResponse.json();
-        const existingResults = resultsData.scored || [];
-        const existingAthleteIds = new Set(existingResults.map(r => r.athlete_id));
         
         // Sort athletes by name
         const sortedAthletes = [...athletes].sort((a, b) => {
@@ -2081,19 +2075,14 @@ async function populateAthleteSelect() {
             return nameA.localeCompare(nameB);
         });
         
-        // Add athletes to select (excluding those with existing results)
+        // Add all confirmed athletes to select
         sortedAthletes.forEach(athlete => {
-            if (!existingAthleteIds.has(athlete.id)) {
-                const option = document.createElement('option');
-                option.value = athlete.id;
-                option.textContent = `${athlete.name} (${athlete.country}) - ${athlete.gender}`;
-                select.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = athlete.id;
+            option.textContent = `${athlete.name} (${athlete.country}) - ${athlete.gender}`;
+            select.appendChild(option);
         });
         
-        if (select.options.length === 1) {
-            alert('All athletes already have results entered. Use the table to edit existing results.');
-        }
     } catch (error) {
         console.error('Error loading athletes:', error);
         alert('Error loading athletes. Please try again.');
