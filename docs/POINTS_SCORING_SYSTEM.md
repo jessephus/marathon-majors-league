@@ -37,10 +37,15 @@ Awarded when an athlete runs the second half faster than the first half, demonst
 #### Even Pace (+1 point)
 Awarded when the difference between first and second half times is within 0.5% of total time, showing consistent pacing throughout.
 
+**Pacing Bonus Exclusivity**: Negative Split and Even Pace bonuses are **mutually exclusive** - only one can be awarded per athlete. Negative Split takes precedence when both conditions are met.
+
 #### Fast Finish Kick (+1 point)
 Awarded when the final 5km is run 3% faster than average pace, demonstrating strong closing speed.
 
-**Note**: Multiple performance bonuses can stack unless explicitly excluded in the configuration.
+**Stacking Rules**: 
+- Negative Split and Even Pace **cannot** stack (mutually exclusive)
+- Fast Finish Kick **can** stack with either pacing bonus
+- Maximum performance bonuses: 3 points (either pacing bonus + fast finish)
 
 ### 🌎 Record Bonuses
 

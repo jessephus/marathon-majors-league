@@ -1863,33 +1863,45 @@ async function displayResultsManagement() {
             const dataCell = document.createElement('td');
             
             if (currentView === 'bonuses') {
-                // Show bonus points checkboxes
+                // Show record eligibility checkboxes
+                // Performance bonuses are automatically calculated from splits
                 const bonusContainer = document.createElement('div');
                 bonusContainer.className = 'bonus-points-container';
+                bonusContainer.style.display = 'flex';
+                bonusContainer.style.flexDirection = 'column';
+                bonusContainer.style.gap = '8px';
                 
-                const perfBonus = document.createElement('label');
-                perfBonus.className = 'bonus-checkbox';
-                const perfCheck = document.createElement('input');
-                perfCheck.type = 'checkbox';
-                perfCheck.checked = result.performance_bonus_points > 0;
-                perfCheck.dataset.athleteId = result.athlete_id;
-                perfCheck.dataset.bonusType = 'performance';
-                perfBonus.appendChild(perfCheck);
-                perfBonus.appendChild(document.createTextNode(' Performance Bonus (+' + (result.performance_bonus_points || 0) + ' pts)'));
-                bonusContainer.appendChild(perfBonus);
+                // Note about performance bonuses
+                const perfNote = document.createElement('div');
+                perfNote.style.fontSize = '0.85em';
+                perfNote.style.color = '#666';
+                perfNote.style.marginBottom = '4px';
+                perfNote.textContent = 'Performance Bonus (+' + (result.performance_bonus_points || 0) + ' pts) - auto-calculated from splits';
+                bonusContainer.appendChild(perfNote);
                 
-                bonusContainer.appendChild(document.createElement('br'));
+                // World Record checkbox
+                const wrBonus = document.createElement('label');
+                wrBonus.className = 'bonus-checkbox';
+                const wrCheck = document.createElement('input');
+                wrCheck.type = 'checkbox';
+                wrCheck.checked = result.record_type === 'WORLD' || result.record_type === 'BOTH';
+                wrCheck.dataset.athleteId = result.athlete_id;
+                wrCheck.dataset.recordType = 'world';
+                wrBonus.appendChild(wrCheck);
+                wrBonus.appendChild(document.createTextNode(' World Record (+15 pts)'));
+                bonusContainer.appendChild(wrBonus);
                 
-                const recordBonus = document.createElement('label');
-                recordBonus.className = 'bonus-checkbox';
-                const recordCheck = document.createElement('input');
-                recordCheck.type = 'checkbox';
-                recordCheck.checked = result.record_bonus_points > 0;
-                recordCheck.dataset.athleteId = result.athlete_id;
-                recordCheck.dataset.bonusType = 'record';
-                recordBonus.appendChild(recordCheck);
-                recordBonus.appendChild(document.createTextNode(' Record Bonus (+' + (result.record_bonus_points || 0) + ' pts)'));
-                bonusContainer.appendChild(recordBonus);
+                // Course Record checkbox
+                const crBonus = document.createElement('label');
+                crBonus.className = 'bonus-checkbox';
+                const crCheck = document.createElement('input');
+                crCheck.type = 'checkbox';
+                crCheck.checked = result.record_type === 'COURSE' || result.record_type === 'BOTH';
+                crCheck.dataset.athleteId = result.athlete_id;
+                crCheck.dataset.recordType = 'course';
+                crBonus.appendChild(crCheck);
+                crBonus.appendChild(document.createTextNode(' Course Record (+5 pts)'));
+                bonusContainer.appendChild(crBonus);
                 
                 dataCell.appendChild(bonusContainer);
             } else {
@@ -1949,15 +1961,24 @@ async function displayResultsManagement() {
             saveBtn.onclick = async () => {
                 try {
                     if (currentView === 'bonuses') {
-                        // Save bonus points
-                        const perfCheck = dataCell.querySelector('input[data-bonus-type="performance"]');
-                        const recordCheck = dataCell.querySelector('input[data-bonus-type="record"]');
+                        // Save record eligibility (performance bonuses are auto-calculated)
+                        const wrCheck = dataCell.querySelector('input[data-record-type="world"]');
+                        const crCheck = dataCell.querySelector('input[data-record-type="course"]');
+                        
+                        let recordType = 'NONE';
+                        if (wrCheck.checked && crCheck.checked) {
+                            recordType = 'BOTH';
+                        } else if (wrCheck.checked) {
+                            recordType = 'WORLD';
+                        } else if (crCheck.checked) {
+                            recordType = 'COURSE';
+                        }
                         
                         const updateData = {
                             [result.athlete_id]: {
                                 finish_time: result.finish_time,
-                                performance_bonus_points: perfCheck.checked ? 2 : 0,
-                                record_bonus_points: recordCheck.checked ? 5 : 0
+                                record_type: recordType,
+                                record_status: recordType !== 'NONE' ? 'confirmed' : 'none'
                             }
                         };
                         
@@ -5419,7 +5440,7 @@ function showPointsInfo() {
                         </div>
                         <div class="notation-row">
                             <span class="notation-code">B#</span>
-                            <span class="notation-desc"><strong>Performance Bonuses</strong> - +2 pts for negative split (faster 2nd half), +1 pt for even pace, +1 pt for fast finish kick</span>
+                            <span class="notation-desc"><strong>Performance Bonuses</strong> - +2 pts for negative split (faster 2nd half) OR +1 pt for even pace (mutually exclusive), PLUS +1 pt for fast finish kick (stackable)</span>
                         </div>
                         <div class="notation-row">
                             <span class="notation-code">R#</span>
@@ -5427,11 +5448,11 @@ function showPointsInfo() {
                         </div>
                     </div>
                     <div class="notation-example">
-                        <strong>Example:</strong> "P10+G5+B2" = 17 total points
+                        <strong>Example:</strong> "P10+G5+B3" = 18 total points
                         <ul>
                             <li>10 pts for 1st place finish</li>
                             <li>+5 pts for finishing within 60 seconds of winner</li>
-                            <li>+2 pts for performance bonuses (negative split)</li>
+                            <li>+3 pts for performance bonuses (negative split +2, fast finish kick +1)</li>
                         </ul>
                     </div>
                 </div>

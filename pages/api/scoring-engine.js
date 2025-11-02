@@ -275,24 +275,27 @@ function applyBonusExclusions(bonuses, exclusions) {
 function calculatePerformanceBonuses(result, raceDistanceMeters, rules) {
   const bonuses = [];
   
-  // Check negative split
+  // Check negative split first (takes precedence over even pace)
   const negativeSplit = checkNegativeSplit(
     result.first_half_time_ms,
     result.second_half_time_ms,
     rules
   );
-  if (negativeSplit) bonuses.push(negativeSplit);
   
-  // Check even pace
-  const evenPace = checkEvenPace(
+  // Check even pace only if NO negative split
+  // These bonuses are mutually exclusive - you get one or the other, not both
+  const evenPace = !negativeSplit ? checkEvenPace(
     result.first_half_time_ms,
     result.second_half_time_ms,
     result.finish_time_ms,
     rules
-  );
+  ) : null;
+  
+  // Add whichever pacing bonus applies (if any)
+  if (negativeSplit) bonuses.push(negativeSplit);
   if (evenPace) bonuses.push(evenPace);
   
-  // Check fast finish kick
+  // Check fast finish kick (can stack with either pacing bonus)
   const fastFinish = checkFastFinishKick(
     result.last_5k_time_ms,
     result.finish_time_ms,
@@ -442,9 +445,6 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
       rr.athlete_id,
       rr.finish_time,
       rr.finish_time_ms,
-      rr.first_half_time_ms,
-      rr.second_half_time_ms,
-      rr.last_5k_time_ms,
       rr.split_5k,
       rr.split_10k,
       rr.split_half,
@@ -475,6 +475,19 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
   results.forEach(result => {
     if (result.finish_time) {
       result.finish_time_ms = timeStringToMs(result.finish_time);
+    }
+    
+    // Calculate derived time values for performance bonus calculations
+    // These are not stored in DB but computed from split times
+    if (result.split_half && result.finish_time_ms) {
+      result.first_half_time_ms = timeStringToMs(result.split_half);
+      result.second_half_time_ms = result.finish_time_ms - result.first_half_time_ms;
+    }
+    
+    // Calculate last 5k time (from 40k split to finish)
+    if (result.split_40k && result.finish_time_ms) {
+      const split40kMs = timeStringToMs(result.split_40k);
+      result.last_5k_time_ms = result.finish_time_ms - split40kMs;
     }
   });
   
