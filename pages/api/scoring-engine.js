@@ -464,7 +464,14 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
   }
   
   // Convert finish times to milliseconds (always recalculate from finish_time)
-  // finish_time is the source of truth, finish_time_ms is derived for sorting
+  // 
+  // Data Model:
+  // - finish_time (VARCHAR): Source of truth, human-readable, entered by users
+  // - finish_time_ms (BIGINT): Derived value for fast sorting and tie-breaking
+  // 
+  // We always recalculate finish_time_ms from finish_time to ensure consistency,
+  // especially when times are updated with sub-second precision (e.g., "02:08:09.03").
+  // This guarantees that finish_time_ms accurately reflects the current finish_time value.
   results.forEach(result => {
     if (result.finish_time) {
       result.finish_time_ms = timeStringToMs(result.finish_time);
@@ -511,8 +518,9 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     // Calculate placement points
     const placementPoints = calculatePlacementPoints(result.placement, rules);
     
-    // Calculate time gap (relative to gender winner)
-    const gapSeconds = Math.floor((result.finish_time_ms - winnerTime) / 1000);
+    // Calculate time gap (relative to gender winner) with sub-second precision
+    // Preserve decimals for gaps < 1 second (e.g., 0.03s difference)
+    const gapSeconds = (result.finish_time_ms - winnerTime) / 1000;
     const timeGapPoints = calculateTimeGapPoints(gapSeconds, rules.time_gap_windows);
     
     // Calculate performance bonuses

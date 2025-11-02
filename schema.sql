@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS race_results (
     split_40k VARCHAR(13),
     placement INTEGER,
     placement_points INTEGER,
-    time_gap_seconds INTEGER,
+    time_gap_seconds NUMERIC(10,3),
     time_gap_points INTEGER,
     performance_bonus_points INTEGER,
     record_bonus_points INTEGER,

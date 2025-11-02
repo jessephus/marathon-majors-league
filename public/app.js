@@ -2726,6 +2726,60 @@ function renderFilteredRaceResults(gender, splitType) {
     container.innerHTML = resultsHTML;
 }
 
+// Helper: Round time to nearest second (for display)
+function roundTimeToSecond(timeStr) {
+    if (!timeStr || timeStr === 'DNF' || timeStr === 'DNS' || timeStr === 'N/A') {
+        return timeStr;
+    }
+    
+    // Parse time string (H:MM:SS or H:MM:SS.mmm)
+    const parts = timeStr.split(':');
+    if (parts.length !== 3) return timeStr;
+    
+    const hours = parseInt(parts[0]);
+    const minutes = parseInt(parts[1]);
+    const secondsWithDecimal = parseFloat(parts[2]);
+    
+    // Round to nearest second
+    const roundedSeconds = Math.round(secondsWithDecimal);
+    
+    // Handle 60 seconds case (round up to next minute)
+    if (roundedSeconds >= 60) {
+        const newMinutes = minutes + 1;
+        if (newMinutes >= 60) {
+            return `${hours + 1}:00:00`;
+        }
+        return `${hours}:${newMinutes.toString().padStart(2, '0')}:00`;
+    }
+    
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${roundedSeconds.toString().padStart(2, '0')}`;
+}
+
+// Helper: Format time gap with sub-second precision
+function formatTimeGap(gapSeconds) {
+    if (gapSeconds <= 0) return '';
+    
+    const minutes = Math.floor(gapSeconds / 60);
+    const seconds = gapSeconds % 60;
+    
+    // Show sub-second precision if gap is less than 1 second
+    if (gapSeconds < 1) {
+        return `+0:00.${Math.round(seconds * 100).toString().padStart(2, '0')}`;
+    }
+    
+    // Show decimal seconds if there's a fractional part
+    const wholeSec = Math.floor(seconds);
+    const decimal = seconds - wholeSec;
+    
+    if (decimal > 0) {
+        const decimalStr = Math.round(decimal * 100).toString().padStart(2, '0');
+        return `+${minutes}:${wholeSec.toString().padStart(2, '0')}.${decimalStr}`;
+    }
+    
+    // No decimals needed
+    return `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 // Create a single race result row
 function createRaceResultRow(result, athlete, splitType = 'finish') {
     const placement = result.placement || '-';
@@ -2739,6 +2793,10 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     switch(splitType) {
         case 'finish':
             displayTime = result.finish_time || 'DNF';
+            // Round finish time to nearest second for display
+            if (displayTime !== 'DNF' && displayTime !== 'DNS' && displayTime !== 'N/A') {
+                displayTime = roundTimeToSecond(displayTime);
+            }
             timeLabel = 'Finish';
             break;
         case '5k':
@@ -2772,9 +2830,7 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     if (splitType === 'finish' && result.breakdown && result.breakdown.time_gap) {
         const gapSeconds = result.breakdown.time_gap.gap_seconds || 0;
         if (gapSeconds > 0) {
-            const minutes = Math.floor(gapSeconds / 60);
-            const seconds = Math.floor(gapSeconds % 60);
-            gapFromFirst = `+${minutes}:${seconds.toString().padStart(2, '0')}`;
+            gapFromFirst = formatTimeGap(gapSeconds);
         }
     }
 
