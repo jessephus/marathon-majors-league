@@ -268,28 +268,24 @@ export default async function handler(req, res) {
             });
             
             // Check if we should use cached or recalculate for temporary scoring
-            // If there are splits without finish times, we need fresh calculation
-            const needsFreshCalc = await sql`
-              SELECT COUNT(*) as count
+            // Also check for finish times in a single query
+            const resultsCheck = await sql`
+              SELECT 
+                COUNT(*) FILTER (WHERE finish_time IS NULL AND 
+                  (split_5k IS NOT NULL OR split_10k IS NOT NULL OR split_half IS NOT NULL 
+                   OR split_30k IS NOT NULL OR split_35k IS NOT NULL OR split_40k IS NOT NULL)) as splits_without_finish,
+                COUNT(*) FILTER (WHERE finish_time IS NOT NULL) as finish_times
               FROM race_results
               WHERE game_id = ${gameId}
-                AND finish_time IS NULL
-                AND (split_5k IS NOT NULL OR split_10k IS NOT NULL OR split_half IS NOT NULL 
-                     OR split_30k IS NOT NULL OR split_35k IS NOT NULL OR split_40k IS NOT NULL)
             `;
             
-            if (needsFreshCalc[0]?.count > 0) {
+            const needsFreshCalc = resultsCheck[0]?.splits_without_finish > 0;
+            const hasFinishTimes = resultsCheck[0]?.finish_times > 0;
+            
+            if (needsFreshCalc) {
               // Recalculate for temporary scoring
               standingsData = null;
             } else {
-              // Check if there are any finish times (for banner display)
-              const finishTimesCheck = await sql`
-                SELECT COUNT(*) as count
-                FROM race_results
-                WHERE game_id = ${gameId}
-                  AND finish_time IS NOT NULL
-              `;
-              const hasFinishTimes = finishTimesCheck[0]?.count > 0;
               standingsData = { standings: cached, isTemporary: false, hasFinishTimes, projectionInfo: null };
             }
           }
