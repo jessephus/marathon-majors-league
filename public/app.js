@@ -2341,8 +2341,24 @@ async function displayLeaderboard() {
         // Build leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container">';
         
-        // Add temporary score indicator if applicable
-        if (isTemporary && projectionInfo) {
+        // Determine banner state
+        // Case 1: Race finished with finish times, but not yet finalized (manual review)
+        // Case 2: Live projections based on splits (race in progress)
+        const raceFinishedNotFinalized = !isTemporary && !gameState.resultsFinalized && standings.length > 0;
+        
+        if (raceFinishedNotFinalized) {
+            // Show manual review banner
+            leaderboardHTML += `
+                <div class="temporary-scores-banner review-state">
+                    <span class="banner-icon">⏳</span>
+                    <div class="banner-content">
+                        <strong>Race Finished - Results Being Manually Reviewed</strong>
+                        <span class="banner-detail">This could take a while. Check back tomorrow for final official results.</span>
+                    </div>
+                </div>
+            `;
+        } else if (isTemporary && projectionInfo) {
+            // Show live projections banner
             const splitLabel = formatSplitLabel(projectionInfo.mostCommonSplit);
             leaderboardHTML += `
                 <div class="temporary-scores-banner">
