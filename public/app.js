@@ -1971,8 +1971,8 @@ async function displayResultsManagement() {
                         const timeInput = dataCell.querySelector('input[type="text"]');
                         const newTime = timeInput.value.trim();
                         
-                        if (newTime && !/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(newTime)) {
-                            alert('Invalid time format. Please use HH:MM:SS format (e.g., 2:05:30)');
+                        if (newTime && !/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/.test(newTime)) {
+                            alert('Invalid time format. Please use HH:MM:SS or HH:MM:SS.mmm format (e.g., 2:05:30 or 2:05:30.12)');
                             return;
                         }
                         
@@ -2156,10 +2156,10 @@ async function handleAddResult(e) {
         return;
     }
     
-    // Validate time format
-    const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/;
+    // Validate time format (allow optional decimal seconds)
+    const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/;
     if (!timePattern.test(finishTime)) {
-        alert('Invalid finish time format. Please use HH:MM:SS format (e.g., 2:05:30)');
+        alert('Invalid finish time format. Please use HH:MM:SS or HH:MM:SS.mmm format (e.g., 2:05:30 or 2:05:30.12)');
         return;
     }
     
@@ -3388,7 +3388,7 @@ async function handleUpdateResults() {
         console.log(`Athlete ${athleteId}: "${time}"`);
         if (time) {
             hasAnyValues = true;
-            if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+            if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/.test(time)) {
                 gameState.results[athleteId] = time;
                 console.log(`Added result for athlete ${athleteId}: ${time}`);
                 // Mark as valid
@@ -3412,9 +3412,9 @@ async function handleUpdateResults() {
 
     if (Object.keys(gameState.results).length === 0) {
         if (invalidFields.length > 0) {
-            alert('Invalid time format detected. Please use HH:MM:SS format (e.g., 2:05:30 or 0:14:30).\n\nFields with invalid format:\n' + invalidFields.slice(0, 5).join('\n') + (invalidFields.length > 5 ? '\n... and ' + (invalidFields.length - 5) + ' more' : ''));
+            alert('Invalid time format detected. Please use HH:MM:SS or HH:MM:SS.mmm format (e.g., 2:05:30 or 2:05:30.12).\n\nFields with invalid format:\n' + invalidFields.slice(0, 5).join('\n') + (invalidFields.length > 5 ? '\n... and ' + (invalidFields.length - 5) + ' more' : ''));
         } else if (hasAnyValues) {
-            alert('Please check the time format. Times should be in HH:MM:SS format (e.g., 2:05:30)');
+            alert('Please check the time format. Times should be in HH:MM:SS or HH:MM:SS.mmm format (e.g., 2:05:30 or 2:05:30.12)');
         } else {
             alert('Please enter results first using the form above.');
         }
@@ -3722,10 +3722,13 @@ function calculateTeamScore(team) {
 }
 
 function timeToSeconds(timeStr) {
-    // Convert "HH:MM:SS" or "H:MM:SS" to seconds
-    const parts = timeStr.split(':').map(p => parseInt(p, 10));
+    // Convert "HH:MM:SS" or "H:MM:SS" or "HH:MM:SS.mmm" to seconds (with decimals)
+    const parts = timeStr.split(':');
     if (parts.length === 3) {
-        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        const seconds = parseFloat(parts[2]); // Use parseFloat to handle decimals
+        return hours * 3600 + minutes * 60 + seconds;
     }
     return 0;
 }
@@ -3755,7 +3758,7 @@ function calculateAverageTime(team) {
 
 function setupResultsForm() {
     const form = document.getElementById('results-form');
-    form.innerHTML = '<h4>Enter Athlete Finish Times (HH:MM:SS - e.g., 2:05:30)</h4><p style="color: var(--dark-gray); font-size: 0.9em; margin-bottom: 15px;">Format: Hours:Minutes:Seconds (e.g., 2:15:45 or 0:14:30)</p>';
+    form.innerHTML = '<h4>Enter Athlete Finish Times (HH:MM:SS or HH:MM:SS.mmm)</h4><p style="color: var(--dark-gray); font-size: 0.9em; margin-bottom: 15px;">Format: Hours:Minutes:Seconds (e.g., 2:15:45 or 2:05:30.12 for close finishes)</p>';
 
     // Get all unique athletes from teams
     const allAthletes = new Set();
@@ -3792,8 +3795,8 @@ function setupResultsForm() {
                 return;
             }
             
-            // Check if format is valid (HH:MM:SS or H:MM:SS)
-            if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+            // Check if format is valid (HH:MM:SS or H:MM:SS with optional .mmm decimals)
+            if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/.test(time)) {
                 // Valid format
                 e.target.style.borderColor = '#28a745';
                 e.target.style.backgroundColor = '#d4edda';
@@ -3808,7 +3811,7 @@ function setupResultsForm() {
         input.addEventListener('change', async (e) => {
             const athleteId = parseInt(e.target.dataset.athleteId, 10);
             const time = e.target.value;
-            if (time && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+            if (time && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/.test(time)) {
                 gameState.results[athleteId] = time;
                 // Auto-save to database
                 try {
