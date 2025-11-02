@@ -10,10 +10,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       const athletes = scrapeLeaderboard();
       console.log('✅ Scraped athletes:', athletes);
+      
+      // Send response back to popup
       sendResponse({ success: true, athletes });
+      
+      // Also send to background script so popup can collect from all frames
+      chrome.runtime.sendMessage({
+        action: 'scrapedData',
+        athletes,
+        url: window.location.href,
+        isIframe: window !== window.top
+      }).catch(err => {
+        // Popup might be closed, that's okay
+        console.log('Could not send to background:', err.message);
+      });
+      
     } catch (error) {
       console.error('❌ Scraping error:', error);
-      sendResponse({ success: false, error: error.message });
+      sendResponse({ success: false, error: error.message, url: window.location.href });
     }
     return true; // Keep message channel open for async response
   }
@@ -131,43 +145,44 @@ function scrapeLeaderboard() {
       
       // Try to parse structured data from cells
       const cells = row.querySelectorAll('td, div[class*="cell"], span[class*="cell"], div[class*="col"]');
-      let rank = null, name = null, country = null, time = null;
+      let name = null, time = null;
       
       cells.forEach((cell) => {
         const cellText = (cell.innerText || cell.textContent || '').trim();
         if (!cellText) return;
-        
-        // Rank (number only, typically 1-100)
-        if (/^\d+$/.test(cellText) && parseInt(cellText) <= 500 && !rank) {
-          rank = parseInt(cellText);
-        }
-        
-        // Country code (3 uppercase letters like USA, KEN, ETH)
-        if (/^[A-Z]{3}$/.test(cellText)) {
-          country = cellText;
-        }
         
         // Time (HH:MM:SS or MM:SS or H:MM:SS)
         if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(cellText)) {
           time = normalizeTime(cellText);
         }
         
-        // Name (longer text, not time, not country, not just a number)
+        // Name (longer text, not time, not country code, not just a number)
         if (cellText.length > 5 && 
-            !/^\d+$/.test(cellText) && 
-            !/^[A-Z]{3}$/.test(cellText) && 
-            !/^\d{1,2}:\d{2}/.test(cellText) &&
+            !/^\d+$/.test(cellText) &&                    // Not just a number
+            !/^[A-Z]{3}$/.test(cellText) &&               // Not a country code
+            !/^\d{1,2}:\d{2}/.test(cellText) &&           // Not a time
+            !/^[\d\s\-:]+$/.test(cellText) &&             // Not pace/diff numbers
             !name) {
-          name = cellText;
+          // Clean up name - remove bib numbers and sponsors
+          // Names often come as "First Last\n123\nSponsor"
+          let cleanName = cellText;
+          
+          // Split by newlines and take first part (actual name)
+          if (cleanName.includes('\n')) {
+            cleanName = cleanName.split('\n')[0].trim();
+          }
+          
+          // Only accept if it's still substantial after cleaning
+          if (cleanName.length > 5) {
+            name = cleanName;
+          }
         }
       });
       
-      // Only add if we found at least name and time
+      // Only add if we found both name and time
       if (name && time) {
         const athlete = {
-          rank: rank || (processedCount + 1),
           name,
-          country: country || 'UNK',
           time
         };
         

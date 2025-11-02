@@ -1,5 +1,8 @@
-// Popup script - DEBUG MODE (outputs to console only)
+// Popup script - Production version with API integration
 console.log('🎯 Fantasy Marathon Extension Popup loaded');
+
+// Configuration - change this for your deployment
+const API_BASE = 'http://localhost:3000'; // Change to 'https://your-app.vercel.app' for production
 
 document.getElementById('scrapeBtn').addEventListener('click', async () => {
   const btn = document.getElementById('scrapeBtn');
@@ -13,51 +16,66 @@ document.getElementById('scrapeBtn').addEventListener('click', async () => {
     // Get current tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    console.log('');
-    console.log('═══════════════════════════════════════');
-    console.log('🚀 STARTING SCRAPE PROCESS');
-    console.log('═══════════════════════════════════════');
-    console.log('📍 Current tab URL:', tab.url);
-    console.log('📄 Tab title:', tab.title);
+    console.log('🚀 Starting scrape from:', tab.url);
     
     // Check if we're on NYRR/RTRT site
     if (!tab.url.includes('nyrr.org') && !tab.url.includes('rtrt.me')) {
-      console.error('❌ Not on NYRR/RTRT site!');
-      showStatus('error', '❌ Please navigate to the NYRR leaderboard page first');
-      return;
+      throw new Error('Please navigate to the NYRR leaderboard page first');
     }
-    
-    console.log('✅ On NYRR/RTRT site');
-    console.log('');
     
     // Auto-detect gender from page
-    console.log('🔍 Auto-detecting gender...');
-    const genderResponse = await chrome.tabs.sendMessage(tab.id, { action: 'detectGender' });
-    if (genderResponse.gender) {
-      console.log(`✅ Auto-detected gender: ${genderResponse.gender.toUpperCase()}`);
-      document.getElementById('gender').value = genderResponse.gender;
-    } else {
-      console.log('⚠️  Could not auto-detect gender, using manual selection');
-    }
-    console.log('');
-    
-    // Scrape leaderboard from content script
-    console.log('📥 Sending scrape request to content script...');
-    const response = await chrome.tabs.sendMessage(tab.id, { action: 'scrapeLeaderboard' });
-    
-    if (!response.success) {
-      console.error('❌ Scraping failed:', response.error);
-      throw new Error(response.error);
+    try {
+      const genderResponse = await chrome.tabs.sendMessage(tab.id, { action: 'detectGender' });
+      if (genderResponse && genderResponse.gender) {
+        console.log(`Auto-detected gender: ${genderResponse.gender}`);
+        document.getElementById('gender').value = genderResponse.gender;
+      }
+    } catch (error) {
+      console.log('Could not auto-detect gender, using manual selection');
     }
     
-    const athletes = response.athletes;
-    console.log('');
-    console.log('═══════════════════════════════════════');
-    console.log('✅ SCRAPING SUCCESSFUL!');
-    console.log('═══════════════════════════════════════');
+    // Scrape leaderboard from content script (tries all frames including iframe)
+    console.log('Scraping leaderboard from all frames...');
+    
+    let athletes = [];
+    
+    try {
+      // Get all frames in the tab
+      const frames = await chrome.webNavigation.getAllFrames({ tabId: tab.id });
+      console.log(`Found ${frames.length} frames to check`);
+      
+      for (const frame of frames) {
+        try {
+          const response = await chrome.tabs.sendMessage(tab.id, 
+            { action: 'scrapeLeaderboard' },
+            { frameId: frame.frameId }
+          );
+          
+          if (response && response.success && response.athletes && response.athletes.length > 0) {
+            console.log(`✅ Found ${response.athletes.length} athletes`);
+            athletes = response.athletes;
+            break; // Found data, stop looking
+          }
+        } catch (error) {
+          // Frame not accessible, continue
+        }
+      }
+    } catch (error) {
+      // Fallback: try simple sendMessage (works if content script is in main frame)
+      console.log('Trying fallback method...');
+      try {
+        const response = await chrome.tabs.sendMessage(tab.id, { action: 'scrapeLeaderboard' });
+        if (response && response.success && response.athletes && response.athletes.length > 0) {
+          athletes = response.athletes;
+          console.log(`✅ Found ${athletes.length} athletes via fallback`);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+      }
+    }
     
     if (athletes.length === 0) {
-      throw new Error('No athletes found on this page');
+      throw new Error('No athletes found. Try refreshing the NYRR page and try again.');
     }
     
     // Get form values
@@ -65,58 +83,58 @@ document.getElementById('scrapeBtn').addEventListener('click', async () => {
     const splitType = document.getElementById('splitType').value;
     const gender = document.getElementById('gender').value;
     
-    console.log('');
-    console.log('📋 PAYLOAD THAT WOULD BE SENT TO API:');
-    console.log('═══════════════════════════════════════');
-    
+    // Build API payload
     const payload = {
       gameId,
       splitType,
       gender,
-      athletes,
-      timestamp: new Date().toISOString()
+      athletes
     };
     
-    console.log(JSON.stringify(payload, null, 2));
-    console.log('');
-    console.log('═══════════════════════════════════════');
-    console.log('📊 SUMMARY:');
-    console.log('═══════════════════════════════════════');
-    console.log(`Game ID: ${gameId}`);
-    console.log(`Split Type: ${splitType}`);
-    console.log(`Gender: ${gender}`);
-    console.log(`Athletes Found: ${athletes.length}`);
-    console.log('');
-    console.log('💾 This data is ready to be sent to:');
-    console.log('   POST /api/import-live-results');
-    console.log('');
-    console.log('🔧 Next steps:');
-    console.log('   1. Create the /api/import-live-results endpoint');
-    console.log('   2. Test the endpoint with this data');
-    console.log('   3. Remove DEBUG MODE from popup.js');
-    console.log('═══════════════════════════════════════');
+    console.log(`📦 Sending ${athletes.length} athletes to API...`);
+    showStatus('info', `📤 Sending ${athletes.length} athletes to API...`);
     
-    showStatus('success', 
-      `✅ Successfully scraped ${athletes.length} athletes!\n` +
-      `Check console (F12) for detailed output.\n\n` +
-      `Ready to send to API:\n` +
-      `• Game: ${gameId}\n` +
-      `• Split: ${splitType}\n` +
-      `• Division: ${gender}\n` +
-      `• Athletes: ${athletes.length}`
-    );
+    // Send to API
+    const apiResponse = await fetch(`${API_BASE}/api/import-live-results`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!apiResponse.ok) {
+      throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
+    }
+    
+    const result = await apiResponse.json();
+    
+    if (result.success) {
+      console.log(`✅ Success! Imported ${result.summary.successful} of ${result.summary.total}`);
+      
+      showStatus('success', 
+        `✅ Successfully imported!\n\n` +
+        `Total Athletes: ${result.summary.total}\n` +
+        `Imported: ${result.summary.successful}\n` +
+        `Failed: ${result.summary.failed}\n\n` +
+        (result.summary.failed > 0 
+          ? `Some athletes not in database.\nCheck console for details.` 
+          : `All athletes matched!`)
+      );
+      
+      if (result.summary.failed > 0) {
+        console.log('⚠️  Failed athletes:', result.errors);
+      }
+      
+      console.log('Matched athletes:', result.matches);
+    } else {
+      throw new Error('Import failed. Check console for details.');
+    }
     
   } catch (error) {
-    console.error('');
-    console.error('═══════════════════════════════════════');
-    console.error('❌ ERROR:');
-    console.error('═══════════════════════════════════════');
-    console.error(error);
-    console.error('═══════════════════════════════════════');
+    console.error('❌ Error:', error);
     showStatus('error', `❌ Error: ${error.message}`);
   } finally {
     btn.disabled = false;
-    btn.textContent = '🔍 Scrape to Console (Debug)';
+    btn.textContent = '📥 Import Live Results';
   }
 });
 

@@ -2,117 +2,122 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <title>Fantasy Marathon - Import Live Results</title>
   <style>
     body {
-      width: 400px;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
+      width: 350px;
+      padding: 15px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
     }
-    
-    h1 {
-      font-size: 18px;
+    h3 {
       margin: 0 0 15px 0;
-      color: #1e3a8a;
+      font-size: 16px;
+      color: #333;
     }
-    
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 12px;
     }
-    
     label {
       display: block;
       margin-bottom: 5px;
-      font-weight: 600;
-      font-size: 14px;
-      color: #374151;
+      font-weight: 500;
+      color: #555;
     }
-    
     input, select {
       width: 100%;
       padding: 8px;
-      border: 2px solid #d1d5db;
-      border-radius: 5px;
-      font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
       box-sizing: border-box;
+      font-size: 13px;
     }
-    
     button {
       width: 100%;
-      padding: 12px;
-      background: #3b82f6;
+      padding: 10px;
+      background: #ff6900;
       color: white;
       border: none;
-      border-radius: 5px;
-      font-size: 16px;
+      border-radius: 4px;
       cursor: pointer;
+      font-size: 14px;
       font-weight: 600;
       margin-top: 10px;
     }
-    
-    button:hover {
-      background: #2563eb;
+    button:hover:not(:disabled) {
+      background: #e55e00;
     }
-    
     button:disabled {
-      background: #9ca3af;
+      background: #ccc;
       cursor: not-allowed;
     }
-    
     .status {
-      padding: 10px;
-      border-radius: 5px;
       margin-top: 15px;
-      font-size: 14px;
-    }
-    
-    .status.success {
-      background: #d1fae5;
-      color: #065f46;
-      border: 1px solid #10b981;
-    }
-    
-    .status.error {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #ef4444;
-    }
-    
-    .status.info {
-      background: #dbeafe;
-      color: #1e40af;
-      border: 1px solid #3b82f6;
-    }
-    
-    small {
-      color: #6b7280;
-      font-size: 12px;
-    }
-    
-    .debug-mode {
-      background: #fef3c7;
-      border: 2px solid #f59e0b;
       padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 15px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-line;
+      display: none;
     }
-    
-    .debug-mode strong {
-      color: #92400e;
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .api-config {
+      background: #e8f4fd;
+      border: 1px solid #bee5eb;
+      color: #004085;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .api-config code {
+      background: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <h1>🏃 Fantasy Marathon - Import Results</h1>
+  <h3>📊 Import Live Results</h3>
   
-  <div class="debug-mode">
-    <strong>🔧 DEBUG MODE</strong><br>
-    <small>Results will be logged to console (F12) instead of being sent to API</small>
+  <div class="warning">
+    ⚠️ <strong>First time using?</strong> Refresh the NYRR page before clicking Import.
+  </div>
+
+  <div class="api-config">
+    ℹ️ <strong>API:</strong> <code id="apiEndpoint">localhost:3000</code><br>
+    Edit <code>popup.js</code> to change for production
   </div>
   
   <div class="form-group">
     <label for="gameId">Game ID:</label>
-    <input type="text" id="gameId" value="demo-game" placeholder="e.g., default">
+    <input type="text" id="gameId" value="demo-game" placeholder="Enter game ID">
   </div>
   
   <div class="form-group">
@@ -139,10 +144,10 @@
     </select>
   </div>
   
-  <button id="scrapeBtn">🔍 Scrape to Console (Debug)</button>
+  <button id="scrapeBtn">📥 Import Live Results</button>
   
-  <div id="status" style="display: none;"></div>
-  
+  <div id="status" class="status"></div>
+
   <script src="popup.js"></script>
 </body>
 </html>

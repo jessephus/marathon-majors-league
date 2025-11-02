@@ -5,7 +5,8 @@
   "description": "Import live race results from NYRR leaderboard to Fantasy Marathon",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "webNavigation"
   ],
   "host_permissions": [
     "https://liveresults.nyrr.org/*",
