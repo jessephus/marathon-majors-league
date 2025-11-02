@@ -1754,21 +1754,13 @@ async function displayResultsManagement() {
             throw new Error('Failed to fetch results');
         }
         const data = await response.json();
-        const results = data.results || {}; // Object: { athlete_id: finish_time }
         
-        // Get all unique athletes from teams
-        const allAthletes = new Set();
-        Object.values(gameState.teams).forEach(team => {
-            [...team.men, ...team.women].forEach(athlete => {
-                allAthletes.add(JSON.stringify(athlete));
-            });
-        });
+        // Use the scored array which has full athlete info
+        const scoredResults = data.scored || [];
         
-        const athleteList = Array.from(allAthletes).map(a => JSON.parse(a));
-        
-        // Filter athletes that have results entered
-        const athletesWithResults = athleteList.filter(athlete => {
-            return results[athlete.id] && results[athlete.id].trim() !== '';
+        // Filter to only athletes with finish times
+        const athletesWithResults = scoredResults.filter(result => {
+            return result.finish_time && result.finish_time.trim() !== '';
         });
         
         if (athletesWithResults.length === 0) {
@@ -1782,49 +1774,42 @@ async function displayResultsManagement() {
         noResultsMessage.style.display = 'none';
         document.getElementById('results-table').style.display = 'table';
         
-        // Sort athletes by finish time
-        athletesWithResults.sort((a, b) => {
-            const timeA = results[a.id] || '';
-            const timeB = results[b.id] || '';
-            return timeA.localeCompare(timeB);
-        });
-        
+        // Results are already sorted by the API query
         // Build table rows
-        athletesWithResults.forEach(athlete => {
-            const finishTime = results[athlete.id] || '';
-            
+        athletesWithResults.forEach(result => {
             const row = document.createElement('tr');
             row.className = 'result-row';
             
             // Athlete name column
             const nameCell = document.createElement('td');
-            nameCell.textContent = athlete.name;
+            nameCell.textContent = result.athlete_name || 'Unknown';
             nameCell.style.fontWeight = '600';
             row.appendChild(nameCell);
             
             // Country column
             const countryCell = document.createElement('td');
-            countryCell.textContent = athlete.country;
+            countryCell.textContent = result.country || '-';
             row.appendChild(countryCell);
             
             // Gender column
             const genderCell = document.createElement('td');
-            genderCell.textContent = athlete.gender.charAt(0).toUpperCase() + athlete.gender.slice(1);
+            const gender = result.gender || '';
+            genderCell.textContent = gender.charAt(0).toUpperCase() + gender.slice(1);
             row.appendChild(genderCell);
             
             // Finish time column with inline editing
             const timeCell = document.createElement('td');
             const timeInput = document.createElement('input');
             timeInput.type = 'text';
-            timeInput.value = finishTime;
+            timeInput.value = result.finish_time || '';
             timeInput.placeholder = '2:05:30';
             timeInput.pattern = '[0-9]{1,2}:[0-9]{2}:[0-9]{2}';
             timeInput.style.width = '100px';
             timeInput.style.padding = '4px 8px';
             timeInput.style.border = '1px solid #ddd';
             timeInput.style.borderRadius = '4px';
-            timeInput.dataset.athleteId = athlete.id;
-            timeInput.dataset.originalTime = finishTime;
+            timeInput.dataset.athleteId = result.athlete_id;
+            timeInput.dataset.originalTime = result.finish_time;
             
             // Validation styling on input
             timeInput.addEventListener('input', (e) => {
@@ -1860,11 +1845,11 @@ async function displayResultsManagement() {
                         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ results: { [athlete.id]: newTime } })
+                            body: JSON.stringify({ results: { [result.athlete_id]: newTime } })
                         });
                         
                         // Update local state
-                        gameState.results[athlete.id] = newTime;
+                        gameState.results[result.athlete_id] = newTime;
                         timeInput.dataset.originalTime = newTime;
                         
                         // Invalidate cache
@@ -1892,17 +1877,17 @@ async function displayResultsManagement() {
             deleteBtn.className = 'btn-mini btn-danger';
             deleteBtn.textContent = 'Delete';
             deleteBtn.onclick = async () => {
-                if (confirm(`Are you sure you want to delete the result for ${athlete.name}?`)) {
+                if (confirm(`Are you sure you want to delete the result for ${result.athlete_name}?`)) {
                     try {
                         // Delete the result by setting it to empty string
                         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ results: { [athlete.id]: '' } })
+                            body: JSON.stringify({ results: { [result.athlete_id]: '' } })
                         });
                         
                         // Update local state
-                        delete gameState.results[athlete.id];
+                        delete gameState.results[result.athlete_id];
                         
                         // Invalidate cache
                         invalidateResultsCache();
