@@ -1859,6 +1859,8 @@ async function displayLeaderboard() {
         }
         
         const standings = data.standings || [];
+        const isTemporary = data.isTemporary || false;
+        const projectionInfo = data.projectionInfo || null;
         
         if (standings.length === 0) {
             container.innerHTML = '<p>No standings available yet.</p>';
@@ -1873,6 +1875,21 @@ async function displayLeaderboard() {
         // Build leaderboard HTML
         let leaderboardHTML = '<div class="leaderboard-container">';
         
+        // Add temporary score indicator if applicable
+        if (isTemporary && projectionInfo) {
+            const splitLabel = projectionInfo.mostCommonSplit ? 
+                projectionInfo.mostCommonSplit.toUpperCase().replace('HALF', 'Half Marathon') : 'recent split';
+            leaderboardHTML += `
+                <div class="temporary-scores-banner">
+                    <span class="banner-icon">⚡</span>
+                    <div class="banner-content">
+                        <strong>Live Projections</strong>
+                        <span class="banner-detail">Based on ${splitLabel} times • Scores will update as race progresses</span>
+                    </div>
+                </div>
+            `;
+        }
+        
         // Show ALL teams with sticky behavior for current player
         standings.forEach((standing, index) => {
             const isCurrentPlayer = standing.player_code === currentPlayerCode;
@@ -1885,6 +1902,11 @@ async function displayLeaderboard() {
         
         // Initialize bidirectional sticky behavior for highlighted row
         initLeaderboardStickyBehavior();
+        
+        // If showing temporary scores, set up auto-refresh
+        if (isTemporary) {
+            setupLeaderboardAutoRefresh();
+        }
         
     } catch (error) {
         console.error('Error displaying leaderboard:', error);
@@ -2027,6 +2049,34 @@ function createLeaderboardRow(standing, isCurrentPlayer = false) {
             </div>
         </div>
     `;
+}
+
+// Auto-refresh leaderboard during live race with temporary scoring
+let leaderboardRefreshInterval = null;
+
+function setupLeaderboardAutoRefresh() {
+    // Clear any existing refresh interval
+    if (leaderboardRefreshInterval) {
+        clearInterval(leaderboardRefreshInterval);
+        leaderboardRefreshInterval = null;
+    }
+    
+    // Set up auto-refresh every 30 seconds during live race
+    leaderboardRefreshInterval = setInterval(async () => {
+        try {
+            // Only refresh if we're still on the leaderboard page
+            const leaderboardPage = document.getElementById('leaderboard-page');
+            if (leaderboardPage && leaderboardPage.classList.contains('active')) {
+                await displayLeaderboard();
+            } else {
+                // Stop refreshing if we navigated away
+                clearInterval(leaderboardRefreshInterval);
+                leaderboardRefreshInterval = null;
+            }
+        } catch (error) {
+            console.error('Error during auto-refresh:', error);
+        }
+    }, 30000); // Refresh every 30 seconds
 }
 
 // Display race results (actual athlete performance)
