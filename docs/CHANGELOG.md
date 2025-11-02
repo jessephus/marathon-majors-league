@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Roster Lock Timer**: Automatic roster locking at race time
+  - Added `roster_lock_time` field to games table
+  - Frontend checks lock time and prevents edits after deadline
+  - UI displays lock time with countdown before deadline
+  - Lock time set to 8:35 AM EST on November 2, 2025 for default game
+  - Migration script `005_roster_lock_time.sql` to add field
+  - Migration runner `run-roster-lock-migration.js` to apply changes
+  - Documentation in `docs/ROSTER_LOCK_TIME.md`
 - **Points-Based Scoring System (Version 2)**: Complete overhaul of scoring mechanics
   - Placement points for top 10 finishers (10 pts for 1st down to 1 pt for 10th)
   - Time gap bonuses (5 levels: +5 pts within 60s down to +1 pt within 10 min)
@@ -36,11 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migration script with utility functions and seeded records
 
 ### Changed
+- Game state API now includes `rosterLockTime` field
+- Salary cap draft page checks roster lock time on load
 - Results API now auto-triggers scoring calculation
 - Team cards enhanced with points display alongside legacy time display
 - Leaderboard prioritizes points-based standings with fallback
 
 ### Technical
+- Database helper functions updated for roster lock time
+- Roster lock logic integrated with existing permanent lock mechanism
 - Scoring engine module with modular calculation functions
 - Database helper functions for scoring rules and standings
 - Version 2 scoring rules with configurable parameters

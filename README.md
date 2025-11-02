@@ -23,6 +23,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 - 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
 - 🔄 **Automated Data Sync**: Top 100 marathon athletes automatically synced from World Athletics every 2 days
 - 🔒 **Secure Sessions**: 90-day session tokens with upgrade path to full user accounts
+- ⏰ **Roster Lock Timer**: Automatic roster locking at race time to ensure fair play
 
 ## 🎯 How to Play
 
@@ -244,6 +245,7 @@ Customizable options in the application:
 
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
 - **[Salary Cap Draft Guide](docs/SALARY_CAP_DRAFT.md)** - Daily fantasy-style team building system
+- **[Roster Lock Time Guide](docs/ROSTER_LOCK_TIME.md)** - Automatic roster locking at race time
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy your own instance to Vercel
 - **[Development Guide](docs/DEVELOPMENT.md)** - Local development and code standards
 - **[Database Guide](docs/DATABASE.md)** - Schema, initialization, and troubleshooting
