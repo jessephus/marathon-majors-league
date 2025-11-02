@@ -585,6 +585,21 @@ function getMainHTML() {
                 <h2>Manage Live Results</h2>
                 <p class="page-description">View and edit all race results entered so far</p>
                 
+                <!-- View Selector -->
+                <div class="results-view-controls">
+                    <label for="results-view-select">Show:</label>
+                    <select id="results-view-select" class="view-selector">
+                        <option value="finish">Finish Time</option>
+                        <option value="5k">5K Split</option>
+                        <option value="10k">10K Split</option>
+                        <option value="half">Half Marathon Split</option>
+                        <option value="30k">30K Split</option>
+                        <option value="35k">35K Split</option>
+                        <option value="40k">40K Split</option>
+                        <option value="bonuses">Bonus Points</option>
+                    </select>
+                </div>
+                
                 <div id="results-management-container">
                     <table id="results-table" class="results-table">
                         <thead>
@@ -592,7 +607,7 @@ function getMainHTML() {
                                 <th>Athlete</th>
                                 <th>Country</th>
                                 <th>Gender</th>
-                                <th>Finish Time</th>
+                                <th id="time-column-header">Finish Time</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>

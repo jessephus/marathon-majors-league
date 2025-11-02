@@ -535,6 +535,7 @@ function setupEventListeners() {
     
     // Results Management page
     document.getElementById('back-to-commissioner-from-results').addEventListener('click', () => showPage('commissioner-page'));
+    document.getElementById('results-view-select').addEventListener('change', () => displayResultsManagement());
     
     // Athlete Management modal
     const addAthleteModal = document.getElementById('add-athlete-modal');
@@ -1745,7 +1746,24 @@ async function displayTeamsTable() {
 async function displayResultsManagement() {
     const tableBody = document.getElementById('results-table-body');
     const noResultsMessage = document.getElementById('no-results-message');
+    const viewSelect = document.getElementById('results-view-select');
+    const headerCell = document.getElementById('time-column-header');
+    const currentView = viewSelect.value;
+    
     tableBody.innerHTML = '';
+    
+    // Update column header based on view
+    const headerTitles = {
+        'finish': 'Finish Time',
+        '5k': '5K Split',
+        '10k': '10K Split',
+        'half': 'Half Marathon Split',
+        '30k': '30K Split',
+        '35k': '35K Split',
+        '40k': '40K Split',
+        'bonuses': 'Bonus Points'
+    };
+    headerCell.textContent = headerTitles[currentView] || 'Finish Time';
     
     // Load current results from database
     try {
@@ -1797,37 +1815,84 @@ async function displayResultsManagement() {
             genderCell.textContent = gender.charAt(0).toUpperCase() + gender.slice(1);
             row.appendChild(genderCell);
             
-            // Finish time column with inline editing
-            const timeCell = document.createElement('td');
-            const timeInput = document.createElement('input');
-            timeInput.type = 'text';
-            timeInput.value = result.finish_time || '';
-            timeInput.placeholder = '2:05:30';
-            timeInput.pattern = '[0-9]{1,2}:[0-9]{2}:[0-9]{2}';
-            timeInput.style.width = '100px';
-            timeInput.style.padding = '4px 8px';
-            timeInput.style.border = '1px solid #ddd';
-            timeInput.style.borderRadius = '4px';
-            timeInput.dataset.athleteId = result.athlete_id;
-            timeInput.dataset.originalTime = result.finish_time;
+            // Time/Data column - changes based on current view
+            const dataCell = document.createElement('td');
             
-            // Validation styling on input
-            timeInput.addEventListener('input', (e) => {
-                const time = e.target.value.trim();
-                if (time === '') {
-                    e.target.style.borderColor = '#ddd';
-                    e.target.style.backgroundColor = '';
-                } else if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
-                    e.target.style.borderColor = '#28a745';
-                    e.target.style.backgroundColor = '#d4edda';
-                } else {
-                    e.target.style.borderColor = '#dc3545';
-                    e.target.style.backgroundColor = '#f8d7da';
-                }
-            });
+            if (currentView === 'bonuses') {
+                // Show bonus points checkboxes
+                const bonusContainer = document.createElement('div');
+                bonusContainer.className = 'bonus-points-container';
+                
+                const perfBonus = document.createElement('label');
+                perfBonus.className = 'bonus-checkbox';
+                const perfCheck = document.createElement('input');
+                perfCheck.type = 'checkbox';
+                perfCheck.checked = result.performance_bonus_points > 0;
+                perfCheck.dataset.athleteId = result.athlete_id;
+                perfCheck.dataset.bonusType = 'performance';
+                perfBonus.appendChild(perfCheck);
+                perfBonus.appendChild(document.createTextNode(' Performance Bonus (+' + (result.performance_bonus_points || 0) + ' pts)'));
+                bonusContainer.appendChild(perfBonus);
+                
+                bonusContainer.appendChild(document.createElement('br'));
+                
+                const recordBonus = document.createElement('label');
+                recordBonus.className = 'bonus-checkbox';
+                const recordCheck = document.createElement('input');
+                recordCheck.type = 'checkbox';
+                recordCheck.checked = result.record_bonus_points > 0;
+                recordCheck.dataset.athleteId = result.athlete_id;
+                recordCheck.dataset.bonusType = 'record';
+                recordBonus.appendChild(recordCheck);
+                recordBonus.appendChild(document.createTextNode(' Record Bonus (+' + (result.record_bonus_points || 0) + ' pts)'));
+                bonusContainer.appendChild(recordBonus);
+                
+                dataCell.appendChild(bonusContainer);
+            } else {
+                // Show time input
+                const timeInput = document.createElement('input');
+                timeInput.type = 'text';
+                
+                // Get the appropriate value based on current view
+                const fieldMap = {
+                    'finish': result.finish_time,
+                    '5k': result.split_5k,
+                    '10k': result.split_10k,
+                    'half': result.split_half,
+                    '30k': result.split_30k,
+                    '35k': result.split_35k,
+                    '40k': result.split_40k
+                };
+                
+                timeInput.value = fieldMap[currentView] || '';
+                timeInput.placeholder = currentView === 'finish' ? '2:05:30' : '0:14:30';
+                timeInput.pattern = '[0-9]{1,2}:[0-9]{2}:[0-9]{2}';
+                timeInput.style.width = '100px';
+                timeInput.style.padding = '4px 8px';
+                timeInput.style.border = '1px solid #ddd';
+                timeInput.style.borderRadius = '4px';
+                timeInput.dataset.athleteId = result.athlete_id;
+                timeInput.dataset.field = currentView;
+                
+                // Validation styling on input
+                timeInput.addEventListener('input', (e) => {
+                    const time = e.target.value.trim();
+                    if (time === '') {
+                        e.target.style.borderColor = '#ddd';
+                        e.target.style.backgroundColor = '';
+                    } else if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+                        e.target.style.borderColor = '#28a745';
+                        e.target.style.backgroundColor = '#d4edda';
+                    } else {
+                        e.target.style.borderColor = '#dc3545';
+                        e.target.style.backgroundColor = '#f8d7da';
+                    }
+                });
+                
+                dataCell.appendChild(timeInput);
+            }
             
-            timeCell.appendChild(timeInput);
-            row.appendChild(timeCell);
+            row.appendChild(dataCell);
             
             // Actions column with Save and Delete buttons
             const actionsCell = document.createElement('td');
@@ -1838,71 +1903,121 @@ async function displayResultsManagement() {
             saveBtn.className = 'btn-mini btn-success';
             saveBtn.textContent = 'Save';
             saveBtn.onclick = async () => {
-                const newTime = timeInput.value.trim();
-                if (newTime && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(newTime)) {
-                    try {
-                        // Update the result in the database
+                try {
+                    if (currentView === 'bonuses') {
+                        // Save bonus points
+                        const perfCheck = dataCell.querySelector('input[data-bonus-type="performance"]');
+                        const recordCheck = dataCell.querySelector('input[data-bonus-type="record"]');
+                        
+                        const updateData = {
+                            [result.athlete_id]: {
+                                finish_time: result.finish_time,
+                                performance_bonus_points: perfCheck.checked ? 2 : 0,
+                                record_bonus_points: recordCheck.checked ? 5 : 0
+                            }
+                        };
+                        
                         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ results: { [result.athlete_id]: newTime } })
+                            body: JSON.stringify({ results: updateData })
                         });
+                    } else {
+                        // Save time data
+                        const timeInput = dataCell.querySelector('input[type="text"]');
+                        const newTime = timeInput.value.trim();
                         
-                        // Update local state
-                        gameState.results[result.athlete_id] = newTime;
-                        timeInput.dataset.originalTime = newTime;
+                        if (newTime && !/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(newTime)) {
+                            alert('Invalid time format. Please use HH:MM:SS format (e.g., 2:05:30)');
+                            return;
+                        }
                         
-                        // Invalidate cache
-                        invalidateResultsCache();
+                        // Build update payload based on current field
+                        const updateData = {
+                            [result.athlete_id]: {}
+                        };
                         
-                        // Show success feedback
-                        saveBtn.textContent = '✓';
-                        setTimeout(() => {
-                            saveBtn.textContent = 'Save';
-                        }, 2000);
+                        // Always include finish_time to maintain record
+                        if (currentView === 'finish') {
+                            updateData[result.athlete_id].finish_time = newTime;
+                        } else {
+                            updateData[result.athlete_id].finish_time = result.finish_time;
+                            const splitFieldMap = {
+                                '5k': 'split_5k',
+                                '10k': 'split_10k',
+                                'half': 'split_half',
+                                '30k': 'split_30k',
+                                '35k': 'split_35k',
+                                '40k': 'split_40k'
+                            };
+                            updateData[result.athlete_id][splitFieldMap[currentView]] = newTime;
+                        }
                         
-                        // Refresh the table to show updated order
-                        displayResultsManagement();
-                    } catch (error) {
-                        console.error('Error saving result:', error);
-                        alert(`Error saving result: ${error.message}. Please try again.`);
-                    }
-                } else {
-                    alert('Invalid time format. Please use HH:MM:SS format (e.g., 2:05:30)');
-                }
-            };
-            
-            // Delete button
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'btn-mini btn-danger';
-            deleteBtn.textContent = 'Delete';
-            deleteBtn.onclick = async () => {
-                if (confirm(`Are you sure you want to delete the result for ${result.athlete_name}?`)) {
-                    try {
-                        // Delete the result by setting it to empty string
                         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ results: { [result.athlete_id]: '' } })
+                            body: JSON.stringify({ results: updateData })
                         });
                         
-                        // Update local state
-                        delete gameState.results[result.athlete_id];
-                        
-                        // Invalidate cache
-                        invalidateResultsCache();
-                        
-                        // Refresh the table
-                        displayResultsManagement();
-                    } catch (error) {
-                        console.error('Error deleting result:', error);
-                        alert(`Error deleting result: ${error.message}. Please try again.`);
+                        // Update local state if finish time
+                        if (currentView === 'finish') {
+                            gameState.results[result.athlete_id] = newTime;
+                        }
                     }
+                    
+                    // Invalidate cache
+                    invalidateResultsCache();
+                    
+                    // Show success feedback
+                    saveBtn.textContent = '✓';
+                    setTimeout(() => {
+                        saveBtn.textContent = 'Save';
+                    }, 2000);
+                    
+                    // Refresh the table to show updated data
+                    displayResultsManagement();
+                } catch (error) {
+                    console.error('Error saving result:', error);
+                    alert(`Error saving result: ${error.message}. Please try again.`);
                 }
             };
             
-            actionsCell.appendChild(saveBtn);
-            actionsCell.appendChild(deleteBtn);
+            // Delete button (only for finish time view)
+            if (currentView === 'finish') {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-mini btn-danger';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = async () => {
+                    if (confirm(`Are you sure you want to delete the result for ${result.athlete_name}?`)) {
+                        try {
+                            // Delete the result by setting it to empty string
+                            await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ results: { [result.athlete_id]: '' } })
+                            });
+                            
+                            // Update local state
+                            delete gameState.results[result.athlete_id];
+                            
+                            // Invalidate cache
+                            invalidateResultsCache();
+                            
+                            // Refresh the table
+                            displayResultsManagement();
+                        } catch (error) {
+                            console.error('Error deleting result:', error);
+                            alert(`Error deleting result: ${error.message}. Please try again.`);
+                        }
+                    }
+                };
+                
+                actionsCell.appendChild(saveBtn);
+                actionsCell.appendChild(deleteBtn);
+            } else {
+                actionsCell.appendChild(saveBtn);
+            }
+            
             row.appendChild(actionsCell);
             
             tableBody.appendChild(row);
