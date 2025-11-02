@@ -177,6 +177,11 @@ async function setupSalaryCapDraft() {
         return;
     }
     
+    // Update team header with team name and avatar
+    if (session.teamName) {
+        updateTeamHeader(session.teamName);
+    }
+    
     const gameId = session.gameId;
     const playerCode = session.playerCode;
     
