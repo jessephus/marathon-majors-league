@@ -6,7 +6,11 @@
  */
 
 import { readFileSync } from 'fs';
+import { config } from 'dotenv';
 import { neon } from '@neondatabase/serverless';
+
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 const sql = neon(process.env.DATABASE_URL);
 
