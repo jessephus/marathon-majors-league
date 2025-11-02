@@ -1876,6 +1876,9 @@ async function displayLeaderboard() {
         
         container.innerHTML = leaderboardHTML;
         
+        // Initialize bidirectional sticky behavior for highlighted row
+        initLeaderboardStickyBehavior();
+        
     } catch (error) {
         console.error('Error displaying leaderboard:', error);
         container.innerHTML = `
@@ -1886,6 +1889,68 @@ async function displayLeaderboard() {
             </div>
         `;
     }
+}
+
+// Initialize bidirectional sticky behavior for leaderboard highlight
+function initLeaderboardStickyBehavior() {
+    const highlightedRow = document.querySelector('.leaderboard-row-highlight');
+    if (!highlightedRow) return; // No highlighted row
+    
+    const container = document.querySelector('.leaderboard-container');
+    if (!container) return;
+    
+    // Calculate the natural position of the highlighted row
+    function updateStickyBehavior() {
+        const containerRect = container.getBoundingClientRect();
+        const rowRect = highlightedRow.getBoundingClientRect();
+        
+        // Get the row's position relative to the document
+        const rowTop = rowRect.top + window.scrollY;
+        const viewportHeight = window.innerHeight;
+        const scrollTop = window.scrollY;
+        
+        // Header offset (accounting for page header)
+        const headerOffset = 80;
+        const bottomOffset = 20;
+        
+        // Calculate whether row is naturally above or below current viewport
+        const rowNaturalTop = highlightedRow.offsetTop;
+        const viewportTop = scrollTop + headerOffset;
+        const viewportBottom = scrollTop + viewportHeight - bottomOffset;
+        
+        // If row's natural position is above current viewport, stick to top
+        if (rowNaturalTop < viewportTop) {
+            highlightedRow.classList.add('sticky-top');
+            highlightedRow.classList.remove('sticky-bottom');
+        }
+        // If row's natural position is below current viewport, stick to bottom  
+        else if (rowNaturalTop + rowRect.height > viewportBottom) {
+            highlightedRow.classList.add('sticky-bottom');
+            highlightedRow.classList.remove('sticky-top');
+        }
+        // Row is in natural view, no sticky needed
+        else {
+            highlightedRow.classList.remove('sticky-top', 'sticky-bottom');
+        }
+    }
+    
+    // Update on scroll
+    let ticking = false;
+    function onScroll() {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                updateStickyBehavior();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateStickyBehavior, { passive: true });
+    
+    // Initial update
+    updateStickyBehavior();
 }
 
 // Create a single leaderboard row
