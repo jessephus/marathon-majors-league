@@ -2921,9 +2921,17 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     
     // Add status class for styling
     const statusClass = isDNS ? 'status-dns' : isDNF ? 'status-dnf' : '';
+    
+    // Combine athlete and result data for modal
+    const combinedData = {
+        ...athlete,
+        ...result,
+        athlete_id: result.athlete_id || athlete.id,
+        id: athlete.id
+    };
 
     return `
-        <div class="race-result-row ${statusClass}" onclick="openAthleteScoringModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
+        <div class="race-result-row ${statusClass}" onclick="openAthleteScoringModal(${JSON.stringify(combinedData).replace(/"/g, '&quot;')})">
             <div class="race-result-placement">
                 ${medal ? `<span class="placement-medal">${medal}</span>` : `<span class="placement-number">#${placement}</span>`}
             </div>
@@ -2940,7 +2948,6 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
             <div class="race-result-performance">
                 <div class="finish-time ${isDNS || isDNF ? 'status-label' : ''}">${displayTime}</div>
                 ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : (splitType !== 'finish' ? `<div class="time-gap">${timeLabel} Split</div>` : '')}
-            </div>
             </div>
             <div class="race-result-points">
                 <div class="points-value">${points} pts</div>
@@ -4703,6 +4710,8 @@ async function openAthleteScoringModal(athleteIdOrData) {
  * Load and display scoring breakdown for an athlete
  */
 async function loadAthleteScoringData(athleteId, athleteData) {
+    console.log('loadAthleteScoringData called with:', { athleteId, athleteData });
+    
     const modal = document.getElementById('athlete-modal');
     if (!modal) {
         console.error('Athlete modal not found');
@@ -4724,15 +4733,155 @@ async function loadAthleteScoringData(athleteId, athleteData) {
     contentArea.innerHTML = '<div class="loading-spinner">Loading scoring details...</div>';
     
     try {
-        // Fetch race results for this athlete
-        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
-        const data = await response.json();
+        let athleteResult = null;
         
-        // Find this athlete's result
-        const results = data.scored || data.results || [];
-        const athleteResult = results.find(r => 
-            r.athlete_id === athleteId || r.id === athleteId
-        );
+        // Check if athleteData already has result information (from race results page)
+        if (athleteData && (athleteData.finish_time || athleteData.split_5k || athleteData.total_points !== undefined)) {
+            console.log('Using athleteData directly as result:', athleteData);
+            athleteResult = athleteData;
+        } else {
+            console.log('Fetching results from API for athlete:', athleteId);
+            // Fetch race results for this athlete
+            const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+            const data = await response.json();
+            
+            // Find this athlete's result
+            const results = data.scored || data.results || [];
+            athleteResult = results.find(r => 
+                r.athlete_id === athleteId || r.id === athleteId
+            );
+            console.log('Found athleteResult from API:', athleteResult);
+        }
+        
+        // Check for DNS (Did Not Start) or DNF (Did Not Finish)
+        if (athleteResult) {
+            const hasSomeSplits = athleteResult.split_5k || athleteResult.split_10k || 
+                                  athleteResult.split_half || athleteResult.split_30k || 
+                                  athleteResult.split_35k || athleteResult.split_40k;
+            const isDNS = !athleteResult.finish_time && !hasSomeSplits;
+            const isDNF = !athleteResult.finish_time && hasSomeSplits;
+            
+            console.log('DNS/DNF detection:', { 
+                finish_time: athleteResult.finish_time, 
+                hasSomeSplits, 
+                isDNS, 
+                isDNF 
+            });
+            
+            if (isDNS) {
+                // Show DNS status - compact single-line version
+                contentArea.innerHTML = `
+                    <div style="padding: 24px; max-width: 600px; margin: 0 auto;">
+                        <h2 style="margin: 0 0 24px 0; font-size: 24px; color: #1e293b; border-bottom: 2px solid #e74c3c; padding-bottom: 12px;">
+                            Race Status
+                        </h2>
+                        
+                        <div style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
+                                    color: white; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; 
+                                    display: flex; align-items: center; justify-content: center; gap: 16px;">
+                            <div style="font-size: 32px;">⚠️</div>
+                            <div>
+                                <div style="font-size: 24px; font-weight: bold;">DNS</div>
+                                <div style="font-size: 14px; opacity: 0.95;">Did Not Start</div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #fff5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 18px; color: #334155;">What happened?</h3>
+                            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                                This athlete was confirmed for the race but did not cross the starting line. 
+                                This could be due to a last-minute withdrawal, injury, or other circumstances.
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 14px; color: #64748b; margin-bottom: 8px;">Points Earned</div>
+                            <div style="font-size: 48px; font-weight: bold; color: #94a3b8;">0</div>
+                            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 12px;">No points awarded for DNS</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (isDNF) {
+                // Show DNF status with last recorded split
+                const splits = [
+                    { label: '40K', time: athleteResult.split_40k, distance: '40km' },
+                    { label: '35K', time: athleteResult.split_35k, distance: '35km' },
+                    { label: '30K', time: athleteResult.split_30k, distance: '30km' },
+                    { label: 'Half', time: athleteResult.split_half, distance: '21.1km' },
+                    { label: '10K', time: athleteResult.split_10k, distance: '10km' },
+                    { label: '5K', time: athleteResult.split_5k, distance: '5km' }
+                ];
+                
+                const lastSplit = splits.find(s => s.time);
+                
+                let splitsHTML = '';
+                splits.reverse().forEach(split => {
+                    if (split.time) {
+                        const isLast = split === lastSplit;
+                        splitsHTML += `
+                            <div style="display: flex; justify-content: space-between; padding: 12px 0; 
+                                        border-bottom: 1px solid #e2e8f0; ${isLast ? 'background: #fef2f2; margin: 0 -16px; padding: 12px 16px;' : ''}">
+                                <span style="color: ${isLast ? '#dc2626' : '#475569'}; font-weight: ${isLast ? '600' : '400'};">
+                                    ${split.label} (${split.distance})
+                                    ${isLast ? ' <span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">LAST SPLIT</span>' : ''}
+                                </span>
+                                <span style="font-family: 'Monaco', 'Courier New', monospace; color: ${isLast ? '#dc2626' : '#1e293b'}; font-weight: ${isLast ? '700' : '600'};">
+                                    ${split.time}
+                                </span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                contentArea.innerHTML = `
+                    <div style="padding: 24px; max-width: 600px; margin: 0 auto;">
+                        <h2 style="margin: 0 0 24px 0; font-size: 24px; color: #1e293b; border-bottom: 2px solid #f59e0b; padding-bottom: 12px;">
+                            Race Status
+                        </h2>
+                        
+                        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+                                    color: white; padding: 32px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">🛑</div>
+                            <div style="font-size: 32px; font-weight: bold; margin-bottom: 8px;">DNF</div>
+                            <div style="font-size: 16px; opacity: 0.95;">Did Not Finish</div>
+                        </div>
+                        
+                        ${lastSplit ? `
+                            <div style="background: #fffbeb; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin-bottom: 24px;">
+                                <h3 style="margin: 0 0 12px 0; font-size: 18px; color: #334155;">Last Recorded Position</h3>
+                                <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                                    This athlete was last recorded at the <strong>${lastSplit.label}</strong> timing mat (${lastSplit.distance}) 
+                                    with a time of <strong>${lastSplit.time}</strong>. They did not complete the full marathon distance.
+                                </p>
+                            </div>
+                        ` : ''}
+                        
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+                            <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #334155;">Recorded Splits</h3>
+                            ${splitsHTML || '<p style="margin: 0; color: #94a3b8; text-align: center;">No split data available</p>'}
+                        </div>
+                        
+                        <div style="background: #fff5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #e74c3c;">
+                            <h3 style="margin: 0 0 12px 0; font-size: 18px; color: #334155;">What happened?</h3>
+                            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                                This athlete started the race but did not cross the finish line. This could be due to injury, 
+                                exhaustion, time cutoffs, or other race-day circumstances.
+                            </p>
+                        </div>
+                        
+                        <div style="margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 14px; color: #64748b; margin-bottom: 8px;">Points Earned</div>
+                            <div style="font-size: 48px; font-weight: bold; color: #94a3b8;">0</div>
+                            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 12px;">No points awarded for DNF</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+        }
         
         if (!athleteResult || !athleteResult.total_points) {
             contentArea.innerHTML = `
@@ -4839,6 +4988,12 @@ async function loadAthleteScoringData(athleteId, athleteData) {
                 const label = bonus.type === 'NEGATIVE_SPLIT' ? 'Negative Split' :
                             bonus.type === 'EVEN_PACE' ? 'Even Pace' : 'Fast Finish Kick';
                 
+                // Debug logging for Fast Finish Kick
+                if (bonus.type === 'FAST_FINISH_KICK') {
+                    console.log('Fast Finish Kick bonus:', bonus);
+                    console.log('Bonus details:', bonus.details);
+                }
+                
                 // Build details text based on bonus type
                 let detailsText = '';
                 if (bonus.details) {
@@ -4852,19 +5007,27 @@ async function loadAthleteScoringData(athleteId, athleteData) {
                         const diff = Math.abs(bonus.details.second_half_ms - bonus.details.first_half_ms);
                         const diffDisplay = formatTimeFromMs(diff);
                         detailsText = `<br><span style="font-size: 12px; color: #64748b;">1st half: ${firstHalf} | 2nd half: ${secondHalf} (±${diffDisplay})</span>`;
-                    } else if (bonus.type === 'FAST_FINISH_KICK' && bonus.details.final_sprint_ms) {
-                        // Final sprint (last 2.195km from 40K to finish)
-                        const finalSprintTime = formatTimeFromMs(bonus.details.final_sprint_ms);
-                        const finalSprintDistance = bonus.details.final_sprint_distance_km || 2.195;
-                        const finalSprintPace = formatPacePerMile(bonus.details.final_sprint_pace_ms_per_m);
+                    } else if (bonus.type === 'FAST_FINISH_KICK') {
+                        // Check for new field names first, fall back to old field names
+                        const sprintMs = bonus.details.final_sprint_ms || bonus.details.last_5k_ms;
+                        const sprintPace = bonus.details.final_sprint_pace_ms_per_m || bonus.details.last_5k_pace_ms_per_m;
+                        const first40kPace = bonus.details.first_40k_pace_ms_per_m;
                         
-                        // First 40K pace for comparison
-                        const first40kPace = formatPacePerMile(bonus.details.first_40k_pace_ms_per_m);
-                        
-                        detailsText = `<br><span style="font-size: 12px; color: #64748b;">
-                            Final ${finalSprintDistance.toFixed(2)}km: ${finalSprintTime} (${finalSprintPace} pace)<br>
-                            First 40km pace: ${first40kPace}
-                        </span>`;
+                        if (sprintPace && first40kPace) {
+                            // New format with detailed pace comparison (pace only, no time)
+                            const finalSprintDistance = bonus.details.final_sprint_distance_km || 2.195;
+                            const finalSprintPace = formatPacePerMile(sprintPace);
+                            const first40kPaceFormatted = formatPacePerMile(first40kPace);
+                            
+                            detailsText = `<br><span style="font-size: 12px; color: #64748b;">
+                                Final ${finalSprintDistance.toFixed(2)}km: ${finalSprintPace} pace<br>
+                                First 40km: ${first40kPaceFormatted} pace
+                            </span>`;
+                        } else if (sprintMs) {
+                            // Old format or partial data - just show the time
+                            const sprintTime = formatTimeFromMs(sprintMs);
+                            detailsText = `<br><span style="font-size: 12px; color: #64748b;">Final sprint: ${sprintTime}</span>`;
+                        }
                     }
                 }
                 
@@ -5124,12 +5287,12 @@ async function loadAthleteDetailedData(athleteId) {
     const chartContainer = document.querySelector('.chart-container');
     const selectedRaceInfo = document.getElementById('selected-race-info');
     
-    // Show loading states
-    progressionLoading.style.display = 'block';
-    resultsLoading.style.display = 'block';
-    resultsDiv.innerHTML = '';
-    progressionEmpty.style.display = 'none';
-    resultsEmpty.style.display = 'none';
+    // Show loading states (only if elements exist)
+    if (progressionLoading) progressionLoading.style.display = 'block';
+    if (resultsLoading) resultsLoading.style.display = 'block';
+    if (resultsDiv) resultsDiv.innerHTML = '';
+    if (progressionEmpty) progressionEmpty.style.display = 'none';
+    if (resultsEmpty) resultsEmpty.style.display = 'none';
     if (chartContainer) chartContainer.style.display = 'none';
     if (selectedRaceInfo) selectedRaceInfo.style.display = 'none';
     
@@ -5140,32 +5303,40 @@ async function loadAthleteDetailedData(athleteId) {
         
         const data = await response.json();
         
-        // Hide loading spinners
-        progressionLoading.style.display = 'none';
-        resultsLoading.style.display = 'none';
+        // Hide loading spinners (only if elements exist)
+        if (progressionLoading) progressionLoading.style.display = 'none';
+        if (resultsLoading) resultsLoading.style.display = 'none';
         
         // Display progression data
         if (data.progression && data.progression.length > 0) {
             displayProgression(data.progression);
         } else {
-            progressionEmpty.style.display = 'block';
+            if (progressionEmpty) {
+                progressionEmpty.style.display = 'block';
+            }
         }
         
         // Display race results
         if (data.raceResults && data.raceResults.length > 0) {
             displayRaceResults(data.raceResults);
         } else {
-            resultsEmpty.style.display = 'block';
+            if (resultsEmpty) {
+                resultsEmpty.style.display = 'block';
+            }
         }
         
     } catch (error) {
         console.error('Error loading athlete details:', error);
-        progressionLoading.style.display = 'none';
-        resultsLoading.style.display = 'none';
-        progressionEmpty.textContent = 'Error loading data';
-        progressionEmpty.style.display = 'block';
-        resultsEmpty.textContent = 'Error loading data';
-        resultsEmpty.style.display = 'block';
+        if (progressionLoading) progressionLoading.style.display = 'none';
+        if (resultsLoading) resultsLoading.style.display = 'none';
+        if (progressionEmpty) {
+            progressionEmpty.textContent = 'Error loading data';
+            progressionEmpty.style.display = 'block';
+        }
+        if (resultsEmpty) {
+            resultsEmpty.textContent = 'Error loading data';
+            resultsEmpty.style.display = 'block';
+        }
     }
 }
 

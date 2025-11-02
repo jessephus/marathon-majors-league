@@ -124,79 +124,87 @@ export default async function handler(req, res) {
         // 1. Athletes with results (finished, DNF with splits)
         // 2. Athletes confirmed for race but no results at all (DNS)
         return sql`
-          -- Athletes with recorded results (finished or DNF with some splits)
-          SELECT 
-            rr.athlete_id,
-            rr.finish_time,
-            rr.finish_time_ms,
-            rr.split_5k,
-            rr.split_10k,
-            rr.split_half,
-            rr.split_30k,
-            rr.split_35k,
-            rr.split_40k,
-            rr.placement,
-            rr.placement_points,
-            rr.time_gap_seconds,
-            rr.time_gap_points,
-            rr.performance_bonus_points,
-            rr.record_bonus_points,
-            rr.total_points,
-            rr.points_version,
-            rr.breakdown,
-            rr.record_type,
-            rr.record_status,
-            rr.updated_at,
-            a.name AS athlete_name,
-            a.country,
-            a.gender,
-            a.personal_best AS personal_best,
-            a.headshot_url AS headshot_url,
-            'has_results' as result_status
-          FROM race_results rr
-          LEFT JOIN athletes a ON rr.athlete_id = a.id
-          WHERE rr.game_id = ${gameId}
-          
-          UNION ALL
-          
-          -- Confirmed athletes with NO results at all (DNS)
-          SELECT 
-            a.id as athlete_id,
-            NULL as finish_time,
-            NULL as finish_time_ms,
-            NULL as split_5k,
-            NULL as split_10k,
-            NULL as split_half,
-            NULL as split_30k,
-            NULL as split_35k,
-            NULL as split_40k,
-            NULL as placement,
-            NULL as placement_points,
-            NULL as time_gap_seconds,
-            NULL as time_gap_points,
-            NULL as performance_bonus_points,
-            NULL as record_bonus_points,
-            NULL as total_points,
-            NULL as points_version,
-            NULL as breakdown,
-            NULL as record_type,
-            NULL as record_status,
-            NULL as updated_at,
-            a.name AS athlete_name,
-            a.country,
-            a.gender,
-            a.personal_best AS personal_best,
-            a.headshot_url AS headshot_url,
-            'dns' as result_status
-          FROM athletes a
-          INNER JOIN athlete_races ar ON a.id = ar.athlete_id
-          WHERE ar.race_id = ${activeRace.id}
-            AND NOT EXISTS (
-              SELECT 1 FROM race_results rr 
-              WHERE rr.athlete_id = a.id AND rr.game_id = ${gameId}
-            )
-          
-          ORDER BY gender NULLS LAST, placement NULLS LAST, finish_time ASC
+          WITH combined_results AS (
+            -- Athletes with recorded results (finished or DNF with some splits)
+            SELECT 
+              rr.athlete_id,
+              rr.finish_time,
+              rr.finish_time_ms,
+              rr.split_5k,
+              rr.split_10k,
+              rr.split_half,
+              rr.split_30k,
+              rr.split_35k,
+              rr.split_40k,
+              rr.placement,
+              rr.placement_points,
+              rr.time_gap_seconds,
+              rr.time_gap_points,
+              rr.performance_bonus_points,
+              rr.record_bonus_points,
+              rr.total_points,
+              rr.points_version,
+              rr.breakdown,
+              rr.record_type,
+              rr.record_status,
+              rr.updated_at,
+              a.name AS athlete_name,
+              a.country,
+              a.gender,
+              a.personal_best AS personal_best,
+              a.headshot_url AS headshot_url,
+              'has_results' as result_status,
+              1 as sort_priority
+            FROM race_results rr
+            LEFT JOIN athletes a ON rr.athlete_id = a.id
+            WHERE rr.game_id = ${gameId}
+            
+            UNION ALL
+            
+            -- Confirmed athletes with NO results at all (DNS)
+            SELECT 
+              a.id as athlete_id,
+              NULL::text as finish_time,
+              NULL::bigint as finish_time_ms,
+              NULL::text as split_5k,
+              NULL::text as split_10k,
+              NULL::text as split_half,
+              NULL::text as split_30k,
+              NULL::text as split_35k,
+              NULL::text as split_40k,
+              NULL::integer as placement,
+              NULL::integer as placement_points,
+              NULL::numeric as time_gap_seconds,
+              NULL::integer as time_gap_points,
+              NULL::integer as performance_bonus_points,
+              NULL::integer as record_bonus_points,
+              NULL::integer as total_points,
+              NULL::integer as points_version,
+              NULL::jsonb as breakdown,
+              NULL::text as record_type,
+              NULL::text as record_status,
+              NULL::timestamp as updated_at,
+              a.name AS athlete_name,
+              a.country,
+              a.gender,
+              a.personal_best AS personal_best,
+              a.headshot_url AS headshot_url,
+              'dns' as result_status,
+              2 as sort_priority
+            FROM athletes a
+            INNER JOIN athlete_races ar ON a.id = ar.athlete_id
+            WHERE ar.race_id = ${activeRace.id}
+              AND NOT EXISTS (
+                SELECT 1 FROM race_results rr 
+                WHERE rr.athlete_id = a.id AND rr.game_id = ${gameId}
+              )
+          )
+          SELECT * FROM combined_results
+          ORDER BY 
+            gender NULLS LAST, 
+            sort_priority ASC,
+            placement NULLS LAST, 
+            finish_time ASC NULLS LAST
         `;
       }
 
