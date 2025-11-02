@@ -1899,13 +1899,23 @@ function initLeaderboardStickyBehavior() {
     const container = document.querySelector('.leaderboard-container');
     if (!container) return;
     
+    // Remove any existing listeners to prevent memory leaks
+    if (window._leaderboardStickyCleanup) {
+        window._leaderboardStickyCleanup();
+        window._leaderboardStickyCleanup = null;
+    }
+    
     // Calculate the natural position of the highlighted row
     function updateStickyBehavior() {
-        const containerRect = container.getBoundingClientRect();
-        const rowRect = highlightedRow.getBoundingClientRect();
+        // Remove sticky classes to get true natural dimensions
+        const hadStickyTop = highlightedRow.classList.contains('sticky-top');
+        const hadStickyBottom = highlightedRow.classList.contains('sticky-bottom');
+        highlightedRow.classList.remove('sticky-top', 'sticky-bottom');
         
-        // Get the row's position relative to the document
-        const rowTop = rowRect.top + window.scrollY;
+        // Get natural dimensions and position
+        const rowNaturalTop = highlightedRow.offsetTop;
+        const rowNaturalHeight = highlightedRow.offsetHeight;
+        
         const viewportHeight = window.innerHeight;
         const scrollTop = window.scrollY;
         
@@ -1913,41 +1923,44 @@ function initLeaderboardStickyBehavior() {
         const headerOffset = 80;
         const bottomOffset = 20;
         
-        // Calculate whether row is naturally above or below current viewport
-        const rowNaturalTop = highlightedRow.offsetTop;
+        // Calculate viewport boundaries
         const viewportTop = scrollTop + headerOffset;
         const viewportBottom = scrollTop + viewportHeight - bottomOffset;
         
-        // If row's natural position is above current viewport, stick to top
+        // Apply appropriate sticky mode based on natural position
         if (rowNaturalTop < viewportTop) {
+            // Row's natural position is above current viewport, stick to top
             highlightedRow.classList.add('sticky-top');
-            highlightedRow.classList.remove('sticky-bottom');
-        }
-        // If row's natural position is below current viewport, stick to bottom  
-        else if (rowNaturalTop + rowRect.height > viewportBottom) {
+        } else if (rowNaturalTop + rowNaturalHeight > viewportBottom) {
+            // Row's natural position is below current viewport, stick to bottom  
             highlightedRow.classList.add('sticky-bottom');
-            highlightedRow.classList.remove('sticky-top');
         }
-        // Row is in natural view, no sticky needed
-        else {
-            highlightedRow.classList.remove('sticky-top', 'sticky-bottom');
-        }
+        // else: Row is in natural view, no sticky classes (already removed above)
     }
     
-    // Update on scroll
+    // Update on scroll with requestAnimationFrame throttling
     let ticking = false;
     function onScroll() {
         if (!ticking) {
-            window.requestAnimationFrame(() => {
-                updateStickyBehavior();
-                ticking = false;
-            });
             ticking = true;
+            window.requestAnimationFrame(() => {
+                try {
+                    updateStickyBehavior();
+                } finally {
+                    ticking = false;
+                }
+            });
         }
     }
     
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', updateStickyBehavior, { passive: true });
+    
+    // Store cleanup function to prevent memory leaks
+    window._leaderboardStickyCleanup = () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', updateStickyBehavior);
+    };
     
     // Initial update
     updateStickyBehavior();
