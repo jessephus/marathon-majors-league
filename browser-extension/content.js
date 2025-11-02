@@ -46,11 +46,22 @@ function detectGender() {
   
   console.log('🔍 Detecting gender from URL and page content...');
   
-  if (url.includes('women') || url.includes('female') || pageText.includes('top women')) {
-    console.log('   → Detected: WOMEN');
+  // Check URL first (most reliable), then page text as fallback
+  // Check women first since 'men' is substring of 'women'
+  if (url.includes('women') || url.includes('female') || url.includes('elite-w')) {
+    console.log('   → Detected: WOMEN (from URL)');
     return 'women';
-  } else if (url.includes('men') || url.includes('male') || pageText.includes('top men')) {
-    console.log('   → Detected: MEN');
+  } else if (url.includes('-men') || url.includes('/men') || url.includes('male') || url.includes('elite-m')) {
+    console.log('   → Detected: MEN (from URL)');
+    return 'men';
+  }
+  
+  // Fallback to page text if URL doesn't match
+  if (pageText.includes('pro women')) {
+    console.log('   → Detected: WOMEN (from page text)');
+    return 'women';
+  } else if (pageText.includes('pro men')) {
+    console.log('   → Detected: MEN (from page text)');
     return 'men';
   }
   

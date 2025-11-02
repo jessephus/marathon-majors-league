@@ -12,34 +12,36 @@ async function autoDetectFromURL() {
     
     // Detect gender from URL
     let gender = 'women'; // default
-    if (url.includes('/men') || url.includes('elite-m') || url.includes('male')) {
-      gender = 'men';
-    } else if (url.includes('/women') || url.includes('elite-w') || url.includes('female')) {
+    // Check women first since 'men' is substring of 'women'
+    if (url.includes('women') || url.includes('female') || url.includes('elite-w')) {
       gender = 'women';
+    } else if (url.includes('/men') || url.includes('-men') || url.includes('male') || url.includes('elite-m')) {
+      gender = 'men';
     }
     document.getElementById('gender').value = gender;
     console.log('Auto-detected gender from URL:', gender);
     
     // Detect split type from URL
+    // Check from longest to shortest to avoid substring matches (e.g., 15k contains 5k)
     let splitType = 'finish'; // default
-    if (url.includes('5k') || url.includes('5-k')) {
-      splitType = '5k';
-    } else if (url.includes('10k') || url.includes('10-k')) {
-      splitType = '10k';
-    } else if (url.includes('15k') || url.includes('15-k')) {
-      splitType = '15k';
-    } else if (url.includes('20k') || url.includes('20-k')) {
-      splitType = '20k';
-    } else if (url.includes('half') || url.includes('21k')) {
+    if (url.includes('half') || url.includes('21k')) {
       splitType = 'half';
-    } else if (url.includes('25k') || url.includes('25-k')) {
-      splitType = '25k';
-    } else if (url.includes('30k') || url.includes('30-k')) {
-      splitType = '30k';
-    } else if (url.includes('35k') || url.includes('35-k')) {
-      splitType = '35k';
     } else if (url.includes('40k') || url.includes('40-k')) {
       splitType = '40k';
+    } else if (url.includes('35k') || url.includes('35-k')) {
+      splitType = '35k';
+    } else if (url.includes('30k') || url.includes('30-k')) {
+      splitType = '30k';
+    } else if (url.includes('25k') || url.includes('25-k')) {
+      splitType = '25k';
+    } else if (url.includes('20k') || url.includes('20-k')) {
+      splitType = '20k';
+    } else if (url.includes('15k') || url.includes('15-k')) {
+      splitType = '15k';
+    } else if (url.includes('10k') || url.includes('10-k')) {
+      splitType = '10k';
+    } else if (url.includes('/5k') || url.includes('-5k')) {
+      splitType = '5k';
     } else if (url.includes('finish') || url.includes('final') || url.includes('result')) {
       splitType = 'finish';
     }
@@ -142,6 +144,7 @@ document.getElementById('scrapeBtn').addEventListener('click', async () => {
     };
     
     console.log(`📦 Sending ${athletes.length} athletes to API...`);
+    console.log('Payload:', JSON.stringify(payload, null, 2));
     showStatus('info', `📤 Sending ${athletes.length} athletes to API...`);
     
     // Send to API
@@ -151,11 +154,16 @@ document.getElementById('scrapeBtn').addEventListener('click', async () => {
       body: JSON.stringify(payload)
     });
     
+    console.log('API Response Status:', apiResponse.status, apiResponse.statusText);
+    
     if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error('API Error Response:', errorText);
       throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
     }
     
     const result = await apiResponse.json();
+    console.log('API Result:', result);
     
     if (result.success) {
       console.log(`✅ Success! Imported ${result.summary.successful} of ${result.summary.total}`);
@@ -171,10 +179,30 @@ document.getElementById('scrapeBtn').addEventListener('click', async () => {
       );
       
       if (result.summary.failed > 0) {
-        console.log('⚠️  Failed athletes:', result.errors);
+        console.log('');
+        console.log('═══════════════════════════════════════');
+        console.log('⚠️  ATHLETES NOT FOUND IN DATABASE');
+        console.log('═══════════════════════════════════════');
+        console.log('');
+        console.log('These athletes need to be added or mapped:');
+        console.log('');
+        result.errors.forEach((error, index) => {
+          console.log(`${index + 1}. "${error.name}" - ${error.error}`);
+        });
+        console.log('');
+        console.log('Copy these names to create athlete mappings');
+        console.log('═══════════════════════════════════════');
+        console.log('');
       }
       
-      console.log('Matched athletes:', result.matches);
+      if (result.summary.successful > 0) {
+        console.log('');
+        console.log('✅ Successfully matched athletes:');
+        result.matches.forEach((match, index) => {
+          console.log(`${index + 1}. "${match.name}" → ${match.time}`);
+        });
+        console.log('');
+      }
     } else {
       throw new Error('Import failed. Check console for details.');
     }

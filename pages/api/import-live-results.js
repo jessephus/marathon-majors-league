@@ -72,6 +72,7 @@ export default async function handler(req, res) {
         }
 
         console.log(`🔍 Matching "${name}" with time ${time}...`);
+        console.log(`   Gender filter: "${gender}"`);
 
         // Try exact match first
         let matchedAthlete = await sql`
@@ -79,6 +80,8 @@ export default async function handler(req, res) {
           FROM athletes 
           WHERE LOWER(name) = LOWER(${name}) AND gender = ${gender}
         `;
+        
+        console.log(`   Exact match query returned ${matchedAthlete.length} results`);
 
         // If no exact match, try fuzzy match (partial name match)
         if (matchedAthlete.length === 0) {
