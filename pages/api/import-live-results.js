@@ -3,6 +3,16 @@ import { neon } from '@neondatabase/serverless';
 // Initialize Neon SQL client
 const sql = neon(process.env.DATABASE_URL);
 
+// Name mappings for athletes with different names in NYRR vs database
+// Maps NYRR name -> Database name
+const NAME_MAPPINGS = {
+  // NYRR lists short name, but database has full name
+  'Alexander Mutiso': 'Alexander Mutiso Munyao',
+  
+  // Add more mappings here as needed
+  // 'NYRR Name': 'Database Name',
+};
+
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -74,11 +84,17 @@ export default async function handler(req, res) {
         console.log(`🔍 Matching "${name}" with time ${time}...`);
         console.log(`   Gender filter: "${gender}"`);
 
-        // Try exact match first
+        // Check if there's a name mapping for this athlete
+        const mappedName = NAME_MAPPINGS[name] || name;
+        if (NAME_MAPPINGS[name]) {
+          console.log(`   📝 Using name mapping: "${name}" → "${mappedName}"`);
+        }
+
+        // Try exact match first (using mapped name if available)
         let matchedAthlete = await sql`
           SELECT id, name, gender 
           FROM athletes 
-          WHERE LOWER(name) = LOWER(${name}) AND gender = ${gender}
+          WHERE LOWER(name) = LOWER(${mappedName}) AND gender = ${gender}
         `;
         
         console.log(`   Exact match query returned ${matchedAthlete.length} results`);
