@@ -17,6 +17,9 @@ const SPLIT_DISTANCES = {
   '40k': 40
 };
 
+// Special result codes indicating non-finishers
+const NON_FINISHER_CODES = ['DNF', 'DNS', 'DQ', 'NA', 'NONE'];
+
 /**
  * Convert time string (HH:MM:SS or MM:SS) to milliseconds
  */
@@ -26,7 +29,7 @@ function timeStringToMs(timeStr) {
   const normalized = timeStr.trim().toUpperCase();
   
   // Treat special result codes as non-finishers
-  if (['DNF', 'DNS', 'DQ', 'NA', 'NONE'].includes(normalized)) {
+  if (NON_FINISHER_CODES.includes(normalized)) {
     return null;
   }
   
@@ -127,9 +130,12 @@ function projectFinishTime(splitInfo) {
   } else if (progressRatio >= 0.50) {
     // Half marathon split - significant slowdown expected in second half
     fatigueFactor = 1.06;
+  } else if (progressRatio >= 0.24) {
+    // 10k split - very rough projection, substantial slowdown expected
+    fatigueFactor = 1.10;
   } else {
-    // Early splits (5k, 10k) - very rough projection
-    fatigueFactor = 1.08;
+    // Early splits (5k) - extremely rough projection
+    fatigueFactor = 1.12;
   }
   
   // Project remaining distance at adjusted pace

@@ -1837,6 +1837,20 @@ function displayDraftResults() {
     });
 }
 
+// Helper function to format split labels for display
+function formatSplitLabel(splitName) {
+    const splitLabels = {
+        '5k': '5K',
+        '10k': '10K',
+        'half': 'Half Marathon',
+        '30k': '30K',
+        '35k': '35K',
+        '40k': '40K'
+    };
+    
+    return splitLabels[splitName] || (splitName ? splitName.toUpperCase() : 'recent split');
+}
+
 // Display leaderboard with team rankings
 async function displayLeaderboard() {
     const container = document.getElementById('leaderboard-display');
@@ -1877,8 +1891,7 @@ async function displayLeaderboard() {
         
         // Add temporary score indicator if applicable
         if (isTemporary && projectionInfo) {
-            const splitLabel = projectionInfo.mostCommonSplit ? 
-                projectionInfo.mostCommonSplit.toUpperCase().replace('HALF', 'Half Marathon') : 'recent split';
+            const splitLabel = formatSplitLabel(projectionInfo.mostCommonSplit);
             leaderboardHTML += `
                 <div class="temporary-scores-banner">
                     <span class="banner-icon">⚡</span>
