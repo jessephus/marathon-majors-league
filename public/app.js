@@ -4805,7 +4805,7 @@ async function loadAthleteScoringData(athleteId, athleteData) {
             }
             
             if (isDNF) {
-                // Show DNF status with last recorded split
+                // Show DNF status with last recorded split - compact version
                 const splits = [
                     { label: '40K', time: athleteResult.split_40k, distance: '40km' },
                     { label: '35K', time: athleteResult.split_35k, distance: '35km' },
@@ -4843,10 +4843,13 @@ async function loadAthleteScoringData(athleteId, athleteData) {
                         </h2>
                         
                         <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
-                                    color: white; padding: 32px; border-radius: 12px; text-align: center; margin-bottom: 24px;">
-                            <div style="font-size: 64px; margin-bottom: 16px;">🛑</div>
-                            <div style="font-size: 32px; font-weight: bold; margin-bottom: 8px;">DNF</div>
-                            <div style="font-size: 16px; opacity: 0.95;">Did Not Finish</div>
+                                    color: white; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; 
+                                    display: flex; align-items: center; justify-content: center; gap: 16px;">
+                            <div style="font-size: 32px;">🛑</div>
+                            <div>
+                                <div style="font-size: 24px; font-weight: bold;">DNF</div>
+                                <div style="font-size: 14px; opacity: 0.95;">Did Not Finish</div>
+                            </div>
                         </div>
                         
                         ${lastSplit ? `

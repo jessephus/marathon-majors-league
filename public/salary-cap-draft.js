@@ -88,6 +88,39 @@ function createTeamAvatarSVG(teamName, size = 48) {
     return svg;
 }
 
+/**
+ * Check if any race results exist in the game
+ * If results exist, open scoring modal; otherwise open regular athlete modal
+ */
+async function openAppropriateAthleteModal(athlete) {
+    try {
+        // Check if we have gameState.results already loaded
+        if (window.gameState && window.gameState.results && Object.keys(window.gameState.results).length > 0) {
+            // Results exist - open scoring modal
+            openAthleteScoringModal(athlete);
+            return;
+        }
+        
+        // Check via API
+        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        const data = await response.json();
+        
+        const results = data.scored || data.results || [];
+        
+        if (results.length > 0) {
+            // Results exist - open scoring modal
+            openAthleteScoringModal(athlete);
+        } else {
+            // No results yet - open regular athlete modal
+            openAthleteModal(athlete);
+        }
+    } catch (error) {
+        console.error('Error checking for results:', error);
+        // Fallback to regular modal on error
+        openAthleteModal(athlete);
+    }
+}
+
 // Salary cap configuration
 const SALARY_CAP_CONFIG = {
     totalCap: 30000,
@@ -340,7 +373,7 @@ function handleSlotClick(slotElement) {
     if (salaryCapState.isLocked) {
         const athlete = salaryCapState.slots[slotId];
         if (athlete) {
-            openAthleteModal(athlete);
+            openAppropriateAthleteModal(athlete);
         }
         return;
     }
@@ -1092,7 +1125,7 @@ function updateAllSlotsLocked() {
                 // Only allow viewing details, not removing
                 const athlete = salaryCapState.slots[slotId];
                 if (athlete && e.target.classList.contains('athlete-name')) {
-                    openAthleteModal(athlete);
+                    openAppropriateAthleteModal(athlete);
                 }
             };
             
