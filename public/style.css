@@ -4285,6 +4285,67 @@ footer .btn {
     background-color: #94a3b8;
 }
 
+/* Results Management Table Styles */
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.results-table thead {
+    background: linear-gradient(135deg, var(--primary-orange) 0%, #d95700 100%);
+    color: white;
+}
+
+.results-table th {
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+.results-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s;
+}
+
+.results-table tbody tr:hover {
+    background-color: #fff7ed;
+}
+
+.results-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.results-table td {
+    padding: 16px 12px;
+    font-size: 14px;
+}
+
+.result-row {
+    background-color: white;
+}
+
+.results-management-container {
+    margin-top: 20px;
+}
+
+/* Mobile responsiveness for results table */
+@media (max-width: 768px) {
+    .results-table {
+        font-size: 12px;
+    }
+    
+    .results-table th,
+    .results-table td {
+        padding: 12px 8px;
+    }
+}
+
 /* Mobile responsiveness for teams table */
 @media (max-width: 768px) {
     .teams-status-table {

@@ -485,9 +485,8 @@ function getMainHTML() {
                     </div>
 
                     <div class="action-card">
-                        <h3>Results Entry</h3>
-                        <div id="results-form"></div>
-                        <button id="update-results" class="btn btn-primary">Update Live Results</button>
+                        <h3>Results Management</h3>
+                        <button id="manage-results-btn" class="btn btn-primary">Manage Live Results</button>
                         <button id="finalize-results" class="btn btn-success" style="display: none;">Finalize Results & Crown Winner</button>
                         <button id="reset-results" class="btn btn-warning">Reset Live Results</button>
                         <div id="live-standings"></div>
@@ -579,6 +578,35 @@ function getMainHTML() {
                 <div id="athlete-management-container"></div>
                 
                 <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
+            </div>
+
+            <!-- Results Management Page -->
+            <div id="results-management-page" class="page">
+                <h2>Manage Live Results</h2>
+                <p class="page-description">View and edit all race results entered so far</p>
+                
+                <div id="results-management-container">
+                    <table id="results-table" class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Athlete</th>
+                                <th>Country</th>
+                                <th>Gender</th>
+                                <th>Finish Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="no-results-message" style="display: none; text-align: center; padding: 40px; color: var(--dark-gray);">
+                        <p>No results have been entered yet.</p>
+                        <p>Results will appear here once you start entering athlete finish times.</p>
+                    </div>
+                </div>
+                
+                <button id="back-to-commissioner-from-results" class="btn btn-secondary">Back to Dashboard</button>
             </div>
             
             <!-- Add Athlete Modal -->

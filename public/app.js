@@ -505,7 +505,10 @@ function setupEventListeners() {
 
     // Commissioner page
     document.getElementById('run-draft').addEventListener('click', handleRunDraft);
-    document.getElementById('update-results').addEventListener('click', handleUpdateResults);
+    document.getElementById('manage-results-btn').addEventListener('click', () => {
+        showPage('results-management-page');
+        displayResultsManagement();
+    });
     document.getElementById('finalize-results').addEventListener('click', handleFinalizeResults);
     document.getElementById('reset-results').addEventListener('click', handleResetResults);
     document.getElementById('reset-game').addEventListener('click', handleResetGame);
@@ -529,6 +532,9 @@ function setupEventListeners() {
         displayTeamsTable();
     });
     document.getElementById('back-to-commissioner-from-teams').addEventListener('click', () => showPage('commissioner-page'));
+    
+    // Results Management page
+    document.getElementById('back-to-commissioner-from-results').addEventListener('click', () => showPage('commissioner-page'));
     
     // Athlete Management modal
     const addAthleteModal = document.getElementById('add-athlete-modal');
@@ -721,20 +727,15 @@ async function handleCommissionerTOTPLogin(e) {
                 displayPlayerCodes();
             }
             if (gameState.draftComplete) {
-                setupResultsForm();
                 updateLiveStandings();
                 
-                // Update button states
+                // Update finalize button visibility
                 if (gameState.resultsFinalized) {
-                    document.getElementById('update-results').textContent = 'Results Finalized';
-                    document.getElementById('update-results').disabled = true;
                     document.getElementById('finalize-results').style.display = 'none';
+                } else if (Object.keys(gameState.results).length > 0) {
+                    document.getElementById('finalize-results').style.display = 'inline-block';
                 } else {
-                    document.getElementById('update-results').textContent = 'Update Live Results';
-                    document.getElementById('update-results').disabled = false;
-                    if (Object.keys(gameState.results).length > 0) {
-                        document.getElementById('finalize-results').style.display = 'inline-block';
-                    }
+                    document.getElementById('finalize-results').style.display = 'none';
                 }
             }
         } else {
@@ -1135,24 +1136,17 @@ function handleCommissionerMode() {
         if (gameState.players.length > 0) {
             displayPlayerCodes();
         }
-        // Setup results form if draft is complete
+        // Update button states based on results and finalized state
         if (gameState.draftComplete) {
-            setupResultsForm();
             updateLiveStandings();
             
-            // Update button states based on finalized state
+            // Update finalize button visibility based on results
             if (gameState.resultsFinalized) {
-                document.getElementById('update-results').textContent = 'Results Finalized';
-                document.getElementById('update-results').disabled = true;
                 document.getElementById('finalize-results').style.display = 'none';
+            } else if (Object.keys(gameState.results).length > 0) {
+                document.getElementById('finalize-results').style.display = 'inline-block';
             } else {
-                document.getElementById('update-results').textContent = 'Update Live Results';
-                document.getElementById('update-results').disabled = false;
-                if (Object.keys(gameState.results).length > 0) {
-                    document.getElementById('finalize-results').style.display = 'inline-block';
-                } else {
-                    document.getElementById('finalize-results').style.display = 'none';
-                }
+                document.getElementById('finalize-results').style.display = 'none';
             }
         }
     } else {
@@ -1745,6 +1739,202 @@ async function displayTeamsTable() {
         
         tableBody.appendChild(row);
     });
+}
+
+// Display and manage race results in a table
+async function displayResultsManagement() {
+    const tableBody = document.getElementById('results-table-body');
+    const noResultsMessage = document.getElementById('no-results-message');
+    tableBody.innerHTML = '';
+    
+    // Load current results from database
+    try {
+        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch results');
+        }
+        const data = await response.json();
+        const results = data.results || {};
+        
+        // Get all unique athletes from teams
+        const allAthletes = new Set();
+        Object.values(gameState.teams).forEach(team => {
+            [...team.men, ...team.women].forEach(athlete => {
+                allAthletes.add(JSON.stringify(athlete));
+            });
+        });
+        
+        const athleteList = Array.from(allAthletes).map(a => JSON.parse(a));
+        
+        // Filter athletes that have results entered
+        const athletesWithResults = athleteList.filter(athlete => {
+            const resultEntry = results.find(r => r.athlete_id === athlete.id);
+            return resultEntry && resultEntry.finish_time;
+        });
+        
+        if (athletesWithResults.length === 0) {
+            // Show no results message
+            noResultsMessage.style.display = 'block';
+            document.getElementById('results-table').style.display = 'none';
+            return;
+        }
+        
+        // Show table and hide no results message
+        noResultsMessage.style.display = 'none';
+        document.getElementById('results-table').style.display = 'table';
+        
+        // Sort athletes by finish time
+        athletesWithResults.sort((a, b) => {
+            const timeA = results.find(r => r.athlete_id === a.id)?.finish_time || '';
+            const timeB = results.find(r => r.athlete_id === b.id)?.finish_time || '';
+            return timeA.localeCompare(timeB);
+        });
+        
+        // Build table rows
+        athletesWithResults.forEach(athlete => {
+            const resultEntry = results.find(r => r.athlete_id === athlete.id);
+            const finishTime = resultEntry?.finish_time || '';
+            
+            const row = document.createElement('tr');
+            row.className = 'result-row';
+            
+            // Athlete name column
+            const nameCell = document.createElement('td');
+            nameCell.textContent = athlete.name;
+            nameCell.style.fontWeight = '600';
+            row.appendChild(nameCell);
+            
+            // Country column
+            const countryCell = document.createElement('td');
+            countryCell.textContent = athlete.country;
+            row.appendChild(countryCell);
+            
+            // Gender column
+            const genderCell = document.createElement('td');
+            genderCell.textContent = athlete.gender === 'men' ? 'Men' : 'Women';
+            row.appendChild(genderCell);
+            
+            // Finish time column with inline editing
+            const timeCell = document.createElement('td');
+            const timeInput = document.createElement('input');
+            timeInput.type = 'text';
+            timeInput.value = finishTime;
+            timeInput.placeholder = '2:05:30';
+            timeInput.pattern = '[0-9]{1,2}:[0-9]{2}:[0-9]{2}';
+            timeInput.style.width = '100px';
+            timeInput.style.padding = '4px 8px';
+            timeInput.style.border = '1px solid #ddd';
+            timeInput.style.borderRadius = '4px';
+            timeInput.dataset.athleteId = athlete.id;
+            timeInput.dataset.originalTime = finishTime;
+            
+            // Validation styling on input
+            timeInput.addEventListener('input', (e) => {
+                const time = e.target.value.trim();
+                if (time === '') {
+                    e.target.style.borderColor = '#ddd';
+                    e.target.style.backgroundColor = '';
+                } else if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+                    e.target.style.borderColor = '#28a745';
+                    e.target.style.backgroundColor = '#d4edda';
+                } else {
+                    e.target.style.borderColor = '#dc3545';
+                    e.target.style.backgroundColor = '#f8d7da';
+                }
+            });
+            
+            timeCell.appendChild(timeInput);
+            row.appendChild(timeCell);
+            
+            // Actions column with Save and Delete buttons
+            const actionsCell = document.createElement('td');
+            actionsCell.style.display = 'flex';
+            actionsCell.style.gap = '8px';
+            
+            // Save button
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn-mini';
+            saveBtn.textContent = 'Save';
+            saveBtn.style.backgroundColor = '#28a745';
+            saveBtn.style.color = 'white';
+            saveBtn.onclick = async () => {
+                const newTime = timeInput.value.trim();
+                if (newTime && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(newTime)) {
+                    try {
+                        // Update the result in the database
+                        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ results: { [athlete.id]: newTime } })
+                        });
+                        
+                        // Update local state
+                        gameState.results[athlete.id] = newTime;
+                        timeInput.dataset.originalTime = newTime;
+                        
+                        // Invalidate cache
+                        invalidateResultsCache();
+                        
+                        // Show success feedback
+                        saveBtn.textContent = '✓';
+                        setTimeout(() => {
+                            saveBtn.textContent = 'Save';
+                        }, 2000);
+                        
+                        // Refresh the table to show updated order
+                        displayResultsManagement();
+                    } catch (error) {
+                        console.error('Error saving result:', error);
+                        alert('Error saving result. Please try again.');
+                    }
+                } else {
+                    alert('Invalid time format. Please use HH:MM:SS format (e.g., 2:05:30)');
+                }
+            };
+            
+            // Delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn-mini';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.style.backgroundColor = '#dc3545';
+            deleteBtn.style.color = 'white';
+            deleteBtn.onclick = async () => {
+                if (confirm(`Are you sure you want to delete the result for ${athlete.name}?`)) {
+                    try {
+                        // Delete the result by setting it to empty string
+                        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ results: { [athlete.id]: '' } })
+                        });
+                        
+                        // Update local state
+                        delete gameState.results[athlete.id];
+                        
+                        // Invalidate cache
+                        invalidateResultsCache();
+                        
+                        // Refresh the table
+                        displayResultsManagement();
+                    } catch (error) {
+                        console.error('Error deleting result:', error);
+                        alert('Error deleting result. Please try again.');
+                    }
+                }
+            };
+            
+            actionsCell.appendChild(saveBtn);
+            actionsCell.appendChild(deleteBtn);
+            row.appendChild(actionsCell);
+            
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading results:', error);
+        noResultsMessage.innerHTML = '<p>Error loading results. Please try again.</p>';
+        noResultsMessage.style.display = 'block';
+        document.getElementById('results-table').style.display = 'none';
+    }
 }
 
 // Snake draft algorithm
@@ -3217,17 +3407,10 @@ async function handleResetResults() {
         document.getElementById('live-standings').innerHTML = '';
         document.getElementById('winner-display').innerHTML = '';
         
-        // Re-setup the results form with empty values
-        if (gameState.draftComplete) {
-            setupResultsForm();
-        }
-
-        // Reset button states
-        document.getElementById('update-results').textContent = 'Update Live Results';
-        document.getElementById('update-results').disabled = false;
+        // Reset finalize button state
         document.getElementById('finalize-results').style.display = 'none';
 
-        alert('Live results have been reset. You can now enter new times.');
+        alert('Live results have been reset. You can now enter new times from the Manage Live Results page.');
     } catch (error) {
         console.error('Error resetting results:', error);
         alert('Error resetting results. Please try again.');
