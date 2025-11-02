@@ -566,9 +566,13 @@ export async function clearAllRankings(gameId) {
 export async function getDraftTeams(gameId) {
   const teams = await sql`
     SELECT dt.player_code,
+           ans.display_name,
            a.id, a.name, a.country, a.gender, a.personal_best as pb, a.headshot_url as "headshotUrl"
     FROM draft_teams dt
     JOIN athletes a ON dt.athlete_id = a.id
+    LEFT JOIN anonymous_sessions ans ON dt.game_id = ans.game_id 
+      AND dt.player_code = ans.player_code
+      AND ans.is_active = true
     WHERE dt.game_id = ${gameId}
     ORDER BY dt.player_code, a.gender, a.personal_best
   `;
@@ -578,7 +582,11 @@ export async function getDraftTeams(gameId) {
   
   teams.forEach(row => {
     if (!grouped[row.player_code]) {
-      grouped[row.player_code] = { men: [], women: [] };
+      grouped[row.player_code] = { 
+        men: [], 
+        women: [],
+        displayName: row.display_name || null  // Include display name if available
+      };
     }
     
     const athlete = {

@@ -2272,13 +2272,107 @@ function formatAthleteDetails(athlete, includePersonalBest = false) {
     return detailsParts.join(' • ');
 }
 
+// Helper function to generate team initials
+function getTeamInitials(teamName) {
+    if (!teamName) return '??';
+    
+    const words = teamName.trim().split(/\s+/);
+    let initials = '';
+    
+    if (words.length === 1) {
+        // Single word: take first 2 letters
+        initials = words[0].substring(0, 2).toUpperCase();
+    } else {
+        // Multiple words: take first letter of first 2 words
+        initials = words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+    
+    return initials;
+}
+
+// Helper function to create SVG avatar placeholder
+function createTeamAvatarSVG(teamName, size = 48) {
+    const initials = getTeamInitials(teamName);
+    
+    // Generate a consistent color based on the team name
+    const hashCode = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return hash;
+    };
+    
+    const hue = Math.abs(hashCode(teamName || 'Team')) % 360;
+    const saturation = 65;
+    const lightness = 55;
+    
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    svg.style.borderRadius = "50%";
+    svg.style.flexShrink = "0";
+    
+    // Background circle
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("cx", size / 2);
+    circle.setAttribute("cy", size / 2);
+    circle.setAttribute("r", size / 2);
+    circle.setAttribute("fill", `hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    svg.appendChild(circle);
+    
+    // Text (initials)
+    const text = document.createElementNS(svgNS, "text");
+    text.setAttribute("x", "50%");
+    text.setAttribute("y", "50%");
+    text.setAttribute("dominant-baseline", "middle");
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("fill", "white");
+    text.setAttribute("font-size", size * 0.4);
+    text.setAttribute("font-weight", "bold");
+    text.setAttribute("font-family", "system-ui, -apple-system, sans-serif");
+    text.textContent = initials;
+    svg.appendChild(text);
+    
+    return svg;
+}
+
 function createTeamCard(player, team, showScore = false) {
     const card = document.createElement('div');
     card.className = 'team-card';
 
-    const title = document.createElement('h3');
-    title.textContent = player;
-    card.appendChild(title);
+    // Create team header with avatar, team name, and player code
+    const header = document.createElement('div');
+    header.className = 'team-card-header';
+    
+    // Create avatar
+    const displayName = team.displayName || player;
+    const avatar = createTeamAvatarSVG(displayName, 48);
+    avatar.className = 'team-card-avatar';
+    header.appendChild(avatar);
+    
+    // Create team info section
+    const teamInfo = document.createElement('div');
+    teamInfo.className = 'team-card-info';
+    
+    // Team name (display name if available)
+    const teamNameDiv = document.createElement('div');
+    teamNameDiv.className = 'team-card-name';
+    teamNameDiv.textContent = displayName;
+    teamInfo.appendChild(teamNameDiv);
+    
+    // Player code (if different from display name)
+    if (team.displayName && team.displayName !== player) {
+        const playerCodeDiv = document.createElement('div');
+        playerCodeDiv.className = 'team-card-player-code';
+        playerCodeDiv.textContent = `Player: ${player}`;
+        teamInfo.appendChild(playerCodeDiv);
+    }
+    
+    header.appendChild(teamInfo);
+    card.appendChild(header);
 
     // Show score/ranking at the top if results are available
     if (showScore && Object.keys(gameState.results).length > 0) {

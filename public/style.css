@@ -650,6 +650,40 @@ footer .btn {
     border-bottom: 2px solid var(--medium-gray);
 }
 
+.team-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.team-card-avatar {
+    flex-shrink: 0;
+}
+
+.team-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.team-card-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-orange);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.team-card-player-code {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    font-style: italic;
+}
+
 .team-card .team-section {
     margin-bottom: 20px;
 }
