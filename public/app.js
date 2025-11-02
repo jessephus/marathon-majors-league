@@ -4431,12 +4431,23 @@ async function viewTeamDetails(playerCode) {
         const teamResults = scoredResults.filter(r => teamAthleteIds.includes(r.athlete_id));
         const totalPoints = teamResults.reduce((sum, r) => sum + (r.total_points || 0), 0);
         
+        // Get display name for avatar and title
+        const displayName = team.displayName || playerCode;
+        const avatarSvg = createTeamAvatarSVG(displayName, 56);
+        const avatarHTML = avatarSvg.outerHTML;
+        
         // Build modal content
         let modalHTML = `
             <div class="team-details-modal-overlay" id="team-details-overlay" onclick="closeTeamDetails()">
                 <div class="team-details-modal" onclick="event.stopPropagation()">
                     <div class="team-details-header">
-                        <h2>${escapeHtml(playerCode)}</h2>
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                            ${avatarHTML}
+                            <div style="flex: 1; min-width: 0;">
+                                <h2 style="margin: 0; font-size: 1.5rem; color: var(--primary-orange);">${escapeHtml(displayName)}</h2>
+                                ${team.displayName && team.displayName !== playerCode ? `<div style="font-size: 0.9rem; color: var(--dark-gray); font-style: italic; margin-top: 2px;">Player: ${escapeHtml(playerCode)}</div>` : ''}
+                            </div>
+                        </div>
                         <button class="modal-close-btn" onclick="closeTeamDetails()">×</button>
                     </div>
                     <div class="team-details-summary">
