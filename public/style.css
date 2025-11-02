@@ -4409,6 +4409,17 @@ footer .btn {
     background-color: #c82333;
 }
 
+.results-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.results-actions button {
+    flex: 0 1 auto;
+}
+
 /* Mobile responsiveness for results table */
 @media (max-width: 768px) {
     .results-table {

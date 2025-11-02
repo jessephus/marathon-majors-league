@@ -621,7 +621,62 @@ function getMainHTML() {
                     </div>
                 </div>
                 
-                <button id="back-to-commissioner-from-results" class="btn btn-secondary">Back to Dashboard</button>
+                <div class="results-actions">
+                    <button id="add-result-btn" class="btn btn-primary">Add New Result</button>
+                    <button id="back-to-commissioner-from-results" class="btn btn-secondary">Back to Dashboard</button>
+                </div>
+            </div>
+            
+            <!-- Add Result Modal -->
+            <div id="add-result-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="add-result-modal-close">&times;</button>
+                    <h2>Add New Athlete Result</h2>
+                    <p style="color: var(--dark-gray); margin-bottom: 20px;">Select an athlete and enter their result</p>
+                    <form id="add-result-form">
+                        <div class="form-group">
+                            <label for="result-athlete-select">Athlete *</label>
+                            <select id="result-athlete-select" required>
+                                <option value="">Select athlete...</option>
+                                <!-- Populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="result-finish-time">Finish Time *</label>
+                            <input type="text" id="result-finish-time" required placeholder="2:05:30" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                            <small>Format: HH:MM:SS (e.g., 2:05:30)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-5k">5K Split</label>
+                            <input type="text" id="result-split-5k" placeholder="0:14:30" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-10k">10K Split</label>
+                            <input type="text" id="result-split-10k" placeholder="0:29:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-half">Half Marathon Split</label>
+                            <input type="text" id="result-split-half" placeholder="1:02:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-30k">30K Split</label>
+                            <input type="text" id="result-split-30k" placeholder="1:28:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-35k">35K Split</label>
+                            <input type="text" id="result-split-35k" placeholder="1:42:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-40k">40K Split</label>
+                            <input type="text" id="result-split-40k" placeholder="1:56:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Result</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-add-result">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>
             
             <!-- Add Athlete Modal -->

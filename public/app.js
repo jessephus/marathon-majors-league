@@ -537,6 +537,26 @@ function setupEventListeners() {
     document.getElementById('back-to-commissioner-from-results').addEventListener('click', () => showPage('commissioner-page'));
     document.getElementById('results-view-select').addEventListener('change', () => displayResultsManagement());
     
+    // Add Result modal
+    const addResultModal = document.getElementById('add-result-modal');
+    document.getElementById('add-result-btn').addEventListener('click', async () => {
+        await populateAthleteSelect();
+        addResultModal.style.display = 'flex';
+    });
+    document.getElementById('add-result-modal-close').addEventListener('click', () => {
+        addResultModal.style.display = 'none';
+    });
+    document.getElementById('cancel-add-result').addEventListener('click', () => {
+        addResultModal.style.display = 'none';
+    });
+    // Close modal when clicking the overlay
+    addResultModal.addEventListener('click', (e) => {
+        if (e.target === addResultModal) {
+            addResultModal.style.display = 'none';
+        }
+    });
+    document.getElementById('add-result-form').addEventListener('submit', handleAddResult);
+    
     // Athlete Management modal
     const addAthleteModal = document.getElementById('add-athlete-modal');
     document.getElementById('add-athlete-btn').addEventListener('click', () => {
@@ -2027,6 +2047,124 @@ async function displayResultsManagement() {
         noResultsMessage.innerHTML = '<p>Error loading results. Please try again.</p>';
         noResultsMessage.style.display = 'block';
         document.getElementById('results-table').style.display = 'none';
+    }
+}
+
+// Populate athlete select for adding new results
+async function populateAthleteSelect() {
+    const select = document.getElementById('result-athlete-select');
+    
+    // Clear existing options except the first one
+    while (select.options.length > 1) {
+        select.remove(1);
+    }
+    
+    try {
+        // Fetch all athletes
+        const response = await fetch(`${API_BASE}/api/athletes`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch athletes');
+        }
+        const data = await response.json();
+        const athletes = data.athletes || [];
+        
+        // Get current results to filter out athletes that already have results
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        const resultsData = await resultsResponse.json();
+        const existingResults = resultsData.scored || [];
+        const existingAthleteIds = new Set(existingResults.map(r => r.athlete_id));
+        
+        // Sort athletes by name
+        const sortedAthletes = [...athletes].sort((a, b) => {
+            const nameA = a.name || '';
+            const nameB = b.name || '';
+            return nameA.localeCompare(nameB);
+        });
+        
+        // Add athletes to select (excluding those with existing results)
+        sortedAthletes.forEach(athlete => {
+            if (!existingAthleteIds.has(athlete.id)) {
+                const option = document.createElement('option');
+                option.value = athlete.id;
+                option.textContent = `${athlete.name} (${athlete.country}) - ${athlete.gender}`;
+                select.appendChild(option);
+            }
+        });
+        
+        if (select.options.length === 1) {
+            alert('All athletes already have results entered. Use the table to edit existing results.');
+        }
+    } catch (error) {
+        console.error('Error loading athletes:', error);
+        alert('Error loading athletes. Please try again.');
+    }
+}
+
+// Handle adding a new result
+async function handleAddResult(e) {
+    e.preventDefault();
+    
+    const athleteId = parseInt(document.getElementById('result-athlete-select').value, 10);
+    const finishTime = document.getElementById('result-finish-time').value.trim();
+    const split5k = document.getElementById('result-split-5k').value.trim();
+    const split10k = document.getElementById('result-split-10k').value.trim();
+    const splitHalf = document.getElementById('result-split-half').value.trim();
+    const split30k = document.getElementById('result-split-30k').value.trim();
+    const split35k = document.getElementById('result-split-35k').value.trim();
+    const split40k = document.getElementById('result-split-40k').value.trim();
+    
+    if (!athleteId || !finishTime) {
+        alert('Please select an athlete and enter a finish time.');
+        return;
+    }
+    
+    // Validate time format
+    const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/;
+    if (!timePattern.test(finishTime)) {
+        alert('Invalid finish time format. Please use HH:MM:SS format (e.g., 2:05:30)');
+        return;
+    }
+    
+    // Build result payload
+    const resultData = {
+        finish_time: finishTime
+    };
+    
+    // Add splits if provided
+    if (split5k && timePattern.test(split5k)) resultData.split_5k = split5k;
+    if (split10k && timePattern.test(split10k)) resultData.split_10k = split10k;
+    if (splitHalf && timePattern.test(splitHalf)) resultData.split_half = splitHalf;
+    if (split30k && timePattern.test(split30k)) resultData.split_30k = split30k;
+    if (split35k && timePattern.test(split35k)) resultData.split_35k = split35k;
+    if (split40k && timePattern.test(split40k)) resultData.split_40k = split40k;
+    
+    try {
+        // Save result to database
+        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ results: { [athleteId]: resultData } })
+        });
+        
+        // Update local state
+        gameState.results[athleteId] = finishTime;
+        
+        // Invalidate cache
+        invalidateResultsCache();
+        
+        // Close modal
+        document.getElementById('add-result-modal').style.display = 'none';
+        
+        // Reset form
+        document.getElementById('add-result-form').reset();
+        
+        // Refresh the table
+        displayResultsManagement();
+        
+        alert('Result added successfully!');
+    } catch (error) {
+        console.error('Error adding result:', error);
+        alert(`Error adding result: ${error.message}. Please try again.`);
     }
 }
 
