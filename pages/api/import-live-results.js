@@ -6,8 +6,8 @@ const sql = neon(process.env.DATABASE_URL);
 // Name mappings for athletes with different names in NYRR vs database
 // Maps NYRR name -> Database name
 const NAME_MAPPINGS = {
-  // NYRR lists short name, but database has full name
-  'Alexander Mutiso': 'Alexander Mutiso Munyao',
+  // NYRR lists "Alexander Mutiso", database has "Alexander MUNYAO"
+  'Alexander Mutiso': 'Alexander MUNYAO',
   
   // Add more mappings here as needed
   // 'NYRR Name': 'Database Name',
