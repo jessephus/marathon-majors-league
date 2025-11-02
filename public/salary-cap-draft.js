@@ -187,14 +187,15 @@ async function setupSalaryCapDraft() {
     const gameId = session.gameId;
     const playerCode = session.playerCode;
     
-    // Fetch team data and check results in parallel
+    // Fetch team data, check results, and get game state in parallel
     const fetchStart = performance.now();
-    console.log('🔍 Fetching team data and checking results (parallel)...');
+    console.log('🔍 Fetching team data, checking results, and getting game state (parallel)...');
     
     try {
-        const [teamResponse, resultsResponse] = await Promise.all([
+        const [teamResponse, resultsResponse, gameStateResponse] = await Promise.all([
             fetch(`/api/salary-cap-draft?gameId=${gameId}&playerCode=${playerCode}`),
-            fetch(`/api/results?gameId=${gameId}&checkOnly=true`)
+            fetch(`/api/results?gameId=${gameId}&checkOnly=true`),
+            fetch(`/api/game-state?gameId=${gameId}`)
         ]);
         console.log(`⏱️ Parallel API fetches took ${(performance.now() - fetchStart).toFixed(2)}ms`);
         
@@ -202,8 +203,10 @@ async function setupSalaryCapDraft() {
         const parseStart = performance.now();
         const data = await teamResponse.json();
         const resultsData = await resultsResponse.json();
+        const gameStateData = await gameStateResponse.json();
         console.log(`⏱️ JSON parsing took ${(performance.now() - parseStart).toFixed(2)}ms`);
         console.log('🔍 Team data from API:', data);
+        console.log('🔍 Game state from API:', gameStateData);
         
         // API returns all teams keyed by playerCode, get this player's team
         const playerTeam = data[playerCode];
@@ -242,6 +245,23 @@ async function setupSalaryCapDraft() {
         if (resultsData.hasResults) {
             salaryCapState.permanentlyLocked = true;
             console.log('🔒 Race results exist - roster permanently locked');
+        }
+        
+        // Check if roster lock time has passed (permanently lock roster)
+        if (gameStateData.rosterLockTime) {
+            const lockTime = new Date(gameStateData.rosterLockTime);
+            const now = new Date();
+            
+            // Show roster lock time notice
+            displayRosterLockTime(lockTime);
+            
+            if (now >= lockTime) {
+                salaryCapState.permanentlyLocked = true;
+                console.log('🔒 Roster lock time has passed - roster permanently locked');
+                console.log('🕒 Lock time was:', lockTime.toLocaleString());
+            } else {
+                console.log('ℹ️ Roster lock time not yet reached:', lockTime.toLocaleString());
+            }
         }
         
     } catch (error) {
@@ -763,6 +783,40 @@ function updateBudgetDisplay() {
     if (remaining < 0) {
         remainingEl.classList.add('over-budget');
     }
+}
+
+/**
+ * Display roster lock time notice
+ */
+function displayRosterLockTime(lockTime) {
+    const noticeEl = document.getElementById('roster-lock-notice');
+    const displayEl = document.getElementById('roster-lock-time-display');
+    
+    if (!noticeEl || !displayEl) {
+        return;
+    }
+    
+    const now = new Date();
+    const options = { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric', 
+        hour: 'numeric', 
+        minute: '2-digit',
+        timeZoneName: 'short'
+    };
+    
+    if (now >= lockTime) {
+        displayEl.textContent = `Rosters locked as of ${lockTime.toLocaleString('en-US', options)}`;
+        noticeEl.style.backgroundColor = '#ffebee';
+        noticeEl.style.color = '#c62828';
+    } else {
+        displayEl.textContent = `Rosters will lock at ${lockTime.toLocaleString('en-US', options)}`;
+        noticeEl.style.backgroundColor = '#fff3e0';
+        noticeEl.style.color = '#e65100';
+    }
+    
+    noticeEl.style.display = 'block';
 }
 
 /**

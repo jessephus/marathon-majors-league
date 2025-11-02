@@ -34,6 +34,7 @@ export default async function handler(req, res) {
         players: gameState?.players || [],
         draftComplete: gameState?.draft_complete || false,
         resultsFinalized: gameState?.results_finalized || false,
+        rosterLockTime: gameState?.roster_lock_time || null,
         rankings,
         teams,
         results,
@@ -59,12 +60,13 @@ export default async function handler(req, res) {
       }
       
       // Update game state
-      const { players, draftComplete, resultsFinalized } = req.body;
+      const { players, draftComplete, resultsFinalized, rosterLockTime } = req.body;
 
       await updateGameState(gameId, {
         players,
         draft_complete: draftComplete,
-        results_finalized: resultsFinalized
+        results_finalized: resultsFinalized,
+        roster_lock_time: rosterLockTime
       });
 
       res.status(200).json({ message: 'Game state updated successfully' });
