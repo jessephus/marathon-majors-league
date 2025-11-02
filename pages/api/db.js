@@ -388,7 +388,7 @@ export async function getAthleteProfile(athleteId, options = {}) {
 
 export async function getGameState(gameId) {
   const [game] = await sql`
-    SELECT game_id, players, draft_complete, results_finalized, created_at, updated_at
+    SELECT game_id, players, draft_complete, results_finalized, roster_lock_time, created_at, updated_at
     FROM games
     WHERE game_id = ${gameId}
   `;
@@ -401,6 +401,7 @@ export async function getGameState(gameId) {
     players: game.players || [],
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
+    roster_lock_time: game.roster_lock_time,
     created_at: game.created_at,
     updated_at: game.updated_at
   };
@@ -410,20 +411,21 @@ export async function createGame(gameId, players = []) {
   const [game] = await sql`
     INSERT INTO games (game_id, players, draft_complete, results_finalized)
     VALUES (${gameId}, ${players}, false, false)
-    RETURNING game_id, players, draft_complete, results_finalized, created_at, updated_at
+    RETURNING game_id, players, draft_complete, results_finalized, roster_lock_time, created_at, updated_at
   `;
   
   return {
     players: game.players || [],
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
+    roster_lock_time: game.roster_lock_time,
     created_at: game.created_at,
     updated_at: game.updated_at
   };
 }
 
 export async function updateGameState(gameId, updates) {
-  const { players, draft_complete, results_finalized } = updates;
+  const { players, draft_complete, results_finalized, roster_lock_time } = updates;
   
   // Get current game state or create if doesn't exist
   let game = await getGameState(gameId);
@@ -445,6 +447,10 @@ export async function updateGameState(gameId, updates) {
   
   if (results_finalized !== undefined) {
     updateParts.push({ field: 'results_finalized', value: results_finalized });
+  }
+  
+  if (roster_lock_time !== undefined) {
+    updateParts.push({ field: 'roster_lock_time', value: roster_lock_time });
   }
   
   if (updateParts.length === 0) {
@@ -469,6 +475,12 @@ export async function updateGameState(gameId, updates) {
       await sql`
         UPDATE games
         SET results_finalized = ${part.value}, updated_at = CURRENT_TIMESTAMP
+        WHERE game_id = ${gameId}
+      `;
+    } else if (part.field === 'roster_lock_time') {
+      await sql`
+        UPDATE games
+        SET roster_lock_time = ${part.value}, updated_at = CURRENT_TIMESTAMP
         WHERE game_id = ${gameId}
       `;
     }

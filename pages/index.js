@@ -213,6 +213,11 @@ function getMainHTML() {
                     </div>
                 </div>
 
+                <!-- Roster Lock Time Notice (shown if lock time is set) -->
+                <div id="roster-lock-notice" class="info-notice" style="display: none; margin: 16px 0;">
+                    <strong>⏰ Roster Lock:</strong> <span id="roster-lock-time-display"></span>
+                </div>
+
                 <!-- Submit Button -->
                 <div class="draft-submit-container">
                     <button id="submit-salary-cap-team" class="btn btn-primary btn-large" disabled>Submit Team</button>

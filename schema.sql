@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS games (
     draft_complete BOOLEAN DEFAULT FALSE,
     results_finalized BOOLEAN DEFAULT FALSE,
     commissioner_password VARCHAR(255) DEFAULT 'kipchoge',
+    roster_lock_time TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -8,6 +8,7 @@ let gameState = {
     results: {},
     draftComplete: false,
     resultsFinalized: false,
+    rosterLockTime: null,
     // Caching for API optimization
     resultsCache: null,
     gameStateCache: null
@@ -102,6 +103,7 @@ async function loadGameState() {
             gameState.players = data.players || [];
             gameState.draftComplete = data.draftComplete || false;
             gameState.resultsFinalized = data.resultsFinalized || false;
+            gameState.rosterLockTime = data.rosterLockTime || null;
             gameState.rankings = data.rankings || {};
             gameState.teams = data.teams || {};
             gameState.results = data.results || {};
@@ -120,7 +122,8 @@ async function saveGameState() {
             body: JSON.stringify({
                 players: gameState.players,
                 draftComplete: gameState.draftComplete,
-                resultsFinalized: gameState.resultsFinalized
+                resultsFinalized: gameState.resultsFinalized,
+                rosterLockTime: gameState.rosterLockTime
             })
         });
     } catch (error) {
@@ -187,6 +190,7 @@ async function loadGameStateCached(forceRefresh = false) {
             gameState.players = data.players || [];
             gameState.draftComplete = data.draftComplete || false;
             gameState.resultsFinalized = data.resultsFinalized || false;
+            gameState.rosterLockTime = data.rosterLockTime || null;
             gameState.rankings = data.rankings || {};
             gameState.teams = data.teams || {};
             gameState.results = data.results || {};

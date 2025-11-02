@@ -1242,6 +1242,19 @@ footer .btn {
     color: #0d47a1;
 }
 
+.info-notice {
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    border-left: 4px solid currentColor;
+}
+
+.info-notice strong {
+    font-weight: 600;
+}
+
 .athlete-name-link {
     color: var(--primary-blue);
     text-decoration: none;
