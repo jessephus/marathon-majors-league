@@ -91,25 +91,27 @@ async function calculateStandings(gameId) {
     // Filter results for this player's athletes
     const playerResults = resultsWithScores.filter(r => athleteIds.includes(r.athlete_id));
     
-    // Calculate stats based on whether we're using temporary or final scoring
-    let totalPoints, racesCount, wins, top3;
+    // Calculate stats - prefer total_points when available, fall back to temporary_points
+    // Each result is evaluated individually based on whether it has full scoring or only temporary
+    const totalPoints = playerResults.reduce((sum, r) => {
+      // Use total_points if available (from full scoring engine)
+      if (r.total_points !== undefined && r.total_points !== null) {
+        return sum + r.total_points;
+      }
+      // Fall back to temporary_points for results that only have splits
+      return sum + (r.temporary_points || 0);
+    }, 0);
     
-    if (useTemporaryScoring) {
-      // Use temporary points and projected placements
-      totalPoints = playerResults.reduce((sum, r) => sum + (r.temporary_points || r.total_points || 0), 0);
-      racesCount = playerResults.filter(r => r.projected_placement !== null || r.placement !== null).length;
-      wins = playerResults.filter(r => (r.projected_placement || r.placement) === 1).length;
-      top3 = playerResults.filter(r => {
-        const place = r.projected_placement || r.placement;
-        return place !== null && place <= 3;
-      }).length;
-    } else {
-      // Use final points and placements
-      totalPoints = playerResults.reduce((sum, r) => sum + (r.total_points || 0), 0);
-      racesCount = playerResults.filter(r => r.placement !== null).length;
-      wins = playerResults.filter(r => r.placement === 1).length;
-      top3 = playerResults.filter(r => r.placement !== null && r.placement <= 3).length;
-    }
+    // Calculate race stats
+    const racesCount = playerResults.filter(r => r.placement !== null || r.projected_placement !== null).length;
+    const wins = playerResults.filter(r => {
+      const place = r.placement || r.projected_placement;
+      return place === 1;
+    }).length;
+    const top3 = playerResults.filter(r => {
+      const place = r.placement || r.projected_placement;
+      return place !== null && place <= 3;
+    }).length;
     
     const worldRecords = playerResults.filter(r => 
       (r.record_type === 'WORLD' || r.record_type === 'BOTH') && 

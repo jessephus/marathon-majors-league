@@ -2801,6 +2801,21 @@ function formatTimeGap(gapSeconds) {
     return `+${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Helper: Format milliseconds to H:MM:SS format
+function formatTimeFromMs(ms) {
+    if (!ms || ms <= 0) return '0:00:00';
+    
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 // Create a single race result row
 function createRaceResultRow(result, athlete, splitType = 'finish') {
     const placement = result.placement || '-';
@@ -2880,7 +2895,7 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     const personalBest = athlete.pb || athlete.personal_best || athlete.personalBest || '';
 
     return `
-        <div class="race-result-row" onclick="openAthleteModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
+        <div class="race-result-row" onclick="openAthleteScoringModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
             <div class="race-result-placement">
                 ${medal ? `<span class="placement-medal">${medal}</span>` : `<span class="placement-number">#${placement}</span>`}
             </div>
@@ -4619,6 +4634,267 @@ async function openAthleteModal(athleteIdOrData) {
 }
 
 /**
+ * Open athlete modal showing scoring breakdown from leaderboards
+ * @param {number|object} athleteIdOrData - Athlete ID or full athlete object with scoring data
+ */
+async function openAthleteScoringModal(athleteIdOrData) {
+    const modal = document.getElementById('athlete-modal');
+    let athleteId, athleteData;
+    
+    // Handle both ID and full object
+    if (typeof athleteIdOrData === 'object') {
+        athleteData = athleteIdOrData;
+        athleteId = athleteData.id || athleteData.athlete_id;
+    } else {
+        athleteId = athleteIdOrData;
+        // Find athlete in current data
+        athleteData = [...gameState.athletes.men, ...gameState.athletes.women]
+            .find(a => a.id === athleteId);
+    }
+    
+    if (!athleteData) {
+        console.error('Athlete not found:', athleteId);
+        return;
+    }
+    
+    // Populate basic athlete masthead info
+    populateAthleteBasicInfo(athleteData);
+    
+    // Show modal
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Wait for modal to be visible in DOM, then load scoring
+    setTimeout(() => {
+        loadAthleteScoringData(athleteId, athleteData);
+    }, 0);
+}
+
+/**
+ * Load and display scoring breakdown for an athlete
+ */
+async function loadAthleteScoringData(athleteId, athleteData) {
+    const modal = document.getElementById('athlete-modal');
+    if (!modal) {
+        console.error('Athlete modal not found');
+        return;
+    }
+    
+    const tabsContainer = modal.querySelector('.tabs-container');
+    const contentArea = modal.querySelector('.tab-content-container');
+    
+    if (!tabsContainer || !contentArea) {
+        console.error('Modal elements not found', { tabsContainer, contentArea });
+        return;
+    }
+    
+    // Hide tabs since we're only showing scoring
+    tabsContainer.style.display = 'none';
+    
+    // Show loading state
+    contentArea.innerHTML = '<div class="loading-spinner">Loading scoring details...</div>';
+    
+    try {
+        // Fetch race results for this athlete
+        const response = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        const data = await response.json();
+        
+        // Find this athlete's result
+        const results = data.scored || data.results || [];
+        const athleteResult = results.find(r => 
+            r.athlete_id === athleteId || r.id === athleteId
+        );
+        
+        if (!athleteResult || !athleteResult.total_points) {
+            contentArea.innerHTML = `
+                <div style="padding: 24px; text-align: center;">
+                    <p style="color: #64748b; font-size: 16px;">No scoring data available for this athlete yet.</p>
+                    <p style="color: #94a3b8; font-size: 14px; margin-top: 8px;">Check back once race results have been entered.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Parse breakdown if it's a JSON string
+        let breakdown = athleteResult.breakdown;
+        if (typeof breakdown === 'string') {
+            try {
+                breakdown = JSON.parse(breakdown);
+            } catch (e) {
+                console.error('Error parsing breakdown JSON:', e);
+                breakdown = null;
+            }
+        }
+        
+        // Build scoring detail HTML
+        let scoringHTML = `
+            <div style="padding: 24px; max-width: 600px; margin: 0 auto;">
+                <h2 style="margin: 0 0 24px 0; font-size: 24px; color: #1e293b; border-bottom: 2px solid var(--primary-blue); padding-bottom: 12px;">
+                    Scoring Breakdown
+                </h2>
+                
+                <!-- Total Points Summary -->
+                <div style="background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%); 
+                            color: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; text-align: center;">
+                    <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">TOTAL POINTS</div>
+                    <div style="font-size: 48px; font-weight: bold;">${athleteResult.total_points}</div>
+                </div>
+        `;
+        
+        // Placement Points
+        if (breakdown && breakdown.placement) {
+            const placement = breakdown.placement.position;
+            const points = breakdown.placement.points;
+            const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+            
+            scoringHTML += `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid var(--primary-blue);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="margin: 0; font-size: 18px; color: #334155;">
+                            ${medal} Placement Points
+                        </h3>
+                        <span style="font-size: 24px; font-weight: bold; color: var(--primary-blue);">+${points}</span>
+                    </div>
+                    <p style="margin: 0; color: #64748b; font-size: 14px;">
+                        Finished in <strong>#${placement}</strong> place
+                    </p>
+                </div>
+            `;
+        }
+        
+        // Time Gap Points
+        if (breakdown && breakdown.time_gap && breakdown.time_gap.points > 0) {
+            const gapSeconds = breakdown.time_gap.gap_seconds;
+            const points = breakdown.time_gap.points;
+            const window = breakdown.time_gap.window;
+            
+            // Format gap time
+            let gapDisplay = '';
+            if (gapSeconds < 60) {
+                gapDisplay = `${gapSeconds.toFixed(2)}s`;
+            } else {
+                const minutes = Math.floor(gapSeconds / 60);
+                const seconds = (gapSeconds % 60).toFixed(2);
+                gapDisplay = `${minutes}:${seconds.padStart(5, '0')}`;
+            }
+            
+            scoringHTML += `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #10b981;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="margin: 0; font-size: 18px; color: #334155;">⚡ Time Gap Bonus</h3>
+                        <span style="font-size: 24px; font-weight: bold; color: #10b981;">+${points}</span>
+                    </div>
+                    <p style="margin: 0; color: #64748b; font-size: 14px;">
+                        Finished <strong>${gapDisplay}</strong> behind winner
+                        ${window ? `<br><em>Within ${window.max_gap_seconds}s threshold</em>` : ''}
+                    </p>
+                </div>
+            `;
+        }
+        
+        // Performance Bonuses
+        if (breakdown && breakdown.performance_bonuses && breakdown.performance_bonuses.length > 0) {
+            const totalPerfPoints = breakdown.performance_bonuses.reduce((sum, b) => sum + b.points, 0);
+            
+            scoringHTML += `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #f59e0b;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 18px; color: #334155;">🏃 Performance Bonuses</h3>
+                        <span style="font-size: 24px; font-weight: bold; color: #f59e0b;">+${totalPerfPoints}</span>
+                    </div>
+            `;
+            
+            breakdown.performance_bonuses.forEach(bonus => {
+                const icon = bonus.type === 'NEGATIVE_SPLIT' ? '📈' : 
+                           bonus.type === 'EVEN_PACE' ? '⚖️' : '🚀';
+                const label = bonus.type === 'NEGATIVE_SPLIT' ? 'Negative Split' :
+                            bonus.type === 'EVEN_PACE' ? 'Even Pace' : 'Fast Finish Kick';
+                
+                // Build details text based on bonus type
+                let detailsText = '';
+                if (bonus.details) {
+                    if (bonus.type === 'NEGATIVE_SPLIT' && bonus.details.first_half_ms && bonus.details.second_half_ms) {
+                        const firstHalf = formatTimeFromMs(bonus.details.first_half_ms);
+                        const secondHalf = formatTimeFromMs(bonus.details.second_half_ms);
+                        detailsText = `<br><span style="font-size: 12px; color: #64748b;">1st half: ${firstHalf} | 2nd half: ${secondHalf}</span>`;
+                    } else if (bonus.type === 'EVEN_PACE' && bonus.details.first_half_ms && bonus.details.second_half_ms) {
+                        const firstHalf = formatTimeFromMs(bonus.details.first_half_ms);
+                        const secondHalf = formatTimeFromMs(bonus.details.second_half_ms);
+                        const diff = Math.abs(bonus.details.second_half_ms - bonus.details.first_half_ms);
+                        const diffDisplay = formatTimeFromMs(diff);
+                        detailsText = `<br><span style="font-size: 12px; color: #64748b;">1st half: ${firstHalf} | 2nd half: ${secondHalf} (±${diffDisplay})</span>`;
+                    } else if (bonus.type === 'FAST_FINISH_KICK' && bonus.details.last_5k_ms) {
+                        const last5k = formatTimeFromMs(bonus.details.last_5k_ms);
+                        detailsText = `<br><span style="font-size: 12px; color: #64748b;">Last 5K: ${last5k}</span>`;
+                    }
+                }
+                
+                scoringHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                        <span style="color: #475569; font-size: 14px;">${icon} ${label}${detailsText}</span>
+                        <span style="font-weight: 600; color: #f59e0b;">+${bonus.points} pts</span>
+                    </div>
+                `;
+            });
+            
+            scoringHTML += `</div>`;
+        }
+        
+        // Record Bonuses
+        if (breakdown && breakdown.record_bonuses && breakdown.record_bonuses.length > 0) {
+            const totalRecordPoints = breakdown.record_bonuses.reduce((sum, b) => sum + b.points, 0);
+            
+            scoringHTML += `
+                <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 16px; border-left: 4px solid #dc2626;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 18px; color: #334155;">🏆 Record Bonuses</h3>
+                        <span style="font-size: 24px; font-weight: bold; color: #dc2626;">+${totalRecordPoints}</span>
+                    </div>
+            `;
+            
+            breakdown.record_bonuses.forEach(bonus => {
+                const icon = bonus.type === 'WORLD_RECORD' ? '🌎' : '🏆';
+                const label = bonus.type === 'WORLD_RECORD' ? 'World Record' : 'Course Record';
+                const statusBadge = bonus.status === 'provisional' ? 
+                    '<span style="background: #fbbf24; color: #78350f; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">PROVISIONAL</span>' : '';
+                
+                scoringHTML += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                        <span style="color: #475569; font-size: 14px;">${icon} ${label}${statusBadge}</span>
+                        <span style="font-weight: 600; color: #dc2626;">+${bonus.points} pts</span>
+                    </div>
+                `;
+            });
+            
+            scoringHTML += `</div>`;
+        }
+        
+        // Race info footer
+        if (athleteResult.finish_time) {
+            scoringHTML += `
+                <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px; text-align: center;">
+                    <strong>Finish Time:</strong> ${athleteResult.finish_time}
+                </div>
+            `;
+        }
+        
+        scoringHTML += `</div>`;
+        
+        // Display the scoring breakdown
+        contentArea.innerHTML = scoringHTML;
+        
+    } catch (error) {
+        console.error('Error loading athlete scoring data:', error);
+        contentArea.innerHTML = `
+            <div style="padding: 24px; text-align: center;">
+                <p style="color: #ef4444;">Error loading scoring data</p>
+                <p style="color: #64748b; font-size: 14px;">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+/**
  * Convert ISO 3166-1 alpha-3 country code to flag emoji
  */
 function getCountryFlagEmoji(countryCode) {
@@ -5176,15 +5452,17 @@ async function viewTeamDetails(playerCode) {
         ];
         const teamResults = scoredResults.filter(r => teamAthleteIds.includes(r.athlete_id));
         
-        // Check if we're using temporary scoring
-        const hasTemporaryScoring = teamResults.some(r => r.is_temporary === true);
+        // Check if we're using temporary scoring (some results may have finish times, some only splits)
+        const hasAnyTemporaryScoring = teamResults.some(r => r.is_temporary === true && !r.total_points);
         
-        // Calculate total points (use temporary_points if available, otherwise total_points)
+        // Calculate total points (prefer total_points if available, fall back to temporary_points)
         const totalPoints = teamResults.reduce((sum, r) => {
-            if (hasTemporaryScoring && r.is_temporary) {
-                return sum + (r.temporary_points || 0);
+            // Use total_points if available (from full scoring engine)
+            if (r.total_points !== undefined && r.total_points !== null) {
+                return sum + r.total_points;
             }
-            return sum + (r.total_points || 0);
+            // Fall back to temporary_points for results that only have splits
+            return sum + (r.temporary_points || 0);
         }, 0);
         
         // Get display name for avatar and title
@@ -5209,13 +5487,13 @@ async function viewTeamDetails(playerCode) {
         `;
         
         // Add temporary scoring banner if applicable
-        if (hasTemporaryScoring) {
+        if (hasAnyTemporaryScoring) {
             modalHTML += `
                     <div class="team-details-temp-banner">
                         <span class="banner-icon">⚡</span>
                         <div class="banner-text">
                             <strong>Live Projections</strong>
-                            <span>Points based on current pace from splits</span>
+                            <span>Some points based on current pace from splits</span>
                         </div>
                     </div>
             `;
@@ -5225,7 +5503,7 @@ async function viewTeamDetails(playerCode) {
                     <div class="team-details-summary">
                         <div class="summary-stat">
                             <div class="stat-label">Total Points</div>
-                            <div class="stat-value">${totalPoints}${hasTemporaryScoring ? '*' : ''}</div>
+                            <div class="stat-value">${totalPoints}${hasAnyTemporaryScoring ? '*' : ''}</div>
                         </div>
                         <div class="summary-stat">
                             <div class="stat-label">Salary</div>
@@ -5241,16 +5519,16 @@ async function viewTeamDetails(playerCode) {
             team.men.forEach(athlete => {
                 const result = scoredResults.find(r => r.athlete_id === athlete.id);
                 
-                // Use temporary data if available
-                const isTemporary = result && result.is_temporary === true;
-                const points = isTemporary ? (result.temporary_points || 0) : (result ? result.total_points || 0 : 0);
-                const placement = isTemporary ? (result.projected_placement || null) : (result ? result.placement : null);
-                const finishTime = isTemporary ? (result.projected_finish_time || null) : (result ? result.finish_time : null);
-                const breakdown = result ? result.breakdown : null;
+                // Prefer full scoring if available, fall back to temporary
+                const hasFullScoring = result && result.total_points !== undefined && result.total_points !== null;
+                const points = hasFullScoring ? result.total_points : (result?.temporary_points || 0);
+                const placement = hasFullScoring ? (result.placement || null) : (result?.projected_placement || null);
+                const finishTime = hasFullScoring ? (result.finish_time || null) : (result?.projected_finish_time || null);
+                const breakdown = hasFullScoring ? result.breakdown : null;
                 
                 // Calculate gap from first place (only for final results)
                 let gapFromFirst = '';
-                if (!isTemporary && result && breakdown && breakdown.time_gap) {
+                if (hasFullScoring && breakdown && breakdown.time_gap) {
                     const gapSeconds = breakdown.time_gap.gap_seconds || 0;
                     if (gapSeconds > 0) {
                         const minutes = Math.floor(gapSeconds / 60);
@@ -5261,7 +5539,7 @@ async function viewTeamDetails(playerCode) {
                 
                 // Create shorthand notation: P=placement, G=time gap, B=bonuses
                 let shorthand = '';
-                if (isTemporary) {
+                if (!hasFullScoring) {
                     // For temporary scoring, just show placement points
                     shorthand = points > 0 ? `P${points}` : '-';
                 } else if (breakdown) {
@@ -5284,8 +5562,15 @@ async function viewTeamDetails(playerCode) {
                 const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('men');
                 const fallbackImg = getRunnerSvg('men');
                 
+                // Prepare athlete data with result info for scoring modal
+                const athleteWithResult = {
+                    ...athlete,
+                    ...result,
+                    athlete_id: athlete.id
+                };
+                
                 modalHTML += `
-                    <div class="athlete-card">
+                    <div class="athlete-card" onclick='closeTeamDetails(); openAthleteScoringModal(${JSON.stringify(athleteWithResult).replace(/'/g, "&#39;").replace(/"/g, '&quot;')});' style="cursor: pointer;">
                         <div class="athlete-card-left">
                             <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
                             <div class="athlete-info">
@@ -5299,7 +5584,7 @@ async function viewTeamDetails(playerCode) {
                         <div class="athlete-card-center">
                             <div class="race-time">${finishTime || '-'}</div>
                             <div class="race-details">
-                                ${placement ? `<span class="race-placement">${isTemporary ? '~' : ''}#${placement}</span>` : ''}
+                                ${placement ? `<span class="race-placement">${!hasFullScoring ? '~' : ''}#${placement}</span>` : ''}
                                 ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
                             </div>
                         </div>
@@ -5322,16 +5607,16 @@ async function viewTeamDetails(playerCode) {
             team.women.forEach(athlete => {
                 const result = scoredResults.find(r => r.athlete_id === athlete.id);
                 
-                // Use temporary data if available
-                const isTemporary = result && result.is_temporary === true;
-                const points = isTemporary ? (result.temporary_points || 0) : (result ? result.total_points || 0 : 0);
-                const placement = isTemporary ? (result.projected_placement || null) : (result ? result.placement : null);
-                const finishTime = isTemporary ? (result.projected_finish_time || null) : (result ? result.finish_time : null);
-                const breakdown = result ? result.breakdown : null;
+                // Prefer full scoring if available, fall back to temporary
+                const hasFullScoring = result && result.total_points !== undefined && result.total_points !== null;
+                const points = hasFullScoring ? result.total_points : (result?.temporary_points || 0);
+                const placement = hasFullScoring ? (result.placement || null) : (result?.projected_placement || null);
+                const finishTime = hasFullScoring ? (result.finish_time || null) : (result?.projected_finish_time || null);
+                const breakdown = hasFullScoring ? result.breakdown : null;
                 
                 // Calculate gap from first place (only for final results)
                 let gapFromFirst = '';
-                if (!isTemporary && result && breakdown && breakdown.time_gap) {
+                if (hasFullScoring && breakdown && breakdown.time_gap) {
                     const gapSeconds = breakdown.time_gap.gap_seconds || 0;
                     if (gapSeconds > 0) {
                         const minutes = Math.floor(gapSeconds / 60);
@@ -5342,7 +5627,7 @@ async function viewTeamDetails(playerCode) {
                 
                 // Create shorthand notation
                 let shorthand = '';
-                if (isTemporary) {
+                if (!hasFullScoring) {
                     // For temporary scoring, just show placement points
                     shorthand = points > 0 ? `P${points}` : '-';
                 } else if (breakdown) {
@@ -5365,8 +5650,15 @@ async function viewTeamDetails(playerCode) {
                 const headshotUrl = athlete.headshot_url || athlete.headshotUrl || getRunnerSvg('women');
                 const fallbackImg = getRunnerSvg('women');
                 
+                // Prepare athlete data with result info for scoring modal
+                const athleteWithResult = {
+                    ...athlete,
+                    ...result,
+                    athlete_id: athlete.id
+                };
+                
                 modalHTML += `
-                    <div class="athlete-card">
+                    <div class="athlete-card" onclick='closeTeamDetails(); openAthleteScoringModal(${JSON.stringify(athleteWithResult).replace(/'/g, "&#39;").replace(/"/g, '&quot;')});' style="cursor: pointer;">
                         <div class="athlete-card-left">
                             <img src="${headshotUrl}" alt="${escapeHtml(athlete.name)}" class="athlete-headshot" onerror="this.onerror=null; this.src='${fallbackImg}';" />
                             <div class="athlete-info">
@@ -5380,7 +5672,7 @@ async function viewTeamDetails(playerCode) {
                         <div class="athlete-card-center">
                             <div class="race-time">${finishTime || '-'}</div>
                             <div class="race-details">
-                                ${placement ? `<span class="race-placement">${isTemporary ? '~' : ''}#${placement}</span>` : ''}
+                                ${placement ? `<span class="race-placement">${!hasFullScoring ? '~' : ''}#${placement}</span>` : ''}
                                 ${gapFromFirst ? `<span class="race-gap">${gapFromFirst}</span>` : ''}
                             </div>
                         </div>

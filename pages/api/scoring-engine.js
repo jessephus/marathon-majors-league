@@ -373,8 +373,8 @@ function calculateRecordBonus(recordMeta, rules) {
   const mutuallyExclusive = rules.record_bonuses_mutually_exclusive;
   const precedence = rules.record_bonus_precedence;
   
-  // Determine status
-  const status = requiresConfirmation ? 'provisional' : 'confirmed';
+  // Determine status - use provided status if available (manual selection), otherwise default
+  const status = recordMeta.status || (requiresConfirmation ? 'provisional' : 'confirmed');
   
   // Determine if points should be awarded now
   const awardNow = (status === 'confirmed') || 
@@ -451,6 +451,8 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
       rr.split_30k,
       rr.split_35k,
       rr.split_40k,
+      rr.record_type,
+      rr.record_status,
       a.gender,
       a.name as athlete_name
     FROM race_results rr
@@ -545,7 +547,26 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     const performanceBonusPoints = performanceBonuses.reduce((sum, b) => sum + b.points, 0);
     
     // Detect and calculate record bonuses
-    const recordMeta = await detectRecords(result, raceId, result.gender);
+    // Respect manual record_type selection if commissioner has set it
+    let recordMeta;
+    if (result.record_type && result.record_type !== 'NONE') {
+      // Use manually selected record type
+      const recordList = [];
+      if (result.record_type === 'WORLD' || result.record_type === 'BOTH') {
+        recordList.push('WORLD');
+      }
+      if (result.record_type === 'COURSE' || result.record_type === 'BOTH') {
+        recordList.push('COURSE');
+      }
+      recordMeta = {
+        type: result.record_type,
+        list: recordList,
+        status: result.record_status || 'confirmed'
+      };
+    } else {
+      // Auto-detect records if no manual selection
+      recordMeta = await detectRecords(result, raceId, result.gender);
+    }
     const recordBonus = calculateRecordBonus(recordMeta, rules);
     
     // Calculate total points
