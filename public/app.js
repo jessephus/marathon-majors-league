@@ -1918,13 +1918,13 @@ async function displayResultsManagement() {
                 timeInput.dataset.athleteId = result.athlete_id;
                 timeInput.dataset.field = currentView;
                 
-                // Validation styling on input
+                // Validation styling on input (supports decimal seconds)
                 timeInput.addEventListener('input', (e) => {
                     const time = e.target.value.trim();
                     if (time === '') {
                         e.target.style.borderColor = '#ddd';
                         e.target.style.backgroundColor = '';
-                    } else if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}$/.test(time)) {
+                    } else if (/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/.test(time)) {
                         e.target.style.borderColor = '#28a745';
                         e.target.style.backgroundColor = '#d4edda';
                     } else {
@@ -1964,8 +1964,14 @@ async function displayResultsManagement() {
                         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ results: updateData })
+                            body: JSON.stringify({ 
+                                results: updateData,
+                                autoScore: true  // Trigger scoring engine after save
+                            })
                         });
+                        
+                        // Reload data to show updated scores
+                        await loadCommissionerResultsData();
                     } else {
                         // Save time data
                         const timeInput = dataCell.querySelector('input[type="text"]');
@@ -2000,13 +2006,19 @@ async function displayResultsManagement() {
                         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ results: updateData })
+                            body: JSON.stringify({ 
+                                results: updateData,
+                                autoScore: true  // Trigger scoring engine after save
+                            })
                         });
                         
                         // Update local state if finish time
                         if (currentView === 'finish') {
                             gameState.results[result.athlete_id] = newTime;
                         }
+                        
+                        // Reload data to show updated scores
+                        await loadCommissionerResultsData();
                     }
                     
                     // Invalidate cache
@@ -3428,11 +3440,14 @@ async function handleUpdateResults() {
     document.getElementById('finalize-results').style.display = 'inline-block';
 
     try {
-        // Save results to database
+        // Save results to database with auto-scoring
         await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ results: gameState.results })
+            body: JSON.stringify({ 
+                results: gameState.results,
+                autoScore: true  // Trigger scoring engine to calculate points
+            })
         });
         
         // Invalidate results cache so players see fresh data
@@ -3813,12 +3828,15 @@ function setupResultsForm() {
             const time = e.target.value;
             if (time && /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/.test(time)) {
                 gameState.results[athleteId] = time;
-                // Auto-save to database
+                // Auto-save to database with scoring
                 try {
                     await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ results: { [athleteId]: time } })
+                        body: JSON.stringify({ 
+                            results: { [athleteId]: time },
+                            autoScore: true  // Trigger scoring engine
+                        })
                     });
                     // Update live standings as results are entered
                     updateLiveStandings();
