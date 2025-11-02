@@ -2315,6 +2315,8 @@ function createTeamAvatarSVG(teamName, size = 48) {
     svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
     svg.style.borderRadius = "50%";
     svg.style.flexShrink = "0";
+    svg.style.border = "3px solid white";
+    svg.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
     
     // Background circle
     const circle = document.createElementNS(svgNS, "circle");
