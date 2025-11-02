@@ -2326,6 +2326,7 @@ async function displayLeaderboard() {
         
         const standings = data.standings || [];
         const isTemporary = data.isTemporary || false;
+        const hasFinishTimes = data.hasFinishTimes || false;
         const projectionInfo = data.projectionInfo || null;
         
         if (standings.length === 0) {
@@ -2344,7 +2345,7 @@ async function displayLeaderboard() {
         // Determine banner state
         // Case 1: Race finished with finish times, but not yet finalized (manual review)
         // Case 2: Live projections based on splits (race in progress)
-        const raceFinishedNotFinalized = !isTemporary && !gameState.resultsFinalized && standings.length > 0;
+        const raceFinishedNotFinalized = hasFinishTimes && !gameState.resultsFinalized && standings.length > 0;
         
         if (raceFinishedNotFinalized) {
             // Show manual review banner
