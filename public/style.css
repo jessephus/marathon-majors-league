@@ -3731,6 +3731,30 @@ footer .btn {
     color: var(--primary-blue);
 }
 
+.finish-time.status-label {
+    color: #e74c3c;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+}
+
+.race-result-row.status-dns {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+}
+
+.race-result-row.status-dnf {
+    background-color: #fff5f5;
+    border-left: 3px solid #e74c3c;
+}
+
+.race-result-row.status-dns:hover,
+.race-result-row.status-dnf:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
 .time-gap {
     font-size: 13px;
     color: #95a5a6;

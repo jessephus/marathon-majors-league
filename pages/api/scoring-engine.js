@@ -196,26 +196,38 @@ function checkEvenPace(firstHalfMs, secondHalfMs, totalTimeMs, rules) {
 
 /**
  * Check for fast finish kick bonus
+ * NOTE: This measures the final 2.195km (from 40K to finish), not a full 5K
  */
-function checkFastFinishKick(last5kMs, totalTimeMs, raceDistanceMeters, rules) {
+function checkFastFinishKick(finalSprintMs, totalTimeMs, raceDistanceMeters, rules, split40kMs = null) {
   const bonus = rules.performance_bonuses.FastFinishKick;
   
-  if (!bonus.enabled || !last5kMs || raceDistanceMeters < 10000) {
+  if (!bonus.enabled || !finalSprintMs || raceDistanceMeters < 10000) {
     return null;
   }
   
+  // Final sprint is the last 2.195km (from 40K to finish line at 42.195km)
+  const finalSprintDistanceMeters = 2195;
+  const first40kDistanceMeters = 40000;
+  
   const avgPaceMsPerMeter = totalTimeMs / raceDistanceMeters;
-  const last5kPaceMsPerMeter = last5kMs / 5000;
+  const finalSprintPaceMsPerMeter = finalSprintMs / finalSprintDistanceMeters;
   const thresholdPace = avgPaceMsPerMeter * (1 - bonus.pace_improvement_ratio);
   
-  if (last5kPaceMsPerMeter <= thresholdPace) {
+  // Calculate first 40K pace for comparison display
+  const first40kMs = split40kMs || (totalTimeMs - finalSprintMs);
+  const first40kPaceMsPerMeter = first40kMs / first40kDistanceMeters;
+  
+  if (finalSprintPaceMsPerMeter <= thresholdPace) {
     return {
       type: 'FAST_FINISH_KICK',
       points: bonus.points,
       details: {
-        last_5k_ms: last5kMs,
+        final_sprint_ms: finalSprintMs,
+        final_sprint_distance_km: finalSprintDistanceMeters / 1000,
+        first_40k_ms: first40kMs,
         avg_pace_ms_per_m: avgPaceMsPerMeter,
-        last_5k_pace_ms_per_m: last5kPaceMsPerMeter,
+        final_sprint_pace_ms_per_m: finalSprintPaceMsPerMeter,
+        first_40k_pace_ms_per_m: first40kPaceMsPerMeter,
         threshold_pace_ms_per_m: thresholdPace
       }
     };
@@ -300,7 +312,8 @@ function calculatePerformanceBonuses(result, raceDistanceMeters, rules) {
     result.last_5k_time_ms,
     result.finish_time_ms,
     raceDistanceMeters,
-    rules
+    rules,
+    result.split_40k_ms // Pass the 40K split time for pace comparison
   );
   if (fastFinish) bonuses.push(fastFinish);
   
@@ -490,6 +503,7 @@ export async function scoreRace(gameId, raceId, rulesVersion = 2) {
     if (result.split_40k && result.finish_time_ms) {
       const split40kMs = timeStringToMs(result.split_40k);
       result.last_5k_time_ms = result.finish_time_ms - split40kMs;
+      result.split_40k_ms = split40kMs; // Store for pace calculation
     }
   });
   

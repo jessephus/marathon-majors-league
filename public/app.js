@@ -2816,11 +2816,30 @@ function formatTimeFromMs(ms) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Helper: Convert pace from ms per meter to min/mile format
+function formatPacePerMile(msPerMeter) {
+    if (!msPerMeter || msPerMeter <= 0) return 'N/A';
+    
+    // 1 mile = 1609.34 meters
+    const msPerMile = msPerMeter * 1609.34;
+    const totalSeconds = Math.floor(msPerMile / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}/mi`;
+}
+
 // Create a single race result row
 function createRaceResultRow(result, athlete, splitType = 'finish') {
     const placement = result.placement || '-';
     const points = result.total_points || 0;
     const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+    
+    // Detect DNS (Did Not Start) - no finish time AND no splits at all
+    const hasSomeSplits = result.split_5k || result.split_10k || result.split_half || 
+                          result.split_30k || result.split_35k || result.split_40k;
+    const isDNS = !result.finish_time && !hasSomeSplits;
+    const isDNF = !result.finish_time && hasSomeSplits;
     
     // Determine which time to display based on splitType
     let displayTime = 'N/A';
@@ -2828,10 +2847,16 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     
     switch(splitType) {
         case 'finish':
-            displayTime = result.finish_time || 'DNF';
-            // Round finish time to nearest second for display
-            if (displayTime !== 'DNF' && displayTime !== 'DNS' && displayTime !== 'N/A') {
-                displayTime = roundTimeToSecond(displayTime);
+            if (isDNS) {
+                displayTime = 'DNS';
+            } else if (isDNF) {
+                displayTime = 'DNF';
+            } else {
+                displayTime = result.finish_time || 'N/A';
+                // Round finish time to nearest second for display
+                if (displayTime !== 'N/A') {
+                    displayTime = roundTimeToSecond(displayTime);
+                }
             }
             timeLabel = 'Finish';
             break;
@@ -2893,9 +2918,12 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     const fallbackImg = getRunnerSvg((athlete.gender || 'men').toLowerCase());
     const countryCode = (athlete.country || '').toUpperCase();
     const personalBest = athlete.pb || athlete.personal_best || athlete.personalBest || '';
+    
+    // Add status class for styling
+    const statusClass = isDNS ? 'status-dns' : isDNF ? 'status-dnf' : '';
 
     return `
-        <div class="race-result-row" onclick="openAthleteScoringModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
+        <div class="race-result-row ${statusClass}" onclick="openAthleteScoringModal(${JSON.stringify(athlete).replace(/"/g, '&quot;')})">
             <div class="race-result-placement">
                 ${medal ? `<span class="placement-medal">${medal}</span>` : `<span class="placement-number">#${placement}</span>`}
             </div>
@@ -2910,8 +2938,9 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
                 </div>
             </div>
             <div class="race-result-performance">
-                <div class="finish-time">${displayTime}</div>
+                <div class="finish-time ${isDNS || isDNF ? 'status-label' : ''}">${displayTime}</div>
                 ${gapFromFirst ? `<div class="time-gap">${gapFromFirst}</div>` : (splitType !== 'finish' ? `<div class="time-gap">${timeLabel} Split</div>` : '')}
+            </div>
             </div>
             <div class="race-result-points">
                 <div class="points-value">${points} pts</div>
@@ -4823,9 +4852,19 @@ async function loadAthleteScoringData(athleteId, athleteData) {
                         const diff = Math.abs(bonus.details.second_half_ms - bonus.details.first_half_ms);
                         const diffDisplay = formatTimeFromMs(diff);
                         detailsText = `<br><span style="font-size: 12px; color: #64748b;">1st half: ${firstHalf} | 2nd half: ${secondHalf} (±${diffDisplay})</span>`;
-                    } else if (bonus.type === 'FAST_FINISH_KICK' && bonus.details.last_5k_ms) {
-                        const last5k = formatTimeFromMs(bonus.details.last_5k_ms);
-                        detailsText = `<br><span style="font-size: 12px; color: #64748b;">Last 5K: ${last5k}</span>`;
+                    } else if (bonus.type === 'FAST_FINISH_KICK' && bonus.details.final_sprint_ms) {
+                        // Final sprint (last 2.195km from 40K to finish)
+                        const finalSprintTime = formatTimeFromMs(bonus.details.final_sprint_ms);
+                        const finalSprintDistance = bonus.details.final_sprint_distance_km || 2.195;
+                        const finalSprintPace = formatPacePerMile(bonus.details.final_sprint_pace_ms_per_m);
+                        
+                        // First 40K pace for comparison
+                        const first40kPace = formatPacePerMile(bonus.details.first_40k_pace_ms_per_m);
+                        
+                        detailsText = `<br><span style="font-size: 12px; color: #64748b;">
+                            Final ${finalSprintDistance.toFixed(2)}km: ${finalSprintTime} (${finalSprintPace} pace)<br>
+                            First 40km pace: ${first40kPace}
+                        </span>`;
                     }
                 }
                 
