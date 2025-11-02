@@ -2061,12 +2061,26 @@ async function populateAthleteSelect() {
     
     try {
         // Fetch all athletes confirmed for NYC Marathon
+        console.log('[Add Result] Fetching athletes from:', `${API_BASE}/api/athletes`);
         const response = await fetch(`${API_BASE}/api/athletes`);
+        console.log('[Add Result] Athletes response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch athletes');
+            const errorText = await response.text();
+            console.error('[Add Result] Failed to fetch athletes:', response.status, errorText);
+            throw new Error(`Failed to fetch athletes: ${response.status}`);
         }
+        
         const data = await response.json();
+        console.log('[Add Result] Athletes data received:', data);
         const athletes = data.athletes || [];
+        console.log('[Add Result] Number of athletes:', athletes.length);
+        
+        if (athletes.length === 0) {
+            console.warn('[Add Result] No athletes found in response');
+            alert('No athletes found. Please ensure athletes are loaded in the system.');
+            return;
+        }
         
         // Sort athletes by name
         const sortedAthletes = [...athletes].sort((a, b) => {
@@ -2083,9 +2097,11 @@ async function populateAthleteSelect() {
             select.appendChild(option);
         });
         
+        console.log('[Add Result] Successfully added', sortedAthletes.length, 'athletes to dropdown');
+        
     } catch (error) {
-        console.error('Error loading athletes:', error);
-        alert('Error loading athletes. Please try again.');
+        console.error('[Add Result] Error loading athletes:', error);
+        alert(`Error loading athletes: ${error.message}. Please try again.`);
     }
 }
 
