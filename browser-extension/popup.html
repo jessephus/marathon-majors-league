@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fantasy Marathon - Import Live Results</title>
+  <style>
+    body {
+      width: 350px;
+      padding: 15px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+    }
+    h3 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #333;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 13px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #ff6900;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    button:hover:not(:disabled) {
+      background: #e55e00;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-line;
+      display: none;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      color: #856404;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .api-config {
+      background: #e8f4fd;
+      border: 1px solid #bee5eb;
+      color: #004085;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .api-config code {
+      background: white;
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h3>📊 Import Live Results</h3>
+  
+  <div class="warning">
+    ⚠️ <strong>First time using?</strong> Refresh the NYRR page before clicking Import.
+  </div>
+
+  <div class="api-config">
+    ℹ️ <strong>API:</strong> <code id="apiEndpoint">localhost:3000</code><br>
+    Edit <code>popup.js</code> to change for production
+  </div>
+  
+  <div class="form-group">
+    <label for="gameId">Game ID:</label>
+    <input type="text" id="gameId" value="demo-game" placeholder="Enter game ID">
+  </div>
+  
+  <div class="form-group">
+    <label for="splitType">Split Type:</label>
+    <select id="splitType">
+      <option value="5k">5K Split</option>
+      <option value="10k">10K Split</option>
+      <option value="15k">15K Split</option>
+      <option value="20k">20K Split</option>
+      <option value="half">Half Marathon</option>
+      <option value="25k">25K Split</option>
+      <option value="30k">30K Split</option>
+      <option value="35k">35K Split</option>
+      <option value="40k">40K Split</option>
+      <option value="finish" selected>Finish Time</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label for="gender">Division:</label>
+    <select id="gender">
+      <option value="men">Men</option>
+      <option value="women">Women</option>
+    </select>
+  </div>
+  
+  <button id="scrapeBtn">📥 Import Live Results</button>
+  
+  <div id="status" class="status"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
