@@ -565,16 +565,23 @@ export async function clearAllRankings(gameId) {
 
 export async function getDraftTeams(gameId) {
   const teams = await sql`
-    SELECT dt.player_code,
+    SELECT DISTINCT ON (dt.player_code, a.id)
+           dt.player_code,
            ans.display_name,
            a.id, a.name, a.country, a.gender, a.personal_best as pb, a.headshot_url as "headshotUrl"
     FROM draft_teams dt
     JOIN athletes a ON dt.athlete_id = a.id
-    LEFT JOIN anonymous_sessions ans ON dt.game_id = ans.game_id 
-      AND dt.player_code = ans.player_code
-      AND ans.is_active = true
+    LEFT JOIN LATERAL (
+      SELECT display_name 
+      FROM anonymous_sessions 
+      WHERE game_id = dt.game_id 
+        AND player_code = dt.player_code
+        AND is_active = true
+      ORDER BY created_at DESC
+      LIMIT 1
+    ) ans ON true
     WHERE dt.game_id = ${gameId}
-    ORDER BY dt.player_code, a.gender, a.personal_best
+    ORDER BY dt.player_code, a.id, a.gender, a.personal_best
   `;
   
   // Transform to match blob storage format

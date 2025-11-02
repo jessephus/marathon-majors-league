@@ -2274,7 +2274,7 @@ function formatAthleteDetails(athlete, includePersonalBest = false) {
 
 // Helper function to generate team initials
 function getTeamInitials(teamName) {
-    if (!teamName) return '??';
+    if (!teamName) return 'T';
     
     const words = teamName.trim().split(/\s+/);
     let initials = '';
@@ -2303,7 +2303,8 @@ function createTeamAvatarSVG(teamName, size = 48) {
         return hash;
     };
     
-    const hue = Math.abs(hashCode(teamName || 'Team')) % 360;
+    // Use the team name or a default to generate consistent color
+    const hue = Math.abs(hashCode(teamName || 'DefaultTeam')) % 360;
     const saturation = 65;
     const lightness = 55;
     
