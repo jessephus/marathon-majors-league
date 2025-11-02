@@ -490,9 +490,8 @@ function getMainHTML() {
                     </div>
 
                     <div class="action-card">
-                        <h3>Results Entry</h3>
-                        <div id="results-form"></div>
-                        <button id="update-results" class="btn btn-primary">Update Live Results</button>
+                        <h3>Results Management</h3>
+                        <button id="manage-results-btn" class="btn btn-primary">Manage Live Results</button>
                         <button id="finalize-results" class="btn btn-success" style="display: none;">Finalize Results & Crown Winner</button>
                         <button id="reset-results" class="btn btn-warning">Reset Live Results</button>
                         <div id="live-standings"></div>
@@ -584,6 +583,105 @@ function getMainHTML() {
                 <div id="athlete-management-container"></div>
                 
                 <button id="back-to-commissioner" class="btn btn-secondary">Back to Dashboard</button>
+            </div>
+
+            <!-- Results Management Page -->
+            <div id="results-management-page" class="page">
+                <h2>Manage Live Results</h2>
+                <p class="page-description">View and edit all race results entered so far</p>
+                
+                <!-- View Selector -->
+                <div class="results-view-controls">
+                    <label for="results-view-select">Show:</label>
+                    <select id="results-view-select" class="view-selector">
+                        <option value="finish">Finish Time</option>
+                        <option value="5k">5K Split</option>
+                        <option value="10k">10K Split</option>
+                        <option value="half">Half Marathon Split</option>
+                        <option value="30k">30K Split</option>
+                        <option value="35k">35K Split</option>
+                        <option value="40k">40K Split</option>
+                        <option value="bonuses">Bonus Points</option>
+                    </select>
+                </div>
+                
+                <div id="results-management-container">
+                    <table id="results-table" class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Athlete</th>
+                                <th>Country</th>
+                                <th>Gender</th>
+                                <th id="time-column-header">Finish Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-table-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="no-results-message" style="display: none; text-align: center; padding: 40px; color: var(--dark-gray);">
+                        <p>No results have been entered yet.</p>
+                        <p>Results will appear here once you start entering athlete finish times.</p>
+                    </div>
+                </div>
+                
+                <div class="results-actions">
+                    <button id="add-result-btn" class="btn btn-primary">Add New Result</button>
+                    <button id="back-to-commissioner-from-results" class="btn btn-secondary">Back to Dashboard</button>
+                </div>
+            </div>
+            
+            <!-- Add Result Modal -->
+            <div id="add-result-modal" class="modal" style="display: none;">
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close" id="add-result-modal-close">&times;</button>
+                    <h2>Add New Athlete Result</h2>
+                    <p style="color: var(--dark-gray); margin-bottom: 20px;">Select an athlete and enter their result</p>
+                    <form id="add-result-form">
+                        <div class="form-group">
+                            <label for="result-athlete-select">Athlete *</label>
+                            <select id="result-athlete-select" required>
+                                <option value="">Select athlete...</option>
+                                <!-- Populated by JavaScript -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="result-finish-time">Finish Time *</label>
+                            <input type="text" id="result-finish-time" required placeholder="2:05:30" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                            <small>Format: HH:MM:SS (e.g., 2:05:30)</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-5k">5K Split</label>
+                            <input type="text" id="result-split-5k" placeholder="0:14:30" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-10k">10K Split</label>
+                            <input type="text" id="result-split-10k" placeholder="0:29:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-half">Half Marathon Split</label>
+                            <input type="text" id="result-split-half" placeholder="1:02:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-30k">30K Split</label>
+                            <input type="text" id="result-split-30k" placeholder="1:28:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-35k">35K Split</label>
+                            <input type="text" id="result-split-35k" placeholder="1:42:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-group">
+                            <label for="result-split-40k">40K Split</label>
+                            <input type="text" id="result-split-40k" placeholder="1:56:00" pattern="[0-9]{1,2}:[0-9]{2}:[0-9]{2}">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Result</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-add-result">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </div>
             
             <!-- Add Athlete Modal -->
