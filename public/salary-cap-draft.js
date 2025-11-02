@@ -14,6 +14,80 @@ function getRunnerSvg(gender) {
     return gender === 'men' || gender === 'M' ? maleRunnerImg : femaleRunnerImg;
 }
 
+/**
+ * Helper function to generate team initials
+ */
+function getTeamInitials(teamName) {
+    if (!teamName) return 'T';
+    
+    const words = teamName.trim().split(/\s+/);
+    let initials = '';
+    
+    if (words.length === 1) {
+        // Single word: take first 2 letters
+        initials = words[0].substring(0, 2).toUpperCase();
+    } else {
+        // Multiple words: take first letter of first 2 words
+        initials = words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+    
+    return initials;
+}
+
+/**
+ * Helper function to create SVG avatar placeholder
+ */
+function createTeamAvatarSVG(teamName, size = 48) {
+    const initials = getTeamInitials(teamName);
+    
+    // Generate a consistent color based on the team name
+    const hashCode = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return hash;
+    };
+    
+    // Use the team name or a default to generate consistent color
+    const hue = Math.abs(hashCode(teamName || 'DefaultTeam')) % 360;
+    const saturation = 65;
+    const lightness = 55;
+    
+    const svgNS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+    svg.style.borderRadius = "50%";
+    svg.style.flexShrink = "0";
+    svg.style.border = "3px solid white";
+    svg.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
+    
+    // Background circle
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("cx", size / 2);
+    circle.setAttribute("cy", size / 2);
+    circle.setAttribute("r", size / 2);
+    circle.setAttribute("fill", `hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    svg.appendChild(circle);
+    
+    // Text (initials)
+    const text = document.createElementNS(svgNS, "text");
+    text.setAttribute("x", "50%");
+    text.setAttribute("y", "50%");
+    text.setAttribute("dominant-baseline", "middle");
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("fill", "white");
+    text.setAttribute("font-size", size * 0.4);
+    text.setAttribute("font-weight", "bold");
+    text.setAttribute("font-family", "system-ui, -apple-system, sans-serif");
+    text.textContent = initials;
+    svg.appendChild(text);
+    
+    return svg;
+}
+
 // Salary cap configuration
 const SALARY_CAP_CONFIG = {
     totalCap: 30000,
@@ -103,6 +177,11 @@ async function setupSalaryCapDraft() {
         showErrorNotification('No session found. Please enter game via home page.');
         console.error('❌ Invalid session:', session);
         return;
+    }
+    
+    // Update team header with team name and avatar
+    if (session.teamName) {
+        updateTeamHeader(session.teamName);
     }
     
     const gameId = session.gameId;
@@ -637,7 +716,7 @@ function removeAthleteFromSlot(slotId) {
 }
 
 /**
- * Update team header with name and initials
+ * Update team header with name and SVG avatar
  */
 function updateTeamHeader(teamName) {
     if (!teamName) return;
@@ -648,21 +727,16 @@ function updateTeamHeader(teamName) {
         teamNameEl.textContent = teamName;
     }
     
-    // Generate initials (first letter of each word, max 2)
-    const initialsEl = document.getElementById('team-avatar-initials');
-    if (initialsEl) {
-        const words = teamName.trim().split(/\s+/);
-        let initials = '';
+    // Replace the avatar placeholder with SVG avatar
+    const avatarContainer = document.querySelector('.team-avatar-placeholder .avatar-circle');
+    if (avatarContainer) {
+        // Clear existing content
+        avatarContainer.innerHTML = '';
         
-        if (words.length === 1) {
-            // Single word: take first 2 letters
-            initials = words[0].substring(0, 2).toUpperCase();
-        } else {
-            // Multiple words: take first letter of first 2 words
-            initials = words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
-        }
-        
-        initialsEl.textContent = initials;
+        // Create and append SVG avatar
+        const avatarSvg = createTeamAvatarSVG(teamName, 48);
+        avatarSvg.style.border = 'none';  // Remove border since SVG is already circular
+        avatarContainer.appendChild(avatarSvg);
     }
 }
 

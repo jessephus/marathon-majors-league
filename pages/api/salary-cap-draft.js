@@ -48,15 +48,25 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get salary cap draft teams for a game
+      // Get salary cap draft teams for a game with display names
       const teams = await sql`
-        SELECT DISTINCT ON (player_code) 
-          player_code,
-          total_spent,
-          submitted_at
-        FROM salary_cap_teams
-        WHERE game_id = ${gameId}
-        ORDER BY player_code, submitted_at DESC
+        SELECT DISTINCT ON (sct.player_code) 
+          sct.player_code,
+          sct.total_spent,
+          sct.submitted_at,
+          ans.display_name
+        FROM salary_cap_teams sct
+        LEFT JOIN LATERAL (
+          SELECT display_name 
+          FROM anonymous_sessions 
+          WHERE game_id = sct.game_id 
+            AND player_code = sct.player_code
+            AND is_active = true
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) ans ON true
+        WHERE sct.game_id = ${gameId}
+        ORDER BY sct.player_code, sct.submitted_at DESC
       `;
 
       // Get team details for each player
@@ -78,7 +88,8 @@ export default async function handler(req, res) {
           men: athletes.filter(a => a.team_gender === 'men'),
           women: athletes.filter(a => a.team_gender === 'women'),
           totalSpent: team.total_spent,
-          submittedAt: team.submitted_at
+          submittedAt: team.submitted_at,
+          displayName: team.display_name || null
         };
       }
 

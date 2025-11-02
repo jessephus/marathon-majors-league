@@ -77,10 +77,14 @@ footer .footer-copyright {
 }
 
 footer .game-switcher {
-    display: flex;
+    display: none; /* Hidden by default, only shown for commissioners */
     align-items: center;
     gap: 6px;
     font-size: 0.85rem;
+}
+
+footer .game-switcher.visible {
+    display: flex; /* Show when commissioner is logged in */
 }
 
 footer .game-select {
@@ -648,6 +652,40 @@ footer .btn {
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--medium-gray);
+}
+
+.team-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--medium-gray);
+}
+
+.team-card-avatar {
+    flex-shrink: 0;
+}
+
+.team-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.team-card-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-orange);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.team-card-player-code {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    font-style: italic;
 }
 
 .team-card .team-section {
@@ -3330,9 +3368,18 @@ footer .btn {
 .leaderboard-row-highlight {
     background: linear-gradient(135deg, #fff3e6 0%, #ffe6cc 100%);
     border: 2px solid #ff6900;
-    position: sticky;
-    top: 80px; /* Stick to top when scrolling down */
     z-index: 10;
+}
+
+/* Bidirectional sticky behavior - applied dynamically via JavaScript */
+.leaderboard-row-highlight.sticky-top {
+    position: sticky;
+    top: 80px;
+}
+
+.leaderboard-row-highlight.sticky-bottom {
+    position: sticky;
+    bottom: 20px;
 }
 
 .leaderboard-row-highlight:hover {
