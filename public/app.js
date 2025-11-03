@@ -6145,21 +6145,36 @@ async function showGameRecap(playerCode) {
         const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
         const resultsData = await resultsResponse.json();
         const allResults = resultsData.scored || resultsData.results || [];
+        console.log('[showGameRecap] All results:', allResults.length, 'athletes');
         
-        // Get player's team athletes
+        // Get player's team athletes - try salary-cap-draft first, then draft
         let teamAthletes = [];
         try {
-            const teamResponse = await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`);
+            const teamResponse = await fetch(`${API_BASE}/api/salary-cap-draft?gameId=${GAME_ID}&playerCode=${playerCode}`);
             const teamData = await teamResponse.json();
-            const teams = teamData.teams || {};
-            teamAthletes = teams[playerCode] || [];
+            console.log('[showGameRecap] Team data response:', teamData);
+            
+            // Check multiple possible formats
+            if (teamData.team && (teamData.team.men || teamData.team.women)) {
+                // Format: { team: { men: [...], women: [...] } }
+                teamAthletes = [...(teamData.team.men || []), ...(teamData.team.women || [])];
+            } else if (teamData[playerCode] && (teamData[playerCode].men || teamData[playerCode].women)) {
+                // Format: { "Team Name": { men: [...], women: [...] } }
+                teamAthletes = [...(teamData[playerCode].men || []), ...(teamData[playerCode].women || [])];
+            } else if (teamData.teams && teamData.teams[playerCode]) {
+                // Draft format: { teams: { "PLAYER_CODE": [...] } }
+                teamAthletes = teamData.teams[playerCode];
+            }
+            console.log('[showGameRecap] Team athletes:', teamAthletes);
         } catch (e) {
             console.error('Error fetching team:', e);
         }
         
         // Find player's results and top scorer
         const teamAthleteIds = teamAthletes.map(a => a.id);
+        console.log('[showGameRecap] Team athlete IDs:', teamAthleteIds);
         const playerResults = allResults.filter(r => teamAthleteIds.includes(r.athlete_id || r.id));
+        console.log('[showGameRecap] Filtered player results:', playerResults);
         
         let topScorer = null;
         let topPoints = 0;
@@ -6223,7 +6238,13 @@ async function showGameRecap(playerCode) {
         }
         
         // Generate stats
-        const athletesFinished = playerResults.filter(r => r.finish_time).length;
+        console.log('[showGameRecap] Player results:', playerResults);
+        const athletesFinished = playerResults.filter(r => {
+            // Check multiple possible field names
+            return r.finish_time || r.finish_time_ms || r.finishTime || r.total_points > 0;
+        }).length;
+        console.log('[showGameRecap] Athletes finished:', athletesFinished, 'out of', playerResults.length);
+        
         const statsHTML = `
             <h4 style="margin: 0 0 16px 0; color: #1e293b;">Your Team Stats</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: center;">

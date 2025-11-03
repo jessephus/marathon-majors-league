@@ -911,27 +911,27 @@ function getMainHTML() {
         <!-- Game Recap Modal -->
         <div id="game-recap-modal" class="modal" style="display: none;">
             <div class="modal-overlay"></div>
-            <div class="modal-content" style="max-width: 600px; text-align: center; position: relative; z-index: 1001;">
+            <div class="modal-content" style="max-width: 600px; width: 90%; max-height: 85vh; text-align: center; position: relative; z-index: 1001; margin: auto;">
                 <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000;"></canvas>
                 
-                <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-                    <h2 style="font-size: 32px; margin: 0 0 16px 0; color: var(--primary-blue);">
+                <div style="background: white; padding: 32px 24px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); overflow-y: auto; max-height: 85vh;">
+                    <h2 style="font-size: 28px; margin: 0 0 16px 0; color: var(--primary-blue);">
                         Thanks for Playing! 🎉
                     </h2>
                     
-                    <div id="recap-placement" style="margin: 24px 0;">
+                    <div id="recap-placement" style="margin: 20px 0;">
                         <!-- Placement will be inserted here -->
                     </div>
                     
-                    <div id="recap-stats" style="background: #f8fafc; padding: 24px; border-radius: 8px; margin: 24px 0;">
+                    <div id="recap-stats" style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
                         <!-- Stats will be inserted here -->
                     </div>
                     
-                    <div id="recap-highlights" style="text-align: left; margin: 24px 0;">
+                    <div id="recap-highlights" style="text-align: left; margin: 20px 0;">
                         <!-- Highlights will be inserted here -->
                     </div>
                     
-                    <button id="close-recap" class="btn btn-primary" style="margin-top: 24px; padding: 12px 32px; font-size: 16px;">
+                    <button id="close-recap" class="btn btn-primary" style="margin-top: 20px; padding: 12px 32px; font-size: 16px; width: 100%;">
                         View Final Standings
                     </button>
                 </div>
