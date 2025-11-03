@@ -1,4 +1,7 @@
-import { sql } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
+
+// Initialize Neon SQL client
+const sql = neon(process.env.DATABASE_URL);
 
 export default async function handler(req, res) {
   // CORS headers
@@ -29,7 +32,7 @@ export default async function handler(req, res) {
       WHERE game_id = ${gameId}
         AND player_code = ${playerCode}
     `;
-    console.log(`[Delete Team] Deleted ${deleteTeamResult.rowCount} team records`);
+    console.log(`[Delete Team] Deleted ${deleteTeamResult.length} team records`);
 
     // Delete from player_rankings
     const deleteRankingsResult = await sql`
@@ -37,9 +40,10 @@ export default async function handler(req, res) {
       WHERE game_id = ${gameId}
         AND player_code = ${playerCode}
     `;
-    console.log(`[Delete Team] Deleted ${deleteRankingsResult.rowCount} ranking records`);
+    console.log(`[Delete Team] Deleted ${deleteRankingsResult.length} ranking records`);
 
     // Delete from anonymous_sessions (if sessionToken provided)
+    let deletedSessions = 0;
     if (sessionToken) {
       const deleteSessionResult = await sql`
         DELETE FROM anonymous_sessions
@@ -47,7 +51,8 @@ export default async function handler(req, res) {
           AND game_id = ${gameId}
           AND player_code = ${playerCode}
       `;
-      console.log(`[Delete Team] Deleted ${deleteSessionResult.rowCount} session records`);
+      deletedSessions = deleteSessionResult.length;
+      console.log(`[Delete Team] Deleted ${deletedSessions} session records`);
     }
 
     // Remove player from games.players array
@@ -55,8 +60,8 @@ export default async function handler(req, res) {
       SELECT players FROM games WHERE game_id = ${gameId}
     `;
 
-    if (gameResult.rows.length > 0) {
-      const currentPlayers = gameResult.rows[0].players || [];
+    if (gameResult.length > 0) {
+      const currentPlayers = gameResult[0].players || [];
       const updatedPlayers = currentPlayers.filter(p => p !== playerCode);
 
       await sql`
@@ -71,9 +76,9 @@ export default async function handler(req, res) {
       message: 'Team/player deleted successfully',
       playerCode,
       deletedRecords: {
-        teams: deleteTeamResult.rowCount,
-        rankings: deleteRankingsResult.rowCount,
-        sessions: sessionToken ? 1 : 0
+        teams: deleteTeamResult.length,
+        rankings: deleteRankingsResult.length,
+        sessions: deletedSessions
       }
     });
 
