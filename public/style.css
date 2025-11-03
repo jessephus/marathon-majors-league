@@ -4416,6 +4416,15 @@ footer .btn {
     background-color: #94a3b8;
 }
 
+.btn-danger-mini {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-danger-mini:hover {
+    background-color: #b91c1c;
+}
+
 /* Results Management Table Styles */
 .results-table {
     width: 100%;

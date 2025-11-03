@@ -1780,12 +1780,55 @@ async function displayTeamsTable() {
         
         // Actions column
         const actionsCell = document.createElement('td');
+        
+        // View button (disabled for now)
         const viewButton = document.createElement('button');
         viewButton.className = 'btn-mini';
         viewButton.textContent = 'View';
-        viewButton.disabled = true; // Disable until feature is implemented
+        viewButton.disabled = true;
         viewButton.title = 'Team details coming in a future update';
+        viewButton.style.marginRight = '4px';
         actionsCell.appendChild(viewButton);
+        
+        // Delete button
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn-mini btn-danger-mini';
+        deleteButton.textContent = 'Delete';
+        deleteButton.title = 'Delete this player/team';
+        deleteButton.onclick = async () => {
+            if (confirm(`Are you sure you want to delete player "${code}" and all associated data?\n\nThis will remove:\n- Rankings\n- Drafted team\n- Session access\n\nThis action cannot be undone.`)) {
+                try {
+                    const sessionToken = sessionData?.uniqueUrl?.split('?session=')[1];
+                    const response = await fetch(`${API_BASE}/api/teams/delete`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            gameId: GAME_ID,
+                            playerCode: code,
+                            sessionToken: sessionToken
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to delete team');
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Delete result:', result);
+                    
+                    // Refresh game state and table
+                    await loadGameState();
+                    await displayTeamsTable();
+                    
+                    alert(`Successfully deleted player "${code}"`);
+                } catch (error) {
+                    console.error('Error deleting team:', error);
+                    alert('Failed to delete team. Please try again.');
+                }
+            }
+        };
+        actionsCell.appendChild(deleteButton);
+        
         row.appendChild(actionsCell);
         
         tableBody.appendChild(row);
