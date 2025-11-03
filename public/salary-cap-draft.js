@@ -325,6 +325,13 @@ async function setupSalaryCapDraft() {
     
     console.log(`⏱️ UI setup took ${(performance.now() - uiStart).toFixed(2)}ms`);
     console.log(`⏱️ Total setupSalaryCapDraft took ${(performance.now() - perfStart).toFixed(2)}ms`);
+    
+    // Check if we should show the game recap modal (after everything is set up)
+    setTimeout(async () => {
+        if (typeof window.checkAndShowGameRecap === 'function') {
+            await window.checkAndShowGameRecap();
+        }
+    }, 500);
 }
 
 /**

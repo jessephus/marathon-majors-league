@@ -582,6 +582,15 @@ function setupEventListeners() {
         }
     });
     document.getElementById('add-athlete-form').addEventListener('submit', handleAddAthlete);
+    
+    // Game Recap modal
+    document.getElementById('close-recap').addEventListener('click', closeGameRecap);
+    const gameRecapModal = document.getElementById('game-recap-modal');
+    gameRecapModal.addEventListener('click', (e) => {
+        if (e.target === gameRecapModal || e.target.classList.contains('modal-overlay')) {
+            closeGameRecap();
+        }
+    });
 }
 
 // Show page
@@ -1102,6 +1111,11 @@ async function handleEnterGame() {
     // Always go to salary cap draft page (it shows roster when locked)
     await setupSalaryCapDraft();
     showPage('salary-cap-draft-page');
+    
+    // Delay slightly to ensure page is fully rendered, then check for game recap
+    setTimeout(async () => {
+        await checkAndShowGameRecap();
+    }, 500);
 }
 
 // Handle create new game (Account-Free)
@@ -3587,58 +3601,70 @@ async function handleUpdateResults() {
 
 // Finalize results and crown winner
 async function handleFinalizeResults() {
-    if (!confirm('Are you sure you want to finalize the results? This will declare the winner and lock all results.')) {
+    if (!confirm('Are you sure you want to finalize the results? This will lock all results and show final standings.')) {
         return;
     }
 
-    const scores = {};
-    const averageTimes = {};
-    Object.entries(gameState.teams).forEach(([player, team]) => {
-        scores[player] = calculateTeamScore(team);
-        averageTimes[player] = calculateAverageTime(team);
-    });
-
-    // Find winner (lowest score wins in marathon)
-    const winner = Object.entries(scores).reduce((best, [player, score]) => {
-        if (!best || score < best.score) {
-            return { player, score };
-        }
-        return best;
-    }, null);
-
-    const display = document.getElementById('winner-display');
-    display.innerHTML = `
-        <h3>🏆 Winner: ${winner.player}</h3>
-        <p>Average Finish Time: ${averageTimes[winner.player]}</p>
-        <hr style="margin: 10px 0; border-color: rgba(255,255,255,0.3);">
-        ${Object.entries(scores).sort((a, b) => a[1] - b[1]).map(([player, score], i) => 
-            `<div>${i + 1}. ${player}: ${averageTimes[player]}</div>`
-        ).join('')}
-    `;
-
-    // Mark results as finalized
-    gameState.resultsFinalized = true;
-    
-    // Hide the finalize button and update button text
-    document.getElementById('finalize-results').style.display = 'none';
-    document.getElementById('update-results').textContent = 'Results Finalized';
-    document.getElementById('update-results').disabled = true;
-
     try {
-        // Save finalized state
-        await saveGameState();
+        // Fetch current standings to get final points
+        const response = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
+        const data = await response.json();
+        const standings = data.standings || [];
         
-        // Save results to database
-        await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`, {
+        if (standings.length === 0) {
+            alert('No standings available to finalize. Please enter race results first.');
+            return;
+        }
+
+        // Find winner (highest points wins)
+        const winner = standings[0]; // Already sorted by points descending
+        
+        const display = document.getElementById('winner-display');
+        if (display) {
+            display.innerHTML = `
+                <h3>🏆 Winner: ${winner.player_code}</h3>
+                <p>Total Points: ${winner.total_points}</p>
+                <hr style="margin: 10px 0; border-color: rgba(255,255,255,0.3);">
+                ${standings.map((team, i) => {
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+                    return `<div>${medal} ${i + 1}. ${team.player_code}: ${team.total_points} pts</div>`;
+                }).join('')}
+            `;
+        }
+
+        // Mark results as finalized in local state
+        gameState.resultsFinalized = true;
+        
+        // Hide the finalize button and update button text (check if elements exist)
+        const finalizeBtn = document.getElementById('finalize-results');
+        if (finalizeBtn) {
+            finalizeBtn.style.display = 'none';
+        }
+        
+        const updateBtn = document.getElementById('update-results');
+        if (updateBtn) {
+            updateBtn.textContent = 'Results Finalized';
+            updateBtn.disabled = true;
+        }
+
+        // Save finalized state to database
+        await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ results: gameState.results })
+            body: JSON.stringify({ 
+                players: gameState.players,
+                draftComplete: gameState.draftComplete,
+                resultsFinalized: true
+            })
         });
         
         // Invalidate results cache after finalizing
         invalidateResultsCache();
+        
+        alert('Results finalized successfully! Players will now see the final standings and game recap.');
     } catch (error) {
-        console.error('Error saving results:', error);
+        console.error('Error finalizing results:', error);
+        alert('Error finalizing results. Please try again.');
     }
 }
 
@@ -5997,11 +6023,390 @@ function closePointsInfo() {
     }
 }
 
+// ============================================================================
+// GAME RECAP MODAL
+// ============================================================================
+
+/**
+ * Confetti animation for game recap
+ */
+function createConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const confettiPieces = [];
+    const confettiCount = 150;
+    const colors = ['#ff6900', '#2C39A2', '#ffd700', '#ff1493', '#00ff00', '#00bfff'];
+    
+    for (let i = 0; i < confettiCount; i++) {
+        confettiPieces.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            w: Math.random() * 10 + 5,
+            h: Math.random() * 10 + 5,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rotation: Math.random() * 360,
+            rotationSpeed: Math.random() * 10 - 5,
+            speedX: Math.random() * 3 - 1.5,
+            speedY: Math.random() * 3 + 2
+        });
+    }
+    
+    let animationId;
+    let startTime = Date.now();
+    const duration = 5000; // 5 seconds
+    
+    function draw() {
+        const elapsed = Date.now() - startTime;
+        
+        // Stop after 5 seconds
+        if (elapsed > duration) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            cancelAnimationFrame(animationId);
+            return;
+        }
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        confettiPieces.forEach((piece, index) => {
+            ctx.save();
+            ctx.translate(piece.x, piece.y);
+            ctx.rotate((piece.rotation * Math.PI) / 180);
+            ctx.fillStyle = piece.color;
+            ctx.fillRect(-piece.w / 2, -piece.h / 2, piece.w, piece.h);
+            ctx.restore();
+            
+            // Update position
+            piece.y += piece.speedY;
+            piece.x += piece.speedX;
+            piece.rotation += piece.rotationSpeed;
+            
+            // Don't reset - let them fall off screen
+            // (removed the reset code so confetti doesn't loop)
+        });
+        
+        animationId = requestAnimationFrame(draw);
+    }
+    
+    draw();
+}
+
+/**
+ * Check if player has seen the game recap
+ */
+function hasSeenGameRecap(playerCode) {
+    const key = `gameRecap_${GAME_ID}_${playerCode}`;
+    return localStorage.getItem(key) === 'true';
+}
+
+/**
+ * Mark that player has seen the game recap
+ */
+function markGameRecapSeen(playerCode) {
+    const key = `gameRecap_${GAME_ID}_${playerCode}`;
+    localStorage.setItem(key, 'true');
+}
+
+/**
+ * Show game recap modal for the current player
+ */
+async function showGameRecap(playerCode) {
+    console.log('[showGameRecap] Starting for player:', playerCode);
+    try {
+        // Fetch standings
+        console.log('[showGameRecap] Fetching standings...');
+        const standingsResponse = await fetch(`${API_BASE}/api/standings?gameId=${GAME_ID}`);
+        const standingsData = await standingsResponse.json();
+        const standings = standingsData.standings || [];
+        console.log('[showGameRecap] Got standings:', standings.length, 'teams');
+        
+        if (standings.length === 0) {
+            console.log('[showGameRecap] No standings, returning');
+            return; // No standings to show
+        }
+        
+        // Find current player's team
+        const playerTeam = standings.find(s => s.player_code === playerCode);
+        console.log('[showGameRecap] Player team:', playerTeam);
+        if (!playerTeam) {
+            console.log('[showGameRecap] Player not in standings, returning');
+            return; // Player not in standings
+        }
+        
+        const placement = standings.indexOf(playerTeam) + 1;
+        const totalTeams = standings.length;
+        console.log('[showGameRecap] Placement:', placement, 'of', totalTeams);
+        
+        // Fetch player's athlete results to find top scorer
+        const resultsResponse = await fetch(`${API_BASE}/api/results?gameId=${GAME_ID}`);
+        const resultsData = await resultsResponse.json();
+        const allResults = resultsData.scored || resultsData.results || [];
+        
+        // Get player's team athletes
+        let teamAthletes = [];
+        try {
+            const teamResponse = await fetch(`${API_BASE}/api/draft?gameId=${GAME_ID}`);
+            const teamData = await teamResponse.json();
+            const teams = teamData.teams || {};
+            teamAthletes = teams[playerCode] || [];
+        } catch (e) {
+            console.error('Error fetching team:', e);
+        }
+        
+        // Find player's results and top scorer
+        const teamAthleteIds = teamAthletes.map(a => a.id);
+        const playerResults = allResults.filter(r => teamAthleteIds.includes(r.athlete_id || r.id));
+        
+        let topScorer = null;
+        let topPoints = 0;
+        playerResults.forEach(r => {
+            const points = r.total_points || 0;
+            if (points > topPoints) {
+                topPoints = points;
+                topScorer = {
+                    name: r.name || teamAthletes.find(a => a.id === r.athlete_id)?.name,
+                    points: points
+                };
+            }
+        });
+        
+        // Count podium finishes (top 3)
+        const podiumCount = playerResults.filter(r => r.placement && r.placement <= 3).length;
+        
+        // Generate placement message
+        let placementHTML = '';
+        const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+        
+        if (placement === 1) {
+            placementHTML = `
+                <div style="font-size: 64px; margin-bottom: 16px;">🥇</div>
+                <h3 style="font-size: 28px; color: var(--primary-orange); margin: 0;">
+                    Congratulations, Champion!
+                </h3>
+                <p style="font-size: 18px; color: #64748b; margin-top: 8px;">
+                    You finished in <strong>1st place</strong> with <strong>${playerTeam.total_points} points</strong>!
+                </p>
+            `;
+        } else if (placement === 2) {
+            placementHTML = `
+                <div style="font-size: 64px; margin-bottom: 16px;">🥈</div>
+                <h3 style="font-size: 28px; color: #94a3b8; margin: 0;">
+                    Amazing Performance!
+                </h3>
+                <p style="font-size: 18px; color: #64748b; margin-top: 8px;">
+                    You finished in <strong>2nd place</strong> with <strong>${playerTeam.total_points} points</strong>
+                </p>
+            `;
+        } else if (placement === 3) {
+            placementHTML = `
+                <div style="font-size: 64px; margin-bottom: 16px;">🥉</div>
+                <h3 style="font-size: 28px; color: #cd7f32; margin: 0;">
+                    Great Job!
+                </h3>
+                <p style="font-size: 18px; color: #64748b; margin-top: 8px;">
+                    You finished in <strong>3rd place</strong> with <strong>${playerTeam.total_points} points</strong>
+                </p>
+            `;
+        } else {
+            placementHTML = `
+                <h3 style="font-size: 28px; color: var(--primary-blue); margin: 0;">
+                    Thanks for Competing!
+                </h3>
+                <p style="font-size: 18px; color: #64748b; margin-top: 8px;">
+                    You finished in <strong>#${placement}</strong> of ${totalTeams} teams with <strong>${playerTeam.total_points} points</strong>
+                </p>
+            `;
+        }
+        
+        // Generate stats
+        const athletesFinished = playerResults.filter(r => r.finish_time).length;
+        const statsHTML = `
+            <h4 style="margin: 0 0 16px 0; color: #1e293b;">Your Team Stats</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: center;">
+                <div>
+                    <div style="font-size: 32px; font-weight: bold; color: var(--primary-blue);">${playerTeam.total_points}</div>
+                    <div style="font-size: 14px; color: #64748b;">Total Points</div>
+                </div>
+                <div>
+                    <div style="font-size: 32px; font-weight: bold; color: var(--primary-orange);">${athletesFinished}</div>
+                    <div style="font-size: 14px; color: #64748b;">Athletes Finished</div>
+                </div>
+            </div>
+        `;
+        
+        // Generate highlights
+        let highlightsHTML = '<h4 style="margin: 0 0 12px 0; color: #1e293b;">Team Highlights</h4><ul style="margin: 0; padding-left: 20px; text-align: left;">';
+        let hasHighlights = false;
+        
+        // Top scorer
+        if (topScorer && topScorer.name) {
+            highlightsHTML += `<li style="margin-bottom: 8px;">🌟 <strong>${topScorer.name}</strong> was your top scorer with ${topScorer.points} points</li>`;
+            hasHighlights = true;
+        }
+        
+        // Podium finishes
+        if (podiumCount > 0) {
+            highlightsHTML += `<li style="margin-bottom: 8px;">🏆 ${podiumCount} athlete${podiumCount > 1 ? 's' : ''} finished on the podium (top 3)</li>`;
+            hasHighlights = true;
+        }
+        
+        // Team wins
+        if (playerTeam.wins > 0) {
+            highlightsHTML += `<li style="margin-bottom: 8px;">🥇 ${playerTeam.wins} race win${playerTeam.wins > 1 ? 's' : ''}</li>`;
+            hasHighlights = true;
+        }
+        
+        // Add message if no highlights
+        if (!hasHighlights) {
+            highlightsHTML += `<li style="margin-bottom: 8px; color: #64748b;">Check out the full standings to see how everyone performed!</li>`;
+        }
+        
+        highlightsHTML += '</ul>';
+        
+        console.log('[showGameRecap] Populating modal elements...');
+        // Populate modal
+        const recapPlacement = document.getElementById('recap-placement');
+        const recapStats = document.getElementById('recap-stats');
+        const recapHighlights = document.getElementById('recap-highlights');
+        
+        console.log('[showGameRecap] Elements found:', {
+            recapPlacement: !!recapPlacement,
+            recapStats: !!recapStats,
+            recapHighlights: !!recapHighlights
+        });
+        
+        if (recapPlacement) recapPlacement.innerHTML = placementHTML;
+        if (recapStats) recapStats.innerHTML = statsHTML;
+        if (recapHighlights) recapHighlights.innerHTML = highlightsHTML;
+        
+        // Show modal with proper centering
+        const modal = document.getElementById('game-recap-modal');
+        console.log('[showGameRecap] Modal element:', modal);
+        console.log('[showGameRecap] Modal current classes:', modal?.className);
+        
+        if (modal) {
+            modal.classList.add('active');
+            modal.style.display = ''; // Remove inline display:none
+            console.log('[showGameRecap] Added active class, new classes:', modal.className);
+            document.body.style.overflow = 'hidden';
+            
+            // Start confetti (will auto-stop after 5 seconds)
+            console.log('[showGameRecap] Starting confetti...');
+            createConfetti();
+            
+            // Mark as seen
+            console.log('[showGameRecap] Marking as seen...');
+            markGameRecapSeen(playerCode);
+            console.log('[showGameRecap] COMPLETE - Modal should be visible now!');
+        } else {
+            console.error('[showGameRecap] Modal element not found!');
+        }
+        
+    } catch (error) {
+        console.error('Error showing game recap:', error);
+    }
+}
+
+/**
+ * Close game recap modal
+ */
+function closeGameRecap() {
+    const modal = document.getElementById('game-recap-modal');
+    modal.classList.remove('active');
+    modal.style.display = 'none'; // Set back to display:none
+    document.body.style.overflow = '';
+    
+    // Clear confetti
+    const canvas = document.getElementById('confetti-canvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    
+    // Navigate to Fantasy Results Leaderboard
+    showPage('leaderboard-page');
+    displayLeaderboard().catch(err => {
+        console.error('Error loading leaderboard:', err);
+    });
+}
+
+/**
+ * Check and show game recap if appropriate
+ */
+async function checkAndShowGameRecap() {
+    console.log('=== checkAndShowGameRecap called ===');
+    
+    // Try to get player code from session storage (Next.js version) or gameState (old version)
+    let playerCode = null;
+    try {
+        const sessionData = localStorage.getItem('marathon_fantasy_team');
+        if (sessionData) {
+            const session = JSON.parse(sessionData);
+            playerCode = session.playerCode;
+        }
+    } catch (e) {
+        console.log('Could not get playerCode from localStorage, trying gameState');
+    }
+    
+    // Fallback to gameState.currentPlayer if localStorage doesn't have it
+    if (!playerCode && gameState.currentPlayer) {
+        playerCode = gameState.currentPlayer;
+    }
+    
+    console.log('Player code:', playerCode);
+    
+    // Only show for players (not commissioners)
+    if (!playerCode) {
+        console.log('No player code found, skipping recap');
+        return;
+    }
+    
+    // Only show if player hasn't seen it yet
+    const alreadySeen = hasSeenGameRecap(playerCode);
+    console.log('Has player already seen recap?', alreadySeen);
+    if (alreadySeen) {
+        console.log('Player has already seen recap, skipping. To test again, run: localStorage.removeItem("gameRecap_' + GAME_ID + '_' + playerCode + '")');
+        return;
+    }
+    
+    try {
+        // Fetch game state to check if results are finalized
+        console.log('Fetching game state from API...');
+        const response = await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
+        const data = await response.json();
+        const isFinalized = data.resultsFinalized || false;
+        
+        console.log('Game finalized status:', isFinalized);
+        console.log('Full game state data:', data);
+        
+        // Only show if results are finalized
+        if (!isFinalized) {
+            console.log('Results not finalized yet');
+            return;
+        }
+        
+        // Update local state
+        gameState.resultsFinalized = isFinalized;
+        
+        // Show the recap
+        console.log('Showing game recap for player:', playerCode);
+        await showGameRecap(playerCode);
+    } catch (error) {
+        console.error('Error checking game recap:', error);
+    }
+}
+
 // Make functions available globally
 window.viewTeamDetails = viewTeamDetails;
 window.closeTeamDetails = closeTeamDetails;
 window.showPointsInfo = showPointsInfo;
 window.closePointsInfo = closePointsInfo;
+window.checkAndShowGameRecap = checkAndShowGameRecap;
+window.closeGameRecap = closeGameRecap;
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
