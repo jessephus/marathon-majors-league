@@ -40,7 +40,7 @@ Awarded when the difference between first and second half times is within 0.5% o
 **Pacing Bonus Exclusivity**: Negative Split and Even Pace bonuses are **mutually exclusive** - only one can be awarded per athlete. Negative Split takes precedence when both conditions are met.
 
 #### Fast Finish Kick (+1 point)
-Awarded when the final 5km is run 3% faster than average pace, demonstrating strong closing speed.
+Awarded when the final 2.2km is run 3% faster than average pace, demonstrating strong closing speed.
 
 **Stacking Rules**: 
 - Negative Split and Even Pace **cannot** stack (mutually exclusive)
