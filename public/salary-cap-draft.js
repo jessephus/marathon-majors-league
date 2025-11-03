@@ -377,14 +377,24 @@ function setupSalaryCapEventListeners() {
     const recapBtn = document.getElementById('view-game-recap-btn');
     if (recapBtn) {
         recapBtn.addEventListener('click', () => {
+            console.log('🎉 View Game Recap button clicked!');
             const playerCode = salaryCapState.session?.playerCode;
+            console.log('Player code from session:', playerCode);
+            console.log('checkAndShowGameRecap exists?', typeof window.checkAndShowGameRecap === 'function');
+            
             if (playerCode && typeof window.checkAndShowGameRecap === 'function') {
                 const gameId = localStorage.getItem('current_game_id') || 'default';
+                console.log('Clearing seen flag for:', `gameRecap_${gameId}_${playerCode}`);
                 // Clear the "seen" flag so recap shows again
                 localStorage.removeItem(`gameRecap_${gameId}_${playerCode}`);
+                console.log('Calling checkAndShowGameRecap...');
                 window.checkAndShowGameRecap();
+            } else {
+                console.error('Cannot show recap - missing playerCode or checkAndShowGameRecap function');
             }
         });
+    } else {
+        console.warn('View Game Recap button not found in DOM');
     }
 }
 
@@ -1066,10 +1076,16 @@ function showErrorNotification(message) {
 function lockRoster() {
     const start = performance.now();
     console.log('🔒 Locking roster...');
+    console.log('permanentlyLocked:', salaryCapState.permanentlyLocked);
+    console.log('gameState:', salaryCapState.gameState);
+    console.log('resultsFinalized:', salaryCapState.gameState?.resultsFinalized);
     
     // Get buttons
     const submitBtn = document.getElementById('submit-salary-cap-team');
     const recapBtn = document.getElementById('view-game-recap-btn');
+    
+    console.log('Submit button found:', !!submitBtn);
+    console.log('Recap button found:', !!recapBtn);
     
     // Disable submit button
     submitBtn.disabled = true;
@@ -1077,12 +1093,17 @@ function lockRoster() {
     if (salaryCapState.permanentlyLocked) {
         // Check if results are finalized
         if (salaryCapState.gameState && salaryCapState.gameState.resultsFinalized) {
+            console.log('✅ Results are finalized - showing recap button');
             // Hide submit button, show recap button
             submitBtn.style.display = 'none';
             if (recapBtn) {
                 recapBtn.style.display = 'inline-block';
+                console.log('Recap button display set to inline-block');
+            } else {
+                console.error('❌ Recap button not found!');
             }
         } else {
+            console.log('⏸️ Results not finalized - showing locked state');
             // Show locked state
             submitBtn.textContent = '🔒 Locked - Race Started';
             submitBtn.style.opacity = '0.5';
@@ -1091,6 +1112,7 @@ function lockRoster() {
             }
         }
     } else {
+        console.log('🔓 Not permanently locked - showing roster locked state');
         submitBtn.textContent = 'Roster Locked ✓';
         submitBtn.style.opacity = '0.6';
         if (recapBtn) {

@@ -4091,12 +4091,21 @@ async function handleResetGame() {
             localStorage.removeItem(TEAM_SESSION_KEY);
             anonymousSession = { token: null, teamName: null, playerCode: null, ownerName: null, expiresAt: null };
 
-            // Clear any displayed data in commissioner dashboard
-            document.getElementById('player-codes-display').innerHTML = '';
-            document.getElementById('draft-status').innerHTML = '';
-            document.getElementById('results-form').innerHTML = '';
-            document.getElementById('winner-display').innerHTML = '';
-            document.getElementById('live-standings').innerHTML = '';
+            // Clear any displayed data in commissioner dashboard (with null safety)
+            const playerCodesDisplay = document.getElementById('player-codes-display');
+            if (playerCodesDisplay) playerCodesDisplay.innerHTML = '';
+            
+            const draftStatus = document.getElementById('draft-status');
+            if (draftStatus) draftStatus.innerHTML = '';
+            
+            const resultsForm = document.getElementById('results-form');
+            if (resultsForm) resultsForm.innerHTML = '';
+            
+            const winnerDisplay = document.getElementById('winner-display');
+            if (winnerDisplay) winnerDisplay.innerHTML = '';
+            
+            const liveStandings = document.getElementById('live-standings');
+            if (liveStandings) liveStandings.innerHTML = '';
             
             // Show success message with details
             alert(`Game reset complete!\n\nDeleted:\n- ${result.deleted.draftTeams} team rosters\n- ${result.deleted.playerRankings} player rankings\n- ${result.deleted.raceResults} race results\n- ${result.deleted.leagueStandings} standings entries\n- ${result.deleted.anonymousSessions} team sessions\n\nAll athlete data has been preserved.`);
