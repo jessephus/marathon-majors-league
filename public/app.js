@@ -49,6 +49,9 @@ let rankingViewState = {
 // Leaderboard sticky behavior cleanup function
 let leaderboardStickyCleanup = null;
 
+// Keep track of escape key handler for game recap modal
+let gameRecapEscapeHandler = null;
+
 // API base URL - will be relative in production
 const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
 
@@ -584,13 +587,19 @@ function setupEventListeners() {
     document.getElementById('add-athlete-form').addEventListener('submit', handleAddAthlete);
     
     // Game Recap modal
-    document.getElementById('close-recap').addEventListener('click', closeGameRecap);
+    const closeRecapButton = document.getElementById('close-recap');
+    if (closeRecapButton) {
+        closeRecapButton.addEventListener('click', () => closeGameRecap(true));
+    }
+
     const gameRecapModal = document.getElementById('game-recap-modal');
-    gameRecapModal.addEventListener('click', (e) => {
-        if (e.target === gameRecapModal || e.target.classList.contains('modal-overlay')) {
-            closeGameRecap();
-        }
-    });
+    if (gameRecapModal) {
+        gameRecapModal.addEventListener('click', (e) => {
+            if (e.target === gameRecapModal || e.target.classList.contains('modal-overlay')) {
+                closeGameRecap(false);
+            }
+        });
+    }
 }
 
 // Show page
@@ -6315,29 +6324,38 @@ async function showGameRecap(playerCode) {
             console.log('[showGameRecap] Added active class, new classes:', modal.className);
             document.body.style.overflow = 'hidden';
             
-            // Ensure event listeners are attached (in case they weren't ready during init)
+            // Wire up close button (navigates to leaderboard)
             const closeButton = document.getElementById('close-recap');
             if (closeButton) {
-                // Remove any existing listener and add a fresh one
-                closeButton.replaceWith(closeButton.cloneNode(true));
-                const newCloseButton = document.getElementById('close-recap');
-                newCloseButton.addEventListener('click', closeGameRecap);
+                closeButton.onclick = () => closeGameRecap(true);
                 console.log('[showGameRecap] Attached click handler to close button');
             }
             
-            // Ensure overlay click works
+            // Wire up overlay (just close modal)
             const overlay = modal.querySelector('.modal-overlay');
             if (overlay) {
-                overlay.addEventListener('click', closeGameRecap);
+                overlay.onclick = () => closeGameRecap(false);
                 console.log('[showGameRecap] Attached click handler to overlay');
             }
             
-            // Ensure modal click works
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    closeGameRecap();
-                }
-            });
+            if (!modal.dataset.recapClickListener) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeGameRecap(false);
+                    }
+                });
+                modal.dataset.recapClickListener = 'true';
+            }
+            
+            if (!gameRecapEscapeHandler) {
+                gameRecapEscapeHandler = (event) => {
+                    if (event.key === 'Escape') {
+                        closeGameRecap(false);
+                    }
+                };
+                document.addEventListener('keydown', gameRecapEscapeHandler);
+                console.log('[showGameRecap] Escape key handler attached');
+            }
             
             // Start confetti (will auto-stop after 5 seconds)
             console.log('[showGameRecap] Starting confetti...');
@@ -6358,12 +6376,23 @@ async function showGameRecap(playerCode) {
 
 /**
  * Close game recap modal
+ * @param {boolean} navigateToLeaderboard - whether to jump to standings after closing
  */
-function closeGameRecap() {
+function closeGameRecap(navigateToLeaderboard = false) {
     const modal = document.getElementById('game-recap-modal');
+    if (!modal) {
+        return;
+    }
+
     modal.classList.remove('active');
     modal.style.display = 'none'; // Set back to display:none
     document.body.style.overflow = '';
+    
+    // Remove escape handler if attached
+    if (gameRecapEscapeHandler) {
+        document.removeEventListener('keydown', gameRecapEscapeHandler);
+        gameRecapEscapeHandler = null;
+    }
     
     // Clear confetti
     const canvas = document.getElementById('confetti-canvas');
@@ -6372,11 +6401,12 @@ function closeGameRecap() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
     
-    // Navigate to Fantasy Results Leaderboard
-    showPage('leaderboard-page');
-    displayLeaderboard().catch(err => {
-        console.error('Error loading leaderboard:', err);
-    });
+    if (navigateToLeaderboard) {
+        showPage('leaderboard-page');
+        displayLeaderboard().catch(err => {
+            console.error('Error loading leaderboard:', err);
+        });
+    }
 }
 
 /**
