@@ -1,77 +1,149 @@
-# Fantasy NY Marathon 🗽🏃‍♂️
+# Fantasy NY Marathon
 
 **Turn marathon watching into the ultimate competitive experience!**
 
-Experience the thrill of the New York City Marathon like never before with this interactive fantasy game. Compete with your friends by drafting elite runners and cheering them on as they race through the five boroughs.
+Experience the thrill of the New York City Marathon like never before with this interactive fantasy game. Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory through the five boroughs of New York City.
 
 <img width="1536" height="1024" alt="AI generated image depicting a Ugandan athlete finishing a marathon with a Marathon Majors Fantasy League graphic on his racing singlet." src="https://github.com/user-attachments/assets/c66852b6-3087-4335-9be5-dd16ee4ed431" />
 
-With live result tracking, snake draft mechanics, and mobile-friendly gameplay, every step of the marathon becomes edge-of-your-seat entertainment. Perfect for marathon fans, running enthusiasts, or anyone who loves friendly competition during one of the world's most prestigious races!
+## What's New in the New York Release
 
-## ✨ Features
+This major release transforms the fantasy marathon experience with a complete overhaul:
 
-- 🔗 **Account-Free Team Creation**: Create and join games with unique URLs - no registration required
-- 🎮 **Code-Based Authentication**: Legacy support for players who join with game codes
-- 💰 **Salary Cap Draft**: Daily fantasy-style team building with $30k budget constraint
-- 🐍 **Intelligent Snake Draft**: Alternative fair automated drafting of 3 men and 3 women per player
-- 📱 **Mobile-First Design**: Optimized for watching and managing on your phone
-- 🎨 **NYC-Inspired Theme**: Orange and blue styling that captures the city's energy
-- ⚡ **Live Results Updates**: Real-time standings throughout the race with split times
-- 🏆 **Live Leaderboard**: Dedicated race day view showing team rankings with your position highlighted
-- 👑 **Commissioner Dashboard**: Complete game management and result entry tools
-- 💾 **Cloud Storage**: Reliable game state persistence with Neon Postgres database
-- 🏆 **Multiple Game Support**: Run tournaments or multiple leagues simultaneously
-- 🔄 **Automated Data Sync**: Top 100 marathon athletes automatically synced from World Athletics every 2 days
-- 🔒 **Secure Sessions**: 90-day session tokens with upgrade path to full user accounts
-- ⏰ **Roster Lock Timer**: Automatic roster locking at race time to ensure fair play
+### Daily Fantasy Style Gameplay
+No more waiting for friends to submit rankings - jump right in and build your team! Choose any 3 men and 3 women within your $30,000 salary cap. Star athletes cost more, but savvy picks of undervalued runners can lead to victory.
 
-## 🎯 How to Play
+<img src="https://private-user-images.githubusercontent.com/6133249/508751643-9d780e7c-da50-4c8b-af69-52c6af9efb6d.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIxODgzNTEsIm5iZiI6MTc2MjE4ODA1MSwicGF0aCI6Ii82MTMzMjQ5LzUwODc1MTY0My05ZDc4MGU3Yy1kYTUwLTRjOGItYWY2OS01MmM2YWY5ZWZiNmQucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDNUMTY0MDUxWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9YTYzZWJlODNmYjI2NmUxYmFiY2YxYTI3YzU4ZWVhOTg3ZTRhODYxYjBkOGFmY2U1OWM5OTFkYjkyOGNlYzExZiZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.3BUoFsqEQ51zDbm4mU4ezILZFUlOkJnQEcCe85XkBf4" alt="Screenshot of account-free team creation showing unique session URL generation and bookmark instructions without any login form or password fields" width="200">&nbsp;
+&nbsp;
+<img src="https://private-user-images.githubusercontent.com/6133249/508751581-20a09088-b70c-4fa2-8049-739de8e7edf4.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIxODgzNTEsIm5iZiI6MTc2MjE4ODA1MSwicGF0aCI6Ii82MTMzMjQ5LzUwODc1MTU4MS0yMGEwOTA4OC1iNzBjLTRmYTItODA0OS03MzlkZThlN2VkZjQucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDNUMTY0MDUxWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9M2U5OTRhMWI4OWM2ZDZhZDAyMDllMGQ3YWI1ZjRmODY0MGNkYzY4YjYzZWE1YzEzMTljNDhlMmM1MWRiZGY4ZiZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.4HitfGgubTVwRsIMioKer7mx_LE3rPXAysk6W5ypE3Q" alt="Screenshot of athlete detail view showing athlete biographical and statistical information, race log, progression, and news" width="200">&nbsp;
+&nbsp;
+<img src="https://private-user-images.githubusercontent.com/6133249/508751531-b5b2f648-3bbc-42b7-bbfd-6900554dd377.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIxODgwNzQsIm5iZiI6MTc2MjE4Nzc3NCwicGF0aCI6Ii82MTMzMjQ5LzUwODc1MTUzMS1iNWIyZjY0OC0zYmJjLTQyYjctYmJmZC02OTAwNTU0ZGQzNzcucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDNUMTYzNjE0WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9ZTNkMzNkODBjYzUwYzhmZDY4YmIxZmYwY2JmMzU0ZGExZThiZWIwMWM1NTRiZWJkNGVmMjRlNzMxMjlmZjdhMiZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.n1GKU8gqcdSzOMg_WHj5fO31N4omnHRPqn6mrOqhJdc" alt="Screenshot of salary cap draft interface showing athlete cards with prices, budget tracker displaying remaining funds, and selected team roster with 3 men and 3 women" width="200">
 
-### 👑 For the Commissioner
+### Zero Friction - No Accounts Needed
+Create or join a game instantly. No email, no password, no hassle. Your unique URL is your ticket to come back and manage your team - just bookmark it and come back anytime.
 
-1. **Initialize the Game**
-   - Open the app and click **"Commissioner Mode"**
-   - Set the number of players (2-4 supported)
-   - Click **"Generate Player Codes"** to create unique access codes
+### Live Race Day Action
+Watch your team climb the leaderboard in real-time as the marathon unfolds. See detailed stats, split times, and point breakdowns for every athlete. The dedicated leaderboard view keeps you on the edge of your seat.
 
-2. **Share & Setup**
-   - Share the player codes with your friends along with the game URL
-   - Wait for all players to join and submit their athlete rankings
+<img src="https://private-user-images.githubusercontent.com/6133249/508751716-40a732f6-21c8-4c06-86ab-3383a424f8db.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIxODg2NTUsIm5iZiI6MTc2MjE4ODM1NSwicGF0aCI6Ii82MTMzMjQ5LzUwODc1MTcxNi00MGE3MzJmNi0yMWM4LTRjMDYtODZhYi0zMzgzYTQyNGY4ZGIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDNUMTY0NTU1WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9ZDRmY2NhYWU2YmUwZDExODliZTk5MWEwNzEyYTQ4MDU4MTQ2MTIyZjY2YTFkYzRjY2M5MTBkMGNlYmNjNmVjZCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.D5G2y0Jnhsb0cSy-rcFGSSjIeKWi6g3Md0oUOS20P7M" alt="Screenshot of live leaderboard during race showing fantasy results with team rankings with point totals, athlete performance details, split times, and highlighted user position" width="200">&nbsp;
+&nbsp;
+<img src="https://private-user-images.githubusercontent.com/6133249/508751778-e51fe4a1-67e6-44ff-865d-9411b708dd2e.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIxODg2NTUsIm5iZiI6MTc2MjE4ODM1NSwicGF0aCI6Ii82MTMzMjQ5LzUwODc1MTc3OC1lNTFmZTRhMS02N2U2LTQ0ZmYtODY1ZC05NDExYjcwOGRkMmUucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDNUMTY0NTU1WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9MjBlMDEzMjIyZTAxMzQ0MDg1NDliZmE1ODFlNDY0NWI3OWQxODVlYTRmZDU5YTM0NDYzNzNjZWVjMWY3Nzk4OCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.EGC1ow_lUG21D1t48mpFNobvASuwRm2c8fCl5KYOMdI" alt="Screenshot of live leaderboard during race showing actual race results with the fantasy points scored by each athlete" width="200">&nbsp;
+&nbsp;
+<img src="https://private-user-images.githubusercontent.com/6133249/508751871-4917083d-0ac0-4585-94bc-f112b6fa5ac2.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIxODg2NTUsIm5iZiI6MTc2MjE4ODM1NSwicGF0aCI6Ii82MTMzMjQ5LzUwODc1MTg3MS00OTE3MDgzZC0wYWMwLTQ1ODUtOTRiYy1mMTEyYjZmYTVhYzIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwMyUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDNUMTY0NTU1WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9ZThiMGQ3Mzc5N2UxMmQxMzgwY2QyZDc1ZjllNTc4Y2ZkMGNjZDI0ZWRmMjRlOGZhM2MwNTMyMmZiN2RkNGUyYyZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.KZ0Pf9XhQMm3rT03U-g1kRf_ervqpmmNpkStmcs3W94" alt="Screenshot of athlete scoring detail view page showing an explanation of the athlete's fantasy scoring" width="200">
 
-3. **Execute the Draft**
-   - Click **"Run Snake Draft"** to automatically assign teams
-   - Each player gets 3 men and 3 women based on their rankings
+### Commissioner Power Tools
+Enter live race updates with our streamlined interface. Track positions, split times, and final results. Semi-automated data entry makes managing race day a breeze.
 
-4. **Live Results Management**
-   - Enter split times throughout the race (5K, 10K, half-marathon, etc.)
-   - Click **"Update Live Results"** to push updates to all players
-   - Continue updating as the race progresses
+### Advanced Athlete Management
+Commissioners can add new athletes, update World Athletics IDs, confirm race participants, and manage the entire athlete database through an intuitive admin interface.
 
-5. **Crown the Champion**
-   - Enter final finish times when the race concludes
-   - Click **"Finalize Results & Crown Winner"** to declare the victor!
 
-### 🏃‍♂️ For Players
+## Key Features
 
-1. **Join the Game**
-   - Enter your unique player code (provided by the commissioner)
-   - Click **"Enter Game"** to access the drafting interface
+- **Salary Cap Draft**: Build your team within a $30,000 budget - choose wisely!
+- **No Registration Required**: Share a link, start playing - it's that simple
+- **Points-Based Scoring**: Placement points, time bonuses, and performance rewards
+- **Live Updates**: Real-time leaderboard tracking throughout race day
+- **Mobile-Optimized**: Perfect for following the race from anywhere
+- **Commissioner Tools**: Easy game management and result entry
+- **Auto-Sync Athletes**: Top 100 marathoners updated automatically from World Athletics
+- **Strategic Gameplay**: Balance star power with budget constraints
+- **Secure Sessions**: 90-day session tokens keep your team safe
+- **Roster Lock**: Teams automatically lock at race start time
 
-2. **Draft Your Dream Team**
-   - Rank your top 10 men and top 10 women elite runners
-   - Use the intuitive drag-and-drop interface to order your preferences
-   - Click athletes to add them, or use the × button to remove them
-   - Submit your rankings when you're satisfied
+## How to Play
 
-3. **Follow the Action**
-   - View your drafted team after the snake draft completes
-   - Click **"View Leaderboard"** to see live rankings during the race
-   - Check where you stand against the competition
-   - Your team is highlighted so you can quickly find your position
-   - Watch live standings update as the commissioner enters race progress
-   - Celebrate when your team takes the lead! 🎉
+### Creating Your Team
 
-## 🚀 Quick Deploy to Vercel
+1. **Get Your Unique Link**
+   - Visit the game and click **"Create Team"** or use a commissioner-shared link
+   - Your browser automatically saves your session - just bookmark the page
+   - No email or password needed!
+
+2. **Build Your Team ($30,000 Budget)**
+   - Browse all confirmed athletes for the race
+   - Select exactly 3 men and 3 women
+   - Athletes have different salaries based on their ranking and performance
+   - Watch your budget tracker to stay under $30,000
+   - Submit when you're happy with your lineup
+
+3. **Race Day**
+   - Return to your bookmarked link to watch live results
+   - Check the **Leaderboard** to see how you stack up
+   - Watch your team's total points climb with each finish
+   - See detailed breakdowns of placement points, time bonuses, and performance rewards
+
+### For Commissioners
+
+1. **Create a Game**
+   - Click **"Commissioner Mode"** and get your unique commissioner URL
+   - Set up the race details and confirm participating athletes
+   - Share the game link with friends to let them create teams
+
+2. **Manage Race Results**
+   - Use the **Results Entry** interface during the race
+   - Enter finish times and positions as athletes complete the course
+   - Update throughout the race for live standings
+   - Finalize results when the race is complete
+
+3. **Admin Tools**
+   - Add or update athletes in the database
+   - Confirm which athletes are participating in the race
+   - Edit World Athletics IDs for accurate data syncing
+   - Manage multiple games simultaneously
+
+
+## Game Rules & Scoring
+
+### Team Building
+
+- **Budget**: $30,000 salary cap per team
+- **Team Size**: Select exactly 3 men and 3 women (6 total athletes)
+- **Athlete Salaries**: Based on world rankings and personal best times
+  - Elite athletes (Top 10): $7,000 - $14,000
+  - Mid-tier runners (11-50): $3,000 - $7,000
+  - Value picks (50+): $1,500 - $3,000
+- **Strategy**: Balance star power with value picks to maximize points within budget
+
+### Points-Based Scoring
+
+Your team earns points through multiple categories:
+
+**1. Placement Points (Top 10 Finishes)**
+- 1st place: 10 points
+- 2nd place: 9 points
+- 3rd place: 8 points
+- ...down to 10th place: 1 point
+
+**2. Time Gap Bonuses**
+- Within 60 seconds of winner: +5 points
+- Within 2 minutes: +4 points
+- Within 3 minutes: +3 points
+- Within 5 minutes: +2 points
+- Within 10 minutes: +1 point
+
+**3. Performance Bonuses**
+- **Negative Split**: +2 points (second half faster than first)
+- **Even Pace**: +1 point (consistent throughout)
+- **Fast Finish Kick**: +1 point (strong final 5km)
+
+**4. Record Bonuses**
+- **World Record**: +15 points
+- **Course Record**: +5 points
+
+### How to Win
+
+The team with the **highest total points** across all 6 athletes wins! Points are calculated automatically as results come in, and you can see detailed breakdowns for each athlete showing exactly how they earned their points.
+
+### Fair Play
+
+- **Roster Lock**: Teams lock automatically at race start time - no last-minute changes
+- **Live Updates**: Commissioner enters results as the race progresses
+- **Final Results**: Standings are locked once the commissioner finalizes results
+
+For complete scoring details and examples, see the **[Points Scoring System Documentation](docs/POINTS_SCORING_SYSTEM.md)**.
+
+## Quick Deploy to Vercel
 
 ### One-Click Deploy
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jessephus/marathon-majors-league)
@@ -81,7 +153,7 @@ With live result tracking, snake draft mechanics, and mobile-friendly gameplay, 
 1. **Fork this repository** to your GitHub account
 2. **Create a Vercel account** at [vercel.com](https://vercel.com) (free tier available)
 3. **Import your repository** in the Vercel dashboard
-4. **Add Neon Postgres database**:
+4. **Add Postgres database**:
    - Navigate to your project's **Integrations** tab
    - Search for and add the **Neon** integration
    - Follow prompts to create/connect a Neon Postgres database
@@ -116,113 +188,33 @@ vercel dev
 # Open http://localhost:3000
 ```
 
-## 🏁 Game Rules & Scoring
+## Technology
 
-### Version 2: Points-Based Scoring System 🎯
+Built with modern web technologies for reliability and performance:
 
-**Fantasy NY Marathon** now features an advanced points league system that rewards both placement and performance quality:
+- **Frontend**: Fast, responsive design that works on all devices
+- **Backend**: Serverless cloud functions for automatic scaling
+- **Database**: Neon Postgres for reliable data storage
+- **Hosting**: Vercel's global network for fast worldwide access
+- **Auto-Updates**: Athlete database syncs from World Athletics every 2 days
 
-#### Point Categories
+For technical details, see the **[Architecture Guide](docs/ARCHITECTURE.md)**.
 
-1. **Placement Points (Top 10)**
-   - 1st place: 10 pts | 2nd: 9 pts | 3rd: 8 pts ... 10th: 1 pt
-   - Ties handled with standard competition ranking
+## Elite Athletes Database
 
-2. **Time Gap Bonuses**
-   - Within 60s of winner: +5 pts
-   - Within 2 minutes: +4 pts
-   - Within 3 minutes: +3 pts
-   - Within 5 minutes: +2 pts
-   - Within 10 minutes: +1 pt
+The game features the world's best marathoners, automatically kept up-to-date:
 
-3. **Performance Bonuses**
-   - **Negative Split**: +2 pts (second half faster than first)
-   - **Even Pace**: +1 pt (consistent pacing within 0.5%)
-   - **Fast Finish Kick**: +1 pt (final 5km 3% faster than average)
+- **Top 100 Men & Women**: Official World Athletics marathon rankings
+- **Auto-sync every 2 days**: Always current with the latest rankings
+- **Complete profiles**: Photos, personal bests, country, World Athletics rankings
+- **Extended data**: Age, sponsor, season best performance
+- **Race confirmation**: Commissioners can mark which athletes are racing
 
-4. **Record Bonuses**
-   - **World Record**: +15 pts 🌎
-   - **Course Record**: +5 pts 🏆
-   - Records may be provisional pending confirmation
+The database updates automatically via GitHub Actions, ensuring you're always drafting from the current elite field.
 
-### How to Win
+For technical details, see the **[Sync Top 100 Guide](docs/SYNC_TOP_100.md)**.
 
-- **Team Size**: Each player drafts exactly 3 men and 3 women (6 total athletes)
-- **Draft Process**: Snake draft based on your submitted rankings
-- **Winning**: Team with the **highest total points** across all athletes wins!
-- **Live Tracking**: Follow real-time standings with detailed point breakdowns
-- **Fair Play**: Results are locked once finalized to ensure integrity
-
-For complete scoring details, see **[Points Scoring System Documentation](docs/POINTS_SCORING_SYSTEM.md)**.
-
-### Legacy Scoring (Version 1)
-
-The original time-based system (lowest combined finish time wins) remains available as a fallback for compatibility.
-
-## 🛠️ Technical Architecture
-
-### Stack Overview
-- **Frontend**: Vanilla HTML, CSS, and JavaScript (no build step needed!)
-- **Backend**: Vercel Serverless Functions (Node.js)
-- **Database**: Neon Postgres (serverless PostgreSQL)
-- **Hosting**: Vercel Edge Network
-- **Real-time Updates**: Server-sent events for live result tracking
-
-### API Endpoints
-| Endpoint | Purpose |
-|----------|---------|
-| `/api/athletes` | Retrieve elite athlete database |
-| `/api/races` | Manage marathon events and competitions |
-| `/api/game-state` | Game configuration and player management |
-| `/api/rankings` | Store and retrieve player athlete rankings |
-| `/api/draft` | Execute snake draft and save team assignments |
-| `/api/results` | Race result entry and live updates |
-| `/api/init-db` | Initialize database and seed athletes |
-
-### Data Structure
-The application uses Neon Postgres with these key tables:
-- **`athletes`** - Elite runner profiles with personal bests, rankings, and extended data
-- **`races`** - Marathon events and competitions (currently 2025 NYC Marathon)
-- **`athlete_races`** - Links athletes to specific races they're competing in
-- **`games`** - Game settings, player list, and draft status
-- **`player_rankings`** - Each player's ranked athlete preferences
-- **`draft_teams`** - Post-draft team assignments
-- **`race_results`** - Live and final athlete finish times
-- **`users`** - Future user account support (not yet implemented)
-
-Each game instance maintains isolated data through unique game IDs.
-
-## 🏃‍♀️ Elite Athletes Database
-
-The game features automatically synchronized athlete data from World Athletics:
-- **Top 100 men** marathon runners from official World Athletics rankings
-- **Top 100 women** marathon runners from official World Athletics rankings  
-- **Automatic sync every 2 days** via GitHub Actions
-- **Complete athlete profiles** including country representation and headshot photos
-- **Extended athlete data** including World Athletics rankings and IDs
-- **Real-time updates** as race results come in
-
-All athlete data includes:
-- Full name and country code
-- Personal best marathon time
-- Official headshot (when available)
-- Unique World Athletics ID for tracking
-- World Athletics profile and rankings (marathon, road running, overall)
-- Extended fields for age, sponsor, and season best
-
-### Automated Sync System
-
-The athlete database is kept current through an automated GitHub Actions workflow that:
-- Runs every 2 days at 2:00 AM UTC
-- Fetches the top 100 men and women from World Athletics marathon rankings
-- Uses intelligent delta detection to minimize API calls
-- Only updates records when data actually changes (via SHA256 hash comparison)
-- Can be manually triggered anytime from the Actions tab
-- Automatically creates GitHub issues on sync failures
-
-For more details, see the **[Sync Top 100 Guide](docs/SYNC_TOP_100.md)**.
-
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 Required for deployment (automatically configured when using Neon integration):
@@ -231,13 +223,12 @@ DATABASE_URL=postgresql://username:password@host.neon.tech/dbname
 ```
 
 ### Game Settings
-Customizable options in the application:
-- **Player count**: 2-4 players supported
-- **Game ID**: Support for multiple concurrent games
-- **Commissioner password**: Secure game management access
-- **Result update frequency**: Live or batch result updates
+- **Multiple games**: Run several leagues simultaneously
+- **Automatic roster lock**: Teams lock at race start time
+- **Flexible scoring**: Points-based system with detailed breakdowns
+- **Live updates**: Commissioner controls when results are published
 
-## 📚 Additional Documentation
+## Additional Documentation
 
 **[📖 Complete Documentation Index](docs/README.md)** - Find all documentation organized by topic and role
 
@@ -253,7 +244,7 @@ Customizable options in the application:
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Technical architecture and design
 - **[Changelog](docs/CHANGELOG.md)** - Version history and updates
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
 
@@ -264,11 +255,11 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 4. Test thoroughly with multiple players
 5. Submit a pull request
 
-## 📄 License
+## License
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-**Ready to make marathon watching unforgettable?** Deploy your own Fantasy NY Marathon game and let the competition begin! 🏃‍♂️🏆
+**Ready to make marathon watching unforgettable?** Deploy your own Fantasy NY Marathon game and let the competition begin!
 
