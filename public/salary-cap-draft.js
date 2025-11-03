@@ -280,13 +280,18 @@ async function setupSalaryCapDraft() {
             console.log('🔒 Race results exist - roster permanently locked');
         }
         
+        // Store game state data (including resultsFinalized)
+        salaryCapState.gameState = gameStateData;
+        
         // Check if roster lock time has passed (permanently lock roster)
         if (gameStateData.rosterLockTime) {
             const lockTime = new Date(gameStateData.rosterLockTime);
             const now = new Date();
             
-            // Show roster lock time notice
-            displayRosterLockTime(lockTime);
+            // Show roster lock time notice (only if results not finalized)
+            if (!gameStateData.resultsFinalized) {
+                displayRosterLockTime(lockTime);
+            }
             
             if (now >= lockTime) {
                 salaryCapState.permanentlyLocked = true;
