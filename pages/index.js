@@ -8,6 +8,28 @@ export default function Home() {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Fantasy NY Marathon</title>
+        <meta name="description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
+        
+        {/* Favicons */}
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://marathonmajorsfantasy.com/" />
+        <meta property="og:title" content="Fantasy NY Marathon - Daily Fantasy Marathon League" />
+        <meta property="og:description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
+        <meta property="og:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://marathonmajorsfantasy.com/" />
+        <meta property="twitter:title" content="Fantasy NY Marathon - Daily Fantasy Marathon League" />
+        <meta property="twitter:description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
+        <meta property="twitter:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
+        
         <link rel="stylesheet" href="/style.css" />
       </Head>
 
