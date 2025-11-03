@@ -1053,8 +1053,30 @@ function lockRoster() {
     submitBtn.disabled = true;
     
     if (salaryCapState.permanentlyLocked) {
-        submitBtn.textContent = '🔒 Locked - Race Started';
-        submitBtn.style.opacity = '0.5';
+        // Check if results are finalized
+        if (salaryCapState.gameState && salaryCapState.gameState.resultsFinalized) {
+            // Show "View Game Recap" button instead
+            submitBtn.textContent = '🎉 View Game Recap';
+            submitBtn.style.opacity = '1';
+            submitBtn.disabled = false;
+            submitBtn.style.cursor = 'pointer';
+            
+            // Replace click handler
+            submitBtn.onclick = () => {
+                if (typeof window.checkAndShowGameRecap === 'function') {
+                    // Temporarily clear the "seen" flag so recap shows again
+                    const playerCode = salaryCapState.session?.playerCode;
+                    if (playerCode) {
+                        const gameId = localStorage.getItem('current_game_id') || 'default';
+                        localStorage.removeItem(`gameRecap_${gameId}_${playerCode}`);
+                        window.checkAndShowGameRecap();
+                    }
+                }
+            };
+        } else {
+            submitBtn.textContent = '🔒 Locked - Race Started';
+            submitBtn.style.opacity = '0.5';
+        }
     } else {
         submitBtn.textContent = 'Roster Locked ✓';
         submitBtn.style.opacity = '0.6';
