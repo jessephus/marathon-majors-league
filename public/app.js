@@ -6315,6 +6315,30 @@ async function showGameRecap(playerCode) {
             console.log('[showGameRecap] Added active class, new classes:', modal.className);
             document.body.style.overflow = 'hidden';
             
+            // Ensure event listeners are attached (in case they weren't ready during init)
+            const closeButton = document.getElementById('close-recap');
+            if (closeButton) {
+                // Remove any existing listener and add a fresh one
+                closeButton.replaceWith(closeButton.cloneNode(true));
+                const newCloseButton = document.getElementById('close-recap');
+                newCloseButton.addEventListener('click', closeGameRecap);
+                console.log('[showGameRecap] Attached click handler to close button');
+            }
+            
+            // Ensure overlay click works
+            const overlay = modal.querySelector('.modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', closeGameRecap);
+                console.log('[showGameRecap] Attached click handler to overlay');
+            }
+            
+            // Ensure modal click works
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeGameRecap();
+                }
+            });
+            
             // Start confetti (will auto-stop after 5 seconds)
             console.log('[showGameRecap] Starting confetti...');
             createConfetti();
