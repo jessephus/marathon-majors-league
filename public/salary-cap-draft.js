@@ -283,6 +283,9 @@ async function setupSalaryCapDraft() {
         // Store game state data (including resultsFinalized)
         salaryCapState.gameState = gameStateData;
         
+        // Store session data for later use (e.g., game recap button)
+        salaryCapState.session = session;
+        
         // Check if roster lock time has passed (permanently lock roster)
         if (gameStateData.rosterLockTime) {
             const lockTime = new Date(gameStateData.rosterLockTime);
@@ -378,7 +381,24 @@ function setupSalaryCapEventListeners() {
     if (recapBtn) {
         recapBtn.addEventListener('click', () => {
             console.log('🎉 View Game Recap button clicked!');
-            const playerCode = salaryCapState.session?.playerCode;
+            
+            // Try to get player code from state first, then from localStorage
+            let playerCode = salaryCapState.session?.playerCode;
+            
+            if (!playerCode) {
+                console.log('Player code not in state, trying localStorage...');
+                try {
+                    const sessionData = localStorage.getItem('marathon_fantasy_team');
+                    if (sessionData) {
+                        const session = JSON.parse(sessionData);
+                        playerCode = session.playerCode;
+                        console.log('Found player code in localStorage:', playerCode);
+                    }
+                } catch (e) {
+                    console.error('Error reading localStorage:', e);
+                }
+            }
+            
             console.log('Player code from session:', playerCode);
             console.log('checkAndShowGameRecap exists?', typeof window.checkAndShowGameRecap === 'function');
             
@@ -391,6 +411,8 @@ function setupSalaryCapEventListeners() {
                 window.checkAndShowGameRecap();
             } else {
                 console.error('Cannot show recap - missing playerCode or checkAndShowGameRecap function');
+                console.error('playerCode:', playerCode);
+                console.error('checkAndShowGameRecap:', typeof window.checkAndShowGameRecap);
             }
         });
     } else {
