@@ -3338,7 +3338,17 @@ function createTeamCard(player, team, showScore = false) {
     return card;
 }
 
-// Helper to display legacy time-based score
+/**
+ * DEPRECATED: Legacy time-based score display (FALLBACK ONLY)
+ * 
+ * This function displays team rankings using the deprecated average-time scoring system.
+ * It is ONLY used as a fallback when points-based scoring fails to load.
+ * 
+ * The points-based scoring system (see /docs/POINTS_SCORING_SYSTEM.md) is the primary
+ * scoring method. This function should only execute in error conditions.
+ * 
+ * TODO: Remove this function once points-based scoring is confirmed stable in production.
+ */
 function displayLegacyScore(card, player, team) {
     const averageTime = calculateAverageTime(team);
     
@@ -3797,30 +3807,6 @@ function displayPointsStandings(standings, display) {
     `;
 }
 
-// Legacy time-based standings (fallback)
-function displayLegacyStandings(display) {
-    const scores = {};
-    const averageTimes = {};
-    Object.entries(gameState.teams).forEach(([player, team]) => {
-        scores[player] = calculateTeamScore(team);
-        averageTimes[player] = calculateAverageTime(team);
-    });
-
-    const sortedTeams = Object.entries(scores).sort((a, b) => a[1] - b[1]);
-
-    display.innerHTML = `
-        <h4 style="margin-top: 20px;">Current Standings (Time-Based)</h4>
-        <div style="background: var(--light-gray); padding: 15px; border-radius: 5px; margin-top: 10px;">
-            ${sortedTeams.map(([player, score], i) => {
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-                return `<div style="padding: 8px 0; font-weight: ${i === 0 ? 'bold' : 'normal'}; color: ${i === 0 ? 'var(--primary-red)' : 'inherit'};">
-                    ${medal} ${escapeHtml(player)}: ${averageTimes[player]}
-                </div>`;
-            }).join('')}
-        </div>
-    `;
-}
-
 // Fetch detailed scoring data for all results
 async function fetchScoringDetails() {
     try {
@@ -3926,6 +3912,18 @@ function getRecordBadge(recordType, recordStatus) {
     return `<span style="${style}" title="${title}">${badge}</span>`;
 }
 
+/**
+ * DEPRECATED: Legacy time-based scoring functions (FALLBACK ONLY)
+ * 
+ * These functions support the deprecated average-time scoring system.
+ * They are ONLY used as fallbacks when points-based scoring fails.
+ * 
+ * The application now uses a points-based scoring system (see /docs/POINTS_SCORING_SYSTEM.md).
+ * These functions should only execute in error conditions.
+ * 
+ * TODO: Remove these functions once points-based scoring is confirmed stable in production.
+ */
+
 function calculateTeamScore(team) {
     let totalSeconds = 0;
     
@@ -3973,6 +3971,9 @@ function calculateAverageTime(team) {
     const averageSeconds = totalSeconds / numAthletes;
     return secondsToTime(averageSeconds);
 }
+
+/* End of deprecated legacy scoring functions */
+
 
 function setupResultsForm() {
     const form = document.getElementById('results-form');
