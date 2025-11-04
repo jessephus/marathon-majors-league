@@ -78,6 +78,7 @@ jobs:
       - name: Run API endpoint tests
         id: test-api
         run: npm run test:api
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -85,6 +86,7 @@ jobs:
       - name: Run database tests
         id: test-db
         run: npm run test:db
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -92,12 +94,14 @@ jobs:
       - name: Run frontend integration tests
         id: test-frontend
         run: npm run test:frontend
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
       
       - name: Run game flow tests
         id: test-flow
         run: npm run test:flow
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -105,12 +109,14 @@ jobs:
       - name: Run Next.js routing tests
         id: test-nextjs
         run: npm run test:nextjs
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
       
       - name: Run salary cap draft tests
         id: test-salarycap
         run: npm run test:salarycap
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -118,12 +124,14 @@ jobs:
       - name: Run performance benchmarks
         id: test-performance
         run: npm run test:performance
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
       
       - name: Run legacy regression tests
         id: test-legacy
         run: npm run test:legacy
+        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -197,14 +205,14 @@ jobs:
             }
             
             const totalTests = Object.keys(testResults).length;
-            const summary = conclusion === 'success' 
-              ? `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`
-              : `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`;
+            const summary = failedCount > 0
+              ? `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`
+              : `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`;
             
             const body = [
               `## ${emoji} Test Suite Results`,
               '',
-              `**Status:** ${conclusion.toUpperCase()}`,
+              `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
               `**Run:** [#${runNumber}](${runUrl})`,
               `**Commit:** ${commitSha}`,
               '',
@@ -246,3 +254,57 @@ jobs:
                 body: body
               });
             }
+      
+      - name: Check test results and fail if needed
+        if: always()
+        run: |
+          echo "Checking test results..."
+          
+          # Check each test outcome
+          if [ "${{ steps.test-api.outcome }}" != "success" ]; then
+            echo "❌ API endpoint tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-db.outcome }}" != "success" ]; then
+            echo "❌ Database tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-frontend.outcome }}" != "success" ]; then
+            echo "❌ Frontend integration tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-flow.outcome }}" != "success" ]; then
+            echo "❌ Game flow tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-nextjs.outcome }}" != "success" ]; then
+            echo "❌ Next.js routing tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-salarycap.outcome }}" != "success" ]; then
+            echo "❌ Salary cap draft tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-performance.outcome }}" != "success" ]; then
+            echo "❌ Performance benchmarks failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-legacy.outcome }}" != "success" ]; then
+            echo "❌ Legacy regression tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Fail the workflow if any tests failed
+          if [ "$TESTS_FAILED" = "true" ]; then
+            echo "⚠️ One or more test suites failed"
+            exit 1
+          fi
+          
+          echo "✅ All tests passed"
