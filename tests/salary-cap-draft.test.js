@@ -119,30 +119,23 @@ describe('Salary Cap Draft System Tests', () => {
       const createData = await createResponse.json();
       const sessionToken = createData.session.token;
       
-      // Verify the session
-      const verifyResponse = await fetch(`${BASE_URL}/api/session/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionToken })
-      });
+      // Verify the session - API expects GET with query parameter
+      const verifyResponse = await fetch(`${BASE_URL}/api/session/verify?token=${sessionToken}`);
       
       assert.strictEqual(verifyResponse.status, 200, 'Should verify valid session');
       
       const data = await verifyResponse.json();
-      assert.strictEqual(data.isValid, true, 'Session should be valid');
+      assert.strictEqual(data.valid, true, 'Session should be valid');
       
       console.log('✅ Session verification working');
     });
     
     it('should reject invalid session tokens', async () => {
-      const verifyResponse = await fetch(`${BASE_URL}/api/session/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionToken: 'invalid-token-12345' })
-      });
+      // API expects GET with query parameter
+      const verifyResponse = await fetch(`${BASE_URL}/api/session/verify?token=invalid-token-12345`);
       
       const data = await verifyResponse.json();
-      assert.strictEqual(data.isValid, false, 'Invalid session should be rejected');
+      assert.strictEqual(data.valid, false, 'Invalid session should be rejected');
       
       console.log('✅ Invalid session rejection working');
     });
@@ -162,11 +155,11 @@ describe('Salary Cap Draft System Tests', () => {
       const createData = await createResponse.json();
       const sessionToken = createData.session.token;
       
-      // Extend the session
+      // Extend the session - API expects 'token' not 'sessionToken'
       const extendResponse = await fetch(`${BASE_URL}/api/session/extend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionToken })
+        body: JSON.stringify({ token: sessionToken })
       });
       
       assert.strictEqual(extendResponse.status, 200, 'Should extend session');
