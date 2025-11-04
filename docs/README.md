@@ -102,9 +102,12 @@ Welcome to the Fantasy NY Marathon documentation! This index helps you find the 
 
 - **[Testing Guide](TESTING.md)** - Testing procedures and best practices
 
-## 📝 Project History
+## 📝 Project History & Maintenance
 
 - **[Changelog](CHANGELOG.md)** - Version history and notable changes
+- **[Migration Guide](MIGRATION.md)** - Database migration history
+- **[Next.js Migration](NEXTJS_MIGRATION.md)** - Framework migration details
+- **[Legacy Cleanup](LEGACY_CLEANUP.md)** - Code cleanup and deprecation tracking
 
 ## 📖 Documentation by Role
 
@@ -128,6 +131,9 @@ Follow this path:
 Read these in order:
 1. [Development Guide](DEVELOPMENT.md) - Setup and standards
 2. [Architecture Guide](ARCHITECTURE.md) - System design
+3. [Game Modes Guide](GAME_MODES.md) - Understanding the two game modes
+4. [Testing Guide](TESTING.md) - Test procedures
+5. [Legacy Cleanup](LEGACY_CLEANUP.md) - What's deprecated/removed
 3. [Database Guide](DATABASE.md) - Data models
 4. [Authentication API Reference](AUTHENTICATION_API.md) - Authentication endpoints (NEW)
 5. [Testing Guide](TESTING.md) - Testing approach

@@ -235,6 +235,7 @@ DATABASE_URL=postgresql://username:password@host.neon.tech/dbname
 ### Quick Links
 
 - **[User Guide](docs/USER_GUIDE.md)** - Complete player and commissioner instructions  
+- **[Game Modes Guide](docs/GAME_MODES.md)** - Understanding Season League vs Single Race modes
 - **[Salary Cap Draft Guide](docs/SALARY_CAP_DRAFT.md)** - Daily fantasy-style team building system
 - **[Roster Lock Time Guide](docs/ROSTER_LOCK_TIME.md)** - Automatic roster locking at race time
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Deploy your own instance to Vercel
