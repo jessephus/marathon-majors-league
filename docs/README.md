@@ -214,13 +214,13 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 26 files | Well-organized with category prefixes |
+| Total Documents | 25 files | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently consolidated and renamed |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
-**Last Major Cleanup:** November 2025 (42% reduction: 45 → 26 files)  
+**Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
 **Next Review:** February 2026
 
 ---
