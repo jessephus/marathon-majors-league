@@ -22,10 +22,16 @@ console.log('🧪 Running performance benchmarks at:', BASE_URL);
 console.log('📊 These tests establish baseline metrics for regression detection\n');
 
 // Performance thresholds
+// These are generous baselines designed to catch significant regressions
+// without being overly strict. They represent acceptable performance
+// for a serverless application on a typical 3G network:
+// - Page load includes HTML, CSS, JS download and parsing
+// - API response includes database query and JSON serialization
+// - Thresholds should be tightened based on actual performance data
 const THRESHOLDS = {
-  pageLoadTime: 5000,           // 5 seconds max
-  apiResponseTime: 2000,        // 2 seconds max
-  navigationTime: 3000,         // 3 seconds max
+  pageLoadTime: 5000,           // 5 seconds max (initial page load on 3G)
+  apiResponseTime: 2000,        // 2 seconds max (database query + serialization)
+  navigationTime: 3000,         // 3 seconds max (subsequent navigation)
   concurrentRequests: 10,       // Number of concurrent requests to test
   maxBundleSize: 500 * 1024,    // 500KB max for main bundle (gzipped)
 };
@@ -86,13 +92,19 @@ describe('Performance Benchmark Tests', () => {
             const sizeKB = (content.length / 1024).toFixed(2);
             fileSizes[file] = `${sizeKB} KB`;
             console.log(`   ${file}: ${sizeKB} KB`);
+          } else {
+            console.log(`   ${file}: Not found (${response.status})`);
           }
         } catch (error) {
-          console.log(`   ${file}: Unable to fetch`);
+          console.log(`   ${file}: Unable to fetch - ${error.message}`);
         }
       }
       
-      assert.ok(Object.keys(fileSizes).length > 0, 'Should measure at least one file');
+      // At least one file should be measurable for the test to be meaningful
+      assert.ok(
+        Object.keys(fileSizes).length > 0, 
+        'Should measure at least one JavaScript file'
+      );
       console.log('✅ JavaScript file sizes recorded');
       console.log('📊 Baseline established for future comparison');
     });

@@ -202,14 +202,21 @@ describe('Legacy Feature Regression Tests', () => {
         assert.ok(genderValues.length > 0, 'Should have gender values');
         
         // Common formats: 'M', 'F', 'men', 'women', 'male', 'female'
+        // Check each gender value matches exactly one of the expected formats
         const validGenderFormats = ['M', 'F', 'W', 'men', 'women', 'male', 'female'];
-        const hasValidFormat = genderValues.some(g => 
-          validGenderFormats.some(valid => 
-            g && g.toString().toLowerCase().includes(valid.toLowerCase())
+        const allValid = genderValues.every(g => 
+          g && validGenderFormats.includes(g.toString())
+        );
+        
+        // If strict validation fails, check for case-insensitive partial match as fallback
+        const hasRecognizedFormat = allValid || genderValues.some(g => 
+          g && validGenderFormats.some(valid => 
+            g.toString().toLowerCase() === valid.toLowerCase()
           )
         );
         
-        assert.ok(hasValidFormat, 'Should use recognized gender format');
+        assert.ok(hasRecognizedFormat, 
+          `Gender values should use recognized formats, got: ${genderValues.join(', ')}`);
         
         console.log(`✅ Gender field formats: ${genderValues.join(', ')}`);
       }

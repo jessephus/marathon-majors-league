@@ -14,7 +14,7 @@ const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
 console.log('🧪 Testing Salary Cap Draft functionality at:', BASE_URL);
 
 // Helper to generate unique test IDs
-const generateTestId = () => `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateTestId = () => `test-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
 describe('Salary Cap Draft System Tests', () => {
   
