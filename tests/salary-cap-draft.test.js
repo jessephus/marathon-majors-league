@@ -322,12 +322,23 @@ describe('Salary Cap Draft System Tests', () => {
   
   describe('Error Handling and Edge Cases', () => {
     it('should handle missing session token', async () => {
+      // Get athletes to build a valid team structure (to pass validation and reach auth check)
+      const athletesResponse = await fetch(`${BASE_URL}/api/athletes`);
+      const athletes = await athletesResponse.json();
+      
+      const men = athletes.filter(a => a.gender === 'M' || a.gender === 'men').slice(0, 3);
+      const women = athletes.filter(a => a.gender === 'F' || a.gender === 'W' || a.gender === 'women').slice(0, 3);
+      
+      // Submit without session token (no Authorization header)
       const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          team: { men: [], women: [] },
-          totalSpent: 0
+          team: {
+            men: men.map(a => ({ id: a.id, name: a.name })),
+            women: women.map(a => ({ id: a.id, name: a.name }))
+          },
+          totalSpent: 25000
         })
       });
       
