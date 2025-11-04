@@ -295,13 +295,45 @@ If tests fail:
 
 ## CI/CD Integration
 
-These tests can be integrated into your GitHub Actions workflow:
+✅ **Automated testing is now configured!** Tests run automatically on every pull request via GitHub Actions.
+
+### GitHub Actions Workflow
+
+The test suite runs automatically on:
+- Every push to a pull request
+- Every push to the main branch
+- Manual workflow dispatch
+
+**Workflow file:** `.github/workflows/test.yml`
+
+**What it does:**
+1. Builds the Next.js application
+2. Starts the production server
+3. Runs all 8 test suites sequentially
+4. Posts results as a comment on pull requests
+5. Uploads test artifacts for debugging
+
+**View workflow runs:** [Actions tab](../../actions/workflows/test.yml)
+
+### Manual Integration
+
+You can also integrate tests into custom workflows:
 
 ```yaml
-- name: Run tests
+- name: Run all tests
   env:
-    TEST_URL: ${{ steps.deploy.outputs.url }}
+    TEST_URL: http://localhost:3000
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
   run: npm test
+```
+
+Or run individual test suites:
+
+```yaml
+- name: Run specific test suite
+  run: npm run test:nextjs
+  env:
+    TEST_URL: http://localhost:3000
 ```
 
 ## Test Coverage

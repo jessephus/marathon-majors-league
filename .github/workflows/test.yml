@@ -1,0 +1,197 @@
+name: Test Suite
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.js'
+      - '**.ts'
+      - '**.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/**'
+      - '.github/workflows/test.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - '**.js'
+      - '**.ts'
+      - '**.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/**'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Start server in background
+        run: |
+          npm start &
+          echo $! > server.pid
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null; then
+              echo "Server is ready!"
+              exit 0
+            fi
+            echo "Attempt $i: Server not ready yet..."
+            sleep 2
+          done
+          echo "Server failed to start within timeout"
+          exit 1
+      
+      - name: Run API endpoint tests
+        run: npm run test:api
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run database tests
+        run: npm run test:db
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run frontend integration tests
+        run: npm run test:frontend
+        env:
+          TEST_URL: http://localhost:3000
+      
+      - name: Run game flow tests
+        run: npm run test:flow
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run Next.js routing tests
+        run: npm run test:nextjs
+        env:
+          TEST_URL: http://localhost:3000
+      
+      - name: Run salary cap draft tests
+        run: npm run test:salarycap
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run performance benchmarks
+        run: npm run test:performance
+        env:
+          TEST_URL: http://localhost:3000
+      
+      - name: Run legacy regression tests
+        run: npm run test:legacy
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: |
+            test-results/
+            *.log
+          retention-days: 30
+          if-no-files-found: ignore
+      
+      - name: Comment test results on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Determine test status
+            const conclusion = '${{ job.status }}';
+            const emoji = conclusion === 'success' ? '✅' : '❌';
+            
+            const body = `
+            ## ${emoji} Test Suite Results
+            
+            **Status:** ${conclusion.toUpperCase()}
+            **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            **Commit:** ${{ github.sha }}
+            
+            ### Test Suites Executed
+            - ✓ API Endpoint Tests
+            - ✓ Database Tests
+            - ✓ Frontend Integration Tests
+            - ✓ Game Flow Tests
+            - ✓ Next.js Routing & SSR Tests
+            - ✓ Salary Cap Draft Tests
+            - ✓ Performance Benchmarks
+            - ✓ Legacy Regression Tests
+            
+            ${conclusion === 'success' ? 
+              '🎉 All tests passed! Your changes are safe to merge.' : 
+              '⚠️ Some tests failed. Please review the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.'}
+            `;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Test Suite Results')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

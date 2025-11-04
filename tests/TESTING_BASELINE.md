@@ -251,51 +251,69 @@ Tests are designed to fail if:
 
 ## CI/CD Integration
 
-### GitHub Actions Workflow
+### ✅ Automated Testing Configured
 
-Add to `.github/workflows/test.yml`:
+Tests now run automatically via GitHub Actions on every pull request!
+
+**Workflow:** `.github/workflows/test.yml`
+
+**Triggers:**
+- Every push to a pull request
+- Every push to main branch  
+- Manual workflow dispatch
+
+**What happens:**
+1. Application is built with `npm run build`
+2. Production server starts on port 3000
+3. All 8 test suites run sequentially
+4. Results posted as PR comment
+5. Test artifacts uploaded for debugging
+
+**View runs:** Navigate to the [Actions tab](../../actions/workflows/test.yml) in GitHub
+
+### GitHub Actions Workflow Example
+
+The automated workflow (`.github/workflows/test.yml`) includes:
 
 ```yaml
 name: Test Suite
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+    branches: [ main ]
+  push:
     branches: [ main ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          
-      - name: Install dependencies
-        run: npm install
-        
-      - name: Build application
-        run: npm run build
-        
-      - name: Start server
-        run: npm start &
-        
-      - name: Wait for server
-        run: npx wait-on http://localhost:3000
-        
-      - name: Run tests
-        run: npm test
-        
-      - name: Run performance benchmarks
-        run: npm run test:performance
-        
-      - name: Check for regressions
-        run: npm run test:legacy
+      - run: npm ci
+      - run: npm run build
+      - run: npm start &
+      - run: npm test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+```
+
+### Manual Workflow Integration
+
+For custom workflows, you can run individual test suites:
+
+```yaml
+- name: Run Next.js tests
+  run: npm run test:nextjs
+  env:
+    TEST_URL: http://localhost:3000
+
+- name: Run performance benchmarks  
+  run: npm run test:performance
+  env:
+    TEST_URL: http://localhost:3000
 ```
 
 ### Pre-deployment Checks
