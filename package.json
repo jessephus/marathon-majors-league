@@ -15,7 +15,11 @@
     "test:api": "node tests/api-endpoints.test.js",
     "test:db": "node tests/database.test.js",
     "test:frontend": "node tests/frontend-integration.test.js",
-    "test:flow": "node tests/game-flow.test.js"
+    "test:flow": "node tests/game-flow.test.js",
+    "test:nextjs": "node tests/nextjs-routing.test.js",
+    "test:salarycap": "node tests/salary-cap-draft.test.js",
+    "test:performance": "node tests/performance-benchmarks.test.js",
+    "test:legacy": "node tests/legacy-regression.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

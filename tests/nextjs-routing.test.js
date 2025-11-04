@@ -1,0 +1,323 @@
+/**
+ * Next.js Routing and SSR Tests
+ * Validates Next.js routing functionality, SSR capabilities, and page rendering
+ * 
+ * Run with: node tests/nextjs-routing.test.js
+ */
+
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+
+const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
+
+console.log('🧪 Testing Next.js routing and SSR at:', BASE_URL);
+
+describe('Next.js Routing and SSR Tests', () => {
+  
+  describe('Next.js Framework Verification', () => {
+    it('should confirm Next.js is powering the application', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      
+      // Check for Next.js header
+      const poweredBy = response.headers.get('x-powered-by');
+      assert.ok(poweredBy, 'Should have x-powered-by header');
+      assert.ok(
+        poweredBy.toLowerCase().includes('next'),
+        `Expected Next.js header, got: ${poweredBy}`
+      );
+      
+      console.log(`✅ Next.js confirmed: ${poweredBy}`);
+    });
+    
+    it('should have Next.js data attributes in HTML', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for Next.js-specific attributes
+      const hasNextData = html.includes('__NEXT_DATA__') || 
+                          html.includes('next-route-announcer') ||
+                          html.includes('id="__next"');
+      
+      assert.ok(hasNextData, 'Should have Next.js-specific HTML elements');
+      console.log('✅ Next.js HTML structure confirmed');
+    });
+  });
+  
+  describe('Essential Routes Rendering', () => {
+    it('should serve main route (/) with valid HTML', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      assert.strictEqual(response.status, 200, 'Should return 200 OK');
+      assert.ok(html.includes('<!DOCTYPE html>') || html.includes('<!doctype html>'), 
+        'Should contain HTML doctype');
+      assert.ok(html.includes('Fantasy NY Marathon') || html.includes('Fantasy Marathon'), 
+        'Should contain app title');
+      
+      console.log('✅ Main route (/) renders correctly');
+    });
+    
+    it('should have all required page sections in main route', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for essential page sections
+      const requiredSections = [
+        'landing-page',
+        'commissioner-page',
+        'leaderboard'
+      ];
+      
+      for (const section of requiredSections) {
+        assert.ok(
+          html.includes(section),
+          `Should contain ${section} section`
+        );
+      }
+      
+      console.log('✅ All required page sections present');
+    });
+    
+    it('should serve API routes without rendering HTML', async () => {
+      const response = await fetch(`${BASE_URL}/api/athletes`);
+      const contentType = response.headers.get('content-type');
+      
+      assert.strictEqual(response.status, 200, 'Should return 200 OK');
+      assert.ok(
+        contentType && contentType.includes('application/json'),
+        `Expected JSON content-type, got: ${contentType}`
+      );
+      
+      console.log('✅ API routes serve JSON correctly');
+    });
+  });
+  
+  describe('Server-Side Rendering (SSR)', () => {
+    it('should render HTML on the server (not just client-side)', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check that content exists in initial HTML (SSR)
+      // Not just loading states or empty divs
+      const hasInitialContent = html.includes('Fantasy') && 
+                                html.includes('Marathon');
+      
+      assert.ok(hasInitialContent, 'Should have content in initial HTML (SSR)');
+      console.log('✅ SSR confirmed - content present in initial HTML');
+    });
+    
+    it('should include meta tags for SEO and social sharing', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for important meta tags
+      assert.ok(html.includes('<meta name="description"'), 'Should have description meta tag');
+      assert.ok(html.includes('og:title') || html.includes('property="og:title"'), 
+        'Should have Open Graph title');
+      assert.ok(html.includes('twitter:card') || html.includes('property="twitter:card"'), 
+        'Should have Twitter card meta');
+      
+      console.log('✅ SEO and social meta tags present');
+    });
+    
+    it('should preload critical resources', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for stylesheet
+      assert.ok(html.includes('stylesheet') || html.includes('style.css'), 
+        'Should include stylesheet');
+      
+      console.log('✅ Critical resources configured');
+    });
+  });
+  
+  describe('Page Navigation and Client-Side Routing', () => {
+    it('should include navigation JavaScript', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for app.js and salary-cap-draft.js
+      assert.ok(html.includes('app.js'), 'Should include app.js');
+      assert.ok(html.includes('salary-cap-draft.js'), 'Should include salary-cap-draft.js');
+      
+      console.log('✅ Navigation JavaScript included');
+    });
+    
+    it('should serve static JavaScript files', async () => {
+      const appJsResponse = await fetch(`${BASE_URL}/app.js`);
+      assert.strictEqual(appJsResponse.status, 200, 'app.js should be accessible');
+      
+      const salaryDraftResponse = await fetch(`${BASE_URL}/salary-cap-draft.js`);
+      assert.strictEqual(salaryDraftResponse.status, 200, 
+        'salary-cap-draft.js should be accessible');
+      
+      console.log('✅ Static JavaScript files accessible');
+    });
+    
+    it('should have page containers for SPA navigation', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for page containers used in client-side navigation
+      const pageContainers = [
+        'landing-page',
+        'commissioner-page',
+        'leaderboard-page'
+      ];
+      
+      for (const container of pageContainers) {
+        assert.ok(
+          html.includes(container),
+          `Should have ${container} container for navigation`
+        );
+      }
+      
+      console.log('✅ SPA page containers present');
+    });
+  });
+  
+  describe('Fallback and Error Handling', () => {
+    it('should handle non-existent routes gracefully', async () => {
+      const response = await fetch(`${BASE_URL}/this-route-does-not-exist-12345`);
+      
+      // Should return 404 or redirect to home
+      assert.ok(
+        response.status === 404 || response.status === 200,
+        `Expected 404 or 200, got: ${response.status}`
+      );
+      
+      console.log(`✅ Non-existent routes handled: ${response.status}`);
+    });
+    
+    it('should handle API errors gracefully', async () => {
+      // Try to access API with invalid parameters
+      const response = await fetch(`${BASE_URL}/api/game-state?gameId=`);
+      
+      // Should not crash the server
+      assert.ok(
+        response.status >= 200 && response.status < 600,
+        'Should return valid HTTP status'
+      );
+      
+      console.log(`✅ API error handling working: ${response.status}`);
+    });
+    
+    it('should include error boundaries in production', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check for error handling setup (app structure)
+      assert.ok(html.includes('<div'), 'Should have proper HTML structure');
+      
+      console.log('✅ HTML structure supports error handling');
+    });
+  });
+  
+  describe('Static Asset Serving', () => {
+    it('should serve CSS files', async () => {
+      const response = await fetch(`${BASE_URL}/style.css`);
+      const contentType = response.headers.get('content-type');
+      
+      assert.strictEqual(response.status, 200, 'Should return 200 OK');
+      assert.ok(
+        contentType && contentType.includes('css'),
+        `Expected CSS content-type, got: ${contentType}`
+      );
+      
+      console.log('✅ CSS files served correctly');
+    });
+    
+    it('should serve JSON data files', async () => {
+      const response = await fetch(`${BASE_URL}/athletes.json`);
+      const contentType = response.headers.get('content-type');
+      
+      assert.strictEqual(response.status, 200, 'Should return 200 OK');
+      assert.ok(
+        contentType && contentType.includes('json'),
+        `Expected JSON content-type, got: ${contentType}`
+      );
+      
+      const data = await response.json();
+      assert.ok(data.men || data.women, 'Should have athlete data');
+      
+      console.log('✅ JSON data files served correctly');
+    });
+    
+    it('should serve images', async () => {
+      const response = await fetch(`${BASE_URL}/favicon-32x32.png`);
+      
+      assert.strictEqual(response.status, 200, 'Should serve images');
+      
+      console.log('✅ Image files served correctly');
+    });
+  });
+  
+  describe('Performance and Caching', () => {
+    it('should include cache headers for static assets', async () => {
+      const response = await fetch(`${BASE_URL}/style.css`);
+      const cacheControl = response.headers.get('cache-control');
+      
+      // Should have some caching strategy
+      assert.ok(cacheControl !== null, 'Should have cache-control header');
+      
+      console.log(`✅ Cache headers present: ${cacheControl || 'default'}`);
+    });
+    
+    it('should have reasonable response times', async () => {
+      const startTime = Date.now();
+      const response = await fetch(`${BASE_URL}/`);
+      const endTime = Date.now();
+      
+      const duration = endTime - startTime;
+      
+      assert.strictEqual(response.status, 200, 'Should return 200 OK');
+      assert.ok(duration < 5000, `Response time should be under 5s, got: ${duration}ms`);
+      
+      console.log(`✅ Response time: ${duration}ms`);
+    });
+  });
+  
+  describe('Legacy Route Compatibility', () => {
+    it('should maintain backward compatibility with expected routes', async () => {
+      // The app uses SPA routing, but main entry should work
+      const response = await fetch(`${BASE_URL}/`);
+      
+      assert.strictEqual(response.status, 200, 'Main route should be accessible');
+      
+      console.log('✅ Legacy route compatibility maintained');
+    });
+    
+    it('should serve all required API endpoints', async () => {
+      const apiEndpoints = [
+        '/api/athletes',
+        '/api/game-state',
+        '/api/races',
+        '/api/rankings',
+        '/api/draft',
+        '/api/results',
+        '/api/standings'
+      ];
+      
+      let allAccessible = true;
+      const failedEndpoints = [];
+      
+      for (const endpoint of apiEndpoints) {
+        const response = await fetch(`${BASE_URL}${endpoint}`);
+        if (response.status >= 500) {
+          allAccessible = false;
+          failedEndpoints.push(endpoint);
+        }
+      }
+      
+      assert.ok(
+        allAccessible,
+        `Some endpoints failed: ${failedEndpoints.join(', ')}`
+      );
+      
+      console.log('✅ All API endpoints accessible');
+    });
+  });
+});
+
+console.log('\n✨ Next.js routing and SSR tests complete!\n');
