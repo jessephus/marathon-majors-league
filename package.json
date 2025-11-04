@@ -20,7 +20,9 @@
     "test:nextjs": "node tests/nextjs-routing.test.js",
     "test:salarycap": "node tests/salary-cap-draft.test.js",
     "test:performance": "node tests/performance-benchmarks.test.js",
-    "test:legacy": "node tests/legacy-regression.test.js"
+    "test:legacy": "node tests/legacy-regression.test.js",
+    "test:quality": "node scripts/validate-test-quality.js",
+    "test:verify": "node scripts/verify-tests-catch-bugs.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
