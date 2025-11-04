@@ -23,9 +23,14 @@ describe('Legacy Feature Regression Tests', () => {
       assert.strictEqual(response.status, 200, 
         `Athletes API should return 200, got ${response.status}`);
       
-      const athletes = await response.json();
-      assert.ok(Array.isArray(athletes), 'Should return array');
+      const athletesData = await response.json();
       
+      // Athletes API returns { men: [...], women: [...] }
+      assert.ok(athletesData.men && Array.isArray(athletesData.men), 'Should have men array');
+      assert.ok(athletesData.women && Array.isArray(athletesData.women), 'Should have women array');
+      
+      // Check structure of first athlete if available
+      const athletes = [...athletesData.men, ...athletesData.women];
       if (athletes.length > 0) {
         const athlete = athletes[0];
         
@@ -461,11 +466,15 @@ describe('Legacy Feature Regression Tests', () => {
       assert.strictEqual(response.status, 200, 
         'Athletes endpoint should return 200 with DATABASE_URL');
       
-      const athletes = await response.json();
+      const athletesData = await response.json();
       
-      assert.ok(Array.isArray(athletes), 
-        'BREAKING: Athletes endpoint should return array');
+      // Athletes API returns { men: [...], women: [...] }
+      assert.ok(athletesData.men && Array.isArray(athletesData.men), 
+        'BREAKING: Athletes endpoint should return object with men array');
+      assert.ok(athletesData.women && Array.isArray(athletesData.women), 
+        'BREAKING: Athletes endpoint should return object with women array');
       
+      const athletes = [...athletesData.men, ...athletesData.women];
       if (athletes.length > 0) {
         const athlete = athletes[0];
         

@@ -206,11 +206,12 @@ describe('Salary Cap Draft System Tests', () => {
       
       // Get athletes to select from
       const athletesResponse = await fetch(`${BASE_URL}/api/athletes`);
-      const athletes = await athletesResponse.json();
+      const athletesData = await athletesResponse.json();
       
+      // Athletes API returns { men: [...], women: [...] }
       // Select 3 men and 3 women (first available with lowest salaries to stay under cap)
-      const menAthletes = athletes.filter(a => a.gender === 'M' || a.gender === 'men');
-      const womenAthletes = athletes.filter(a => a.gender === 'F' || a.gender === 'W' || a.gender === 'women');
+      const menAthletes = athletesData.men;
+      const womenAthletes = athletesData.women;
       
       // Sort by salary (ascending) to get affordable athletes
       const men = menAthletes.sort((a, b) => (a.salary || 5000) - (b.salary || 5000)).slice(0, 3);
@@ -265,11 +266,12 @@ describe('Salary Cap Draft System Tests', () => {
       
       // Get athletes
       const athletesResponse = await fetch(`${BASE_URL}/api/athletes`);
-      const athletes = await athletesResponse.json();
+      const athletesData = await athletesResponse.json();
       
+      // Athletes API returns { men: [...], women: [...] }
       // Try to submit with wrong composition (4 men, 2 women)
-      const men = athletes.filter(a => a.gender === 'M' || a.gender === 'men').slice(0, 4);
-      const women = athletes.filter(a => a.gender === 'F' || a.gender === 'W' || a.gender === 'women').slice(0, 2);
+      const men = athletesData.men.slice(0, 4);
+      const women = athletesData.women.slice(0, 2);
       
       if (men.length >= 4 && women.length >= 2) {
         const totalSalary = [...men, ...women].reduce((sum, a) => sum + (a.salary || 5000), 0);
@@ -324,10 +326,19 @@ describe('Salary Cap Draft System Tests', () => {
     it('should handle missing session token', async () => {
       // Get athletes to build a valid team structure (to pass validation and reach auth check)
       const athletesResponse = await fetch(`${BASE_URL}/api/athletes`);
-      const athletes = await athletesResponse.json();
+      assert.strictEqual(athletesResponse.status, 200, 'Athletes API should return 200');
       
-      const men = athletes.filter(a => a.gender === 'M' || a.gender === 'men').slice(0, 3);
-      const women = athletes.filter(a => a.gender === 'F' || a.gender === 'W' || a.gender === 'women').slice(0, 3);
+      const athletesData = await athletesResponse.json();
+      
+      // Athletes API returns { men: [...], women: [...] }
+      assert.ok(athletesData.men && Array.isArray(athletesData.men), 'Should have men array');
+      assert.ok(athletesData.women && Array.isArray(athletesData.women), 'Should have women array');
+      
+      const men = athletesData.men.slice(0, 3);
+      const women = athletesData.women.slice(0, 3);
+      
+      assert.ok(men.length >= 3, 'Should have at least 3 male athletes');
+      assert.ok(women.length >= 3, 'Should have at least 3 female athletes');
       
       // Submit without session token (no Authorization header)
       const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`, {
