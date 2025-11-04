@@ -63,7 +63,7 @@
 
 4. **Process & Maintenance (6 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_PHASE_2_SUMMARY, etc.
    - These document project history and decisions
-   - Don't delete unless truly obsolete (>2 years old)
+   - Don't delete if they involve ongoing projects or migrations
    - Naming: `PROCESS_*.md` prefix
 
 5. **Setup & Authentication (1 doc)** - SETUP_AUTHENTICATION
