@@ -4,13 +4,13 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **25 total documents**.
+Our documentation is organized into **5 main categories** with **26 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
 - `TECH_*.md` - Technical reference (5 docs)
 - `FEATURE_*.md` - Game features (6 docs)
-- `PROCESS_*.md` - Project history (6 docs)
+- `PROCESS_*.md` - Project history (7 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 
 ---
@@ -88,6 +88,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_CLEANUP_SUMMARY.md](PROCESS_CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
 | **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
 | **[PROCESS_PHASE_2_SUMMARY.md](PROCESS_PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
+| **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
 
 ### 5️⃣ Setup & Authentication
 
@@ -217,13 +218,13 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 25 files | Well-organized with category prefixes |
+| Total Documents | 26 files | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently consolidated and renamed |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
-**Last Major Cleanup:** November 2025 (44% reduction: 45 → 25 files)  
+**Last Major Cleanup:** November 2025 (42% reduction: 45 → 26 files)  
 **Next Review:** February 2026
 
 ---

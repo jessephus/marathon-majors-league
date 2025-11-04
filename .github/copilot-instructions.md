@@ -61,7 +61,7 @@
    - Merge into Core Guides after 6+ months if appropriate
    - Naming: `FEATURE_*.md` prefix
 
-4. **Process & Maintenance (6 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_PHASE_2_SUMMARY, etc.
+4. **Process & Maintenance (7 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_PHASE_2_SUMMARY, PROCESS_DOCS_HEALTH_CHECK, etc.
    - These document project history and decisions
    - Don't delete if they involve ongoing projects or migrations
    - Naming: `PROCESS_*.md` prefix
@@ -109,11 +109,13 @@ Run this checklist every 3 months (or before major releases):
 #### Documentation Health Metrics
 
 Target state (check monthly):
-- **Total docs:** 20-30 files (current: 25 ✅)
+- **Total docs:** 20-30 files (current: 26 ✅)
 - **Orphaned docs:** 0 (not linked from docs/README.md)
 - **Outdated examples:** 0 (code examples match current API)
 - **Broken links:** 0 (all cross-references work)
 - **Redundant docs:** 0 (no duplicate content)
+
+**Automated monitoring:** GitHub Actions runs [docs-health-check.yml](../.github/workflows/docs-health-check.yml) on every docs change and weekly. See [PROCESS_DOCS_HEALTH_CHECK.md](../docs/PROCESS_DOCS_HEALTH_CHECK.md) for details.
 
 #### What NOT to Document
 
