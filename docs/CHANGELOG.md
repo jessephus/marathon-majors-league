@@ -64,6 +64,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `/api/results` now tolerates legacy payloads and stores expanded scoring data, and `race_results` schema is auto-migrated to include all scoring columns.
 - Fixed a regression where fantasy standings and team detail cards always showed 0 pts by auto-triggering the points engine on results/standings fetches and enriching responses with athlete metadata so every recorded finisher appears in Race Results.
 
+### Technical Implementation Notes
+
+#### Sub-Second Precision (Migration 007)
+**Problem:** Two runners finishing within 30ms (e.g., 2:05:30.06 vs 2:05:30.09) were recorded as ties due to whole-second precision.
+
+**Solution:** 
+- Expanded all time columns from `VARCHAR(10)` to `VARCHAR(13)` in database
+- Updated regex patterns to accept optional decimal seconds: `/^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/`
+- Modified `timeToSeconds()` to use `parseFloat()` instead of `parseInt()` for seconds component
+- Supports formats: `2:05:30` (backward compatible), `2:05:30.1`, `2:05:30.12`, `2:05:30.123`
+
+**Files affected:** `migrations/007_add_subsecond_precision.sql`, `public/app.js` (lines ~1975, 2160, 3390, 3415, 3798, 3810), `schema.sql`
+
+#### World Athletics Scraping Limitations (Playwright)
+**Findings from automation attempts:**
+
+**What works:**
+- ✅ Progression data (all years) extracted in 1 HTTP request without browser automation
+- ✅ Current year race results with Playwright (single page load)
+
+**What doesn't work:**
+- ❌ Multi-year race results navigation (World Athletics actively blocks automation)
+- ❌ Symptoms: `ERR_ABORTED`, "Target page closed", cross-session tracking
+- ❌ Detection methods: Post-load detection, IP-based tracking, rate limiting
+
+**Technical details:**
+- Correct URL format: `https://worldathletics.org/athletes/{country}/{firstname}-{lastname}-{id}`
+- Uses stealth settings: `--disable-blink-features=AutomationControlled`, custom user agent, navigator.webdriver override
+- Key limitation: Year selection is client-side only, no URL parameters available
+- Site closes page after detecting automation, even in fresh browser contexts
+
+**Recommendation:** Accept current limitation - extract progression data (all years) and current year race results only. Historical race results require manual collection.
+
 ## [Previous Releases]
 
 ### Added
