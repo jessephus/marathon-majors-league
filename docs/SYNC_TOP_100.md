@@ -348,6 +348,101 @@ For performance, these indexes exist:
   - ⚠️ Subject to HTML structure changes
   - ⚠️ Need to be polite with rate limiting
 
+## Dropped Athlete Sync Feature
+
+The `--sync-dropped` flag extends the sync system to maintain data for athletes who drop out of the top 100 but are still actively competing.
+
+### How It Works
+
+1. **Identify Dropped Athletes**: Compare database athletes vs. current top 100
+2. **Search Beyond Top 100**: Scan ranking pages 3-20 (ranks 101-1000) to find them
+3. **Score-Based Updates**: Only fetch profiles if their World Athletics score changed
+4. **Maintain Historical Data**: Keep all previously-ranked athletes up to date
+
+**Example:**
+```bash
+# Sync top 100 + maintain dropped athletes
+python3 scripts/sync_athletes_from_rankings.py --sync-dropped
+
+# Preview which dropped athletes will be updated
+python3 scripts/sync_athletes_from_rankings.py --sync-dropped --dry-run
+```
+
+### Benefits
+- ✅ Athletes who drop to rank 101-1000 stay current
+- ✅ Historical athlete data doesn't go stale
+- ✅ Score comparison prevents unnecessary profile fetches
+- ✅ Automatic detection of which athletes to search for
+
+### Performance
+- **Without score check**: ~5-8 minutes (fetches all profiles)
+- **With score check**: ~45-60 seconds (skips unchanged athletes)
+- Only updates athletes whose ranking score actually changed
+
+## Finding World Athletics IDs
+
+When adding athletes manually or fixing missing IDs, use these methods:
+
+### Method 1: World Athletics Website Search
+
+1. Go to https://worldathletics.org/
+2. Use search bar (top right)
+3. Enter athlete's full name
+4. Click athlete's profile
+5. Copy ID from URL
+
+**Example:**
+- Search: "Charles Hicks"
+- URL: `https://worldathletics.org/athletes/united-states/charles-hicks-14208500`
+- **World Athletics ID**: `14208500`
+
+### Method 2: Direct Search URL
+
+Use this pattern:
+```
+https://worldathletics.org/athletes/search?q=[ATHLETE NAME]
+```
+
+Example: `https://worldathletics.org/athletes/search?q=Charles%20Hicks`
+
+### Search Tips
+
+1. **Try name variations**:
+   - Full name vs. nickname (Jonathan vs. Jonny)
+   - With/without middle names
+   - Different spellings
+
+2. **Use country filter** if multiple results
+
+3. **Verify identity**:
+   - Check recent marathon results (2024-2025)
+   - Compare personal best times
+   - Review competition history
+
+4. **Not found?**
+   - Athlete might not be in World Athletics database
+   - Some debutants don't have profiles yet
+   - Leave blank and revisit later
+
+### Common Issues
+
+**"Multiple athletes with same name"**
+- Filter by country
+- Check personal best times
+- Look at competition history
+
+**"Athlete not found"**
+- Try alternative spellings
+- Check if they've competed internationally
+- US-only runners may not be listed
+
+**Adding IDs via Commissioner Mode**
+1. Go to Commissioner Mode > Athlete Management
+2. Find athlete in list
+3. Enter World Athletics ID
+4. Click 💾 Save
+5. Run `--sync-dropped` to fetch their data
+
 ## Troubleshooting
 
 ### "No athletes found on page"

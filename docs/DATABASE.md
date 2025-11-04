@@ -437,13 +437,112 @@ See [MIGRATION.md](MIGRATION.md) for migration history and decisions.
 3. Soft-delete via `is_active` flags where possible
 4. Keep historical data (don't delete old games)
 
+## Quick Reference for Developers
+
+### Common Database Operations
+
+```javascript
+import { neon } from '@neondatabase/serverless';
+const sql = neon(process.env.DATABASE_URL);
+
+// Get athletes by gender
+const menAthletes = await sql`
+  SELECT * FROM athletes 
+  WHERE gender = 'men' 
+  ORDER BY personal_best
+`;
+
+// Insert new game
+await sql`
+  INSERT INTO games (game_id, players)
+  VALUES (${gameId}, ${players})
+`;
+
+// Update with conditions
+await sql`
+  UPDATE games 
+  SET draft_complete = ${true}
+  WHERE game_id = ${gameId}
+`;
+
+// JOIN query example
+const teams = await sql`
+  SELECT dt.player_code, a.name, a.country
+  FROM draft_teams dt
+  JOIN athletes a ON dt.athlete_id = a.id
+  WHERE dt.game_id = ${gameId}
+`;
+```
+
+### SQL Injection Prevention
+
+✅ **ALWAYS use parameterized queries:**
+```javascript
+// SAFE - parameterized
+const user = await sql`SELECT * FROM users WHERE id = ${userId}`;
+```
+
+❌ **NEVER concatenate SQL strings:**
+```javascript
+// DANGEROUS - SQL injection risk!
+const query = `SELECT * FROM users WHERE id = ${userId}`;
+```
+
+### Useful SQL Queries
+
+```sql
+-- List all games with player counts
+SELECT game_id, array_length(players, 1) as player_count, 
+       draft_complete, results_finalized 
+FROM games;
+
+-- Find athletes not drafted in a game
+SELECT a.* FROM athletes a
+WHERE a.id NOT IN (
+  SELECT athlete_id FROM draft_teams WHERE game_id = 'game-1'
+);
+
+-- Get leaderboard for a game (legacy)
+SELECT 
+  dt.player_code,
+  COUNT(dt.athlete_id) as athletes,
+  SUM(CASE WHEN rr.finish_time IS NOT NULL THEN 1 ELSE 0 END) as finished
+FROM draft_teams dt
+LEFT JOIN race_results rr ON dt.athlete_id = rr.athlete_id 
+  AND dt.game_id = rr.game_id
+WHERE dt.game_id = 'game-1'
+GROUP BY dt.player_code;
+```
+
+### Debugging Tips
+
+**Check Database in Neon Console:**
+1. Go to https://console.neon.tech
+2. Select your database
+3. Open SQL Editor
+4. Run queries to inspect data
+
+**Test API Endpoints Locally:**
+```bash
+# Test with curl
+curl http://localhost:3000/api/athletes
+
+# Test with query params
+curl "http://localhost:3000/api/game-state?gameId=test"
+
+# Test POST
+curl -X POST http://localhost:3000/api/results?gameId=test \
+  -H "Content-Type: application/json" \
+  -d '{"results": {"1": "2:05:30"}}'
+```
+
 ## Related Documentation
 
 - [NEON_SETUP.md](NEON_SETUP.md) - Initial database setup instructions
-- [POSTGRES_REFERENCE.md](POSTGRES_REFERENCE.md) - SQL queries and examples
 - [MIGRATION.md](MIGRATION.md) - Migration history and rationale
 - [ARCHITECTURE.md](ARCHITECTURE.md) - Overall system architecture
 - [SYNC_TOP_100.md](SYNC_TOP_100.md) - Automated athlete data sync
+- [DEVELOPMENT.md](DEVELOPMENT.md) - Local development setup
 
 ## Future Enhancements
 

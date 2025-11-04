@@ -29,6 +29,28 @@
 
 See [NEON_SETUP.md](../NEON_SETUP.md) for detailed database setup instructions.
 
+#### Points Scoring System Migration (Required)
+
+The application uses a points-based scoring system. Apply the migration:
+
+1. In Neon SQL Editor, run `migrations/002_points_scoring_system.sql`
+2. This creates:
+   - `scoring_rules` table (point values and rules)
+   - `league_standings` table (cached leaderboards)
+   - `records_audit` table (record verification)
+   - `race_records` table (course and world records)
+   - Additional columns in `race_results` for point breakdowns
+
+3. Verify migration:
+```sql
+-- Check scoring rules exist
+SELECT version, description FROM scoring_rules ORDER BY version;
+
+-- Should see Version 1 and Version 2 rules
+```
+
+**Note**: The scoring system auto-initializes on first use, but manual migration is recommended for production.
+
 ### 5. Deploy
 - Click "Deploy" in Vercel dashboard
 - Wait for the build to complete
@@ -39,7 +61,27 @@ See [NEON_SETUP.md](../NEON_SETUP.md) for detailed database setup instructions.
 - Athletes will be automatically seeded from `athletes.json`
 - You should see a success message with athlete count
 
-### 7. Share with Friends
+### 7. Verify Points Scoring System
+
+Test that the scoring system is working:
+
+```bash
+# Test scoring rules endpoint
+curl https://marathonmajorsfantasy.com/api/scoring?gameId=default
+
+# Test standings endpoint
+curl https://marathonmajorsfantasy.com/api/standings?gameId=default
+```
+
+In the browser:
+1. Go to Commissioner Dashboard
+2. Enter test finish times for some athletes
+3. Click "Update Live Results"
+4. Verify points are calculated and displayed
+5. Check leaderboard shows point totals
+6. Click on athlete points to see breakdown modal
+
+### 8. Share with Friends
 - Give your friends the URL: `https://marathonmajorsfantasy.com`
 - As commissioner, generate player codes in the app
 - Share the codes with your players
