@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 
@@ -221,14 +222,14 @@ export default function NewTeamSessionPage(props: TeamSessionPageProps) {
   );
 }
 
-export async function getServerSideProps(context: any) {
-  const sessionToken = context.params.session;
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const sessionToken = context.params?.session;
   
   // Phase 1: Return stub with session token
   // Phase 2+: Verify session and fetch team data on server
   return {
     props: {
-      sessionToken,
+      sessionToken: typeof sessionToken === 'string' ? sessionToken : '',
     },
   };
 }

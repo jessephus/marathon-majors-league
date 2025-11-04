@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import { featureFlags } from '@/lib/feature-flags';
@@ -170,7 +171,7 @@ export default function NewLandingPage(props: LandingPageProps) {
   );
 }
 
-export async function getServerSideProps(context: any) {
+export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Check for session token in URL or cookies
   const sessionToken = context.query.token || context.req.cookies.sessionToken || null;
   

@@ -7,6 +7,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
+import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 
@@ -169,14 +170,14 @@ export default function NewLeaderboardPage(props: LeaderboardPageProps) {
   );
 }
 
-export async function getServerSideProps(context: any) {
+export async function getServerSideProps(context: GetServerSidePropsContext) {
   const gameId = context.query.gameId || 'default';
   
   // Phase 1: Return stub data
   // Phase 2+: Fetch actual results for SSR
   return {
     props: {
-      gameId,
+      gameId: typeof gameId === 'string' ? gameId : 'default',
     },
   };
 }

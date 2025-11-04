@@ -6,7 +6,7 @@
  * Phase 1: Placeholder component structure.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Athlete } from '@/lib/state-provider';
 
@@ -61,11 +61,11 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: 
     setLoading(false);
   }
 
-  function handleKeyDown(e: KeyboardEvent) {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       onClose();
     }
-  }
+  }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,7 +76,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: 
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, handleKeyDown]);
 
   if (!isOpen || !athlete) {
     return null;

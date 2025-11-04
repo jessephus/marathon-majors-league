@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useCommissionerState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 
@@ -220,7 +221,7 @@ export default function NewCommissionerPage(props: CommissionerPageProps) {
   );
 }
 
-export async function getServerSideProps(context: any) {
+export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Check commissioner authentication from cookies
   const commissionerToken = context.req.cookies.commissionerToken || null;
   
