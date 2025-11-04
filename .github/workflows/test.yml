@@ -76,54 +76,54 @@ jobs:
           exit 1
       
       - name: Run API endpoint tests
+        id: test-api
         run: npm run test:api
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
       - name: Run database tests
+        id: test-db
         run: npm run test:db
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
       - name: Run frontend integration tests
+        id: test-frontend
         run: npm run test:frontend
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
       
       - name: Run game flow tests
+        id: test-flow
         run: npm run test:flow
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
       - name: Run Next.js routing tests
+        id: test-nextjs
         run: npm run test:nextjs
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
       
       - name: Run salary cap draft tests
+        id: test-salarycap
         run: npm run test:salarycap
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
       - name: Run performance benchmarks
+        id: test-performance
         run: npm run test:performance
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
       
       - name: Run legacy regression tests
+        id: test-legacy
         run: npm run test:legacy
-        continue-on-error: true
         env:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -158,31 +158,64 @@ jobs:
           script: |
             const fs = require('fs');
             
-            // Determine test status
+            // Determine overall test status
             const conclusion = '${{ job.status }}';
             const emoji = conclusion === 'success' ? '✅' : '❌';
+            const runNumber = '${{ github.run_number }}';
+            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+            const commitSha = '${{ github.sha }}';
             
-            const body = `
-            ## ${emoji} Test Suite Results
+            // Get individual test step results
+            const testResults = {
+              'API Endpoint Tests': '${{ steps.test-api.outcome }}',
+              'Database Tests': '${{ steps.test-db.outcome }}',
+              'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
+              'Game Flow Tests': '${{ steps.test-flow.outcome }}',
+              'Next.js Routing & SSR Tests': '${{ steps.test-nextjs.outcome }}',
+              'Salary Cap Draft Tests': '${{ steps.test-salarycap.outcome }}',
+              'Performance Benchmarks': '${{ steps.test-performance.outcome }}',
+              'Legacy Regression Tests': '${{ steps.test-legacy.outcome }}'
+            };
             
-            **Status:** ${conclusion.toUpperCase()}
-            **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            **Commit:** ${{ github.sha }}
+            // Build test results list
+            let testResultsList = '';
+            let failedCount = 0;
+            let passedCount = 0;
             
-            ### Test Suites Executed
-            - ✓ API Endpoint Tests
-            - ✓ Database Tests
-            - ✓ Frontend Integration Tests
-            - ✓ Game Flow Tests
-            - ✓ Next.js Routing & SSR Tests
-            - ✓ Salary Cap Draft Tests
-            - ✓ Performance Benchmarks
-            - ✓ Legacy Regression Tests
+            for (const [name, outcome] of Object.entries(testResults)) {
+              if (outcome === 'success') {
+                testResultsList += `- ✅ ${name}\n`;
+                passedCount++;
+              } else if (outcome === 'failure') {
+                testResultsList += `- ❌ ${name} (FAILED)\n`;
+                failedCount++;
+              } else if (outcome === 'skipped') {
+                testResultsList += `- ⏭️ ${name} (Skipped)\n`;
+              } else {
+                testResultsList += `- ⚠️ ${name} (${outcome})\n`;
+              }
+            }
             
-            ${conclusion === 'success' ? 
-              '🎉 All tests passed! Your changes are safe to merge.' : 
-              '⚠️ Some tests failed. Please review the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.'}
-            `;
+            const totalTests = Object.keys(testResults).length;
+            const summary = conclusion === 'success' 
+              ? `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`
+              : `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`;
+            
+            const body = [
+              `## ${emoji} Test Suite Results`,
+              '',
+              `**Status:** ${conclusion.toUpperCase()}`,
+              `**Run:** [#${runNumber}](${runUrl})`,
+              `**Commit:** ${commitSha}`,
+              '',
+              `### Test Results (${passedCount}/${totalTests} passed)`,
+              '',
+              testResultsList,
+              summary,
+              '',
+              '---',
+              '_Tests will fail the workflow if any suite fails, preventing merge of broken code._'
+            ].join('\n');
             
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({
