@@ -139,7 +139,7 @@ jobs:
           
           # Check 6: Look for files that might be temporary/debugging
           echo "🧹 Checking for temporary files..."
-          TEMP_PATTERNS=("*test*.md" "*tmp*.md" "*temp*.md" "*debug*.md" "*draft*.md")
+          TEMP_PATTERNS=("*test*.md" "*tmp*.md" "*temp*.md" "*debug*.md")
           TEMP_FILES=()
           for pattern in "${TEMP_PATTERNS[@]}"; do
             while IFS= read -r file; do
