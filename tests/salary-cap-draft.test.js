@@ -29,7 +29,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ teamName, ownerName })
       });
       
-      assert.strictEqual(response.status, 200, 'Should create session successfully');
+      assert.strictEqual(response.status, 201, 'Should create session successfully');
       
       const data = await response.json();
       assert.ok(data.sessionToken, 'Should return session token');
@@ -65,7 +65,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ teamName, ownerName: 'Owner 1' })
       });
       
-      assert.strictEqual(response1.status, 200, 'First team should be created');
+      assert.strictEqual(response1.status, 201, 'First team should be created');
       
       // Create second team with same name (should be allowed with different session)
       const response2 = await fetch(`${BASE_URL}/api/session/create`, {
@@ -74,7 +74,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ teamName, ownerName: 'Owner 2' })
       });
       
-      assert.strictEqual(response2.status, 200, 'Second team should be created');
+      assert.strictEqual(response2.status, 201, 'Second team should be created');
       
       const data1 = await response1.json();
       const data2 = await response2.json();

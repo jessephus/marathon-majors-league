@@ -88,21 +88,19 @@ describe('Next.js Routing and SSR Tests', () => {
       const response = await fetch(`${BASE_URL}/api/athletes`);
       const contentType = response.headers.get('content-type');
       
-      // API may return 500 without DATABASE_URL, but should still return JSON or HTML error
+      // With DATABASE_URL, API should work (200), without it will fail (500)
       assert.ok(
         response.status === 200 || response.status === 500,
-        `Should return 200 or 500 (without DB), got: ${response.status}`
+        `Should return 200 or 500, got: ${response.status}`
       );
       
-      // When working (200), should be JSON. When failing (500), may be HTML error page
-      if (response.status === 200) {
-        assert.ok(
-          contentType && contentType.includes('application/json'),
-          `Expected JSON content-type for successful response, got: ${contentType}`
-        );
-      }
+      // Should return JSON in all cases
+      assert.ok(
+        contentType && contentType.includes('application/json'),
+        `API should return JSON content-type, got: ${contentType}`
+      );
       
-      console.log(`✅ API routes serve correctly: ${response.status}`);
+      console.log('✅ API routes serve JSON correctly');
     });
   });
   
