@@ -35,36 +35,41 @@
    - Keep only if feature is complex/standalone
 
 #### When Modifying Code
-- **API endpoints** → Update `ARCHITECTURE.md` and `AUTHENTICATION_API.md`
-- **Database schema** → Update `DATABASE.md` and `MIGRATION.md`
-- **Deployment process** → Update `DEPLOYMENT.md`
-- **UI/UX changes** → Update `USER_GUIDE.md` with screenshots
-- **Breaking changes** → Update `MIGRATION.md` and `CHANGELOG.md`
-- **Bug fixes** → Add to `CHANGELOG.md` (don't create new docs)
+- **API endpoints** → Update `CORE_ARCHITECTURE.md` and `TECH_AUTHENTICATION_API.md`
+- **Database schema** → Update `TECH_DATABASE.md` and `TECH_MIGRATION.md`
+- **Deployment process** → Update `CORE_DEPLOYMENT.md`
+- **UI/UX changes** → Update `CORE_USER_GUIDE.md` with screenshots
+- **Breaking changes** → Update `TECH_MIGRATION.md` and `CORE_CHANGELOG.md`
+- **Bug fixes** → Add to `CORE_CHANGELOG.md` (don't create new docs)
 
 #### Documentation Organization Rules
 
 **The /docs folder has 5 categories** (see `docs/README.md`):
 
-1. **Core Guides (6 docs)** - USER_GUIDE, ARCHITECTURE, DEVELOPMENT, DEPLOYMENT, TESTING, CHANGELOG
+1. **Core Guides (6 docs)** - CORE_USER_GUIDE, CORE_ARCHITECTURE, CORE_DEVELOPMENT, CORE_DEPLOYMENT, CORE_TESTING, CORE_CHANGELOG
    - These are permanent and should grow with the project
    - Never delete these without team discussion
+   - Naming: `CORE_*.md` prefix
 
-2. **Technical Reference (5 docs)** - DATABASE, NEON_SETUP, MIGRATION, AUTHENTICATION_API, PERFORMANCE_OPTIMIZATION
+2. **Technical Reference (5 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION
    - Keep these current with code changes
    - Add sections, don't create new docs for minor updates
+   - Naming: `TECH_*.md` prefix
 
-3. **Features (6 docs)** - GAME_MODES, SALARY_CAP_DRAFT, POINTS_SCORING_SYSTEM, etc.
+3. **Features (6 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, etc.
    - Create new docs for major features only
    - Merge into Core Guides after 6+ months if appropriate
+   - Naming: `FEATURE_*.md` prefix
 
-4. **Process & Maintenance (5 docs)** - CLEANUP_SUMMARY, CONSOLIDATION_RECOVERY, etc.
+4. **Process & Maintenance (6 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_PHASE_2_SUMMARY, etc.
    - These document project history and decisions
    - Don't delete unless truly obsolete (>2 years old)
+   - Naming: `PROCESS_*.md` prefix
 
-5. **Setup & Authentication (3 docs)** - AUTHENTICATION_SETUP, PHASE_2_SUMMARY
+5. **Setup & Authentication (1 doc)** - SETUP_AUTHENTICATION
    - Configuration and setup guides
    - Update when external services change
+   - Naming: `SETUP_*.md` prefix
 
 #### Before Creating New Documentation
 
@@ -79,13 +84,13 @@
 #### Documentation Lifecycle
 
 ```
-Development → Feature Doc Created (e.g., NEW_FEATURE.md)
+Development → Feature Doc Created (e.g., FEATURE_NEW_FEATURE.md)
      ↓
-Completion → Summary added to CHANGELOG.md
+Completion → Summary added to CORE_CHANGELOG.md
      ↓
 Maturity (3-6 months) → Consider merging into parent guide
      ↓
-Deprecation → Remove doc, keep summary in CHANGELOG
+Deprecation → Remove doc, keep summary in CORE_CHANGELOG.md
 ```
 
 #### Quarterly Documentation Review Checklist
@@ -99,7 +104,7 @@ Run this checklist every 3 months (or before major releases):
 - [ ] **Remove obsolete docs** - Delete docs for removed features
 - [ ] **Merge mature feature docs** - Consolidate into parent guides
 - [ ] **Update docs/README.md** - Ensure all docs are indexed
-- [ ] **Check CHANGELOG.md** - Is it current with recent changes?
+- [ ] **Check CORE_CHANGELOG.md** - Is it current with recent changes?
 
 #### Documentation Health Metrics
 
@@ -113,18 +118,18 @@ Target state (check monthly):
 #### What NOT to Document
 
 ❌ **Don't create docs for:**
-- Small bug fixes (add to CHANGELOG.md instead)
-- UI tweaks (update USER_GUIDE.md)
+- Small bug fixes (add to CORE_CHANGELOG.md instead)
+- UI tweaks (update CORE_USER_GUIDE.md)
 - Minor refactors (use git commit messages)
 - Implementation details (use code comments)
 - Temporary workarounds (add inline code comments)
 
 ✅ **Do create docs for:**
-- Major new features (e.g., SALARY_CAP_DRAFT.md)
-- API changes (update AUTHENTICATION_API.md)
-- Architecture decisions (update ARCHITECTURE.md)
-- Migration guides (e.g., MIGRATION.md)
-- Complex workflows (e.g., SYNC_TOP_100.md)
+- Major new features (e.g., FEATURE_SALARY_CAP_DRAFT.md)
+- API changes (update TECH_AUTHENTICATION_API.md)
+- Architecture decisions (update CORE_ARCHITECTURE.md)
+- Migration guides (e.g., TECH_MIGRATION.md)
+- Complex workflows (e.g., FEATURE_SYNC_TOP_100.md)
 
 ## Required Documentation Reading
 
@@ -134,21 +139,21 @@ Before making any changes, read these files to understand the project:
 **Essential Reading (Read First):**
 - **[docs/README.md](../docs/README.md)** - **START HERE** - Complete documentation index and navigation guide
 - **[README.md](../README.md)** - Project overview, features, and quick start guide
-- **[ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - Complete technical architecture and system design
-- **[CHANGELOG.md](../docs/CHANGELOG.md)** - Version history with technical implementation notes
+- **[CORE_ARCHITECTURE.md](../docs/CORE_ARCHITECTURE.md)** - Complete technical architecture and system design
+- **[CORE_CHANGELOG.md](../docs/CORE_CHANGELOG.md)** - Version history with technical implementation notes
 
 **Core Development Docs:**
-- **[DEVELOPMENT.md](../docs/DEVELOPMENT.md)** - Development environment, code standards, and workflows
-- **[DATABASE.md](../docs/DATABASE.md)** - Schema reference, queries, and troubleshooting
-- **[DEPLOYMENT.md](../docs/DEPLOYMENT.md)** - Deployment instructions and configuration
+- **[CORE_DEVELOPMENT.md](../docs/CORE_DEVELOPMENT.md)** - Development environment, code standards, and workflows
+- **[TECH_DATABASE.md](../docs/TECH_DATABASE.md)** - Schema reference, queries, and troubleshooting
+- **[CORE_DEPLOYMENT.md](../docs/CORE_DEPLOYMENT.md)** - Deployment instructions and configuration
 
 **User-Facing Documentation:**
-- **[USER_GUIDE.md](../docs/USER_GUIDE.md)** - End-user documentation for players and commissioners
-- **[GAME_MODES.md](../docs/GAME_MODES.md)** - Season League vs Single Race modes
+- **[CORE_USER_GUIDE.md](../docs/CORE_USER_GUIDE.md)** - End-user documentation for players and commissioners
+- **[FEATURE_GAME_MODES.md](../docs/FEATURE_GAME_MODES.md)** - Season League vs Single Race modes
 
 **Process Documentation:**
-- **[MIGRATION.md](../docs/MIGRATION.md)** - Database migration history and decisions
-- **[CONSOLIDATION_RECOVERY.md](../docs/CONSOLIDATION_RECOVERY.md)** - Lessons from documentation cleanup
+- **[TECH_MIGRATION.md](../docs/TECH_MIGRATION.md)** - Database migration history and decisions
+- **[PROCESS_CONSOLIDATION_RECOVERY.md](../docs/PROCESS_CONSOLIDATION_RECOVERY.md)** - Lessons from documentation cleanup
 
 **💡 Pro Tip:** Use `docs/README.md` as your documentation navigation hub. It's organized by role and includes quick reference tables.
 
@@ -165,7 +170,7 @@ Before making any changes, read these files to understand the project:
 - `game-state.js` - Player management and game configuration
 ## Technical Architecture Reference
 
-**⚠️ For detailed technical information, see [ARCHITECTURE.md](../docs/ARCHITECTURE.md)**
+**⚠️ For detailed technical information, see [CORE_ARCHITECTURE.md](../docs/CORE_ARCHITECTURE.md)**
 
 ### Core Technologies
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+ (no build tools required)
@@ -199,7 +204,7 @@ fantasy-marathon/{gameId}/
 
 ## Development Quick Reference
 
-**⚠️ For complete development instructions, see [DEVELOPMENT.md](../docs/DEVELOPMENT.md)**
+**⚠️ For complete development instructions, see [CORE_DEVELOPMENT.md](../docs/CORE_DEVELOPMENT.md)**
 
 ### Setup & Local Development
 ```bash
@@ -220,7 +225,7 @@ vercel --prod              # Deploy to production
 
 ## Development Standards & Patterns
 
-**⚠️ For detailed standards and patterns, see [DEVELOPMENT.md](../docs/DEVELOPMENT.md)**
+**⚠️ For detailed standards and patterns, see [CORE_DEVELOPMENT.md](../docs/CORE_DEVELOPMENT.md)**
 
 ### Code Standards Summary
 - **JavaScript**: ES6+ features, async/await, template literals

@@ -2,44 +2,45 @@
 
 Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate our comprehensive documentation based on your role and needs.
 
-## � Documentation Organization
+## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **25 total documents**:
+Our documentation is organized into **5 main categories** with **25 total documents**.
 
-1. **Core Guides (6 docs)** - Essential reading for all users
-2. **Technical Reference (5 docs)** - Architecture, database, and API documentation
-3. **Features (6 docs)** - Game features and scoring system
-4. **Process & Maintenance (5 docs)** - Project history and cleanup documentation
-5. **Setup & Authentication (3 docs)** - Deployment and authentication configuration
+**Naming Convention:** All files are prefixed with their category for easy identification:
+- `CORE_*.md` - Essential guides (6 docs)
+- `TECH_*.md` - Technical reference (5 docs)
+- `FEATURE_*.md` - Game features (6 docs)
+- `PROCESS_*.md` - Project history (6 docs)
+- `SETUP_*.md` - Configuration guides (2 docs)
 
 ---
 
 ## 🎯 Start Here (By Role)
 
 ### 👤 I'm a Player
-**Start with:** [User Guide](USER_GUIDE.md)  
+**Start with:** [User Guide](CORE_USER_GUIDE.md)  
 Learn how to join games, rank athletes, and follow live results.
 
 ### 🎮 I'm a Commissioner
 **Read these in order:**
-1. [User Guide](USER_GUIDE.md) - Game setup and management
-2. [Game Modes Guide](GAME_MODES.md) - Choose your game format
-3. [Points Scoring System](POINTS_SCORING_SYSTEM.md) - Understand how scoring works
+1. [User Guide](CORE_USER_GUIDE.md) - Game setup and management
+2. [Game Modes Guide](FEATURE_GAME_MODES.md) - Choose your game format
+3. [Points Scoring System](FEATURE_POINTS_SCORING_SYSTEM.md) - Understand how scoring works
 
 ### 🚀 I Want to Deploy My Own Instance
 **Follow this path:**
-1. [Deployment Guide](DEPLOYMENT.md) - Deploy to Vercel
-2. [Neon Setup Guide](NEON_SETUP.md) - Configure database
-3. [Authentication Setup](AUTHENTICATION_SETUP.md) - Email/SMS services
-4. [Testing Guide](TESTING.md) - Verify everything works
+1. [Deployment Guide](CORE_DEPLOYMENT.md) - Deploy to Vercel
+2. [Neon Setup Guide](TECH_NEON_SETUP.md) - Configure database
+3. [Authentication Setup](SETUP_AUTHENTICATION.md) - Email/SMS services
+4. [Testing Guide](CORE_TESTING.md) - Verify everything works
 
 ### 💻 I Want to Contribute Code
 **Read these in order:**
-1. [Development Guide](DEVELOPMENT.md) - Setup and coding standards
-2. [Architecture Guide](ARCHITECTURE.md) - System design
-3. [Game Modes Guide](GAME_MODES.md) - Understanding the codebase structure
-4. [Database Guide](DATABASE.md) - Data models and queries
-5. [Testing Guide](TESTING.md) - Testing procedures
+1. [Development Guide](CORE_DEVELOPMENT.md) - Setup and coding standards
+2. [Architecture Guide](CORE_ARCHITECTURE.md) - System design
+3. [Game Modes Guide](FEATURE_GAME_MODES.md) - Understanding the codebase structure
+4. [Database Guide](TECH_DATABASE.md) - Data models and queries
+5. [Testing Guide](CORE_TESTING.md) - Testing procedures
 
 ---
 
@@ -49,50 +50,50 @@ Learn how to join games, rank athletes, and follow live results.
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[USER_GUIDE.md](USER_GUIDE.md)** | Complete player and commissioner guide | First time using the app |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Technical architecture and system design | Understanding the codebase |
-| **[DEVELOPMENT.md](DEVELOPMENT.md)** | Local development setup and standards | Starting development work |
-| **[DEPLOYMENT.md](DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
-| **[TESTING.md](TESTING.md)** | Testing procedures and best practices | Writing or running tests |
-| **[CHANGELOG.md](CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
+| **[CORE_USER_GUIDE.md](CORE_USER_GUIDE.md)** | Complete player and commissioner guide | First time using the app |
+| **[CORE_ARCHITECTURE.md](CORE_ARCHITECTURE.md)** | Technical architecture and system design | Understanding the codebase |
+| **[CORE_DEVELOPMENT.md](CORE_DEVELOPMENT.md)** | Local development setup and standards | Starting development work |
+| **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
+| **[CORE_TESTING.md](CORE_TESTING.md)** | Testing procedures and best practices | Writing or running tests |
+| **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 
 ### 2️⃣ Technical Reference (Architecture & Data)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[DATABASE.md](DATABASE.md)** | Schema, queries, developer reference | Working with database |
-| **[NEON_SETUP.md](NEON_SETUP.md)** | Neon Postgres initial setup | First-time database setup |
-| **[MIGRATION.md](MIGRATION.md)** | Database migration history | Understanding schema evolution |
-| **[AUTHENTICATION_API.md](AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
-| **[PERFORMANCE_OPTIMIZATION.md](PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
+| **[TECH_DATABASE.md](TECH_DATABASE.md)** | Schema, queries, developer reference | Working with database |
+| **[TECH_NEON_SETUP.md](TECH_NEON_SETUP.md)** | Neon Postgres initial setup | First-time database setup |
+| **[TECH_MIGRATION.md](TECH_MIGRATION.md)** | Database migration history | Understanding schema evolution |
+| **[TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
+| **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
 
 ### 3️⃣ Features (Game Mechanics & Functionality)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[GAME_MODES.md](GAME_MODES.md)** | Season League vs Single Race modes | Understanding game structure |
-| **[SALARY_CAP_DRAFT.md](SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building | Working on draft features |
-| **[POINTS_SCORING_SYSTEM.md](POINTS_SCORING_SYSTEM.md)** | Complete scoring documentation | Understanding/modifying scoring |
-| **[ROSTER_LOCK_TIME.md](ROSTER_LOCK_TIME.md)** | Automatic roster locking feature | Working on roster lock logic |
-| **[SYNC_TOP_100.md](SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
-| **[ACCOUNT_FREE_TEAMS.md](ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
+| **[FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md)** | Season League vs Single Race modes | Understanding game structure |
+| **[FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building | Working on draft features |
+| **[FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md)** | Complete scoring documentation | Understanding/modifying scoring |
+| **[FEATURE_ROSTER_LOCK_TIME.md](FEATURE_ROSTER_LOCK_TIME.md)** | Automatic roster locking feature | Working on roster lock logic |
+| **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
+| **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
 
 ### 4️⃣ Process & Maintenance (Project History)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[COMPLETE_CLEANUP_SUMMARY.md](COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
-| **[CONSOLIDATION_RECOVERY.md](CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
-| **[CONSOLIDATION_PLAN.md](CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
-| **[CLEANUP_SUMMARY.md](CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
-| **[EDITABLE_WA_ID_FEATURE.md](EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
+| **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
+| **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
+| **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
+| **[PROCESS_CLEANUP_SUMMARY.md](PROCESS_CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
+| **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
+| **[PROCESS_PHASE_2_SUMMARY.md](PROCESS_PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
 
 ### 5️⃣ Setup & Authentication
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[AUTHENTICATION_SETUP.md](AUTHENTICATION_SETUP.md)** | Email/SMS service configuration | Setting up authentication |
-| **[PHASE_2_SUMMARY.md](PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
+| **[SETUP_AUTHENTICATION.md](SETUP_AUTHENTICATION.md)** | Email/SMS service configuration | Setting up authentication |
 
 ---
 
@@ -102,25 +103,25 @@ Learn how to join games, rank athletes, and follow live results.
 
 | Task | Documentation |
 |------|---------------|
-| Set up local development | [DEVELOPMENT.md](DEVELOPMENT.md) → Quick Setup |
-| Deploy to production | [DEPLOYMENT.md](DEPLOYMENT.md) → Manual Setup |
-| Configure authentication | [AUTHENTICATION_SETUP.md](AUTHENTICATION_SETUP.md) |
-| Understand scoring | [POINTS_SCORING_SYSTEM.md](POINTS_SCORING_SYSTEM.md) |
-| Add new athletes | [SYNC_TOP_100.md](SYNC_TOP_100.md) → Manual Process |
-| Run database migrations | [MIGRATION.md](MIGRATION.md) → Migration Guide |
-| Debug database issues | [DATABASE.md](DATABASE.md) → Troubleshooting |
-| Test before deployment | [TESTING.md](TESTING.md) → Pre-Deployment Checklist |
+| Set up local development | [CORE_DEVELOPMENT.md](CORE_DEVELOPMENT.md) → Quick Setup |
+| Deploy to production | [CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md) → Manual Setup |
+| Configure authentication | [SETUP_AUTHENTICATION.md](SETUP_AUTHENTICATION.md) |
+| Understand scoring | [FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md) |
+| Add new athletes | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) → Manual Process |
+| Run database migrations | [TECH_MIGRATION.md](TECH_MIGRATION.md) → Migration Guide |
+| Debug database issues | [TECH_DATABASE.md](TECH_DATABASE.md) → Troubleshooting |
+| Test before deployment | [CORE_TESTING.md](CORE_TESTING.md) → Pre-Deployment Checklist |
 
 ### Understanding Features
 
 | Feature | Primary Doc | Related Docs |
 |---------|-------------|--------------|
-| Game Modes | [GAME_MODES.md](GAME_MODES.md) | USER_GUIDE.md, SALARY_CAP_DRAFT.md |
-| Salary Cap Draft | [SALARY_CAP_DRAFT.md](SALARY_CAP_DRAFT.md) | GAME_MODES.md, POINTS_SCORING_SYSTEM.md |
-| Points Scoring | [POINTS_SCORING_SYSTEM.md](POINTS_SCORING_SYSTEM.md) | DEPLOYMENT.md, CHANGELOG.md |
-| Athlete Sync | [SYNC_TOP_100.md](SYNC_TOP_100.md) | ARCHITECTURE.md, EDITABLE_WA_ID_FEATURE.md |
-| Authentication | [AUTHENTICATION_API.md](AUTHENTICATION_API.md) | AUTHENTICATION_SETUP.md, PHASE_2_SUMMARY.md |
-| Anonymous Teams | [ACCOUNT_FREE_TEAMS.md](ACCOUNT_FREE_TEAMS.md) | USER_GUIDE.md, ARCHITECTURE.md |
+| Game Modes | [FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md) | CORE_USER_GUIDE.md, FEATURE_SALARY_CAP_DRAFT.md |
+| Salary Cap Draft | [FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md) | FEATURE_GAME_MODES.md, FEATURE_POINTS_SCORING_SYSTEM.md |
+| Points Scoring | [FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md) | CORE_DEPLOYMENT.md, CORE_CHANGELOG.md |
+| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, PROCESS_EDITABLE_WA_ID_FEATURE.md |
+| Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_PHASE_2_SUMMARY.md |
+| Anonymous Teams | [FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md) | CORE_USER_GUIDE.md, CORE_ARCHITECTURE.md |
 
 ---
 
@@ -131,39 +132,43 @@ Learn how to join games, rank athletes, and follow live results.
 Our documentation follows these categories:
 
 1. **Guides** - Step-by-step instructions for accomplishing tasks
-   - Examples: USER_GUIDE.md, DEVELOPMENT.md, DEPLOYMENT.md
+   - Examples: CORE_USER_GUIDE.md, CORE_DEVELOPMENT.md, CORE_DEPLOYMENT.md
    - Format: Task-oriented with clear sections and code examples
+   - Naming: `CORE_*.md` prefix
 
 2. **Reference** - Technical specifications and API documentation
-   - Examples: DATABASE.md, ARCHITECTURE.md, AUTHENTICATION_API.md
+   - Examples: TECH_DATABASE.md, CORE_ARCHITECTURE.md, TECH_AUTHENTICATION_API.md
    - Format: Comprehensive technical details with tables and diagrams
+   - Naming: `TECH_*.md` prefix (or `CORE_*.md` if foundational)
 
 3. **Features** - Individual feature documentation
-   - Examples: SALARY_CAP_DRAFT.md, POINTS_SCORING_SYSTEM.md
+   - Examples: FEATURE_SALARY_CAP_DRAFT.md, FEATURE_POINTS_SCORING_SYSTEM.md
    - Format: Problem statement, solution, implementation, usage
+   - Naming: `FEATURE_*.md` prefix
 
 4. **Process** - Project history and maintenance records
-   - Examples: CHANGELOG.md, MIGRATION.md, CLEANUP_SUMMARY.md
+   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CLEANUP_SUMMARY.md
    - Format: Chronological with decision rationale
+   - Naming: `PROCESS_*.md` prefix (or `CORE_`/`TECH_` if ongoing)
 
 ### When Creating New Documentation
 
 **✅ Create a new doc when:**
-- Documenting a major new feature (e.g., SALARY_CAP_DRAFT.md)
-- Creating a comprehensive technical reference (e.g., AUTHENTICATION_API.md)
-- Recording a significant process or migration (e.g., CONSOLIDATION_RECOVERY.md)
+- Documenting a major new feature (e.g., FEATURE_SALARY_CAP_DRAFT.md)
+- Creating a comprehensive technical reference (e.g., TECH_AUTHENTICATION_API.md)
+- Recording a significant process or migration (e.g., PROCESS_CONSOLIDATION_RECOVERY.md)
 
 **❌ Don't create a new doc when:**
-- Documenting a small bug fix (add to CHANGELOG.md instead)
+- Documenting a small bug fix (add to CORE_CHANGELOG.md instead)
 - Making minor feature updates (update existing feature doc)
 - Recording implementation details (add to code comments or relevant doc)
 
 ### Documentation Lifecycle
 
-1. **Feature Development** → Create feature doc (e.g., NEW_FEATURE.md)
-2. **Feature Completion** → Update CHANGELOG.md with summary
+1. **Feature Development** → Create feature doc (e.g., FEATURE_NEW_FEATURE.md)
+2. **Feature Completion** → Update CORE_CHANGELOG.md with summary
 3. **Feature Maturity** → Merge details into relevant guides
-4. **Deprecation** → Move to CHANGELOG.md, delete feature doc
+4. **Deprecation** → Move to CORE_CHANGELOG.md, delete feature doc
 
 ---
 
@@ -179,11 +184,11 @@ Our documentation follows these categories:
 ### Documentation Best Practices
 
 ✅ **Do:**
-- Use clear, descriptive filenames (FEATURE_NAME.md)
+- Use category prefixes in filenames (FEATURE_NAME.md, CORE_NAME.md, etc.)
 - Include a table of contents for docs > 200 lines
 - Add code examples and screenshots where helpful
 - Cross-reference related documentation
-- Update CHANGELOG.md for major changes
+- Update CORE_CHANGELOG.md for major changes
 - Keep technical details current with code
 
 ❌ **Don't:**
@@ -192,6 +197,7 @@ Our documentation follows these categories:
 - Write docs without examples
 - Forget to update this README.md index
 - Leave outdated documentation in place
+- Use incorrect category prefixes
 
 ### Regular Maintenance
 
@@ -227,7 +233,7 @@ Our documentation follows these categories:
 **Can't find what you need?**
 1. Use your browser's search (Cmd/Ctrl + F) on this page
 2. Check the "Quick Reference" section above
-3. Review [ARCHITECTURE.md](ARCHITECTURE.md) for system overview
+3. Review [CORE_ARCHITECTURE.md](CORE_ARCHITECTURE.md) for system overview
 4. Open an issue on GitHub
 
 **Found an error?**
@@ -329,7 +335,7 @@ Explore these:
 | [LIVE_RESULTS_FEATURE.md](LIVE_RESULTS_FEATURE.md) | Live result update system |
 | [MIGRATION.md](MIGRATION.md) | Database migration history |
 | [NEON_SETUP.md](NEON_SETUP.md) | Neon Postgres setup guide |
-| [PHASE_2_SUMMARY.md](PHASE_2_SUMMARY.md) | **NEW:** Authentication system implementation summary |
+| [PROCESS_PHASE_2_SUMMARY.md](PROCESS_PHASE_2_SUMMARY.md) | **NEW:** Authentication system implementation summary |
 | [POSTGRES_REFERENCE.md](POSTGRES_REFERENCE.md) | SQL query examples |
 | [SYNC_TOP_100.md](SYNC_TOP_100.md) | Automated athlete sync system |
 | [TESTING.md](TESTING.md) | Testing procedures |
