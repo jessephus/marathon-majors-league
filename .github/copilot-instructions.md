@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-**Fantasy NY Marathon** is a web-based fantasy sports application that enables 2-4 friends to compete by drafting elite marathon runners for the New York City Marathon. The application features real-time result tracking, automated snake draft mechanics, and a mobile-first responsive design.
+**Marathon Majors Fantasy League** (fka Fantasy NY Marathon, or Fantasy Chicago Marathon) is a web-based fantasy sports application that enables people to compete online by drafting elite marathon runners for Major Marathon. The application features real-time result tracking, automated snake draft mechanics, and a mobile-first responsive design.
 
 ## Critical Instructions for Copilot
 
@@ -159,47 +159,46 @@ Before making any changes, read these files to understand the project:
 
 ## Project Overview
 
-**Fantasy NY Marathon** is a serverless web application that enables 2-4 friends to compete by drafting elite marathon runners for the New York City Marathon. The application features real-time result tracking, automated snake draft mechanics, and mobile-first responsive design.
+**Marathon Majors Fantasy League** (fka Fantasy NY Marathon, or Fantasy Chicago Marathon) is a serverless web application that enables people to compete online by drafting elite marathon runners for Major Marathons. The application features real-time result tracking, salary cap draft mechanics, and a mobile-first responsive design.
 
 ### Key Design Principles
-- **No build step required** - Direct deployment of static files
+- **Next.js framework** - Modern React-based architecture with serverless API routes
 - **Mobile-first responsive design** - Optimized for phone usage during race watching
 - **Real-time updates** - Live result tracking throughout the marathon
-- **Simple deployment** - One-click Vercel deployment with minimal configuration
+- **Simple deployment** - One-click Vercel deployment with Neon Postgres
 - **Documentation-first** - Comprehensive docs that stay current with code changes
-- `game-state.js` - Player management and game configuration
+
 ## Technical Architecture Reference
 
 **⚠️ For detailed technical information, see [CORE_ARCHITECTURE.md](../docs/CORE_ARCHITECTURE.md)**
 
 ### Core Technologies
-- **Frontend**: Vanilla HTML5, CSS3, JavaScript ES6+ (no build tools required)
-- **Backend**: Vercel Serverless Functions (Node.js ES modules)
-- **Database**: Vercel Blob Storage (JSON file-based)
+- **Frontend**: Next.js 15.5.6 (React framework with vanilla JS components)
+- **Backend**: Vercel Serverless Functions (Node.js API routes)
+- **Database**: Neon Postgres (serverless PostgreSQL)
 - **Hosting**: Vercel Edge Network
 
 ### Key Files Structure
-- `index.html` - Main application entry point with all UI sections
-- `app.js` - Core frontend application logic (1000+ lines)
-- `style.css` - Complete CSS styling with mobile-responsive design
-- `athletes.json` - Elite runner database (33 men, 25 women)
-- `package.json` - Dependencies (@vercel/blob only)
+- `pages/index.js` - Main application entry point (Next.js SSR wrapper)
+- `public/app.js` - Core frontend application logic (vanilla JavaScript)
+- `public/salary-cap-draft.js` - Salary cap draft UI
+- `public/style.css` - Complete CSS styling with mobile-responsive design
+- `pages/api/` - Serverless API endpoints directory
+- `package.json` - Dependencies (@neondatabase/serverless, Next.js, React)
 - `vercel.json` - Deployment configuration
-- `game-state.js` - Player management and game configuration
-- `rankings.js` - Player athlete preferences storage
-- `draft.js` - Snake draft execution and team assignments
-- `results.js` - Race result entry and retrieval
-- `storage.js` - Centralized Blob storage helper functions
-- `init-db.js` - Storage initialization (minimal setup required)
+- `schema.sql` - Database schema definition
 
-### Data Storage Pattern
-Each game uses isolated JSON files in Blob storage:
+### Database Architecture
+Neon Postgres with relational tables:
 ```
-fantasy-marathon/{gameId}/
-├── game-state.json    (players, draft status, finalized status)
-├── rankings.json      (player preferences by code)
-├── teams.json         (post-draft team assignments)
-└── results.json       (athlete finish times)
+Database Tables:
+├── athletes           (elite runner profiles with extended data)
+├── races              (marathon events and competitions)
+├── athlete_races      (athlete-race confirmations)
+├── games              (game configuration and state)
+├── player_rankings    (player athlete preferences)
+├── draft_teams        (post-draft team assignments)
+└── race_results       (race results and live updates)
 ```
 
 ## Development Quick Reference
@@ -208,9 +207,9 @@ fantasy-marathon/{gameId}/
 
 ### Setup & Local Development
 ```bash
-npm install                 # Install @vercel/blob dependency
+npm install                 # Install dependencies
 vercel link                 # Link to Vercel project (one-time)
-vercel env pull            # Pull environment variables
+vercel env pull            # Pull environment variables (including DATABASE_URL)
 vercel dev                 # Start local development server
 ```
 
@@ -221,7 +220,7 @@ vercel --prod              # Deploy to production
 ```
 
 ### Required Environment Variables
-- `BLOB_READ_WRITE_TOKEN` - Automatically configured by Vercel when Blob storage is added
+- `DATABASE_URL` - Neon Postgres connection string (automatically configured via Vercel integration)
 
 ## Development Standards & Patterns
 
@@ -234,7 +233,7 @@ vercel --prod              # Deploy to production
 - **UI/UX**: Do not use emoji for icons or visual elements - use text labels, SVG icons, or icon fonts instead
 
 ### Common Development Patterns
-- Use `storage.js` helper functions: `getData()`, `saveData()`
+- Use database helpers in `pages/api/db.js` for all database operations
 - Update `gameState` object for local state and sync with backend
 - Use `showPage(pageId)` for view transitions
 - Handle errors with try/catch in async functions
@@ -244,10 +243,11 @@ vercel --prod              # Deploy to production
 1. **Read all documentation first** to understand current architecture
 2. Determine if changes require frontend, backend, or both
 3. Update `app.js` for frontend logic
-4. Create/modify API endpoints in `/api/` directory
+4. Create/modify API endpoints in `/pages/api/` directory
 5. Update `style.css` for UI changes
-6. Test complete flow end-to-end
-7. **Update all relevant documentation files**
+6. Update database schema in `schema.sql` if needed
+7. Test complete flow end-to-end
+8. **Update all relevant documentation files**
 
 ---
 
