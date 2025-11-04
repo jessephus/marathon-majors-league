@@ -23,24 +23,24 @@ function LeaderboardPageContent({ gameId }: LeaderboardPageProps) {
 
   // Load results on mount
   useEffect(() => {
-    loadResults();
+    async function fetchResults() {
+      try {
+        const results = await apiClient.results.fetch(gameId);
+        setGameState({ results: (results as Record<string, any>) || {} });
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to load results:', err);
+        setError('Failed to load leaderboard data');
+        setLoading(false);
+      }
+    }
+    
+    fetchResults();
     
     // Set up auto-refresh every 60 seconds
-    const interval = setInterval(loadResults, 60000);
+    const interval = setInterval(fetchResults, 60000);
     return () => clearInterval(interval);
-  }, [gameId]);
-
-  async function loadResults() {
-    try {
-      const results = await apiClient.results.fetch(gameId);
-      setGameState({ results: (results as Record<string, any>) || {} });
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to load results:', err);
-      setError('Failed to load leaderboard data');
-      setLoading(false);
-    }
-  }
+  }, [gameId, setGameState]);
 
   return (
     <>

@@ -26,44 +26,42 @@ function TeamSessionPageContent({ sessionToken }: TeamSessionPageProps) {
 
   // Verify session on mount
   useEffect(() => {
-    verifySession();
-  }, [sessionToken]);
+    async function verify() {
+      try {
+        const result = await apiClient.session.verify(sessionToken);
+        if (result.valid && result.session) {
+          setSessionState(result.session);
+          setSessionValid(true);
+        } else {
+          setError('Invalid or expired session');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Session verification failed:', err);
+        setError('Failed to verify session');
+        setLoading(false);
+      }
+    }
+    verify();
+  }, [sessionToken, setSessionState]);
 
   // Load athletes after session is verified
   useEffect(() => {
-    if (sessionValid) {
-      loadAthletes();
-    }
-  }, [sessionValid]);
-
-  async function verifySession() {
-    try {
-      const result = await apiClient.session.verify(sessionToken);
-      if (result.valid && result.session) {
-        setSessionState(result.session);
-        setSessionValid(true);
-      } else {
-        setError('Invalid or expired session');
+    async function loadData() {
+      try {
+        const athletes = await apiClient.athletes.list();
+        setGameState({ athletes });
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to load athletes:', err);
+        setError('Failed to load athlete data');
         setLoading(false);
       }
-    } catch (err) {
-      console.error('Session verification failed:', err);
-      setError('Failed to verify session');
-      setLoading(false);
     }
-  }
-
-  async function loadAthletes() {
-    try {
-      const athletes = await apiClient.athletes.list();
-      setGameState({ athletes });
-      setLoading(false);
-    } catch (err) {
-      console.error('Failed to load athletes:', err);
-      setError('Failed to load athlete data');
-      setLoading(false);
+    if (sessionValid) {
+      loadData();
     }
-  }
+  }, [sessionValid, setGameState]);
 
   if (loading) {
     return (

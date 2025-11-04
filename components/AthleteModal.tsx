@@ -41,25 +41,23 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && athlete) {
-      loadDetailedData();
-    }
-  }, [isOpen, athlete]);
-
-  async function loadDetailedData() {
-    if (!athlete) return;
+    if (!isOpen || !athlete) return;
     
-    setLoading(true);
-    // Phase 1: Just use the athlete data we have
-    // Phase 2+: Fetch extended data from API
-    setDetailedData({
-      ...athlete,
-      raceLog: [],
-      progression: [],
-      news: [],
-    });
-    setLoading(false);
-  }
+    async function fetchDetailedData() {
+      setLoading(true);
+      // Phase 1: Just use the athlete data we have
+      // Phase 2+: Fetch extended data from API
+      setDetailedData({
+        ...athlete,
+        raceLog: [],
+        progression: [],
+        news: [],
+      });
+      setLoading(false);
+    }
+    
+    fetchDetailedData();
+  }, [isOpen, athlete]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
