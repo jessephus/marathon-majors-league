@@ -164,95 +164,108 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            
-            // Determine overall test status
-            const conclusion = '${{ job.status }}';
-            const emoji = conclusion === 'success' ? '✅' : '❌';
-            const runNumber = '${{ github.run_number }}';
-            const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
-            const commitSha = '${{ github.sha }}';
-            
-            // Get individual test step results
-            const testResults = {
-              'API Endpoint Tests': '${{ steps.test-api.outcome }}',
-              'Database Tests': '${{ steps.test-db.outcome }}',
-              'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
-              'Game Flow Tests': '${{ steps.test-flow.outcome }}',
-              'Next.js Routing & SSR Tests': '${{ steps.test-nextjs.outcome }}',
-              'Salary Cap Draft Tests': '${{ steps.test-salarycap.outcome }}',
-              'Performance Benchmarks': '${{ steps.test-performance.outcome }}',
-              'Legacy Regression Tests': '${{ steps.test-legacy.outcome }}'
-            };
-            
-            // Build test results list
-            let testResultsList = '';
-            let failedCount = 0;
-            let passedCount = 0;
-            
-            for (const [name, outcome] of Object.entries(testResults)) {
-              if (outcome === 'success') {
-                testResultsList += `- ✅ ${name}\n`;
-                passedCount++;
-              } else if (outcome === 'failure') {
-                testResultsList += `- ❌ ${name} (FAILED)\n`;
-                failedCount++;
-              } else if (outcome === 'skipped') {
-                testResultsList += `- ⏭️ ${name} (Skipped)\n`;
-              } else {
-                testResultsList += `- ⚠️ ${name} (${outcome})\n`;
+            try {
+              console.log('Starting PR comment generation...');
+              
+              // Get individual test step results
+              const testResults = {
+                'API Endpoint Tests': '${{ steps.test-api.outcome }}',
+                'Database Tests': '${{ steps.test-db.outcome }}',
+                'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
+                'Game Flow Tests': '${{ steps.test-flow.outcome }}',
+                'Next.js Routing & SSR Tests': '${{ steps.test-nextjs.outcome }}',
+                'Salary Cap Draft Tests': '${{ steps.test-salarycap.outcome }}',
+                'Performance Benchmarks': '${{ steps.test-performance.outcome }}',
+                'Legacy Regression Tests': '${{ steps.test-legacy.outcome }}'
+              };
+              
+              console.log('Test results:', JSON.stringify(testResults, null, 2));
+              
+              // Build test results list
+              let testResultsList = '';
+              let failedCount = 0;
+              let passedCount = 0;
+              
+              for (const [name, outcome] of Object.entries(testResults)) {
+                if (outcome === 'success') {
+                  testResultsList += `- ✅ ${name}\n`;
+                  passedCount++;
+                } else if (outcome === 'failure') {
+                  testResultsList += `- ❌ ${name} (FAILED)\n`;
+                  failedCount++;
+                } else if (outcome === 'skipped') {
+                  testResultsList += `- ⏭️ ${name} (Skipped)\n`;
+                } else {
+                  testResultsList += `- ⚠️ ${name} (${outcome})\n`;
+                }
               }
-            }
-            
-            const totalTests = Object.keys(testResults).length;
-            const summary = failedCount > 0
-              ? `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`
-              : `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`;
-            
-            const body = [
-              `## ${emoji} Test Suite Results`,
-              '',
-              `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
-              `**Run:** [#${runNumber}](${runUrl})`,
-              `**Commit:** ${commitSha}`,
-              '',
-              `### Test Results (${passedCount}/${totalTests} passed)`,
-              '',
-              testResultsList,
-              summary,
-              '',
-              '---',
-              '_Tests will fail the workflow if any suite fails, preventing merge of broken code._'
-            ].join('\n');
-            
-            // Find existing comment
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            
-            const botComment = comments.find(comment => 
-              comment.user.type === 'Bot' && 
-              comment.body.includes('Test Suite Results')
-            );
-            
-            if (botComment) {
-              // Update existing comment
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: body
-              });
-            } else {
-              // Create new comment
-              await github.rest.issues.createComment({
+              
+              const totalTests = Object.keys(testResults).length;
+              const runNumber = '${{ github.run_number }}';
+              const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+              const commitSha = '${{ github.sha }}';
+              const emoji = failedCount > 0 ? '❌' : '✅';
+              
+              const summary = failedCount > 0
+                ? `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`
+                : `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`;
+              
+              const body = [
+                `## ${emoji} Test Suite Results`,
+                '',
+                `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
+                `**Run:** [#${runNumber}](${runUrl})`,
+                `**Commit:** ${commitSha}`,
+                '',
+                `### Test Results (${passedCount}/${totalTests} passed)`,
+                '',
+                testResultsList,
+                summary,
+                '',
+                '---',
+                '_Tests will fail the workflow if any suite fails, preventing merge of broken code._'
+              ].join('\n');
+              
+              console.log('Comment body generated, length:', body.length);
+              
+              // Find existing comment
+              console.log('Fetching existing comments...');
+              const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: body
               });
+              
+              console.log(`Found ${comments.length} existing comments`);
+              
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Test Suite Results')
+              );
+              
+              if (botComment) {
+                console.log(`Updating existing comment ID: ${botComment.id}`);
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: body
+                });
+                console.log('Comment updated successfully');
+              } else {
+                console.log('Creating new comment...');
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: body
+                });
+                console.log('Comment created successfully');
+              }
+            } catch (error) {
+              console.error('Error posting comment:', error);
+              console.error('Error stack:', error.stack);
+              // Don't fail the workflow if comment fails
             }
       
       - name: Check test results and fail if needed
