@@ -3286,12 +3286,40 @@ function createTeamCard(player, team, showScore = false) {
                     </div>
                 `;
             } else {
-                // Fallback to legacy time-based display
-                displayLegacyScore(card, player, team);
+                // No scoring results yet - show pending message
+                let scoreDiv = card.querySelector('.score');
+                if (!scoreDiv) {
+                    scoreDiv = document.createElement('div');
+                    scoreDiv.className = 'score';
+                    card.insertBefore(scoreDiv, card.children[1]);
+                }
+                scoreDiv.style.marginBottom = '15px';
+                scoreDiv.style.padding = '10px';
+                scoreDiv.style.background = 'var(--light-gray)';
+                scoreDiv.style.borderRadius = '5px';
+                scoreDiv.innerHTML = '<div style="color: var(--dark-gray);">Awaiting results...</div>';
             }
         }).catch(err => {
             console.error('Error displaying points score:', err);
-            displayLegacyScore(card, player, team);
+            // Show error message - no fallback to deprecated scoring
+            let scoreDiv = card.querySelector('.score');
+            if (!scoreDiv) {
+                scoreDiv = document.createElement('div');
+                scoreDiv.className = 'score';
+                card.insertBefore(scoreDiv, card.children[1]);
+            }
+            scoreDiv.style.marginBottom = '15px';
+            scoreDiv.style.padding = '10px';
+            scoreDiv.style.background = 'var(--light-gray)';
+            scoreDiv.style.borderRadius = '5px';
+            scoreDiv.innerHTML = `
+                <div style="color: var(--warning-red);">
+                    ⚠️ Unable to load scoring data
+                </div>
+                <div style="font-size: 0.85em; color: var(--dark-gray); margin-top: 4px;">
+                    Please refresh the page
+                </div>
+            `;
         });
         
         // Show placeholder while loading
@@ -3336,40 +3364,6 @@ function createTeamCard(player, team, showScore = false) {
     card.appendChild(womenSection);
 
     return card;
-}
-
-// Helper to display legacy time-based score
-function displayLegacyScore(card, player, team) {
-    const averageTime = calculateAverageTime(team);
-    
-    // Calculate team rankings
-    const allScores = {};
-    Object.entries(gameState.teams).forEach(([p, t]) => {
-        allScores[p] = calculateTeamScore(t);
-    });
-    const sortedTeams = Object.entries(allScores).sort((a, b) => a[1] - b[1]);
-    const rank = sortedTeams.findIndex(([p, s]) => p === player) + 1;
-    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-    
-    let scoreDiv = card.querySelector('.score');
-    if (!scoreDiv) {
-        scoreDiv = document.createElement('div');
-        scoreDiv.className = 'score';
-        card.insertBefore(scoreDiv, card.children[1]);
-    }
-    
-    scoreDiv.style.fontWeight = rank === 1 ? 'bold' : 'normal';
-    scoreDiv.style.color = rank === 1 ? 'var(--primary-red)' : 'inherit';
-    scoreDiv.style.marginBottom = '15px';
-    scoreDiv.style.padding = '10px';
-    scoreDiv.style.background = rank === 1 ? 'rgba(220, 53, 69, 0.1)' : 'var(--light-gray)';
-    scoreDiv.style.borderRadius = '5px';
-    scoreDiv.innerHTML = `
-        <div style="font-size: 1.2em; margin-bottom: 5px;">
-            ${medal} Rank: #${rank} of ${sortedTeams.length}
-        </div>
-        <div>Average Finish Time: ${averageTime}</div>
-    `;
 }
 
 // Create athlete row with points info
@@ -3797,30 +3791,6 @@ function displayPointsStandings(standings, display) {
     `;
 }
 
-// Legacy time-based standings (fallback)
-function displayLegacyStandings(display) {
-    const scores = {};
-    const averageTimes = {};
-    Object.entries(gameState.teams).forEach(([player, team]) => {
-        scores[player] = calculateTeamScore(team);
-        averageTimes[player] = calculateAverageTime(team);
-    });
-
-    const sortedTeams = Object.entries(scores).sort((a, b) => a[1] - b[1]);
-
-    display.innerHTML = `
-        <h4 style="margin-top: 20px;">Current Standings (Time-Based)</h4>
-        <div style="background: var(--light-gray); padding: 15px; border-radius: 5px; margin-top: 10px;">
-            ${sortedTeams.map(([player, score], i) => {
-                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
-                return `<div style="padding: 8px 0; font-weight: ${i === 0 ? 'bold' : 'normal'}; color: ${i === 0 ? 'var(--primary-red)' : 'inherit'};">
-                    ${medal} ${escapeHtml(player)}: ${averageTimes[player]}
-                </div>`;
-            }).join('')}
-        </div>
-    `;
-}
-
 // Fetch detailed scoring data for all results
 async function fetchScoringDetails() {
     try {
@@ -3924,54 +3894,6 @@ function getRecordBadge(recordType, recordStatus) {
     }
     
     return `<span style="${style}" title="${title}">${badge}</span>`;
-}
-
-function calculateTeamScore(team) {
-    let totalSeconds = 0;
-    
-    [...team.men, ...team.women].forEach(athlete => {
-        const time = gameState.results[athlete.id];
-        if (time) {
-            totalSeconds += timeToSeconds(time);
-        }
-    });
-
-    return totalSeconds;
-}
-
-function timeToSeconds(timeStr) {
-    // Convert "HH:MM:SS" or "H:MM:SS" or "HH:MM:SS.mmm" to seconds (with decimals)
-    const parts = timeStr.split(':');
-    if (parts.length === 3) {
-        const hours = parseInt(parts[0], 10);
-        const minutes = parseInt(parts[1], 10);
-        const seconds = parseFloat(parts[2]); // Use parseFloat to handle decimals
-        return hours * 3600 + minutes * 60 + seconds;
-    }
-    return 0;
-}
-
-function secondsToTime(totalSeconds) {
-    // Convert seconds to "H:MM:SS" format
-    // Round to handle floating point precision
-    const roundedSeconds = Math.round(totalSeconds);
-    const hours = Math.floor(roundedSeconds / 3600);
-    const minutes = Math.floor((roundedSeconds % 3600) / 60);
-    const seconds = roundedSeconds % 60;
-    
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-}
-
-function calculateAverageTime(team) {
-    const totalSeconds = calculateTeamScore(team);
-    const numAthletes = team.men.length + team.women.length;
-    
-    if (numAthletes === 0) {
-        return '0:00:00';
-    }
-    
-    const averageSeconds = totalSeconds / numAthletes;
-    return secondsToTime(averageSeconds);
 }
 
 function setupResultsForm() {

@@ -1,0 +1,282 @@
+name: Documentation Health Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '.github/copilot-instructions.md'
+      - '.github/workflows/docs-health-check.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - '.github/copilot-instructions.md'
+  workflow_dispatch:
+  # Run weekly on Mondays at 9am UTC
+  schedule:
+    - cron: '0 9 * * 1'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-docs-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run Documentation Health Checks
+        id: health-check
+        run: |
+          # Initialize variables
+          WARNINGS=()
+          ERROR_COUNT=0
+          
+          # Check 1: Count total documentation files
+          echo "📊 Checking documentation file count..."
+          TOTAL_DOCS=$(find docs -name "*.md" | wc -l | tr -d ' ')
+          echo "total_docs=$TOTAL_DOCS" >> $GITHUB_OUTPUT
+          
+          if [ "$TOTAL_DOCS" -gt 30 ]; then
+            WARNINGS+=("⚠️ **High file count**: $TOTAL_DOCS documentation files detected (target: 20-30). Consider consolidation.")
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          elif [ "$TOTAL_DOCS" -lt 15 ]; then
+            WARNINGS+=("ℹ️ **Low file count**: Only $TOTAL_DOCS documentation files. Ensure all features are documented.")
+          fi
+          
+          # Check 2: Verify category prefixes are used
+          echo "🏷️ Checking category naming convention..."
+          UNPREFIXED_FILES=$(find docs -maxdepth 1 -name "*.md" ! -name "README.md" ! -name "CORE_*.md" ! -name "TECH_*.md" ! -name "FEATURE_*.md" ! -name "PROCESS_*.md" ! -name "SETUP_*.md" | wc -l | tr -d ' ')
+          
+          if [ "$UNPREFIXED_FILES" -gt 0 ]; then
+            UNPREFIXED_LIST=$(find docs -maxdepth 1 -name "*.md" ! -name "README.md" ! -name "CORE_*.md" ! -name "TECH_*.md" ! -name "FEATURE_*.md" ! -name "PROCESS_*.md" ! -name "SETUP_*.md" -exec basename {} \; | tr '\n' ', ' | sed 's/,$//')
+            WARNINGS+=("⚠️ **Naming convention violation**: $UNPREFIXED_FILES files without category prefix: \`$UNPREFIXED_LIST\`")
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          fi
+          
+          # Check 3: Detect potential duplicate/redundant filenames
+          echo "🔍 Checking for potential duplicate content..."
+          DUPLICATE_PATTERNS=()
+          
+          # Check for files with similar names (case-insensitive)
+          while IFS= read -r file1; do
+            basename1=$(basename "$file1" .md | tr '[:upper:]' '[:lower:]')
+            # Remove category prefix for comparison
+            basename1_clean=$(echo "$basename1" | sed -E 's/^(core|tech|feature|process|setup)_//')
+            
+            while IFS= read -r file2; do
+              if [ "$file1" != "$file2" ]; then
+                basename2=$(basename "$file2" .md | tr '[:upper:]' '[:lower:]')
+                basename2_clean=$(echo "$basename2" | sed -E 's/^(core|tech|feature|process|setup)_//')
+                
+                # Check if base names are similar (allowing for slight variations)
+                if [ "$basename1_clean" = "$basename2_clean" ]; then
+                  DUPLICATE_PATTERNS+=("$(basename "$file1") and $(basename "$file2")")
+                fi
+              fi
+            done < <(find docs -maxdepth 1 -name "*.md" ! -name "README.md")
+          done < <(find docs -maxdepth 1 -name "*.md" ! -name "README.md")
+          
+          # Check for common redundant word patterns
+          REDUNDANT_KEYWORDS=("guide" "documentation" "docs" "readme" "summary" "overview")
+          for keyword in "${REDUNDANT_KEYWORDS[@]}"; do
+            COUNT=$(find docs -maxdepth 1 -name "*${keyword}*.md" -o -name "*${keyword^^}*.md" | wc -l | tr -d ' ')
+            if [ "$COUNT" -gt 3 ]; then
+              FILES=$(find docs -maxdepth 1 \( -name "*${keyword}*.md" -o -name "*${keyword^^}*.md" \) -exec basename {} \; | tr '\n' ', ' | sed 's/,$//')
+              WARNINGS+=("ℹ️ **Potential redundancy**: $COUNT files contain '$keyword' in name: \`$FILES\`")
+            fi
+          done
+          
+          # Check 4: Verify docs/README.md is up to date
+          echo "📋 Checking docs/README.md accuracy..."
+          if [ -f "docs/README.md" ]; then
+            # Check if README mentions the correct total count
+            README_MENTIONED_COUNT=$(grep -oP '\*\*\d+\s+total\s+documents?\*\*' docs/README.md | grep -oP '\d+' || echo "0")
+            if [ "$README_MENTIONED_COUNT" != "0" ] && [ "$README_MENTIONED_COUNT" != "$TOTAL_DOCS" ]; then
+              WARNINGS+=("⚠️ **Outdated README**: docs/README.md mentions $README_MENTIONED_COUNT files but found $TOTAL_DOCS files.")
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+            
+            # Verify all .md files in docs/ are referenced in README
+            UNREFERENCED_FILES=()
+            while IFS= read -r file; do
+              filename=$(basename "$file")
+              if [ "$filename" != "README.md" ] && ! grep -q "$filename" docs/README.md; then
+                UNREFERENCED_FILES+=("$filename")
+              fi
+            done < <(find docs -maxdepth 1 -name "*.md")
+            
+            if [ ${#UNREFERENCED_FILES[@]} -gt 0 ]; then
+              UNREFERENCED_LIST=$(IFS=', '; echo "${UNREFERENCED_FILES[*]}")
+              WARNINGS+=("⚠️ **Orphaned files**: ${#UNREFERENCED_FILES[@]} file(s) not referenced in docs/README.md: \`$UNREFERENCED_LIST\`")
+              ERROR_COUNT=$((ERROR_COUNT + 1))
+            fi
+          else
+            WARNINGS+=("❌ **Missing index**: docs/README.md not found!")
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          fi
+          
+          # Check 5: Category distribution balance
+          echo "⚖️ Checking category distribution..."
+          CORE_COUNT=$(find docs -maxdepth 1 -name "CORE_*.md" | wc -l | tr -d ' ')
+          TECH_COUNT=$(find docs -maxdepth 1 -name "TECH_*.md" | wc -l | tr -d ' ')
+          FEATURE_COUNT=$(find docs -maxdepth 1 -name "FEATURE_*.md" | wc -l | tr -d ' ')
+          PROCESS_COUNT=$(find docs -maxdepth 1 -name "PROCESS_*.md" | wc -l | tr -d ' ')
+          SETUP_COUNT=$(find docs -maxdepth 1 -name "SETUP_*.md" | wc -l | tr -d ' ')
+          
+          echo "distribution=CORE: $CORE_COUNT, TECH: $TECH_COUNT, FEATURE: $FEATURE_COUNT, PROCESS: $PROCESS_COUNT, SETUP: $SETUP_COUNT" >> $GITHUB_OUTPUT
+          
+          # Flag if PROCESS category is getting too large (suggests need for cleanup)
+          if [ "$PROCESS_COUNT" -gt 8 ]; then
+            WARNINGS+=("ℹ️ **PROCESS category growing**: $PROCESS_COUNT files in PROCESS category. Consider archiving completed processes.")
+          fi
+          
+          # Check 6: Look for files that might be temporary/debugging
+          echo "🧹 Checking for temporary files..."
+          TEMP_PATTERNS=("*test*.md" "*tmp*.md" "*temp*.md" "*debug*.md")
+          TEMP_FILES=()
+          for pattern in "${TEMP_PATTERNS[@]}"; do
+            while IFS= read -r file; do
+              if [ -n "$file" ]; then
+                TEMP_FILES+=("$(basename "$file")")
+              fi
+            done < <(find docs -maxdepth 1 -iname "$pattern" 2>/dev/null)
+          done
+          
+          if [ ${#TEMP_FILES[@]} -gt 0 ]; then
+            TEMP_LIST=$(IFS=', '; echo "${TEMP_FILES[*]}")
+            WARNINGS+=("ℹ️ **Temporary files detected**: \`$TEMP_LIST\` - Consider removing or renaming if permanent.")
+          fi
+          
+          # Output results
+          echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+          
+          if [ ${#WARNINGS[@]} -eq 0 ]; then
+            echo "✅ All documentation health checks passed!"
+            echo "summary=✅ Documentation health: GOOD ($TOTAL_DOCS files)" >> $GITHUB_OUTPUT
+            echo "has_warnings=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Documentation health issues detected:"
+            printf '%s\n' "${WARNINGS[@]}"
+            
+            # Save warnings to file for PR comment
+            {
+              echo "## 📚 Documentation Health Check Report"
+              echo ""
+              echo "**Total documentation files**: $TOTAL_DOCS"
+              echo "**Category distribution**: CORE: $CORE_COUNT | TECH: $TECH_COUNT | FEATURE: $FEATURE_COUNT | PROCESS: $PROCESS_COUNT | SETUP: $SETUP_COUNT"
+              echo ""
+              echo "### Issues Detected"
+              echo ""
+              for warning in "${WARNINGS[@]}"; do
+                echo "- $warning"
+              done
+              echo ""
+              echo "---"
+              echo "💡 **Recommendation**: Review the [Documentation Standards](https://github.com/${{ github.repository }}/blob/main/docs/README.md#-documentation-standards) for guidance."
+              echo ""
+              echo "<sub>This check runs automatically when documentation changes. See [docs-health-check.yml](https://github.com/${{ github.repository }}/blob/main/.github/workflows/docs-health-check.yml) for details.</sub>"
+            } > /tmp/doc-health-report.md
+            
+            echo "summary=⚠️ Documentation health: NEEDS ATTENTION ($ERROR_COUNT issues)" >> $GITHUB_OUTPUT
+            echo "has_warnings=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request' && steps.health-check.outputs.has_warnings == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/doc-health-report.md', 'utf8');
+            
+            // Check if we already commented
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('📚 Documentation Health Check Report')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: report
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: report
+              });
+            }
+      
+      - name: Create issue for weekly check (if problems found)
+        if: github.event_name == 'schedule' && steps.health-check.outputs.has_warnings == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/doc-health-report.md', 'utf8');
+            
+            // Check if there's already an open issue
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'documentation,health-check'
+            });
+            
+            if (issues.length === 0) {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '📚 Weekly Documentation Health Check: Issues Detected',
+                body: report + '\n\n---\n\n_This issue was created automatically by the weekly documentation health check._',
+                labels: ['documentation', 'health-check', 'maintenance']
+              });
+            } else {
+              // Update existing issue with latest report
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: '## 🔄 Weekly Update\n\n' + report
+              });
+            }
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "### Documentation Health Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.health-check.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Files checked**: ${{ steps.health-check.outputs.total_docs }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Distribution**: ${{ steps.health-check.outputs.distribution }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.health-check.outputs.has_warnings }}" = "true" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Action needed**: Review the detailed report above." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **No action needed**: Documentation is healthy!" >> $GITHUB_STEP_SUMMARY
+          fi
