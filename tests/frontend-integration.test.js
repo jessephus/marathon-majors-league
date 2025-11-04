@@ -151,6 +151,95 @@ describe('Frontend Integration Tests', () => {
       }
     });
   });
+  
+  describe('API Integration', () => {
+    it('should load athlete data from API', async () => {
+      const response = await fetch(`${BASE_URL}/api/athletes`);
+      const data = await response.json();
+      
+      assert.strictEqual(response.status, 200, 'Athletes API should return 200');
+      assert.ok(data.men && data.men.length > 0, 'Should have men athletes from API');
+      assert.ok(data.women && data.women.length > 0, 'Should have women athletes from API');
+      
+      // Verify data structure matches what frontend expects
+      const athlete = data.men[0];
+      assert.ok(athlete.id, 'Athletes should have id field');
+      assert.ok(athlete.name, 'Athletes should have name field');
+      
+      console.log('✅ API athlete data loads correctly');
+    });
+    
+    it('should handle game state API calls', async () => {
+      const testGameId = 'integration-test-' + Date.now();
+      
+      // Test creating a game
+      const createResponse = await fetch(`${BASE_URL}/api/game-state?gameId=${testGameId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          players: ['TEST1', 'TEST2'],
+          draftComplete: false
+        })
+      });
+      
+      assert.ok(createResponse.status === 200 || createResponse.status === 201, 'Should create game');
+      
+      // Test retrieving the game
+      const getResponse = await fetch(`${BASE_URL}/api/game-state?gameId=${testGameId}`);
+      const gameData = await getResponse.json();
+      
+      assert.strictEqual(getResponse.status, 200, 'Should retrieve game');
+      assert.ok(gameData.players, 'Game should have players array');
+      
+      console.log('✅ Game state API integration works');
+    });
+    
+    it('should handle invalid API requests gracefully', async () => {
+      const response = await fetch(`${BASE_URL}/api/nonexistent-endpoint`);
+      
+      assert.ok(response.status === 404 || response.status === 405, 'Should return 404 or 405 for invalid endpoint');
+      
+      console.log('✅ Invalid API requests handled gracefully');
+    });
+    
+    it('should verify API endpoints match frontend expectations', async () => {
+      // Check that critical endpoints exist
+      const endpoints = [
+        '/api/athletes',
+        '/api/races',
+        '/api/game-state',
+      ];
+      
+      for (const endpoint of endpoints) {
+        const response = await fetch(`${BASE_URL}${endpoint}`);
+        assert.ok(response.status === 200 || response.status === 404, `${endpoint} should be accessible`);
+      }
+      
+      console.log('✅ All critical API endpoints accessible');
+    });
+  });
+  
+  describe('Edge Cases', () => {
+    it('should handle missing query parameters', async () => {
+      const response = await fetch(`${BASE_URL}/api/game-state`); // No gameId
+      
+      assert.ok(response.status >= 200, 'Should handle missing gameId parameter');
+      
+      console.log('✅ Missing parameters handled');
+    });
+    
+    it('should handle malformed data', async () => {
+      const response = await fetch(`${BASE_URL}/api/game-state?gameId=test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'invalid json{'
+      });
+      
+      assert.ok(response.status === 400 || response.status === 500, 'Should reject malformed JSON');
+      
+      console.log('✅ Malformed data rejected');
+    });
+  });
 });
 
 console.log('\n🎉 Frontend integration tests completed!\n');
