@@ -41,6 +41,26 @@ const tests = [
     name: 'Complete Game Flow',
     file: 'tests/game-flow.test.js',
     description: 'End-to-end test of entire game workflow'
+  },
+  {
+    name: 'Next.js Routing & SSR',
+    file: 'tests/nextjs-routing.test.js',
+    description: 'Validates Next.js routing and server-side rendering'
+  },
+  {
+    name: 'Salary Cap Draft',
+    file: 'tests/salary-cap-draft.test.js',
+    description: 'Tests salary cap draft functionality and flows'
+  },
+  {
+    name: 'Performance Benchmarks',
+    file: 'tests/performance-benchmarks.test.js',
+    description: 'Establishes performance baseline metrics'
+  },
+  {
+    name: 'Legacy Regression',
+    file: 'tests/legacy-regression.test.js',
+    description: 'Ensures backward compatibility with legacy features'
   }
 ];
 

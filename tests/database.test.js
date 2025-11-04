@@ -64,6 +64,9 @@ describe('Database Connection Tests', () => {
       assert.ok(data.athletesCount > 0, 'Should have athletes in database');
       assert.ok(data.athletesCount >= 100, 'Should have at least 100 athletes (top 100)');
       
+      // Verify actual count is reasonable (not suspiciously high or low)
+      assert.ok(data.athletesCount <= 300, 'Athlete count should be reasonable (not corrupted)');
+      
       console.log('✅ Athletes seeded:', data.athletesCount, 'total');
     });
     
@@ -79,6 +82,12 @@ describe('Database Connection Tests', () => {
       assert.ok(athlete.pb, 'Should have personal best');
       assert.ok(athlete.gender, 'Should have gender');
       
+      // Verify actual data values (not just presence)
+      assert.ok(typeof athlete.id === 'number', 'ID should be a number');
+      assert.ok(athlete.name.length > 2, 'Name should be a real name');
+      assert.ok(athlete.country.length === 3, 'Country should be 3-letter code');
+      assert.ok(/^\d+:\d+:\d+$/.test(athlete.pb), 'Personal best should be in time format (HH:MM:SS)');
+      
       // Check extended fields from World Athletics
       const hasExtendedFields = athlete.marathonRank || athlete.age || athlete.worldAthleticsId;
       if (hasExtendedFields) {
@@ -86,6 +95,15 @@ describe('Database Connection Tests', () => {
       } else {
         console.log('⚠️  Extended fields not present (might need migration)');
       }
+    });
+    
+    it('should handle edge cases - empty game query', async () => {
+      // Test with non-existent game ID
+      const { data, status } = await apiRequest('/api/game-state?gameId=nonexistent-test-game');
+      
+      assert.ok(status === 200 || status === 404, 'Should handle non-existent game gracefully');
+      
+      console.log('✅ Empty/invalid game query handled correctly');
     });
   });
   

@@ -1,0 +1,326 @@
+name: Test Suite
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.js'
+      - '**.ts'
+      - '**.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/**'
+      - '.github/workflows/test.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - '**.js'
+      - '**.ts'
+      - '**.tsx'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/**'
+      - '.github/workflows/test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build application
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Start server in background
+        run: |
+          PORT=3000 npm start > server.log 2>&1 &
+          echo $! > server.pid
+          echo "Server PID: $(cat server.pid)"
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PORT: 3000
+      
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server to start..."
+          for i in {1..60}; do
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Server is ready!"
+              curl -I http://localhost:3000
+              exit 0
+            fi
+            echo "Attempt $i/60: Server not ready yet..."
+            sleep 2
+          done
+          echo "❌ Server failed to start within timeout"
+          echo "Server log:"
+          cat server.log || echo "No server log found"
+          exit 1
+      
+      - name: Run API endpoint tests
+        id: test-api
+        run: npm run test:api
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run database tests
+        id: test-db
+        run: npm run test:db
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run frontend integration tests
+        id: test-frontend
+        run: npm run test:frontend
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run game flow tests
+        id: test-flow
+        run: npm run test:flow
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run Next.js routing tests
+        id: test-nextjs
+        run: npm run test:nextjs
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run salary cap draft tests
+        id: test-salarycap
+        run: npm run test:salarycap
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run performance benchmarks
+        id: test-performance
+        run: npm run test:performance
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Run legacy regression tests
+        id: test-legacy
+        run: npm run test:legacy
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            echo "Stopping server (PID: $(cat server.pid))"
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
+          # Also kill any remaining Next.js processes
+          pkill -f "next start" || true
+      
+      - name: Upload test results and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: |
+            test-results/
+            server.log
+            *.log
+          retention-days: 30
+          if-no-files-found: ignore
+      
+      - name: Comment test results on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              console.log('Starting PR comment generation...');
+              
+              // Get individual test step results
+              const testResults = {
+                'API Endpoint Tests': '${{ steps.test-api.outcome }}',
+                'Database Tests': '${{ steps.test-db.outcome }}',
+                'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
+                'Game Flow Tests': '${{ steps.test-flow.outcome }}',
+                'Next.js Routing & SSR Tests': '${{ steps.test-nextjs.outcome }}',
+                'Salary Cap Draft Tests': '${{ steps.test-salarycap.outcome }}',
+                'Performance Benchmarks': '${{ steps.test-performance.outcome }}',
+                'Legacy Regression Tests': '${{ steps.test-legacy.outcome }}'
+              };
+              
+              console.log('Test results:', JSON.stringify(testResults, null, 2));
+              
+              // Build test results list
+              let testResultsList = '';
+              let failedCount = 0;
+              let passedCount = 0;
+              
+              for (const [name, outcome] of Object.entries(testResults)) {
+                if (outcome === 'success') {
+                  testResultsList += `- ✅ ${name}\n`;
+                  passedCount++;
+                } else if (outcome === 'failure') {
+                  testResultsList += `- ❌ ${name} (FAILED)\n`;
+                  failedCount++;
+                } else if (outcome === 'skipped') {
+                  testResultsList += `- ⏭️ ${name} (Skipped)\n`;
+                } else {
+                  testResultsList += `- ⚠️ ${name} (${outcome})\n`;
+                }
+              }
+              
+              const totalTests = Object.keys(testResults).length;
+              const runNumber = '${{ github.run_number }}';
+              const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
+              const commitSha = '${{ github.sha }}';
+              const emoji = failedCount > 0 ? '❌' : '✅';
+              
+              const summary = failedCount > 0
+                ? `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`
+                : `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`;
+              
+              const body = [
+                `## ${emoji} Test Suite Results`,
+                '',
+                `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
+                `**Run:** [#${runNumber}](${runUrl})`,
+                `**Commit:** ${commitSha}`,
+                '',
+                `### Test Results (${passedCount}/${totalTests} passed)`,
+                '',
+                testResultsList,
+                summary,
+                '',
+                '---',
+                '_Tests will fail the workflow if any suite fails, preventing merge of broken code._'
+              ].join('\n');
+              
+              console.log('Comment body generated, length:', body.length);
+              
+              // Find existing comment
+              console.log('Fetching existing comments...');
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              });
+              
+              console.log(`Found ${comments.length} existing comments`);
+              
+              const botComment = comments.find(comment => 
+                comment.user.type === 'Bot' && 
+                comment.body.includes('Test Suite Results')
+              );
+              
+              if (botComment) {
+                console.log(`Updating existing comment ID: ${botComment.id}`);
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: botComment.id,
+                  body: body
+                });
+                console.log('Comment updated successfully');
+              } else {
+                console.log('Creating new comment...');
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: body
+                });
+                console.log('Comment created successfully');
+              }
+            } catch (error) {
+              console.error('Error posting comment:', error);
+              console.error('Error stack:', error.stack);
+              // Don't fail the workflow if comment fails
+            }
+      
+      - name: Check test results and fail if needed
+        if: always()
+        run: |
+          echo "Checking test results..."
+          
+          # Check each test outcome
+          if [ "${{ steps.test-api.outcome }}" != "success" ]; then
+            echo "❌ API endpoint tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-db.outcome }}" != "success" ]; then
+            echo "❌ Database tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-frontend.outcome }}" != "success" ]; then
+            echo "❌ Frontend integration tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-flow.outcome }}" != "success" ]; then
+            echo "❌ Game flow tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-nextjs.outcome }}" != "success" ]; then
+            echo "❌ Next.js routing tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-salarycap.outcome }}" != "success" ]; then
+            echo "❌ Salary cap draft tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-performance.outcome }}" != "success" ]; then
+            echo "❌ Performance benchmarks failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-legacy.outcome }}" != "success" ]; then
+            echo "❌ Legacy regression tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Fail the workflow if any tests failed
+          if [ "$TESTS_FAILED" = "true" ]; then
+            echo "⚠️ One or more test suites failed"
+            exit 1
+          fi
+          
+          echo "✅ All tests passed"
