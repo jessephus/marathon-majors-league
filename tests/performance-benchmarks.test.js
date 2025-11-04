@@ -182,6 +182,7 @@ describe('Performance Benchmark Tests', () => {
     it('should respond to /api/athletes within threshold', async () => {
       const duration = await measureTiming(async () => {
         const response = await fetch(`${BASE_URL}/api/athletes`);
+        assert.strictEqual(response.status, 200, 'Athletes API should return 200');
         await response.json();
       });
       
@@ -196,6 +197,7 @@ describe('Performance Benchmark Tests', () => {
     it('should respond to /api/races within threshold', async () => {
       const duration = await measureTiming(async () => {
         const response = await fetch(`${BASE_URL}/api/races`);
+        assert.strictEqual(response.status, 200, 'Races API should return 200');
         await response.json();
       });
       
@@ -210,6 +212,7 @@ describe('Performance Benchmark Tests', () => {
     it('should respond to /api/game-state within threshold', async () => {
       const duration = await measureTiming(async () => {
         const response = await fetch(`${BASE_URL}/api/game-state`);
+        assert.ok(response.status === 200 || response.status === 404, 'Game state should return 200 or 404');
         await response.json();
       });
       
@@ -224,6 +227,7 @@ describe('Performance Benchmark Tests', () => {
     it('should respond to /api/standings within threshold', async () => {
       const duration = await measureTiming(async () => {
         const response = await fetch(`${BASE_URL}/api/standings`);
+        assert.ok(response.status === 200 || response.status === 404, 'Standings should return 200 or 404');
         await response.json();
       });
       

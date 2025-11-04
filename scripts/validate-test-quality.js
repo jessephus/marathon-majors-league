@@ -326,22 +326,57 @@ function main() {
     
     // Top performers
     const sorted = allResults.sort((a, b) => b.score - a.score);
-    console.log(colorize('\n🏆 Best Tests:', 'green'));
-    sorted.slice(0, 3).forEach((result, i) => {
-      const fileName = result.file.split('/').pop();
-      console.log(colorize(`  ${i + 1}. ${fileName}: ${result.score}/100`, 'green'));
-    });
+    const perfect = sorted.filter(r => r.score === 100);
+    const good = sorted.filter(r => r.score >= 80 && r.score < 100);
+    const needsWork = sorted.filter(r => r.score < 80);
     
-    // Needs improvement
-    if (sorted[sorted.length - 1].score < 70) {
-      console.log(colorize('\n⚠️  Needs Improvement:', 'yellow'));
-      sorted.slice(-3).reverse().forEach((result, i) => {
+    if (perfect.length > 0) {
+      console.log(colorize(`\n✨ Perfect Tests (100/100): ${perfect.length}`, 'green'));
+      perfect.forEach(result => {
         const fileName = result.file.split('/').pop();
-        console.log(colorize(`  ${i + 1}. ${fileName}: ${result.score}/100`, 'yellow'));
+        console.log(colorize(`   ✓ ${fileName}`, 'green'));
       });
     }
     
+    if (good.length > 0) {
+      console.log(colorize(`\n✅ Good Tests (80-99/100): ${good.length}`, 'green'));
+      good.forEach(result => {
+        const fileName = result.file.split('/').pop();
+        console.log(`   • ${fileName}: ${result.score}/100`);
+      });
+    }
+    
+    if (needsWork.length > 0) {
+      console.log(colorize(`\n⚠️  Needs Improvement (<80/100): ${needsWork.length}`, 'yellow'));
+      needsWork.forEach(result => {
+        const fileName = result.file.split('/').pop();
+        console.log(colorize(`   • ${fileName}: ${result.score}/100`, 'yellow'));
+      });
+    }
+    
+    // Quick summary
+    console.log(colorize('\n📊 Quality Distribution:', 'cyan'));
+    console.log(`   Perfect (100):     ${colorize(perfect.length.toString(), 'green')}`);
+    console.log(`   Good (80-99):      ${good.length}`);
+    console.log(`   Needs Work (<80):  ${needsWork.length > 0 ? colorize(needsWork.length.toString(), 'yellow') : '0'}`);
+    
     console.log('\n' + '='.repeat(70) + '\n');
+  } else if (allResults.length === 1) {
+    // Single file analysis - show quick verdict
+    const score = allResults[0].score;
+    const fileName = allResults[0].file.split('/').pop();
+    
+    console.log(colorize('\n✨ Quick Verdict:', 'cyan'));
+    if (score === 100) {
+      console.log(colorize(`   ${fileName} is EXCELLENT! No improvements needed.`, 'green'));
+    } else if (score >= 80) {
+      console.log(colorize(`   ${fileName} is GOOD. Minor improvements suggested above.`, 'green'));
+    } else if (score >= 60) {
+      console.log(colorize(`   ${fileName} is OK. Review warnings above.`, 'yellow'));
+    } else {
+      console.log(colorize(`   ${fileName} NEEDS WORK. Address critical issues above.`, 'red'));
+    }
+    console.log();
   }
   
   // Exit code based on critical issues
