@@ -4,7 +4,7 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **26 total documents**.
+Our documentation is organized into **5 main categories** with **25 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
@@ -32,7 +32,6 @@ Learn how to join games, rank athletes, and follow live results.
 1. [Deployment Guide](CORE_DEPLOYMENT.md) - Deploy to Vercel
 2. [Neon Setup Guide](TECH_NEON_SETUP.md) - Configure database
 3. [Authentication Setup](SETUP_AUTHENTICATION.md) - Email/SMS services
-4. [Testing Guide](CORE_TESTING.md) - Verify everything works
 
 ### 💻 I Want to Contribute Code
 **Read these in order:**
@@ -40,7 +39,6 @@ Learn how to join games, rank athletes, and follow live results.
 2. [Architecture Guide](CORE_ARCHITECTURE.md) - System design
 3. [Game Modes Guide](FEATURE_GAME_MODES.md) - Understanding the codebase structure
 4. [Database Guide](TECH_DATABASE.md) - Data models and queries
-5. [Testing Guide](CORE_TESTING.md) - Testing procedures
 
 ---
 
@@ -54,7 +52,6 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_ARCHITECTURE.md](CORE_ARCHITECTURE.md)** | Technical architecture and system design | Understanding the codebase |
 | **[CORE_DEVELOPMENT.md](CORE_DEVELOPMENT.md)** | Local development setup and standards | Starting development work |
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
-| **[CORE_TESTING.md](CORE_TESTING.md)** | Testing procedures and best practices | Writing or running tests |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 
 ### 2️⃣ Technical Reference (Architecture & Data)
@@ -111,7 +108,6 @@ Learn how to join games, rank athletes, and follow live results.
 | Add new athletes | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) → Manual Process |
 | Run database migrations | [TECH_MIGRATION.md](TECH_MIGRATION.md) → Migration Guide |
 | Debug database issues | [TECH_DATABASE.md](TECH_DATABASE.md) → Troubleshooting |
-| Test before deployment | [CORE_TESTING.md](CORE_TESTING.md) → Pre-Deployment Checklist |
 
 ### Understanding Features
 
