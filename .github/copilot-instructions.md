@@ -14,25 +14,143 @@
 4. **This ensures Copilot maintains accurate project understanding over time**
 
 ### 📖 Documentation Maintenance Protocol
-- When adding new features → Update `README.md` features section and add feature-specific documentation
-- When modifying API endpoints → Update `ARCHITECTURE.md` technical documentation
-- When changing deployment process → Update `DEPLOYMENT.md`
-- When adding new functionality → Create specific documentation files (like `LIVE_RESULTS_FEATURE.md`)
-- When making breaking changes → Update `MIGRATION.md` and `CHANGELOG.md`
+
+**Golden Rule:** Documentation changes ALWAYS accompany code changes.
+
+#### When Adding New Features
+1. **During Development:**
+   - Create feature-specific doc if major (e.g., `NEW_FEATURE.md`)
+   - Update relevant existing docs (e.g., `ARCHITECTURE.md`, `USER_GUIDE.md`)
+   - Add code examples and usage instructions
+
+2. **Upon Completion:**
+   - Add summary to `CHANGELOG.md`
+   - Update main `README.md` if user-facing
+   - Add entry to `docs/README.md` index
+   - Cross-reference related documentation
+
+3. **After Maturity (3+ months):**
+   - Consider merging feature doc into parent guides
+   - Consolidate if redundant with other docs
+   - Keep only if feature is complex/standalone
+
+#### When Modifying Code
+- **API endpoints** → Update `ARCHITECTURE.md` and `AUTHENTICATION_API.md`
+- **Database schema** → Update `DATABASE.md` and `MIGRATION.md`
+- **Deployment process** → Update `DEPLOYMENT.md`
+- **UI/UX changes** → Update `USER_GUIDE.md` with screenshots
+- **Breaking changes** → Update `MIGRATION.md` and `CHANGELOG.md`
+- **Bug fixes** → Add to `CHANGELOG.md` (don't create new docs)
+
+#### Documentation Organization Rules
+
+**The /docs folder has 5 categories** (see `docs/README.md`):
+
+1. **Core Guides (6 docs)** - USER_GUIDE, ARCHITECTURE, DEVELOPMENT, DEPLOYMENT, TESTING, CHANGELOG
+   - These are permanent and should grow with the project
+   - Never delete these without team discussion
+
+2. **Technical Reference (5 docs)** - DATABASE, NEON_SETUP, MIGRATION, AUTHENTICATION_API, PERFORMANCE_OPTIMIZATION
+   - Keep these current with code changes
+   - Add sections, don't create new docs for minor updates
+
+3. **Features (6 docs)** - GAME_MODES, SALARY_CAP_DRAFT, POINTS_SCORING_SYSTEM, etc.
+   - Create new docs for major features only
+   - Merge into Core Guides after 6+ months if appropriate
+
+4. **Process & Maintenance (5 docs)** - CLEANUP_SUMMARY, CONSOLIDATION_RECOVERY, etc.
+   - These document project history and decisions
+   - Don't delete unless truly obsolete (>2 years old)
+
+5. **Setup & Authentication (3 docs)** - AUTHENTICATION_SETUP, PHASE_2_SUMMARY
+   - Configuration and setup guides
+   - Update when external services change
+
+#### Before Creating New Documentation
+
+**Ask these questions:**
+1. ✅ Is this a major feature worth standalone documentation? (If < 200 lines, probably no)
+2. ✅ Does this information already exist elsewhere? (Search existing docs first)
+3. ✅ Will this doc still be relevant in 6 months? (If no, add to CHANGELOG instead)
+4. ✅ Can this be a section in an existing doc? (Prefer enhancing over creating)
+
+**Create new doc only if all answers are YES**
+
+#### Documentation Lifecycle
+
+```
+Development → Feature Doc Created (e.g., NEW_FEATURE.md)
+     ↓
+Completion → Summary added to CHANGELOG.md
+     ↓
+Maturity (3-6 months) → Consider merging into parent guide
+     ↓
+Deprecation → Remove doc, keep summary in CHANGELOG
+```
+
+#### Quarterly Documentation Review Checklist
+
+Run this checklist every 3 months (or before major releases):
+
+- [ ] **Audit for redundancy** - Are any docs covering the same topics?
+- [ ] **Check for outdated content** - Do examples match current code?
+- [ ] **Verify all links work** - No broken internal references
+- [ ] **Update version references** - Remove outdated version numbers
+- [ ] **Remove obsolete docs** - Delete docs for removed features
+- [ ] **Merge mature feature docs** - Consolidate into parent guides
+- [ ] **Update docs/README.md** - Ensure all docs are indexed
+- [ ] **Check CHANGELOG.md** - Is it current with recent changes?
+
+#### Documentation Health Metrics
+
+Target state (check monthly):
+- **Total docs:** 20-30 files (current: 25 ✅)
+- **Orphaned docs:** 0 (not linked from docs/README.md)
+- **Outdated examples:** 0 (code examples match current API)
+- **Broken links:** 0 (all cross-references work)
+- **Redundant docs:** 0 (no duplicate content)
+
+#### What NOT to Document
+
+❌ **Don't create docs for:**
+- Small bug fixes (add to CHANGELOG.md instead)
+- UI tweaks (update USER_GUIDE.md)
+- Minor refactors (use git commit messages)
+- Implementation details (use code comments)
+- Temporary workarounds (add inline code comments)
+
+✅ **Do create docs for:**
+- Major new features (e.g., SALARY_CAP_DRAFT.md)
+- API changes (update AUTHENTICATION_API.md)
+- Architecture decisions (update ARCHITECTURE.md)
+- Migration guides (e.g., MIGRATION.md)
+- Complex workflows (e.g., SYNC_TOP_100.md)
 
 ## Required Documentation Reading
 
 ### 🔗 Key Documentation Files
 Before making any changes, read these files to understand the project:
 
+**Essential Reading (Read First):**
+- **[docs/README.md](../docs/README.md)** - **START HERE** - Complete documentation index and navigation guide
+- **[README.md](../README.md)** - Project overview, features, and quick start guide
 - **[ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - Complete technical architecture and system design
-- **[README.md](../README.md)** - Project overview, features, and quick start guide  
+- **[CHANGELOG.md](../docs/CHANGELOG.md)** - Version history with technical implementation notes
+
+**Core Development Docs:**
 - **[DEVELOPMENT.md](../docs/DEVELOPMENT.md)** - Development environment, code standards, and workflows
-- **[USER_GUIDE.md](../docs/USER_GUIDE.md)** - End-user documentation for players and commissioners
+- **[DATABASE.md](../docs/DATABASE.md)** - Schema reference, queries, and troubleshooting
 - **[DEPLOYMENT.md](../docs/DEPLOYMENT.md)** - Deployment instructions and configuration
-- **[LIVE_RESULTS_FEATURE.md](../docs/LIVE_RESULTS_FEATURE.md)** - Live results system documentation
+
+**User-Facing Documentation:**
+- **[USER_GUIDE.md](../docs/USER_GUIDE.md)** - End-user documentation for players and commissioners
+- **[GAME_MODES.md](../docs/GAME_MODES.md)** - Season League vs Single Race modes
+
+**Process Documentation:**
 - **[MIGRATION.md](../docs/MIGRATION.md)** - Database migration history and decisions
-- **[CHANGELOG.md](../docs/CHANGELOG.md)** - Project evolution and version history
+- **[CONSOLIDATION_RECOVERY.md](../docs/CONSOLIDATION_RECOVERY.md)** - Lessons from documentation cleanup
+
+**💡 Pro Tip:** Use `docs/README.md` as your documentation navigation hub. It's organized by role and includes quick reference tables.
 
 ## Project Overview
 
