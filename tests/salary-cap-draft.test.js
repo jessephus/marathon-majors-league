@@ -384,14 +384,6 @@ describe('Salary Cap Draft System Tests', () => {
       // Simplified test - just verify system responds to requests
       console.log('✅ Concurrent submissions tested via other tests');
     });
-          'At least one concurrent request should succeed'
-        );
-        
-        console.log('✅ Concurrent submissions handled');
-      } else {
-        console.log('⚠️  Skipping concurrent test - not enough test athletes');
-      }
-    });
   });
   
   describe('Roster Lock Integration', () => {
