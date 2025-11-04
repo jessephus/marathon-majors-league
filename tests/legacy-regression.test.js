@@ -18,8 +18,12 @@ describe('Legacy Feature Regression Tests', () => {
   describe('Legacy API Schema Compatibility', () => {
     it('should maintain athletes API schema structure', async () => {
       const response = await fetch(`${BASE_URL}/api/athletes`);
-      const athletes = await response.json();
       
+      // Should return 200 with DATABASE_URL configured
+      assert.strictEqual(response.status, 200, 
+        `Athletes API should return 200, got ${response.status}`);
+      
+      const athletes = await response.json();
       assert.ok(Array.isArray(athletes), 'Should return array');
       
       if (athletes.length > 0) {
@@ -443,8 +447,9 @@ describe('Legacy Feature Regression Tests', () => {
         assert.notStrictEqual(response.status, 404, 
           `BREAKING: Critical endpoint ${endpoint} was removed!`);
         
-        assert.ok(response.status < 500, 
-          `BREAKING: Critical endpoint ${endpoint} is broken!`);
+        // With DATABASE_URL configured, should return 200
+        assert.strictEqual(response.status, 200, 
+          `BREAKING: Critical endpoint ${endpoint} returned ${response.status} instead of 200!`);
       }
       
       console.log('✅ No breaking changes detected in critical endpoints');
@@ -452,6 +457,10 @@ describe('Legacy Feature Regression Tests', () => {
     
     it('should fail if athlete data structure changes unexpectedly', async () => {
       const response = await fetch(`${BASE_URL}/api/athletes`);
+      
+      assert.strictEqual(response.status, 200, 
+        'Athletes endpoint should return 200 with DATABASE_URL');
+      
       const athletes = await response.json();
       
       assert.ok(Array.isArray(athletes), 
