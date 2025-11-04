@@ -64,12 +64,32 @@ Welcome to the Fantasy NY Marathon documentation! This index helps you find the 
   - Performance impact
   - Usage examples
 
-## 🎮 Features
+## 🎮 Features & Game Modes
+
+- **[Game Modes Guide](GAME_MODES.md)** - Understanding Season League vs Single Race modes
+  - Season League (Ranking + Snake Draft)
+  - Single Race (Salary Cap Draft)
+  - Component boundaries and naming conventions
+  - Scoring system (shared between modes)
+
+- **[Salary Cap Draft Guide](SALARY_CAP_DRAFT.md)** - Daily fantasy-style team building
+  - How salary cap works
+  - Athlete pricing algorithm
+  - Strategic team building
+  - UI/UX details
+
+- **[Points Scoring System](POINTS_SCORING_SYSTEM.md)** - Complete scoring documentation
+  - Placement points
+  - Time gap bonuses
+  - Performance bonuses
+  - Record bonuses
 
 - **[Live Results Feature](LIVE_RESULTS_FEATURE.md)** - Real-time race result updates
   - Commissioner workflow
   - Player experience
   - Split timing support
+
+- **[Roster Lock Time](ROSTER_LOCK_TIME.md)** - Automatic roster locking at race time
 
 ## 🗄️ Database & Setup
 
