@@ -73,7 +73,7 @@ interface StateVersion {
 }
 
 // Event system types
-type StateEventType = 
+export type StateEventType = 
   | 'gameState:updated'
   | 'gameState:loaded'
   | 'session:created'
@@ -86,7 +86,7 @@ type StateEventType =
   | 'roster:locked'
   | 'cache:expired';
 
-type StateEventListener = (data?: any) => void;
+export type StateEventListener = (data?: any) => void;
 
 // Default TTL values (milliseconds)
 const DEFAULT_RESULTS_CACHE_TTL = 30000; // 30 seconds
