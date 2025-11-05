@@ -312,6 +312,34 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
   );
 }
 
+// Helper function to format time from milliseconds
+function formatTimeFromMs(ms: number): string {
+  if (!ms || ms <= 0) return '0:00:00';
+  
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  
+  if (hours > 0) {
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Helper function to convert pace from ms per meter to min/mile format
+function formatPacePerMile(msPerMeter: number): string {
+  if (!msPerMeter || msPerMeter <= 0) return 'N/A';
+  
+  // 1 mile = 1609.34 meters
+  const msPerMile = msPerMeter * 1609.34;
+  const totalSeconds = Math.floor(msPerMile / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  
+  return `${minutes}:${seconds.toString().padStart(2, '0')}/mi pace`;
+}
+
 // Helper function to render scoring breakdown
 function renderScoringBreakdown(scoringData: any) {
   const { totalPoints, breakdown, finishTime, placement, splits } = scoringData;
@@ -415,7 +443,7 @@ function renderScoringBreakdown(scoringData: any) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
             <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>
-              {medal} Placement Points
+              Placement Points
             </h3>
             <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary-blue)' }}>
               +{breakdown.placement.points}
@@ -434,7 +462,7 @@ function renderScoringBreakdown(scoringData: any) {
           borderLeft: '4px solid #10b981'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>⚡ Time Gap Bonus</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>Time Gap Bonus</h3>
             <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
               +{breakdown.time_gap.points}
             </span>
@@ -455,26 +483,56 @@ function renderScoringBreakdown(scoringData: any) {
           borderLeft: '4px solid #f59e0b'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>🏃 Performance Bonuses</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>Performance Bonuses</h3>
             <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
               +{breakdown.performance_bonuses.reduce((sum: number, b: any) => sum + b.points, 0)}
             </span>
           </div>
           {breakdown.performance_bonuses.map((bonus: any, idx: number) => {
-            const icon = bonus.type === 'NEGATIVE_SPLIT' ? '📈' : 
-                        bonus.type === 'EVEN_PACE' ? '⚖️' : 
-                        bonus.type === 'FAST_FINISH_KICK' ? '🚀' : '⭐';
+            // Format bonus details based on type
+            let detailsText = '';
+            if (bonus.details) {
+              if (bonus.type === 'NEGATIVE_SPLIT' && bonus.details.first_half_ms && bonus.details.second_half_ms) {
+                const firstHalf = formatTimeFromMs(bonus.details.first_half_ms);
+                const secondHalf = formatTimeFromMs(bonus.details.second_half_ms);
+                detailsText = `1st half: ${firstHalf} | 2nd half: ${secondHalf}`;
+              } else if (bonus.type === 'EVEN_PACE' && bonus.details.first_half_ms && bonus.details.second_half_ms) {
+                const firstHalf = formatTimeFromMs(bonus.details.first_half_ms);
+                const secondHalf = formatTimeFromMs(bonus.details.second_half_ms);
+                const diff = Math.abs(bonus.details.second_half_ms - bonus.details.first_half_ms);
+                const diffDisplay = formatTimeFromMs(diff);
+                detailsText = `1st half: ${firstHalf} | 2nd half: ${secondHalf} (±${diffDisplay})`;
+              } else if (bonus.type === 'FAST_FINISH_KICK') {
+                const sprintPace = bonus.details.final_sprint_pace_ms_per_m || bonus.details.last_5k_pace_ms_per_m;
+                const first40kPace = bonus.details.first_40k_pace_ms_per_m;
+                
+                if (sprintPace && first40kPace) {
+                  const finalSprintDistance = bonus.details.final_sprint_distance_km || 2.195;
+                  const finalSprintPace = formatPacePerMile(sprintPace);
+                  const first40kPaceFormatted = formatPacePerMile(first40kPace);
+                  detailsText = `Final ${finalSprintDistance.toFixed(2)}km: ${finalSprintPace} pace\nFirst 40km: ${first40kPaceFormatted} pace`;
+                }
+              }
+            }
+
             return (
               <div key={idx} style={{ 
-                display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+                padding: '8px 0',
                 borderBottom: idx < breakdown.performance_bonuses.length - 1 ? '1px solid #e2e8f0' : 'none'
               }}>
-                <span style={{ color: '#475569', fontSize: '14px' }}>
-                  {icon} {formatBonusName(bonus.type)}
-                </span>
-                <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '14px' }}>
-                  +{bonus.points}
-                </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: detailsText ? '4px' : '0' }}>
+                  <span style={{ color: '#475569', fontSize: '14px' }}>
+                    {formatBonusName(bonus.type)}
+                  </span>
+                  <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '14px' }}>
+                    +{bonus.points} pts
+                  </span>
+                </div>
+                {detailsText && (
+                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', whiteSpace: 'pre-line' }}>
+                    {detailsText}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -488,7 +546,7 @@ function renderScoringBreakdown(scoringData: any) {
           border: '2px solid #ffc107'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>🏆 Record Bonuses</h3>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>Record Bonuses</h3>
             <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
               +{breakdown.record_bonuses.reduce((sum: number, b: any) => sum + b.points, 0)}
             </span>
@@ -499,7 +557,7 @@ function renderScoringBreakdown(scoringData: any) {
               borderBottom: idx < breakdown.record_bonuses.length - 1 ? '1px solid #ffd966' : 'none'
             }}>
               <span style={{ color: '#475569', fontSize: '14px' }}>
-                🌎 {formatBonusName(record.type)}
+                {formatBonusName(record.type)}
                 {record.status === 'provisional' && ' (Provisional)'}
               </span>
               <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '14px' }}>
