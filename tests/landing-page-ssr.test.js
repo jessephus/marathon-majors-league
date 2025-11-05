@@ -277,6 +277,7 @@ describe('Landing Page SSR Tests', () => {
       assert.ok(hasScriptBundle, 'Should include Next.js script bundles');
       
       // Check for external scripts defined in index.js
+      // Note: This is checking rendered HTML content, not sanitizing URLs for security
       assert.ok(html.includes('cdn.tailwindcss.com'), 'Should include Tailwind CSS');
       assert.ok(html.includes('chart.js'), 'Should include Chart.js');
       
