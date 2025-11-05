@@ -60,7 +60,7 @@ async function fetchResults() {
 // ============================================================================
 
 import React, { useEffect } from 'react';
-import { useGameState, useSession, useStateEvent } from '@/lib/use-game-state';
+import { useGameState, useSession, useCommissioner, useStateEvent } from '@/lib/use-game-state';
 
 /**
  * Example 1: Basic Component with State Access
