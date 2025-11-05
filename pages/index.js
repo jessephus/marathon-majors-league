@@ -1,7 +1,50 @@
 import Head from 'next/head'
 import Script from 'next/script'
+import { useState, useEffect } from 'react'
+import WelcomeCard from '../components/WelcomeCard'
+import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
 
-export default function Home() {
+// Feature flag for new SSR WelcomeCard component
+const USE_NEW_WELCOME_CARD = process.env.NEXT_PUBLIC_USE_NEW_WELCOME_CARD === 'true';
+
+export async function getServerSideProps(context) {
+  const { req, query } = context;
+  
+  // Check for session token in URL
+  const sessionToken = getSessionFromURL(query);
+  
+  // Detect session type from cookies or localStorage (server-side)
+  // Note: localStorage is not available server-side, so we rely on cookies
+  const cookies = req.headers.cookie || '';
+  const sessionType = detectSessionType(cookies);
+  
+  return {
+    props: {
+      serverSessionType: sessionType,
+      hasURLSession: !!sessionToken,
+    },
+  };
+}
+
+export default function Home({ serverSessionType, hasURLSession }) {
+  const [clientSessionType, setClientSessionType] = useState(serverSessionType);
+  
+  // Client-side session detection (after hydration)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const detected = detectSessionType(document.cookie);
+      setClientSessionType(detected);
+    }
+  }, []);
+  
+  const handleCreateTeam = () => {
+    // Trigger the team creation modal (compatibility with existing app.js)
+    const modal = document.getElementById('team-creation-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  };
+  
   return (
     <>
       <Head>
@@ -9,6 +52,16 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Fantasy NY Marathon</title>
         <meta name="description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
+        
+        {/* Critical CSS for faster first paint */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+          .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+          header { background: linear-gradient(135deg, #ff6900 0%, #e05500 100%); color: white; padding: 1rem; text-align: center; }
+          header h1 { margin: 0; font-size: 2rem; }
+          .loading-spinner { animation: spin 1s linear infinite; }
+          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        `}} />
         
         {/* Favicons */}
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -39,41 +92,68 @@ export default function Home() {
       <Script src="/app.js" strategy="afterInteractive" />
       <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 
-      {/* Main HTML content from index.html */}
-      <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
+      {/* Conditionally render new WelcomeCard component or legacy HTML */}
+      {USE_NEW_WELCOME_CARD ? (
+        <div className="container">
+          {/* Initial Loading Overlay */}
+          <div id="app-loading-overlay" style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: '#fff', 
+            zIndex: 9999, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <h1 style={{ color: '#ff6900', marginBottom: '20px' }}>🗽 Fantasy NY Marathon</h1>
+            <div className="loading-spinner">Loading your experience...</div>
+          </div>
+          
+          <header>
+            <h1>🗽 Fantasy NY Marathon</h1>
+          </header>
+          
+          <main id="app">
+            {/* Landing Page with new WelcomeCard component */}
+            <div id="landing-page" className="page active">
+              <WelcomeCard 
+                sessionType={clientSessionType} 
+                onCreateTeam={handleCreateTeam}
+              />
+            </div>
+            
+            {/* Keep all other legacy pages/modals via dangerouslySetInnerHTML */}
+            <div dangerouslySetInnerHTML={{ __html: getLegacyPagesHTML() }} />
+          </main>
+          
+          <footer>
+            <div className="footer-actions">
+              <button id="home-button" className="btn btn-secondary">Home</button>
+              <button id="commissioner-mode" className="btn btn-secondary">Commissioner Mode</button>
+              <div className="game-switcher">
+                <label htmlFor="game-select">Game: </label>
+                <select id="game-select" className="game-select">
+                  <option value="default">Default Game</option>
+                  <option value="demo-game">Demo Game</option>
+                </select>
+              </div>
+            </div>
+            <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
+          </footer>
+        </div>
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
+      )}
     </>
   )
 }
 
-function getMainHTML() {
+function getLegacyPagesHTML() {
   return `
-    <div class="container">
-        <!-- Initial Loading Overlay -->
-        <div id="app-loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h1 style="color: #ff6900; margin-bottom: 20px;">🗽 Fantasy NY Marathon</h1>
-            <div class="loading-spinner">Loading your experience...</div>
-        </div>
-        
-        <header>
-            <h1>🗽 Fantasy NY Marathon</h1>
-        </header>
-
-        <main id="app">
-            <!-- Landing Page -->
-            <div id="landing-page" class="page active">
-                <div class="welcome-card">
-                    <h2>Welcome to the Fantasy NY Marathon!</h2>
-                    <p>Compete with friends by drafting elite marathon runners.</p>
-                    
-                    <!-- Team Creation for Visitors -->
-                    <div class="create-team-section">
-                        <h3>🏃‍♂️ Join the Competition</h3>
-                        <p>Create your team and draft elite runners - no registration required!</p>
-                        <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Team Creation Modal -->
             <div id="team-creation-modal" class="modal" style="display: none;">
                 <div class="modal-overlay"></div>
@@ -961,6 +1041,57 @@ function getMainHTML() {
             </div>
         </div>
 
+        <footer>
+            <div class="footer-actions">
+                <button id="home-button" class="btn btn-secondary">Home</button>
+                <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
+                <div class="game-switcher">
+                    <label for="game-select">Game: </label>
+                    <select id="game-select" class="game-select">
+                        <option value="default">Default Game</option>
+                        <option value="demo-game">Demo Game</option>
+                    </select>
+                </div>
+            </div>
+            <p class="footer-copyright">Marathon Majors League &copy; 2025</p>
+        </footer>
+    </div>
+  `;
+}
+
+// Original HTML with landing page (used when feature flag is false)
+function getMainHTML() {
+  return `
+    <div class="container">
+        <!-- Initial Loading Overlay -->
+        <div id="app-loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <h1 style="color: #ff6900; margin-bottom: 20px;">🗽 Fantasy NY Marathon</h1>
+            <div class="loading-spinner">Loading your experience...</div>
+        </div>
+        
+        <header>
+            <h1>🗽 Fantasy NY Marathon</h1>
+        </header>
+
+        <main id="app">
+            <!-- Landing Page -->
+            <div id="landing-page" class="page active">
+                <div class="welcome-card">
+                    <h2>Welcome to the Fantasy NY Marathon!</h2>
+                    <p>Compete with friends by drafting elite marathon runners.</p>
+                    
+                    <!-- Team Creation for Visitors -->
+                    <div class="create-team-section">
+                        <h3>🏃‍♂️ Join the Competition</h3>
+                        <p>Create your team and draft elite runners - no registration required!</p>
+                        <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
+                    </div>
+                </div>
+            </div>
+            
+            ${getLegacyPagesHTML()}
+        </main>
+        
         <footer>
             <div class="footer-actions">
                 <button id="home-button" class="btn btn-secondary">Home</button>
