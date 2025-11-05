@@ -155,3 +155,4 @@ test-*.html
 .env
 .env.local
 .env*.local
+.test-build/
