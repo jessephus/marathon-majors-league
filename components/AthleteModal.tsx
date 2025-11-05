@@ -312,6 +312,19 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
   );
 }
 
+// Helper function to format time gap with sub-second precision
+function formatTimeGap(gapSeconds: number): string {
+  if (!gapSeconds || gapSeconds <= 0) return '0.00s';
+  
+  if (gapSeconds < 60) {
+    return `${gapSeconds.toFixed(2)}s`;
+  } else {
+    const minutes = Math.floor(gapSeconds / 60);
+    const seconds = (gapSeconds % 60).toFixed(2);
+    return `${minutes}:${seconds.padStart(5, '0')}`;
+  }
+}
+
 // Helper function to format time from milliseconds
 function formatTimeFromMs(ms: number): string {
   if (!ms || ms <= 0) return '0:00:00';
@@ -468,7 +481,7 @@ function renderScoringBreakdown(scoringData: any) {
             </span>
           </div>
           <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
-            Finished <strong>0.00s</strong> behind winner
+            Finished <strong>{formatTimeGap(breakdown.time_gap.gap_seconds)}</strong> behind winner
             {breakdown.time_gap.window && (
               <><br /><em>Within {breakdown.time_gap.window.max_gap_seconds}s threshold</em></>
             )}
