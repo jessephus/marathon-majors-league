@@ -103,7 +103,18 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: 
                     <img 
                       src={athlete.headshotUrl || (athlete.gender === 'men' ? '/images/man-runner.png' : '/images/woman-runner.png')} 
                       alt={athlete.name} 
-                      className="masthead-photo" 
+                      className="masthead-photo"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        console.log('Image failed to load:', target.src);
+                        console.log('Athlete gender:', athlete.gender);
+                        const fallback = athlete.gender === 'men' ? '/images/man-runner.png' : '/images/woman-runner.png';
+                        console.log('Setting fallback to:', fallback);
+                        // Prevent infinite loop if fallback also fails
+                        if (target.src !== window.location.origin + fallback) {
+                          target.src = fallback;
+                        }
+                      }}
                     />
                     <div className="masthead-flag">
                       <span className="flag-emoji">{getCountryFlag(athlete.country)}</span>
