@@ -38,7 +38,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
 
     try {
       const result = await apiClient.commissioner.verifyTOTP(totpCode);
-      if (result.valid) {
+      if (result.success) {
         setCommissionerState({
           isCommissioner: true,
           loginTime: new Date().toISOString(),
@@ -77,7 +77,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
           </header>
 
           <main className="page active">
-            <div className="modal" style={{ display: 'block' }}>
+            <div className="modal" style={{ display: 'flex' }}>
               <div className="modal-overlay"></div>
               <div className="modal-content">
                 <h2>Commissioner Login</h2>

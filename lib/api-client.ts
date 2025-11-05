@@ -206,10 +206,17 @@ export const commissionerApi = {
   /**
    * Verify TOTP code
    */
-  async verifyTOTP(code: string) {
-    return apiRequest<{ valid: boolean; token?: string }>('/api/auth/totp/verify', {
+  async verifyTOTP(code: string, email?: string) {
+    return apiRequest<{ 
+      success: boolean; 
+      message?: string;
+      user?: { id: number; email: string };
+    }>('/api/auth/totp/verify', {
       method: 'POST',
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ 
+        email: email || 'commissioner@marathonmajorsfantasy.com', // Legacy default email
+        totpCode: code 
+      }),
     });
   },
 

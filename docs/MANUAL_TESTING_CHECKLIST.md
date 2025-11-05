@@ -81,12 +81,12 @@ Restart server after creating env file.
 **URL:** `http://localhost:3000/commissioner`
 
 **Expected Behavior:**
-- [ ] Page renders without errors
-- [ ] TOTP login modal displays (if not authenticated)
-- [ ] Modal has 6-digit code input field
-- [ ] Input accepts numbers only (maxLength=6, pattern="[0-9]{6}")
+- [x] Page renders without errors
+- [x] TOTP login modal displays (if not authenticated)
+- [x] Modal has 6-digit code input field
+- [x] Input accepts numbers only (maxLength=6, pattern="[0-9]{6}")
 - [ ] Submit attempts TOTP verification
-- [ ] Cancel button redirects to home
+- [x] Cancel button redirects to home
 
 **After Authentication (requires valid TOTP):**
 - [ ] Dashboard displays with sections:
