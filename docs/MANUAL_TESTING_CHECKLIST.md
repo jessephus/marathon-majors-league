@@ -40,19 +40,19 @@ Restart server after creating env file.
 **URL:** `http://localhost:3000/landing`
 
 **Expected Behavior:**
-- [ ] Page renders without errors
-- [ ] Header shows "🗽 Fantasy NY Marathon"
-- [ ] Welcome card displays
-- [ ] "Create a New Team" button is visible
-- [ ] Clicking button opens team creation modal
-- [ ] Modal has team name and owner name inputs
-- [ ] Can submit form with team name (requires API)
-- [ ] Error handling works (empty team name)
+- [x] Page renders without errors
+- [x] Header shows "🗽 Fantasy NY Marathon"
+- [x] Welcome card displays
+- [x] "Create a New Team" button is visible
+- [x] Clicking button opens team creation modal
+- [x] Modal has team name and owner name inputs
+- [x] Can submit form with team name (requires API)
+- [x] Error handling works (empty team name)
 
 **Session URL Test:**
-- [ ] Navigate to `/landing?token=test-token`
-- [ ] Page should attempt to verify session
-- [ ] Invalid token shows appropriate state
+- [x] Navigate to `/landing?token=test-token`
+- [x] Page should attempt to verify session
+- [x] Invalid token shows appropriate state
 
 ---
 
@@ -61,18 +61,18 @@ Restart server after creating env file.
 **URL:** `http://localhost:3000/leaderboard`
 
 **Expected Behavior:**
-- [ ] Page renders without errors
-- [ ] "Leaderboard" heading displays
-- [ ] Two tabs: "Fantasy Standings" and "Race Results"
-- [ ] Tab switching works (no errors in console)
-- [ ] Empty state shows: "No teams yet..."
-- [ ] Auto-refresh indicator displays
-- [ ] Back button navigates to previous page
+- [x] Page renders without errors
+- [x] "Leaderboard" heading displays
+- [x] Two tabs: "Fantasy Standings" and "Race Results"
+- [x] Tab switching works (no errors in console)
+- [x] Empty state shows: "No teams yet..."
+- [x] Auto-refresh indicator displays
+- [x] Back button navigates to previous page
 
 **With gameId:**
-- [ ] Navigate to `/leaderboard?gameId=test`
-- [ ] Page loads with same UI
-- [ ] API call attempts to fetch results for gameId
+- [x] Navigate to `/leaderboard?gameId=test`
+- [x] Page loads with same UI
+- [x] API call attempts to fetch results for gameId
 
 ---
 

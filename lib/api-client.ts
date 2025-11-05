@@ -119,15 +119,17 @@ export const sessionApi = {
     return apiRequest<{
       valid: boolean;
       session?: {
-        token: string;
-        teamName: string;
-        playerCode: string;
-        ownerName: string | null;
+        id: string;
+        type: string;
+        gameId: string | null;
+        playerCode: string | null;
+        displayName: string | null;
         expiresAt: string;
+        daysUntilExpiry: number;
       };
-    }>('/api/session/verify', {
-      method: 'POST',
-      body: JSON.stringify({ token }),
+      warning?: string | null;
+    }>(`/api/session/verify?token=${encodeURIComponent(token)}`, {
+      method: 'GET',
     });
   },
 };

@@ -41,9 +41,14 @@ function LandingPageContent({ hasSession, sessionToken }: LandingPageProps) {
         setSessionState(result.session);
         // Redirect to draft page
         router.push(`/team/${token}`);
+      } else {
+        // Session exists but is invalid (expired or inactive)
+        setError('Your session has expired. Please create a new team.');
       }
     } catch (err) {
       console.error('Session verification failed:', err);
+      // Session not found or other error - user can create new team
+      setError('Invalid session link. You can create a new team below.');
     }
   }
 
@@ -80,6 +85,19 @@ function LandingPageContent({ hasSession, sessionToken }: LandingPageProps) {
           <div className="welcome-card">
             <h2>Welcome to the Fantasy NY Marathon!</h2>
             <p>Compete with friends by drafting elite marathon runners.</p>
+            
+            {error && (
+              <div className="error-message" style={{ 
+                backgroundColor: '#fee', 
+                border: '1px solid #fcc',
+                borderRadius: '4px',
+                padding: '1rem', 
+                marginBottom: '1.5rem',
+                color: '#c00'
+              }}>
+                ⚠️ {error}
+              </div>
+            )}
             
             <div className="create-team-section">
               <h3>🏃‍♂️ Join the Competition</h3>
