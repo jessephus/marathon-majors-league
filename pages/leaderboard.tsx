@@ -15,7 +15,7 @@ import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-pro
 import { useStateManagerEvent } from '@/lib/use-state-manager';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
-import PointsModal from '@/components/PointsModal';
+import AthleteModal from '@/components/AthleteModal';
 
 interface LeaderboardPageProps {
   gameId: string;
@@ -39,11 +39,10 @@ function LeaderboardPageContent({
   const [results, setResults] = useState(initialResults);
   const [lastUpdate, setLastUpdate] = useState(cacheTimestamp);
   
-  // Points modal state
-  const [pointsModal, setPointsModal] = useState<{
-    athleteName: string;
-    totalPoints: number;
-    breakdown: any;
+  // Points modal state - using AthleteModal instead of simple modal
+  const [selectedAthlete, setSelectedAthlete] = useState<{
+    athlete: any;
+    scoringData: any;
   } | null>(null);
 
   // Visibility tracking
@@ -176,15 +175,43 @@ function LeaderboardPageContent({
     console.log('Clicked player:', playerCode);
   };
 
-  // Handle athlete click - show points breakdown
+  // Handle athlete click - show athlete modal with scoring
   const handleAthleteClick = (result: any) => {
-    if (result.breakdown) {
-      setPointsModal({
-        athleteName: result.athlete_name,
+    // Convert result data to athlete format
+    const athleteData = {
+      id: result.athlete_id,
+      name: result.athlete_name,
+      country: result.country || '',
+      gender: result.gender || 'men',
+      pb: result.personal_best || result.pb || '',
+      headshotUrl: result.headshot_url,
+      worldAthleticsId: result.world_athletics_id,
+      marathonRank: result.marathon_rank,
+      roadRunningRank: result.road_running_rank,
+      overallRank: result.overall_rank,
+      age: result.age,
+      dateOfBirth: result.date_of_birth,
+      sponsor: result.sponsor,
+      seasonBest: result.season_best,
+    };
+
+    setSelectedAthlete({
+      athlete: athleteData,
+      scoringData: {
         totalPoints: result.total_points || 0,
         breakdown: result.breakdown,
-      });
-    }
+        finishTime: result.finish_time,
+        placement: result.placement,
+        splits: {
+          split_5k: result.split_5k,
+          split_10k: result.split_10k,
+          split_half: result.split_half,
+          split_30k: result.split_30k,
+          split_35k: result.split_35k,
+          split_40k: result.split_40k,
+        },
+      },
+    });
   };
 
   // Current player code - prefer playerCode, fallback to teamName for backwards compatibility
@@ -317,15 +344,14 @@ function LeaderboardPageContent({
         </footer>
       </div>
 
-      {/* Points Breakdown Modal */}
-      {pointsModal && (
-        <PointsModal
-          athleteName={pointsModal.athleteName}
-          totalPoints={pointsModal.totalPoints}
-          breakdown={pointsModal.breakdown}
-          onClose={() => setPointsModal(null)}
-        />
-      )}
+      {/* Athlete Modal with Scoring */}
+      <AthleteModal
+        athlete={selectedAthlete?.athlete || null}
+        isOpen={!!selectedAthlete}
+        onClose={() => setSelectedAthlete(null)}
+        showScoring={true}
+        scoringData={selectedAthlete?.scoringData}
+      />
     </>
   );
 }

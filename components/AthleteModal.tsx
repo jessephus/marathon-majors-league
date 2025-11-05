@@ -15,6 +15,20 @@ interface AthleteModalProps {
   isOpen: boolean;
   onClose: () => void;
   showScoring?: boolean;
+  scoringData?: {
+    totalPoints: number;
+    breakdown: any;
+    finishTime?: string;
+    placement?: number;
+    splits?: {
+      split_5k?: string;
+      split_10k?: string;
+      split_half?: string;
+      split_30k?: string;
+      split_35k?: string;
+      split_40k?: string;
+    };
+  };
 }
 
 interface AthleteDetailedData extends Athlete {
@@ -35,10 +49,19 @@ interface AthleteDetailedData extends Athlete {
   }>;
 }
 
-function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: AthleteModalProps) {
-  const [activeTab, setActiveTab] = useState<'bio' | 'raceLog' | 'progression' | 'news'>('bio');
+function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, scoringData }: AthleteModalProps) {
+  const [activeTab, setActiveTab] = useState<'bio' | 'raceLog' | 'progression' | 'news' | 'scoring'>('bio');
   const [detailedData, setDetailedData] = useState<AthleteDetailedData | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // If showScoring is true, default to scoring tab
+  useEffect(() => {
+    if (showScoring && scoringData) {
+      setActiveTab('scoring');
+    } else {
+      setActiveTab('bio');
+    }
+  }, [showScoring, scoringData, isOpen]);
 
   useEffect(() => {
     if (!isOpen || !athlete) return;
@@ -156,30 +179,41 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: 
             {/* Tabs Navigation */}
             <div className="tabs-container">
               <div className="tabs-nav">
-                <button
-                  className={`tab-button ${activeTab === 'bio' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('bio')}
-                >
-                  Overview
-                </button>
-                <button
-                  className={`tab-button ${activeTab === 'raceLog' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('raceLog')}
-                >
-                  Race Log
-                </button>
-                <button
-                  className={`tab-button ${activeTab === 'progression' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('progression')}
-                >
-                  Progression
-                </button>
-                <button
-                  className={`tab-button ${activeTab === 'news' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('news')}
-                >
-                  News
-                </button>
+                {showScoring && scoringData ? (
+                  <button
+                    className={`tab-button ${activeTab === 'scoring' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('scoring')}
+                  >
+                    Scoring Breakdown
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className={`tab-button ${activeTab === 'bio' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('bio')}
+                    >
+                      Overview
+                    </button>
+                    <button
+                      className={`tab-button ${activeTab === 'raceLog' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('raceLog')}
+                    >
+                      Race Log
+                    </button>
+                    <button
+                      className={`tab-button ${activeTab === 'progression' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('progression')}
+                    >
+                      Progression
+                    </button>
+                    <button
+                      className={`tab-button ${activeTab === 'news' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('news')}
+                    >
+                      News
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -264,17 +298,217 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false }: 
                   <p className="empty-state-message">Recent news will be available in a future update</p>
                 </div>
               )}
-            </div>
 
-            {showScoring && (
-              <div className="athlete-scoring-info">
-                <h3>Points Breakdown</h3>
-                <p className="empty-state-message">Scoring details will appear during the race</p>
-              </div>
-            )}
+              {activeTab === 'scoring' && scoringData && (
+                <div className="tab-panel">
+                  {renderScoringBreakdown(scoringData)}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// Helper function to render scoring breakdown
+function renderScoringBreakdown(scoringData: any) {
+  const { totalPoints, breakdown, finishTime, placement, splits } = scoringData;
+
+  // Check for DNS/DNF
+  const hasSomeSplits = splits && (splits.split_5k || splits.split_10k || splits.split_half || 
+                                   splits.split_30k || splits.split_35k || splits.split_40k);
+  const isDNS = !finishTime && !hasSomeSplits;
+  const isDNF = !finishTime && hasSomeSplits;
+
+  const getOrdinal = (n: number): string => {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  const formatBonusName = (type: string): string => {
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+  };
+
+  if (isDNS) {
+    return (
+      <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+          color: 'white', padding: '16px 24px', borderRadius: '8px', marginBottom: '24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px'
+        }}>
+          <div style={{ fontSize: '32px' }}>⚠️</div>
+          <div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>DNS</div>
+            <div style={{ fontSize: '14px', opacity: 0.95 }}>Did Not Start</div>
+          </div>
+        </div>
+        <div style={{ background: '#fff5f5', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #e74c3c' }}>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '14px', lineHeight: 1.6 }}>
+            This athlete was confirmed for the race but did not cross the starting line.
+          </p>
+        </div>
+        <div style={{ marginTop: '24px', padding: '16px', background: '#f8fafc', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Points Earned</div>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#94a3b8' }}>0</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDNF) {
+    return (
+      <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white', padding: '16px 24px', borderRadius: '8px', marginBottom: '24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px'
+        }}>
+          <div style={{ fontSize: '32px' }}>🛑</div>
+          <div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>DNF</div>
+            <div style={{ fontSize: '14px', opacity: 0.95 }}>Did Not Finish</div>
+          </div>
+        </div>
+        <div style={{ background: '#fff5f5', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #e74c3c' }}>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '14px', lineHeight: 1.6 }}>
+            This athlete started the race but did not cross the finish line.
+          </p>
+        </div>
+        <div style={{ marginTop: '24px', padding: '16px', background: '#f8fafc', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '14px', color: '#64748b', marginBottom: '8px' }}>Points Earned</div>
+          <div style={{ fontSize: '48px', fontWeight: 'bold', color: '#94a3b8' }}>0</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!breakdown || totalPoints === 0) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <p style={{ color: '#64748b', fontSize: '16px' }}>No scoring data available for this athlete yet.</p>
+      </div>
+    );
+  }
+
+  const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+
+  return (
+    <div style={{ padding: '24px', maxWidth: '600px', margin: '0 auto' }}>
+      {/* Total Points */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%)',
+        color: 'white', padding: '24px', borderRadius: '12px', marginBottom: '24px', textAlign: 'center'
+      }}>
+        <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>TOTAL POINTS</div>
+        <div style={{ fontSize: '48px', fontWeight: 'bold' }}>{totalPoints}</div>
+      </div>
+
+      {/* Placement Points */}
+      {breakdown.placement && breakdown.placement.points > 0 && (
+        <div style={{ 
+          background: '#f8fafc', padding: '20px', borderRadius: '8px', marginBottom: '16px',
+          borderLeft: '4px solid var(--primary-blue)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>
+              {medal} Placement Points
+            </h3>
+            <span style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--primary-blue)' }}>
+              +{breakdown.placement.points}
+            </span>
+          </div>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
+            Finished in <strong>{getOrdinal(breakdown.placement.position)}</strong> place
+          </p>
+        </div>
+      )}
+
+      {/* Time Gap Bonus */}
+      {breakdown.time_gap && breakdown.time_gap.points > 0 && (
+        <div style={{ 
+          background: '#f8fafc', padding: '20px', borderRadius: '8px', marginBottom: '16px',
+          borderLeft: '4px solid #10b981'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>⚡ Time Gap Bonus</h3>
+            <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
+              +{breakdown.time_gap.points}
+            </span>
+          </div>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
+            Finished <strong>0.00s</strong> behind winner
+            {breakdown.time_gap.window && (
+              <><br /><em>Within {breakdown.time_gap.window.max_gap_seconds}s threshold</em></>
+            )}
+          </p>
+        </div>
+      )}
+
+      {/* Performance Bonuses */}
+      {breakdown.performance_bonuses && breakdown.performance_bonuses.length > 0 && (
+        <div style={{ 
+          background: '#f8fafc', padding: '20px', borderRadius: '8px', marginBottom: '16px',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>🏃 Performance Bonuses</h3>
+            <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
+              +{breakdown.performance_bonuses.reduce((sum: number, b: any) => sum + b.points, 0)}
+            </span>
+          </div>
+          {breakdown.performance_bonuses.map((bonus: any, idx: number) => {
+            const icon = bonus.type === 'NEGATIVE_SPLIT' ? '📈' : 
+                        bonus.type === 'EVEN_PACE' ? '⚖️' : 
+                        bonus.type === 'FAST_FINISH_KICK' ? '🚀' : '⭐';
+            return (
+              <div key={idx} style={{ 
+                display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+                borderBottom: idx < breakdown.performance_bonuses.length - 1 ? '1px solid #e2e8f0' : 'none'
+              }}>
+                <span style={{ color: '#475569', fontSize: '14px' }}>
+                  {icon} {formatBonusName(bonus.type)}
+                </span>
+                <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '14px' }}>
+                  +{bonus.points}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Record Bonuses */}
+      {breakdown.record_bonuses && breakdown.record_bonuses.length > 0 && (
+        <div style={{ 
+          background: '#fff3cd', padding: '20px', borderRadius: '8px', marginBottom: '16px',
+          border: '2px solid #ffc107'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#334155' }}>🏆 Record Bonuses</h3>
+            <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#f59e0b' }}>
+              +{breakdown.record_bonuses.reduce((sum: number, b: any) => sum + b.points, 0)}
+            </span>
+          </div>
+          {breakdown.record_bonuses.map((record: any, idx: number) => (
+            <div key={idx} style={{ 
+              display: 'flex', justifyContent: 'space-between', padding: '8px 0',
+              borderBottom: idx < breakdown.record_bonuses.length - 1 ? '1px solid #ffd966' : 'none'
+            }}>
+              <span style={{ color: '#475569', fontSize: '14px' }}>
+                🌎 {formatBonusName(record.type)}
+                {record.status === 'provisional' && ' (Provisional)'}
+              </span>
+              <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '14px' }}>
+                +{record.points}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
