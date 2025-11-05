@@ -14,14 +14,18 @@ export interface Athlete {
   name: string;
   country: string;
   gender: string;
-  personal_best: string;
-  headshot_url?: string;
-  world_athletics_id?: string;
+  pb: string; // API returns "pb" not "personal_best"
+  headshotUrl?: string; // camelCase to match API
+  worldAthleticsId?: string; // camelCase to match API
   salary?: number;
-  // Extended fields
-  marathon_rank?: number;
+  // Extended fields (all camelCase to match API)
+  marathonRank?: number;
+  roadRunningRank?: number;
+  overallRank?: number;
   age?: number;
+  dateOfBirth?: string;
   sponsor?: string;
+  seasonBest?: string;
 }
 
 export interface PlayerRanking {

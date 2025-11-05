@@ -100,16 +100,34 @@ export const sessionApi = {
    * Create a new team session
    */
   async create(teamName: string, ownerName?: string, gameId: string = 'default') {
-    return apiRequest<{
-      token: string;
-      teamName: string;
-      playerCode: string;
-      ownerName: string | null;
-      expiresAt: string;
+    const response = await apiRequest<{
+      message: string;
+      session: {
+        token: string;
+        expiresAt: string;
+        sessionType: string;
+        displayName: string | null;
+        gameId: string | null;
+      };
+      uniqueUrl: string;
+      instructions: string;
     }>('/api/session/create', {
       method: 'POST',
-      body: JSON.stringify({ teamName, ownerName, gameId }),
+      body: JSON.stringify({ 
+        displayName: teamName,
+        sessionType: 'player',
+        gameId 
+      }),
     });
+    
+    // Transform API response to match SessionState interface
+    return {
+      token: response.session.token,
+      teamName: response.session.displayName || teamName,
+      playerCode: null, // Generated later when joining game
+      ownerName: ownerName || null,
+      expiresAt: response.session.expiresAt,
+    };
   },
 
   /**

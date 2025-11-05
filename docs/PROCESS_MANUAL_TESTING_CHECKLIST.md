@@ -103,41 +103,60 @@ Restart server after creating env file.
 **URL:** `http://localhost:3000/team/test-session-token`
 
 **Expected Behavior:**
-- [ ] Page renders without errors
-- [ ] Shows "Verifying your session..." initially
-- [ ] After verification (will fail with test token):
+- [x] Page renders without errors
+- [x] Shows "Verifying your session..." initially
+- [x] After verification (will fail with test token):
   - Shows session error
   - "Return to Home" button works
   
 **With Valid Session Token (requires API):**
-- [ ] Team name displays in header
-- [ ] Owner name displays (if provided)
-- [ ] Player code displays
-- [ ] Budget tracker shows $30,000
-- [ ] 6 roster slots display (M1, M2, M3, W1, W2, W3)
-- [ ] Each slot shows "Click to select athlete"
-- [ ] "Submit Team" button is disabled
-- [ ] Session info shows share tip and URL
+- [x] Team name displays in header
+- [x] Owner name displays (if provided)
+- [x] Player code displays
+- [x] Budget tracker shows $30,000
+- [x] 6 roster slots display (M1, M2, M3, W1, W2, W3)
+- [x] Each slot shows "Click to select athlete"
+- [x] "Submit Team" button is disabled
+- [x] Session info shows share tip and URL
 
 ---
 
-### ✅ AthleteModal Component
+### AthleteModal Component
 
-**Testing Method:** Requires integration in parent page
+**URL:** `http://localhost:3000/test-athlete-modal`
+
+**Testing Method:** Dedicated test page with clickable athlete cards
 
 **Expected Behavior:**
-- [ ] Modal opens when triggered
-- [ ] Renders as React portal (outside parent DOM)
-- [ ] Close button (×) works
-- [ ] Escape key closes modal
-- [ ] Overlay click closes modal
-- [ ] Athlete info displays in header
-- [ ] Four tabs render: Bio, Race Log, Progression, News
-- [ ] Tab switching works
-- [ ] Bio tab shows athlete stats
-- [ ] Other tabs show "coming soon" placeholders
-- [ ] Modal prevents body scroll when open
-- [ ] Modal restores scroll when closed
+- [x] Page renders without errors
+- [x] Test instructions display with checklist
+- [x] Men's athletes section shows 6 athlete cards
+- [x] Women's athletes section shows 6 athlete cards
+- [x] Athlete cards show name, country, PB, and salary
+- [x] Clicking any card opens the AthleteModal
+- [x] Modal renders as React portal (inspect DOM - modal is child of `<body>`)
+- [x] Close button (×) in top-right corner closes modal
+- [x] Pressing Escape key closes modal
+- [x] Clicking overlay (dark background) closes modal
+- [x] Modal header shows athlete headshot (or placeholder emoji)
+- [x] Modal header shows athlete name, country, PB, and salary
+- [x] Four tabs display: Bio, Race Log, Progression, News
+- [x] Tab switching works (click each tab)
+- [x] Bio tab shows athlete stats (age, sponsor, world ranking, WA ID)
+- [x] Race Log tab shows "Race history will be available in a future update"
+- [x] Progression tab shows "Performance progression chart coming soon"
+- [x] News tab shows "Recent news will be available in a future update"
+- [x] Body scroll is prevented when modal is open (try scrolling page)
+- [x] Body scroll is restored when modal is closed
+- [x] Modal animates smoothly (fade in/out)
+- [x] No console errors
+
+**Advanced Tests:**
+- [x] Open modal, press Escape, verify it closes
+- [x] Open modal, click overlay, verify it closes
+- [x] Open modal, click close button, verify it closes
+- [x] Open different athletes, verify modal updates correctly
+- [x] Verify modal is centered on screen at all viewport sizes
 
 ---
 

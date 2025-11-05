@@ -30,7 +30,14 @@ function TeamSessionPageContent({ sessionToken }: TeamSessionPageProps) {
       try {
         const result = await apiClient.session.verify(sessionToken);
         if (result.valid && result.session) {
-          setSessionState(result.session);
+          // Transform API response to match SessionState interface
+          setSessionState({
+            token: sessionToken,
+            teamName: result.session.displayName || 'My Team',
+            playerCode: result.session.playerCode || null,
+            ownerName: null, // Not provided by API yet
+            expiresAt: result.session.expiresAt,
+          });
           setSessionValid(true);
         } else {
           setError('Invalid or expired session');
@@ -123,77 +130,71 @@ function TeamSessionPageContent({ sessionToken }: TeamSessionPageProps) {
         </header>
 
         <main className="page active" id="salary-cap-draft-page">
-          <div className="team-header">
-            <h2>{sessionState.teamName}</h2>
-            {sessionState.ownerName && (
-              <p className="team-owner">Owner: {sessionState.ownerName}</p>
-            )}
-            <p className="player-code">Player Code: {sessionState.playerCode}</p>
+          {/* Draft Header with Team Info and Budget */}
+          <div className="draft-header">
+            <div className="team-info">
+              <div className="team-avatar-placeholder">
+                <div className="avatar-circle">
+                  <div className="avatar-initials">
+                    {sessionState.teamName ? sessionState.teamName.charAt(0).toUpperCase() : 'T'}
+                  </div>
+                </div>
+              </div>
+              <div className="team-name-display">
+                <div className="team-name-label">Your Team</div>
+                <div className="team-name-value">{sessionState.teamName}</div>
+              </div>
+            </div>
+            
+            <div className="draft-budget-compact">
+              <div className="budget-metric">
+                <div className="metric-value budget-remaining" id="budget-remaining">$30,000</div>
+                <div className="metric-label">Remaining</div>
+              </div>
+            </div>
           </div>
 
-          <div className="draft-interface">
-            <div className="budget-tracker">
-              <h3>Salary Cap Budget</h3>
-              <div className="budget-display">
-                <span className="budget-label">Remaining:</span>
-                <span className="budget-amount" id="budget-remaining">$30,000</span>
-              </div>
-            </div>
-
-            <div className="roster-section">
-              <h3>Your Roster (0/6 filled)</h3>
-              
-              <div className="roster-slots">
-                <div className="gender-group">
-                  <h4>Men's Team (3 slots)</h4>
-                  <div className="slot-container">
-                    {[1, 2, 3].map((slot) => (
-                      <div key={`M${slot}`} className="roster-slot empty" data-slot-id={`M${slot}`}>
-                        <div className="slot-label">M{slot}</div>
-                        <div className="slot-content">
-                          <span className="empty-text">Click to select athlete</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="gender-group">
-                  <h4>Women's Team (3 slots)</h4>
-                  <div className="slot-container">
-                    {[1, 2, 3].map((slot) => (
-                      <div key={`W${slot}`} className="roster-slot empty" data-slot-id={`W${slot}`}>
-                        <div className="slot-label">W{slot}</div>
-                        <div className="slot-content">
-                          <span className="empty-text">Click to select athlete</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          {/* Draft Slots */}
+          <div className="draft-slots-container">
+            {/* Men's Slots */}
+            {[1, 2, 3].map((slot) => (
+              <div key={`M${slot}`} className="draft-slot empty" data-slot-id={`M${slot}`}>
+                <div className="slot-label">M{slot}</div>
+                <div className="slot-content">
+                  <span className="slot-placeholder">Tap to select athlete</span>
                 </div>
               </div>
-            </div>
+            ))}
 
-            <div className="athlete-pool-info">
-              <p>
-                {totalAthletes > 0 
-                  ? `${totalAthletes} elite athletes available (${menAthletes.length} men, ${womenAthletes.length} women)`
-                  : 'Loading athlete database...'
-                }
-              </p>
-            </div>
+            {/* Women's Slots */}
+            {[1, 2, 3].map((slot) => (
+              <div key={`W${slot}`} className="draft-slot empty" data-slot-id={`W${slot}`}>
+                <div className="slot-label">W{slot}</div>
+                <div className="slot-content">
+                  <span className="slot-placeholder">Tap to select athlete</span>
+                </div>
+              </div>
+            ))}
+          </div>
 
-            <div className="draft-actions">
-              <button className="btn btn-primary btn-large" disabled>
-                Submit Team (fill all slots first)
-              </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => router.push('/leaderboard')}
-              >
-                View Leaderboard
-              </button>
-            </div>
+          {/* Submit Container */}
+          <div className="draft-submit-container">
+            <p className="athlete-pool-info">
+              {totalAthletes > 0 
+                ? `${totalAthletes} elite athletes available (${menAthletes.length} men, ${womenAthletes.length} women)`
+                : 'Loading athlete database...'
+              }
+            </p>
+            <button className="btn btn-primary btn-large" disabled>
+              Submit Team (fill all slots first)
+            </button>
+            <button 
+              className="btn btn-secondary"
+              style={{ marginTop: '12px' }}
+              onClick={() => router.push('/leaderboard')}
+            >
+              View Leaderboard
+            </button>
           </div>
 
           <div className="session-info" style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#666' }}>

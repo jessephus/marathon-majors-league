@@ -114,7 +114,7 @@ function LandingPageContent({ hasSession, sessionToken }: LandingPageProps) {
 
         {/* Team Creation Modal */}
         {showTeamModal && (
-          <div className="modal" style={{ display: 'flex' }}>
+          <div className="modal active">
             <div className="modal-overlay" onClick={() => setShowTeamModal(false)}></div>
             <div className="modal-content">
               <button className="modal-close" onClick={() => setShowTeamModal(false)}>
