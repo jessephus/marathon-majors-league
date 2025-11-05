@@ -12,7 +12,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
-import { apiClient } from '@/lib/api-client';
+import { useStateManagerEvent } from '@/lib/use-state-manager';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import PointsModal from '@/components/PointsModal';
@@ -50,6 +50,17 @@ function LeaderboardPageContent({
   const [isVisible, setIsVisible] = useState(true);
   const [isFocused, setIsFocused] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Subscribe to state manager events for cache invalidation
+  useStateManagerEvent('results:updated', () => {
+    console.log('📢 Results updated event received - refreshing leaderboard');
+    fetchData();
+  });
+
+  useStateManagerEvent('results:invalidated', () => {
+    console.log('📢 Results cache invalidated - refreshing leaderboard');
+    fetchData();
+  });
 
   // Track page visibility
   useEffect(() => {
@@ -158,7 +169,8 @@ function LeaderboardPageContent({
     }
   };
 
-  const currentPlayerCode = sessionState.playerCode || sessionState.teamName;
+  // Current player code - prefer playerCode, fallback to teamName for backwards compatibility
+  const currentPlayerCode = sessionState.playerCode || sessionState.teamName || null;
 
   // Format time since last update
   const timeSinceUpdate = Math.floor((Date.now() - lastUpdate) / 1000);
