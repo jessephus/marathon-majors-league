@@ -4,13 +4,13 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **26 total documents**.
+Our documentation is organized into **5 main categories** with **28 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
 - `TECH_*.md` - Technical reference (5 docs)
 - `FEATURE_*.md` - Game features (6 docs)
-- `PROCESS_*.md` - Project history (8 docs)
+- `PROCESS_*.md` - Project history (10 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 
 ---
@@ -80,6 +80,8 @@ Learn how to join games, rank athletes, and follow live results.
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
+| **[PROCESS_ROUTING_PHASE1.md](PROCESS_ROUTING_PHASE1.md)** | Routing Phase 1 implementation summary | Understanding new page structure |
+| **[PROCESS_SSR_STRATEGY.md](PROCESS_SSR_STRATEGY.md)** | Server-side rendering strategy for Next.js migration | Understanding SSR implementation |
 | **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
 | **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
 | **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
@@ -215,7 +217,7 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 26 files | Well-organized with category prefixes |
+| Total Documents | 28 files | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently consolidated and renamed |
 | Missing Docs | 0 | All features documented |
