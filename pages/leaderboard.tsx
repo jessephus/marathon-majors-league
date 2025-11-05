@@ -33,7 +33,7 @@ function LeaderboardPageContent({
   const { gameState, setGameState } = useGameState();
   const { sessionState } = useSessionState();
   const [activeTab, setActiveTab] = useState<'fantasy' | 'race'>('fantasy');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialStandings && !initialResults); // Show loading if no initial data
   const [error, setError] = useState<string | null>(null);
   const [standings, setStandings] = useState(initialStandings);
   const [results, setResults] = useState(initialResults);
@@ -122,6 +122,14 @@ function LeaderboardPageContent({
       setLoading(false);
     }
   }, [gameId, setGameState, isVisible, isFocused]);
+
+  // Fetch data on mount if we don't have initial data
+  useEffect(() => {
+    if (!initialStandings && !initialResults) {
+      console.log('🔄 Initial data fetch on mount');
+      fetchData();
+    }
+  }, []); // Empty deps - run once on mount
 
   // Set up auto-refresh only when page is visible and focused
   useEffect(() => {
@@ -233,7 +241,7 @@ function LeaderboardPageContent({
               <div id="leaderboard-display">
                 {loading && !standings ? (
                   <div className="loading-spinner">Loading leaderboard...</div>
-                ) : standings?.hasResults === false ? (
+                ) : !standings || (standings.hasResults === false && (!standings.standings || standings.standings.length === 0)) ? (
                   <p>No race results available yet. Check back once the race begins!</p>
                 ) : (
                   <LeaderboardTable
@@ -323,29 +331,11 @@ export default function NewLeaderboardPage(props: LeaderboardPageProps) {
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const gameId = context.query.gameId || 'default';
   
-  // SSR: Fetch standings and results once with cache timestamp
-  let initialStandings = { standings: [], hasResults: false };
-  let initialResults = { scored: [] };
+  // Note: In serverless environments (Vercel), SSR can't fetch from localhost
+  // Client-side hydration will fetch the actual data on mount
+  const initialStandings = null;
+  const initialResults = null;
   const cacheTimestamp = Date.now();
-
-  try {
-    // Fetch standings from API
-    const standingsUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/standings?gameId=${gameId}`;
-    const standingsResponse = await fetch(standingsUrl);
-    if (standingsResponse.ok) {
-      initialStandings = await standingsResponse.json();
-    }
-
-    // Fetch results from API
-    const resultsUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/results?gameId=${gameId}`;
-    const resultsResponse = await fetch(resultsUrl);
-    if (resultsResponse.ok) {
-      initialResults = await resultsResponse.json();
-    }
-  } catch (error) {
-    console.error('SSR fetch error:', error);
-    // Continue with empty data - client will retry
-  }
 
   return {
     props: {
