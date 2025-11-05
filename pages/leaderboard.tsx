@@ -93,26 +93,36 @@ function LeaderboardPageContent({
       setLoading(true);
       setError(null);
 
-      // Fetch standings
-      const standingsResponse = await fetch(`/api/standings?gameId=${gameId}`);
+      // Fetch standings, results, and game state in parallel
+      const [standingsResponse, resultsResponse, gameStateResponse] = await Promise.all([
+        fetch(`/api/standings?gameId=${gameId}`),
+        fetch(`/api/results?gameId=${gameId}`),
+        fetch(`/api/game-state?gameId=${gameId}`)
+      ]);
+
       if (!standingsResponse.ok) {
         throw new Error('Failed to fetch standings');
       }
       const standingsData = await standingsResponse.json();
       setStandings(standingsData);
 
-      // Fetch results
-      const resultsResponse = await fetch(`/api/results?gameId=${gameId}`);
       if (!resultsResponse.ok) {
         throw new Error('Failed to fetch results');
       }
       const resultsData = await resultsResponse.json();
       setResults(resultsData);
 
+      // Get game state for resultsFinalized flag
+      let isFinalized = false;
+      if (gameStateResponse.ok) {
+        const gameStateData = await gameStateResponse.json();
+        isFinalized = gameStateData.resultsFinalized || false;
+      }
+
       setLastUpdate(Date.now());
       setGameState({ 
         results: resultsData.results || {},
-        resultsFinalized: resultsData.isFinalized || false 
+        resultsFinalized: isFinalized
       });
 
     } catch (err) {

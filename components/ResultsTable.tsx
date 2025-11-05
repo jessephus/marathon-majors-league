@@ -87,9 +87,10 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
   };
 
   const getRunnerSvg = (gender: string): string => {
-    return gender === 'men'
-      ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='15' fill='%234a90e2'/%3E%3Crect x='40' y='45' width='20' height='35' fill='%234a90e2'/%3E%3C/svg%3E"
-      : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='30' r='15' fill='%23e94b8a'/%3E%3Crect x='40' y='45' width='20' height='35' fill='%23e94b8a'/%3E%3C/svg%3E";
+    // Use PNG image paths to match legacy implementation
+    return gender === 'men' || gender === 'male'
+      ? '/images/man-runner.png'
+      : '/images/woman-runner.png';
   };
 
   const getCountryFlagEmoji = (countryCode: string): string => {
