@@ -775,6 +775,68 @@ footer .btn {
     margin-bottom: 20px;
 }
 
+/* New Commissioner Dashboard (Phase 1 Next.js) */
+.commissioner-dashboard {
+    max-width: 100%;
+}
+
+.dashboard-section {
+    background: var(--white);
+    padding: 24px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+}
+
+.dashboard-section h3 {
+    color: var(--primary-blue);
+    font-weight: bold;
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    width: 100%;
+}
+
+.button-group .btn {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.stat-card {
+    background: var(--light-gray);
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.stat-value {
+    font-size: 2rem;
+    color: var(--primary-blue);
+    font-weight: bold;
+}
+
 .action-card {
     background: var(--white);
     padding: 20px;

@@ -31,6 +31,20 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
     }
   }, [commissionerState.isCommissioner, initialAuth]);
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape' && showTOTPModal) {
+        router.push('/');
+      }
+    }
+
+    if (showTOTPModal) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [showTOTPModal, router]);
+
   async function handleTOTPLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -78,7 +92,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
 
           <main className="page active">
             <div className="modal" style={{ display: 'flex' }}>
-              <div className="modal-overlay"></div>
+              <div className="modal-overlay" onClick={() => router.push('/')}></div>
               <div className="modal-content">
                 <h2>Commissioner Login</h2>
                 <p>Enter your TOTP code to access commissioner tools:</p>
@@ -91,7 +105,11 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
                       id="totp-code"
                       placeholder="000000"
                       value={totpCode}
-                      onChange={(e) => setTotpCode(e.target.value)}
+                      onChange={(e) => {
+                        // Only allow digits, max 6 characters
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                        setTotpCode(value);
+                      }}
                       maxLength={6}
                       pattern="[0-9]{6}"
                       required

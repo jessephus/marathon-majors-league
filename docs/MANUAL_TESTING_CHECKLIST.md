@@ -85,16 +85,16 @@ Restart server after creating env file.
 - [x] TOTP login modal displays (if not authenticated)
 - [x] Modal has 6-digit code input field
 - [x] Input accepts numbers only (maxLength=6, pattern="[0-9]{6}")
-- [ ] Submit attempts TOTP verification
+- [x] Submit attempts TOTP verification
 - [x] Cancel button redirects to home
 
 **After Authentication (requires valid TOTP):**
-- [ ] Dashboard displays with sections:
+- [x] Dashboard displays with sections:
   - Game Management
   - Game Statistics (shows 0 teams, 0 players, etc.)
   - Administrative Actions
-- [ ] All buttons visible but not yet functional
-- [ ] Logout button clears commissioner state
+- [x] All buttons visible but not yet functional
+- [x] Logout button clears commissioner state
 
 ---
 
