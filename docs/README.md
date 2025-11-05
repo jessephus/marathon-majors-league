@@ -4,11 +4,11 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **28 total documents**.
+Our documentation is organized into **5 main categories** with **29 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
-- `TECH_*.md` - Technical reference (5 docs)
+- `TECH_*.md` - Technical reference (6 docs)
 - `FEATURE_*.md` - Game features (6 docs)
 - `PROCESS_*.md` - Project history (10 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
@@ -63,6 +63,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[TECH_MIGRATION.md](TECH_MIGRATION.md)** | Database migration history | Understanding schema evolution |
 | **[TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
 | **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
+| **[TECH_STATE_MANAGEMENT.md](TECH_STATE_MANAGEMENT.md)** | Centralized state manager (GameStateManager) | Working with application state |
 
 ### 3️⃣ Features (Game Mechanics & Functionality)
 
