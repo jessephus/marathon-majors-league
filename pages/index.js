@@ -13,8 +13,9 @@ export async function getServerSideProps(context) {
   // Check for session token in URL
   const sessionToken = getSessionFromURL(query);
   
-  // Detect session type from cookies or localStorage (server-side)
-  // Note: localStorage is not available server-side, so we rely on cookies
+  // Detect session type from cookies (server-side)
+  // Note: localStorage is not available server-side, so session detection
+  // will be re-run client-side after hydration to check localStorage as well
   const cookies = req.headers.cookie || '';
   const sessionType = detectSessionType(cookies);
   

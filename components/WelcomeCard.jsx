@@ -84,8 +84,13 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               Your team is ready. Continue drafting or check your roster.
             </p>
             <div style={criticalStyles.section}>
-              <a 
-                href="/team" 
+              <button 
+                onClick={() => {
+                  // Navigate using legacy app.js system for compatibility
+                  if (typeof window !== 'undefined' && window.showPage) {
+                    window.showPage('salary-cap-draft-page');
+                  }
+                }}
                 style={{
                   ...criticalStyles.button,
                   ...(isHovered ? criticalStyles.buttonHover : {})
@@ -94,7 +99,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
                 onMouseLeave={() => setIsHovered(false)}
               >
                 View My Team
-              </a>
+              </button>
             </div>
           </>
         );
@@ -107,8 +112,13 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               Manage your league, enter results, and oversee the competition.
             </p>
             <div style={criticalStyles.section}>
-              <a 
-                href="/commissioner" 
+              <button 
+                onClick={() => {
+                  // Navigate using legacy app.js system for compatibility
+                  if (typeof window !== 'undefined' && window.handleCommissionerMode) {
+                    window.handleCommissionerMode();
+                  }
+                }}
                 style={{
                   ...criticalStyles.button,
                   ...(isHovered ? criticalStyles.buttonHover : {})
@@ -117,7 +127,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
                 onMouseLeave={() => setIsHovered(false)}
               >
                 Go to Dashboard
-              </a>
+              </button>
             </div>
           </>
         );
