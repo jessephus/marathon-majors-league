@@ -29,14 +29,42 @@ export async function getServerSideProps(context) {
 
 export default function Home({ serverSessionType, hasURLSession }) {
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
+  const [isProcessingSession, setIsProcessingSession] = useState(false);
   
-  // Client-side session detection (after hydration)
+  // Client-side session detection and URL session handling (after hydration)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const detected = detectSessionType(document.cookie);
-      setClientSessionType(detected);
+      // Check if there's a session token in the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionToken = urlParams.get('session');
+      
+      if (sessionToken && !isProcessingSession) {
+        // Process the URL session token
+        setIsProcessingSession(true);
+        
+        // Store the session token in localStorage
+        // Note: We're creating a minimal session object here
+        // The full session details can be fetched from the API if needed
+        const sessionData = {
+          token: sessionToken,
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days from now
+        };
+        localStorage.setItem('marathon_fantasy_team', JSON.stringify(sessionData));
+        
+        // Clean URL (remove session parameter)
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Update session type
+        setClientSessionType(SessionType.TEAM);
+        setIsProcessingSession(false);
+      } else {
+        // Regular session detection from cookies/localStorage
+        const detected = detectSessionType(document.cookie);
+        setClientSessionType(detected);
+      }
     }
-  }, []);
+  }, [isProcessingSession]);
   
   const handleCreateTeam = () => {
     // Trigger the team creation modal (compatibility with existing app.js)
@@ -60,8 +88,9 @@ export default function Home({ serverSessionType, hasURLSession }) {
           .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
           header { background: linear-gradient(135deg, #ff6900 0%, #e05500 100%); color: white; padding: 1rem; text-align: center; }
           header h1 { margin: 0; font-size: 2rem; }
-          .loading-spinner { animation: spin 1s linear infinite; }
-          @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .loading-spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: #ff6900; font-size: 16px; font-weight: 600; }
+          .loading-spinner::before { content: ''; display: block; width: 40px; height: 40px; margin-bottom: 20px; border: 4px solid rgba(255, 105, 0, 0.2); border-top-color: #ff6900; border-radius: 50%; animation: spin 1s linear infinite; }
+          @keyframes spin { to { transform: rotate(360deg); } }
         `}} />
         
         {/* Favicons */}
@@ -90,8 +119,65 @@ export default function Home({ serverSessionType, hasURLSession }) {
       {/* External scripts */}
       <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
-      <Script src="/app.js" strategy="afterInteractive" />
+      
+      {/* Load app.js only in legacy mode - it expects specific DOM structure */}
+      {!USE_NEW_WELCOME_CARD && <Script src="/app.js" strategy="afterInteractive" />}
+      
+      {/* Always load salary-cap-draft.js */}
       <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
+
+      {/* Load app-bridge.js for SSR mode - shared utilities without monolith */}
+      {USE_NEW_WELCOME_CARD && (
+        <>
+          <Script src="/app-bridge.js" type="module" strategy="afterInteractive" />
+          <Script id="init-ssr-handlers" type="module" strategy="afterInteractive">
+            {`
+              import { 
+                showPage, 
+                closeModal,
+                openModal,
+                setupModalCloseHandlers,
+                removeLoadingOverlay,
+                handleTeamCreation
+              } from '/app-bridge.js';
+              
+              // Initialize SSR landing page
+              function initSSRLandingPage() {
+                // Remove loading overlay after hydration
+                removeLoadingOverlay();
+                
+                // Setup modal close handlers
+                setupModalCloseHandlers('team-creation-modal', 'close-team-modal', 'cancel-team-creation');
+                setupModalCloseHandlers('commissioner-totp-modal', 'close-totp-modal', 'cancel-totp-login');
+                
+                // Setup team creation form handler
+                const teamForm = document.getElementById('team-creation-form');
+                if (teamForm) {
+                  teamForm.addEventListener('submit', handleTeamCreation);
+                }
+                
+                // Setup commissioner mode button
+                const commissionerModeBtn = document.getElementById('commissioner-mode');
+                if (commissionerModeBtn) {
+                  commissionerModeBtn.addEventListener('click', () => openModal('commissioner-totp-modal'));
+                }
+                
+                // Expose functions globally for React components and other scripts
+                window.showPage = showPage;
+                window.closeModal = closeModal;
+                window.openModal = openModal;
+              }
+              
+              // Run when DOM is ready
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSSRLandingPage);
+              } else {
+                initSSRLandingPage();
+              }
+            `}
+          </Script>
+        </>
+      )}
 
       {/* Conditionally render new WelcomeCard component or legacy HTML */}
       {USE_NEW_WELCOME_CARD ? (
@@ -153,6 +239,12 @@ export default function Home({ serverSessionType, hasURLSession }) {
   )
 }
 
+/**
+ * Returns all legacy pages and modals (excluding landing page)
+ * Note: This function returns ONLY the inner content (modals and pages)
+ * It does NOT include <main>, <header>, or <footer> tags
+ * Those are provided by the parent function (getMainHTML)
+ */
 function getLegacyPagesHTML() {
   return `
             <!-- Team Creation Modal -->
@@ -852,7 +944,6 @@ function getLegacyPagesHTML() {
                     </form>
                 </div>
             </div>
-        </main>
 
         <!-- Athlete Card Modal -->
         <div id="athlete-modal" class="modal">
@@ -1041,22 +1132,6 @@ function getLegacyPagesHTML() {
                 </div>
             </div>
         </div>
-
-        <footer>
-            <div class="footer-actions">
-                <button id="home-button" class="btn btn-secondary">Home</button>
-                <button id="commissioner-mode" class="btn btn-secondary">Commissioner Mode</button>
-                <div class="game-switcher">
-                    <label for="game-select">Game: </label>
-                    <select id="game-select" class="game-select">
-                        <option value="default">Default Game</option>
-                        <option value="demo-game">Demo Game</option>
-                    </select>
-                </div>
-            </div>
-            <p class="footer-copyright">Marathon Majors League &copy; 2025</p>
-        </footer>
-    </div>
   `;
 }
 

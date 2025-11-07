@@ -11,14 +11,15 @@
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [Monolith Overview](#monolith-overview)
-3. [Global State Architecture](#global-state-architecture)
-4. [Feature Cluster Mapping](#feature-cluster-mapping)
-5. [Data Flow Analysis](#data-flow-analysis)
-6. [Coupling and Entanglement](#coupling-and-entanglement)
-7. [Extraction Targets](#extraction-targets)
-8. [Migration Strategy Recommendations](#migration-strategy-recommendations)
-9. [Appendices](#appendices)
+2. [Phase 0: Bridge Module (Pre-Modularization)](#phase-0-bridge-module-pre-modularization)
+3. [Monolith Overview](#monolith-overview)
+4. [Global State Architecture](#global-state-architecture)
+5. [Feature Cluster Mapping](#feature-cluster-mapping)
+6. [Data Flow Analysis](#data-flow-analysis)
+7. [Coupling and Entanglement](#coupling-and-entanglement)
+8. [Extraction Targets](#extraction-targets)
+9. [Migration Strategy Recommendations](#migration-strategy-recommendations)
+10. [Appendices](#appendices)
 
 ---
 
@@ -50,6 +51,135 @@ The Fantasy NY Marathon application consists of three primary monolithic files t
 
 ---
 
+## Phase 0: Bridge Module (Pre-Modularization)
+
+**Status:** ✅ Completed (November 2025)  
+**Created:** PR #107 - Landing Page SSR Implementation  
+**Purpose:** Minimal utility extraction to enable SSR landing page without loading full monolith
+
+### Background
+
+When implementing the SSR landing page (see `MIGRATION_LANDING_PAGE_SSR.md`), we encountered the **infinite refresh loop bug** that occurs when loading `app.js` in SSR mode. However, the new landing page still needs core utilities like:
+- Page navigation (`showPage()`)
+- Modal management (`openModal()`, `closeModal()`)
+- Session creation and storage
+- Loading overlay removal
+
+**Problem:** Duplicating these utilities inline creates maintenance burden and violates DRY principle.
+
+**Solution:** Create a minimal bridge module (`app-bridge.js`) that:
+1. Extracts only the utilities needed for SSR landing page
+2. Avoids loading the full monolith (prevents infinite refresh)
+3. Eliminates code duplication
+4. Serves as temporary bridge until Phase 1 modularization begins
+
+### What Was Extracted
+
+**File:** `public/app-bridge.js` (284 lines)
+
+| Function | Purpose | Lines | Will Move To (Phase 1) |
+|----------|---------|-------|-------------------------|
+| `showPage(pageId)` | SPA page navigation | 33-55 | `utils/ui-helpers.js` |
+| `closeModal(modalId)` | Hide modal and reset form | 63-75 | `utils/ui-helpers.js` |
+| `openModal(modalId)` | Show modal and focus input | 77-88 | `utils/ui-helpers.js` |
+| `setupModalCloseHandlers()` | Setup X/cancel/ESC handlers | 90-133 | `utils/ui-helpers.js` |
+| `storeTeamSession()` | Save to localStorage | 135-147 | `utils/session.js` |
+| `getTeamSession()` | Load from localStorage | 149-161 | `utils/session.js` |
+| `clearTeamSession()` | Remove from localStorage | 163-175 | `utils/session.js` |
+| `removeLoadingOverlay()` | Fade out loading screen | 177-197 | `utils/ui-helpers.js` |
+| `handleTeamCreation()` | Create team via API | 199-256 | `components/TeamCreation.js` |
+
+**Constants Extracted:**
+```javascript
+const API_BASE = window.location.origin;
+const GAME_ID = 'default';
+const TEAM_SESSION_KEY = 'marathon_fantasy_team';
+const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
+```
+
+### Integration Points
+
+**SSR Landing Page (`pages/index.js`):**
+```javascript
+// Load bridge module with ES6 imports
+<Script src="/app-bridge.js" type="module" strategy="afterInteractive">
+  {`
+    import { 
+      showPage, 
+      closeModal,
+      openModal,
+      setupModalCloseHandlers,
+      removeLoadingOverlay,
+      handleTeamCreation
+    } from '/app-bridge.js';
+    
+    function initSSRLandingPage() {
+      removeLoadingOverlay();
+      setupModalCloseHandlers('team-creation-modal', ...);
+      setupModalCloseHandlers('commissioner-totp-modal', ...);
+      // ... event listeners
+    }
+  `}
+</Script>
+```
+
+**Legacy Mode (`app.js`):**
+- Bridge module NOT loaded in legacy mode (feature flag OFF)
+- `app.js` continues to define these functions independently
+- No breaking changes to existing code
+
+### Benefits Achieved
+
+✅ **Eliminated 110+ lines of inline script duplication**  
+✅ **Maintained SSR compatibility** (no monolith loading)  
+✅ **Preserved legacy mode** (backward compatible)  
+✅ **DRY principle** (single source of truth for utilities)  
+✅ **Type safety** (ES6 modules with proper imports)  
+✅ **Testable** (functions can be unit tested independently)
+
+### Phase 0 → Phase 1 Transition Plan
+
+When Phase 1 modularization begins, the bridge module will be **absorbed** into the utility structure:
+
+```
+Current (Phase 0):
+├── public/app-bridge.js (temporary bridge)
+└── public/app.js (monolith with duplicated functions)
+
+Future (Phase 1):
+├── utils/
+│   ├── ui-helpers.js (showPage, modal functions, overlay)
+│   ├── session.js (session storage functions)
+│   └── formatting.js (time, scoring, etc.)
+├── components/
+│   └── TeamCreation.js (handleTeamCreation logic)
+└── public/app.js (importing from utils/)
+```
+
+**Migration checklist:**
+1. Create `utils/ui-helpers.js` and move page/modal functions
+2. Create `utils/session.js` and move session storage functions
+3. Update `app.js` to import from `utils/` instead of defining internally
+4. Update `pages/index.js` to import from `utils/` instead of `app-bridge.js`
+5. Delete `public/app-bridge.js` (no longer needed)
+6. Update this document to mark Phase 0 as absorbed
+
+### Lessons Learned
+
+1. **Pre-modularization extraction reduces tech debt:** Even minimal extraction (Phase 0) prevents code duplication during transition periods
+2. **Bridge modules are temporary:** Don't over-engineer—Phase 0 is meant to be absorbed, not permanent
+3. **ES6 modules work in browser:** Modern browsers support `type="module"` natively, no build step needed
+4. **Backward compatibility matters:** Feature flag ensures legacy mode continues working unchanged
+
+### Related Documentation
+
+- **PR #107:** Landing Page SSR Implementation
+- **MIGRATION_LANDING_PAGE_SSR.md:** Full SSR migration details
+- **FEATURE_ACCOUNT_FREE_TEAMS.md:** Session management architecture
+- **Issue #82:** Parent issue for componentization
+
+---
+
 ## Monolith Overview
 
 ### File Statistics
@@ -60,6 +190,7 @@ The Fantasy NY Marathon application consists of three primary monolithic files t
 ├─────────────────────────────────┼───────┼───────────┼───────────┼─────────────────┤
 │ public/app.js                   │ 6,465 │    130    │    41     │       87        │
 │ public/salary-cap-draft.js      │ 1,652 │     36    │     6     │        8        │
+│ public/app-bridge.js (Phase 0)  │   284 │      9    │     1     │        0        │
 │ pages/index.js (Next.js wrapper)│   980 │     -     │     -     │        -        │
 └─────────────────────────────────┴───────┴───────────┴───────────┴─────────────────┘
 ```
@@ -71,6 +202,7 @@ The Fantasy NY Marathon application consists of three primary monolithic files t
 - Direct DOM manipulation
 - Chart.js for data visualization
 - Tailwind CSS (via CDN)
+- ES6 Modules (Phase 0 bridge only)
 - No framework-specific state management
 
 **Backend Integration:**

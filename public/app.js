@@ -1,3 +1,10 @@
+// Guard: Only run this script if legacy HTML structure exists
+// This prevents errors when the new WelcomeCard React component is active
+if (typeof window !== 'undefined' && !document.getElementById('landing-page')) {
+    console.log('[App.js] Legacy HTML structure not found, skipping initialization');
+    // Exit immediately without setting up event listeners
+} else {
+
 // Game State
 let gameState = {
     athletes: { men: [], women: [] },
@@ -6463,3 +6470,5 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
+} // End of legacy mode guard
