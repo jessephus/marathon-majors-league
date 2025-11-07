@@ -1,7 +1,62 @@
 import Head from 'next/head'
 import Script from 'next/script'
+import { useState, useEffect } from 'react'
+import WelcomeCard from '../components/WelcomeCard'
+import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
 
-export default function Home() {
+// Feature flag for new SSR WelcomeCard component
+const USE_NEW_WELCOME_CARD = process.env.NEXT_PUBLIC_USE_NEW_WELCOME_CARD === 'true';
+
+export async function getServerSideProps(context) {
+  const { req, query } = context;
+  
+  // Check for session token in URL
+  const sessionToken = getSessionFromURL(query);
+  
+  // Detect session type from cookies (server-side)
+  // Note: localStorage is not available server-side, so session detection
+  // will be re-run client-side after hydration to check localStorage as well
+  const cookies = req.headers.cookie || '';
+  const sessionType = detectSessionType(cookies);
+  
+  return {
+    props: {
+      serverSessionType: sessionType,
+      hasURLSession: !!sessionToken,
+    },
+  };
+}
+
+export default function Home({ serverSessionType, hasURLSession }) {
+  const [clientSessionType, setClientSessionType] = useState(serverSessionType);
+  
+  // Client-side session detection (after hydration)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Check if there's a session token in the URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionToken = urlParams.get('session');
+      
+      if (sessionToken) {
+        // URL session will be handled by initSSRLandingPage() in the Script tag
+        // Just update the UI state for now
+        setClientSessionType(SessionType.TEAM);
+      } else {
+        // Regular session detection from cookies/localStorage
+        const detected = detectSessionType(document.cookie);
+        setClientSessionType(detected);
+      }
+    }
+  }, []);
+  
+  const handleCreateTeam = () => {
+    // Trigger the team creation modal (compatibility with existing app.js)
+    const modal = document.getElementById('team-creation-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  };
+  
   return (
     <>
       <Head>
@@ -9,6 +64,17 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Fantasy NY Marathon</title>
         <meta name="description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
+        
+        {/* Critical CSS for faster first paint */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+          .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+          header { background: linear-gradient(135deg, #ff6900 0%, #e05500 100%); color: white; padding: 1rem; text-align: center; }
+          header h1 { margin: 0; font-size: 2rem; }
+          .loading-spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: #ff6900; font-size: 16px; font-weight: 600; }
+          .loading-spinner::before { content: ''; display: block; width: 40px; height: 40px; margin-bottom: 20px; border: 4px solid rgba(255, 105, 0, 0.2); border-top-color: #ff6900; border-radius: 50%; animation: spin 1s linear infinite; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}} />
         
         {/* Favicons */}
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -36,44 +102,264 @@ export default function Home() {
       {/* External scripts */}
       <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
-      <Script src="/app.js" strategy="afterInteractive" />
+      
+      {/* Load app.js only in legacy mode - it expects specific DOM structure */}
+      {!USE_NEW_WELCOME_CARD && <Script src="/app.js" strategy="afterInteractive" />}
+      
+      {/* Always load salary-cap-draft.js */}
       <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 
-      {/* Main HTML content from index.html */}
-      <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
+      {/* Load app-bridge.js for SSR mode - shared utilities without monolith */}
+      {USE_NEW_WELCOME_CARD && (
+        <>
+          <Script src="/app-bridge.js" type="module" strategy="afterInteractive" />
+          <Script id="init-ssr-handlers" type="module" strategy="afterInteractive">
+            {`
+              import { 
+                showPage, 
+                closeModal,
+                openModal,
+                setupModalCloseHandlers,
+                removeLoadingOverlay,
+                handleTeamCreation
+              } from '/app-bridge.js';
+              
+              // Initialize SSR landing page
+              async function initSSRLandingPage() {
+                // Remove loading overlay after hydration
+                removeLoadingOverlay();
+                
+                // Restore session from URL if present (for ?session=TOKEN links)
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionToken = urlParams.get('session');
+                const gameId = urlParams.get('game');
+                
+                if (sessionToken) {
+                  // Session in URL - validate and restore it (overwrite existing if present)
+                  console.log('[SSR] Validating and restoring session from URL');
+                  
+                  // Show loading state on the CTA button
+                  const ctaButton = document.querySelector('[data-session-cta]');
+                  if (ctaButton) {
+                    ctaButton.disabled = true;
+                    ctaButton.textContent = 'Restoring session...';
+                  }
+                  
+                  try {
+                    // Validate the session with the server
+                    const response = await fetch('/api/session/validate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ token: sessionToken })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.valid && data.session) {
+                      // Store the validated session with full details
+                      const sessionData = {
+                        token: data.session.sessionToken,
+                        expiresAt: data.session.expiresAt,
+                        sessionType: data.session.sessionType,
+                        displayName: data.session.displayName,
+                        gameId: data.session.gameId,
+                        playerCode: data.session.playerCode
+                      };
+                      
+                      localStorage.setItem('marathon_fantasy_team', JSON.stringify(sessionData));
+                      
+                      if (data.session.gameId) {
+                        localStorage.setItem('current_game_id', data.session.gameId);
+                      }
+                      
+                      console.log('[SSR] Session restored from URL:', data.session.displayName);
+                      
+                      // Trigger app.js to reload the session from localStorage
+                      // This will update anonymousSession and footer buttons
+                      if (typeof window.restoreSession === 'function') {
+                        await window.restoreSession();
+                        console.log('[SSR] Called window.restoreSession() to update app.js state');
+                      } else {
+                        // Fallback: Use app-bridge.js to update session and footer buttons
+                        // Initialize sessions from localStorage (which now has the restored session)
+                        if (typeof window.initializeSessions === 'function') {
+                          window.initializeSessions();
+                          console.log('[SSR] Called initializeSessions() after URL session restore');
+                        }
+                        
+                        // Update footer buttons
+                        if (typeof window.updateFooterButtons === 'function') {
+                          window.updateFooterButtons();
+                          console.log('[SSR] Called updateFooterButtons() after URL session restore');
+                        }
+                        
+                        // Initialize game switcher
+                        if (typeof window.initializeGameSwitcher === 'function') {
+                          window.initializeGameSwitcher();
+                          console.log('[SSR] Called initializeGameSwitcher() after URL session restore');
+                        }
+                      }
+                      
+                      // Re-enable button and update text
+                      if (ctaButton) {
+                        ctaButton.disabled = false;
+                        ctaButton.textContent = 'View My Team';
+                      }
+                    } else {
+                      console.warn('[SSR] Session token from URL is invalid or expired');
+                      
+                      // Show error state
+                      if (ctaButton) {
+                        ctaButton.disabled = false;
+                        ctaButton.textContent = 'Session expired - Create New Team';
+                      }
+                    }
+                  } catch (error) {
+                    console.error('[SSR] Failed to validate session:', error);
+                    
+                    // Show error state
+                    if (ctaButton) {
+                      ctaButton.disabled = false;
+                      ctaButton.textContent = 'Error - Create New Team';
+                    }
+                  }
+                }
+                
+                // Setup modal close handlers
+                setupModalCloseHandlers('team-creation-modal', 'close-team-modal', 'cancel-team-creation');
+                setupModalCloseHandlers('commissioner-totp-modal', 'close-totp-modal', 'cancel-totp-login');
+                
+                // Setup team creation form handler
+                const teamForm = document.getElementById('team-creation-form');
+                if (teamForm) {
+                  teamForm.addEventListener('submit', handleTeamCreation);
+                }
+                
+                // Setup commissioner TOTP form handler
+                const totpForm = document.getElementById('commissioner-totp-form');
+                if (totpForm && typeof window.handleCommissionerTOTPLogin === 'function') {
+                  totpForm.addEventListener('submit', window.handleCommissionerTOTPLogin);
+                  console.log('[SSR] Attached commissioner TOTP form handler');
+                }
+                
+                // Setup commissioner mode button
+                const commissionerModeBtn = document.getElementById('commissioner-mode');
+                if (commissionerModeBtn && typeof window.handleCommissionerMode === 'function') {
+                  commissionerModeBtn.addEventListener('click', window.handleCommissionerMode);
+                  console.log('[SSR] Attached commissioner mode handler');
+                }
+                
+                // Setup home button - navigate to root
+                const homeButton = document.getElementById('home-button');
+                if (homeButton) {
+                  homeButton.addEventListener('click', () => {
+                    console.log('[SSR] Home button clicked, navigating to /');
+                    window.location.href = '/';
+                  });
+                }
+                
+                // Initialize sessions and update footer buttons (for existing sessions from localStorage)
+                // This handles the case where user already has a session but didn't come from URL
+                if (typeof window.initializeSessions === 'function') {
+                  window.initializeSessions();
+                  console.log('[SSR] Initialized sessions from localStorage');
+                }
+                if (typeof window.updateFooterButtons === 'function') {
+                  window.updateFooterButtons();
+                  console.log('[SSR] Updated footer buttons after initialization');
+                }
+                
+                // Initialize game switcher dropdown (for commissioners)
+                if (typeof window.initializeGameSwitcher === 'function') {
+                  window.initializeGameSwitcher();
+                  console.log('[SSR] Initialized game switcher');
+                }
+                
+                // Expose functions globally for React components and other scripts
+                window.showPage = showPage;
+                window.closeModal = closeModal;
+                window.openModal = openModal;
+              }
+              
+              // Run when DOM is ready
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initSSRLandingPage);
+              } else {
+                initSSRLandingPage();
+              }
+            `}
+          </Script>
+        </>
+      )}
+
+      {/* Conditionally render new WelcomeCard component or legacy HTML */}
+      {USE_NEW_WELCOME_CARD ? (
+        <div className="container">
+          {/* Initial Loading Overlay */}
+          <div id="app-loading-overlay" style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: '#fff', 
+            zIndex: 9999, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            justifyContent: 'center' 
+          }}>
+            <h1 style={{ color: '#ff6900', marginBottom: '20px' }}>🗽 Fantasy NY Marathon</h1>
+            <div className="loading-spinner">Loading your experience...</div>
+          </div>
+          
+          <header>
+            <h1>🗽 Fantasy NY Marathon</h1>
+          </header>
+          
+          <main id="app">
+            {/* Landing Page with new WelcomeCard component */}
+            <div id="landing-page" className="page active">
+              <WelcomeCard 
+                sessionType={clientSessionType} 
+                onCreateTeam={handleCreateTeam}
+              />
+            </div>
+            
+            {/* Keep all other legacy pages/modals via dangerouslySetInnerHTML */}
+            <div dangerouslySetInnerHTML={{ __html: getLegacyPagesHTML() }} />
+          </main>
+          
+          <footer>
+            <div className="footer-actions">
+              <button id="home-button" className="btn btn-secondary">Home</button>
+              <button id="commissioner-mode" className="btn btn-secondary">Commissioner Mode</button>
+              <div className="game-switcher">
+                <label htmlFor="game-select">Game: </label>
+                <select id="game-select" className="game-select">
+                  <option value="default">Default Game</option>
+                  <option value="demo-game">Demo Game</option>
+                </select>
+              </div>
+            </div>
+            <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
+          </footer>
+        </div>
+      ) : (
+        <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
+      )}
     </>
   )
 }
 
-function getMainHTML() {
+/**
+ * Returns all legacy pages and modals (excluding landing page)
+ * Note: This function returns ONLY the inner content (modals and pages)
+ * It does NOT include <main>, <header>, or <footer> tags
+ * Those are provided by the parent function (getMainHTML)
+ */
+function getLegacyPagesHTML() {
   return `
-    <div class="container">
-        <!-- Initial Loading Overlay -->
-        <div id="app-loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <h1 style="color: #ff6900; margin-bottom: 20px;">🗽 Fantasy NY Marathon</h1>
-            <div class="loading-spinner">Loading your experience...</div>
-        </div>
-        
-        <header>
-            <h1>🗽 Fantasy NY Marathon</h1>
-        </header>
-
-        <main id="app">
-            <!-- Landing Page -->
-            <div id="landing-page" class="page active">
-                <div class="welcome-card">
-                    <h2>Welcome to the Fantasy NY Marathon!</h2>
-                    <p>Compete with friends by drafting elite marathon runners.</p>
-                    
-                    <!-- Team Creation for Visitors -->
-                    <div class="create-team-section">
-                        <h3>🏃‍♂️ Join the Competition</h3>
-                        <p>Create your team and draft elite runners - no registration required!</p>
-                        <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Team Creation Modal -->
             <div id="team-creation-modal" class="modal" style="display: none;">
                 <div class="modal-overlay"></div>
@@ -771,7 +1057,6 @@ function getMainHTML() {
                     </form>
                 </div>
             </div>
-        </main>
 
         <!-- Athlete Card Modal -->
         <div id="athlete-modal" class="modal">
@@ -960,7 +1245,42 @@ function getMainHTML() {
                 </div>
             </div>
         </div>
+  `;
+}
 
+// Original HTML with landing page (used when feature flag is false)
+function getMainHTML() {
+  return `
+    <div class="container">
+        <!-- Initial Loading Overlay -->
+        <div id="app-loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <h1 style="color: #ff6900; margin-bottom: 20px;">🗽 Fantasy NY Marathon</h1>
+            <div class="loading-spinner">Loading your experience...</div>
+        </div>
+        
+        <header>
+            <h1>🗽 Fantasy NY Marathon</h1>
+        </header>
+
+        <main id="app">
+            <!-- Landing Page -->
+            <div id="landing-page" class="page active">
+                <div class="welcome-card">
+                    <h2>Welcome to the Fantasy NY Marathon!</h2>
+                    <p>Compete with friends by drafting elite marathon runners.</p>
+                    
+                    <!-- Team Creation for Visitors -->
+                    <div class="create-team-section">
+                        <h3>🏃‍♂️ Join the Competition</h3>
+                        <p>Create your team and draft elite runners - no registration required!</p>
+                        <button id="create-team-btn" class="btn btn-primary btn-large">Create a New Team</button>
+                    </div>
+                </div>
+            </div>
+            
+            ${getLegacyPagesHTML()}
+        </main>
+        
         <footer>
             <div class="footer-actions">
                 <button id="home-button" class="btn btn-secondary">Home</button>

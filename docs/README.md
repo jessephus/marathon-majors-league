@@ -4,14 +4,16 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **29 total documents**.
+Our documentation is organized into **5 main categories** with **35 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
 - `TECH_*.md` - Technical reference (6 docs)
 - `FEATURE_*.md` - Game features (6 docs)
-- `PROCESS_*.md` - Project history (10 docs)
+- `PROCESS_*.md` - Project history (14 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
+- `MIGRATION_*.md` - Migration guides (1 doc)
+- `BUGFIX_*.md` - Bug fix documentation (1 doc)
 
 ---
 
@@ -83,6 +85,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
 | **[PROCESS_ROUTING_PHASE1.md](PROCESS_ROUTING_PHASE1.md)** | Routing Phase 1 implementation summary | Understanding new page structure |
 | **[PROCESS_SSR_STRATEGY.md](PROCESS_SSR_STRATEGY.md)** | Server-side rendering strategy for Next.js migration | Understanding SSR implementation |
+| **[MIGRATION_LANDING_PAGE_SSR.md](MIGRATION_LANDING_PAGE_SSR.md)** | Landing page SSR migration guide | Implementing/understanding SSR |
 | **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
 | **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
 | **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |

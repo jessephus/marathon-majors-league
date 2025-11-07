@@ -75,12 +75,29 @@ export default async function handler(req, res) {
             WHERE id = ${user.id}
         `;
         
+        // Set commissioner session cookie (HttpOnly for security)
+        // 30-day expiration matching localStorage session
+        const expiryDays = 30;
+        const sessionData = JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            isCommissioner: true,
+            loginTime: new Date().toISOString()
+        });
+        
+        res.setHeader('Set-Cookie', [
+            `marathon_fantasy_commissioner=${encodeURIComponent(sessionData)}; Path=/; Max-Age=${expiryDays * 24 * 60 * 60}; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+        ]);
+        
+        console.log('[TOTP Verify] Set commissioner cookie for user:', user.email);
+        
         return res.status(200).json({
             success: true,
             message: 'TOTP verified successfully',
-            user: {
-                id: user.id,
-                email: user.email
+            session: {
+                userId: user.id,
+                email: user.email,
+                isCommissioner: true
             }
         });
         
