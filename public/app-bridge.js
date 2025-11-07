@@ -269,6 +269,184 @@ export async function handleTeamCreation(e) {
 }
 
 // ============================================================================
+// SESSION MANAGEMENT (for footer buttons and session state)
+// ============================================================================
+
+/**
+ * Anonymous session object - loaded from localStorage
+ * Structure: { token, expiresAt, sessionType, displayName, gameId, playerCode }
+ */
+let anonymousSession = null;
+
+/**
+ * Commissioner session object - loaded from localStorage
+ * Structure: { sessionToken, userId, role, gameId, displayName, ... }
+ */
+let commissionerSession = null;
+
+/**
+ * Initialize session objects from localStorage
+ */
+function initializeSessions() {
+    // Load anonymous team session
+    const teamSessionData = localStorage.getItem(TEAM_SESSION_KEY);
+    if (teamSessionData) {
+        try {
+            anonymousSession = JSON.parse(teamSessionData);
+            console.log('[App Bridge] Loaded anonymous session:', anonymousSession);
+        } catch (error) {
+            console.error('[App Bridge] Failed to parse team session:', error);
+        }
+    }
+
+    // Load commissioner session
+    const commissionerSessionData = localStorage.getItem(COMMISSIONER_SESSION_KEY);
+    if (commissionerSessionData) {
+        try {
+            commissionerSession = JSON.parse(commissionerSessionData);
+            console.log('[App Bridge] Loaded commissioner session:', commissionerSession);
+        } catch (error) {
+            console.error('[App Bridge] Failed to parse commissioner session:', error);
+        }
+    }
+
+    // Make sessions globally available for other modules
+    if (typeof window !== 'undefined') {
+        window.anonymousSession = anonymousSession;
+        window.commissionerSession = commissionerSession;
+    }
+}
+
+/**
+ * Update footer buttons based on session state
+ * Shows logout and copy URL buttons when user has an active session
+ */
+function updateFooterButtons() {
+    console.log('[App Bridge] Called updateFooterButtons()');
+    console.log('[App Bridge] anonymousSession:', anonymousSession);
+    console.log('[App Bridge] commissionerSession:', commissionerSession);
+
+    // Try to find footer by ID first, then by tag name
+    const footer = document.getElementById('footer') || document.querySelector('footer');
+    if (!footer) {
+        console.warn('[App Bridge] Footer element not found');
+        return;
+    }
+    console.log('[App Bridge] Found footer element');
+
+    // Get or create footer-actions container
+    let footerActions = footer.querySelector('.footer-actions');
+    if (!footerActions) {
+        footerActions = document.createElement('div');
+        footerActions.className = 'footer-actions';
+        footer.appendChild(footerActions);
+        console.log('[App Bridge] Created footer-actions container');
+    } else {
+        console.log('[App Bridge] Found existing footer-actions');
+    }
+
+    // Remove only session-specific buttons (logout/copy URL), preserve permanent ones
+    const existingLogoutBtn = footerActions.querySelector('.logout-btn');
+    const existingCopyUrlBtn = footerActions.querySelector('.copy-url-btn');
+    if (existingLogoutBtn) existingLogoutBtn.remove();
+    if (existingCopyUrlBtn) existingCopyUrlBtn.remove();
+
+    // Show logout and copy URL buttons for anonymous sessions
+    if (anonymousSession && anonymousSession.token) {
+        console.log('[App Bridge] Adding footer buttons for anonymous session');
+
+        // Logout button
+        const logoutBtn = document.createElement('button');
+        logoutBtn.className = 'btn btn-secondary logout-btn';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.onclick = handleLogout;
+        footerActions.appendChild(logoutBtn);
+
+        // Copy URL button
+        const copyUrlBtn = document.createElement('button');
+        copyUrlBtn.className = 'btn btn-primary copy-url-btn';
+        copyUrlBtn.textContent = 'Copy My URL';
+        copyUrlBtn.onclick = handleCopyUrl;
+        footerActions.appendChild(copyUrlBtn);
+
+        console.log('[App Bridge] Added logout and copy URL buttons');
+    } else if (commissionerSession && commissionerSession.sessionToken) {
+        console.log('[App Bridge] Commissioner session active, no footer buttons needed');
+    } else {
+        console.log('[App Bridge] No active session, no footer buttons to add');
+    }
+}
+
+/**
+ * Handle logout button click
+ * Clears the team session (localStorage AND cookie) and navigates to home
+ */
+function handleLogout() {
+    console.log('[App Bridge] Logout button clicked');
+
+    // Confirm logout
+    const confirmed = confirm('Are you sure you want to logout? You\'ll need your session URL to access your team again.');
+    if (!confirmed) {
+        console.log('[App Bridge] Logout cancelled');
+        return;
+    }
+
+    // Clear team session from localStorage
+    clearTeamSession();
+    anonymousSession = null;
+    if (typeof window !== 'undefined') {
+        window.anonymousSession = null;
+    }
+
+    console.log('[App Bridge] Team session cleared from localStorage');
+
+    // Clear the session cookie
+    // Set cookie with same name but expired date to delete it
+    document.cookie = 'marathon_fantasy_team=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+    console.log('[App Bridge] Session cookie cleared');
+
+    // Navigate to home (this will refresh the page and show logged-out state)
+    if (typeof window !== 'undefined' && window.location) {
+        window.location.href = '/';
+    }
+}
+
+/**
+ * Handle copy URL button click
+ * Copies the session URL to clipboard
+ */
+async function handleCopyUrl() {
+    console.log('[App Bridge] Copy URL button clicked');
+
+    if (!anonymousSession || !anonymousSession.token) {
+        console.warn('[App Bridge] No session token to copy');
+        alert('No session found. Please create a team first.');
+        return;
+    }
+
+    // Construct session URL
+    const sessionUrl = `${window.location.origin}/?session=${anonymousSession.token}`;
+    console.log('[App Bridge] Session URL:', sessionUrl);
+
+    try {
+        // Copy to clipboard
+        await navigator.clipboard.writeText(sessionUrl);
+        console.log('[App Bridge] URL copied to clipboard');
+
+        // Show success message
+        alert('URL copied to clipboard! Share this URL to access your team from any device.');
+    } catch (error) {
+        console.error('[App Bridge] Failed to copy URL:', error);
+
+        // Fallback: show the URL in an alert
+        alert(`Copy this URL to access your team:\n\n${sessionUrl}`);
+    }
+}
+
+// Initialize sessions when the script loads
+initializeSessions();
+
+// ============================================================================
 // GLOBAL EXPORTS (for backward compatibility)
 // ============================================================================
 
@@ -283,6 +461,16 @@ if (typeof window !== 'undefined') {
         getTeamSession,
         clearTeamSession,
         removeLoadingOverlay,
-        handleTeamCreation
+        handleTeamCreation,
+        initializeSessions,
+        updateFooterButtons,
+        handleLogout,
+        handleCopyUrl
     };
+
+    // Also expose these functions directly for easier access
+    window.updateFooterButtons = updateFooterButtons;
+    window.initializeSessions = initializeSessions;
+    window.anonymousSession = anonymousSession;
+    window.commissionerSession = commissionerSession;
 }

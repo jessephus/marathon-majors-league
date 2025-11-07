@@ -352,6 +352,14 @@ async function setupSalaryCapDraft() {
     console.log(`⏱️ UI setup took ${(performance.now() - uiStart).toFixed(2)}ms`);
     console.log(`⏱️ Total setupSalaryCapDraft took ${(performance.now() - perfStart).toFixed(2)}ms`);
     
+    // Initialize sessions from app-bridge.js (loads anonymousSession from localStorage)
+    if (typeof window.initializeSessions === 'function') {
+        console.log('[Salary Cap Draft] Calling window.initializeSessions()...');
+        window.initializeSessions();
+    } else {
+        console.warn('[Salary Cap Draft] ⚠️ window.initializeSessions not available');
+    }
+    
     // Update footer buttons to show logout/copy URL for active sessions
     console.log('[Salary Cap Draft] Checking for updateFooterButtons function...');
     console.log('[Salary Cap Draft] window.updateFooterButtons exists?', typeof window.updateFooterButtons === 'function');
@@ -362,12 +370,11 @@ async function setupSalaryCapDraft() {
         window.updateFooterButtons();
         console.log('✅ Called updateFooterButtons() to show session controls');
     } else {
-        console.warn('[Salary Cap Draft] ⚠️ window.updateFooterButtons is not available! Adding buttons directly...');
-        // app.js not loaded (SSR mode) - add buttons directly
-        addSessionFooterButtons();
+        console.warn('[Salary Cap Draft] ⚠️ window.updateFooterButtons is not available!');
     }
     
     // Check if we should show the game recap modal (after everything is set up)
+
     setTimeout(async () => {
         if (typeof window.checkAndShowGameRecap === 'function') {
             await window.checkAndShowGameRecap();

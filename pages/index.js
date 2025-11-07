@@ -129,11 +129,6 @@ export default function Home({ serverSessionType, hasURLSession }) {
                 // Remove loading overlay after hydration
                 removeLoadingOverlay();
                 
-                // Update footer buttons based on session state
-                if (typeof window.updateFooterButtons === 'function') {
-                  window.updateFooterButtons();
-                }
-                
                 // Restore session from URL if present (for ?session=TOKEN links)
                 const urlParams = new URLSearchParams(window.location.search);
                 const sessionToken = urlParams.get('session');
@@ -184,20 +179,19 @@ export default function Home({ serverSessionType, hasURLSession }) {
                       if (typeof window.restoreSession === 'function') {
                         await window.restoreSession();
                         console.log('[SSR] Called window.restoreSession() to update app.js state');
-                      } else if (typeof window.updateFooterButtons === 'function') {
-                        // Fallback: manually update anonymousSession and call updateFooterButtons
-                        if (typeof window.anonymousSession !== 'undefined') {
-                          window.anonymousSession = {
-                            token: data.session.sessionToken,
-                            teamName: data.session.displayName,
-                            playerCode: data.session.playerCode,
-                            ownerName: data.session.displayName,
-                            expiresAt: data.session.expiresAt,
-                            gameId: data.session.gameId
-                          };
+                      } else {
+                        // Fallback: Use app-bridge.js to update session and footer buttons
+                        // Initialize sessions from localStorage (which now has the restored session)
+                        if (typeof window.initializeSessions === 'function') {
+                          window.initializeSessions();
+                          console.log('[SSR] Called initializeSessions() after URL session restore');
                         }
-                        window.updateFooterButtons();
-                        console.log('[SSR] Manually updated anonymousSession and called updateFooterButtons()');
+                        
+                        // Update footer buttons
+                        if (typeof window.updateFooterButtons === 'function') {
+                          window.updateFooterButtons();
+                          console.log('[SSR] Called updateFooterButtons() after URL session restore');
+                        }
                       }
                       
                       // Re-enable button and update text
@@ -248,6 +242,17 @@ export default function Home({ serverSessionType, hasURLSession }) {
                     console.log('[SSR] Home button clicked, navigating to /');
                     window.location.href = '/';
                   });
+                }
+                
+                // Initialize sessions and update footer buttons (for existing sessions from localStorage)
+                // This handles the case where user already has a session but didn't come from URL
+                if (typeof window.initializeSessions === 'function') {
+                  window.initializeSessions();
+                  console.log('[SSR] Initialized sessions from localStorage');
+                }
+                if (typeof window.updateFooterButtons === 'function') {
+                  window.updateFooterButtons();
+                  console.log('[SSR] Updated footer buttons after initialization');
                 }
                 
                 // Expose functions globally for React components and other scripts
