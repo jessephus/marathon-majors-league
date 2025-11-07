@@ -138,6 +138,26 @@ export function AppStateProvider({
       ...prev,
       gameState: { ...prev.gameState, ...updates },
     }));
+
+    // Emit state change events
+    if (typeof window !== 'undefined') {
+      // Emit resultsUpdated event if results or resultsFinalized changed
+      if ('results' in updates || 'resultsFinalized' in updates) {
+        window.dispatchEvent(new CustomEvent('resultsUpdated', { 
+          detail: { 
+            results: updates.results,
+            finalized: updates.resultsFinalized 
+          } 
+        }));
+      }
+
+      // Emit athleteUpdated event if athletes changed
+      if ('athletes' in updates) {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { athletes: updates.athletes } 
+        }));
+      }
+    }
   }, []);
 
   const setSessionState = useCallback((updates: Partial<SessionState>) => {
