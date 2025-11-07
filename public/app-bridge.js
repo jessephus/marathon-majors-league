@@ -317,6 +317,90 @@ function initializeSessions() {
     }
 }
 
+// ============================================================================
+// COMMISSIONER AUTHENTICATION
+// ============================================================================
+
+/**
+ * Handle commissioner TOTP login form submission
+ * @param {Event} e - Form submit event
+ */
+async function handleCommissionerTOTPLogin(e) {
+    e.preventDefault();
+    console.log('[App Bridge] Commissioner TOTP login form submitted');
+    
+    const totpCode = document.getElementById('totp-code').value.trim();
+    
+    if (!totpCode || !/^\d{6}$/.test(totpCode)) {
+        alert('Please enter a valid 6-digit code');
+        return;
+    }
+    
+    try {
+        // Verify TOTP with backend
+        const response = await fetch(`${API_BASE}/api/auth/totp/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: 'commissioner@marathonmajorsfantasy.com',
+                totpCode: totpCode
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('[App Bridge] TOTP verification successful');
+            
+            // Save commissioner session with 30-day expiration
+            const COMMISSIONER_SESSION_TIMEOUT = 30 * 24 * 60 * 60 * 1000; // 30 days
+            const now = new Date();
+            const expiresAt = new Date(now.getTime() + COMMISSIONER_SESSION_TIMEOUT);
+            
+            commissionerSession = {
+                isCommissioner: true,
+                loginTime: now.toISOString(),
+                expiresAt: expiresAt.toISOString(),
+                ...data.session // Include any session data from backend
+            };
+            
+            console.log('[App Bridge] Saving commissioner session:', {
+                loginTime: commissionerSession.loginTime,
+                expiresAt: commissionerSession.expiresAt
+            });
+            
+            localStorage.setItem(COMMISSIONER_SESSION_KEY, JSON.stringify(commissionerSession));
+            
+            // Update global variable
+            if (typeof window !== 'undefined') {
+                window.commissionerSession = commissionerSession;
+            }
+            
+            console.log('[App Bridge] Commissioner session saved to localStorage');
+            
+            // Hide modal
+            closeModal('commissioner-totp-modal');
+            
+            // Navigate to commissioner page
+            showPage('commissioner-page');
+            
+            // Clear the form
+            document.getElementById('totp-code').value = '';
+            
+        } else {
+            const error = await response.json();
+            console.error('[App Bridge] TOTP verification failed:', error);
+            alert(error.error || 'Invalid TOTP code. Please try again.');
+        }
+    } catch (error) {
+        console.error('[App Bridge] Error during TOTP login:', error);
+        alert('Login failed. Please check your connection and try again.');
+    }
+}
+
+// ============================================================================
+// FOOTER BUTTONS
+// ============================================================================
+
 /**
  * Update footer buttons based on session state
  * Shows logout and copy URL buttons when user has an active session
@@ -381,7 +465,7 @@ function updateFooterButtons() {
  * Handle logout button click
  * Clears the team session (localStorage AND cookie) and navigates to home
  */
-function handleLogout() {
+async function handleLogout() {
     console.log('[App Bridge] Logout button clicked');
 
     // Confirm logout
@@ -400,10 +484,22 @@ function handleLogout() {
 
     console.log('[App Bridge] Team session cleared from localStorage');
 
-    // Clear the session cookie
-    // Set cookie with same name but expired date to delete it
-    document.cookie = 'marathon_fantasy_team=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-    console.log('[App Bridge] Session cookie cleared');
+    // Call logout API to clear the HttpOnly cookie
+    try {
+        const response = await fetch(`${API_BASE}/api/session/logout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            console.log('[App Bridge] Session cookie cleared via API');
+        } else {
+            console.warn('[App Bridge] Failed to clear session cookie via API, but proceeding with logout');
+        }
+    } catch (error) {
+        console.error('[App Bridge] Error calling logout API:', error);
+        // Continue with logout anyway
+    }
 
     // Navigate to home (this will refresh the page and show logged-out state)
     if (typeof window !== 'undefined' && window.location) {
@@ -465,12 +561,14 @@ if (typeof window !== 'undefined') {
         initializeSessions,
         updateFooterButtons,
         handleLogout,
-        handleCopyUrl
+        handleCopyUrl,
+        handleCommissionerTOTPLogin
     };
 
     // Also expose these functions directly for easier access
     window.updateFooterButtons = updateFooterButtons;
     window.initializeSessions = initializeSessions;
+    window.handleCommissionerTOTPLogin = handleCommissionerTOTPLogin;
     window.anonymousSession = anonymousSession;
     window.commissionerSession = commissionerSession;
 }

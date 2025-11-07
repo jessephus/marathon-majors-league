@@ -181,7 +181,7 @@ npm run dev
 # 1. Clear storage
 # 2. Go to homepage
 # 3. Click "Commissioner Mode" at bottom
-# 4. Enter password: "kipchoge"
+# 4. Enter TOTP password
 ```
 
 **Test Cases:**
@@ -200,6 +200,12 @@ npm run dev
   - Click "Go to Dashboard"
   - **Expected:** Navigates to commissioner dashboard
   - **Verify:** Can see commissioner controls (generate codes, run draft, etc.)
+
+- [ ] **TC2.3.4:** Commissioner and Team sessions detected simultaneously
+  - After logging in as commissioner, enter a homepage URL with session token to login to team session
+  - Click "Home"
+  - **Expected:** Navigates to landing page
+  - **Verify:** Can see "view team" and "go to dashboard" buttons 
 
 ### 2.4 Session Priority and Edge Cases
 

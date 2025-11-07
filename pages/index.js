@@ -229,6 +229,13 @@ export default function Home({ serverSessionType, hasURLSession }) {
                   teamForm.addEventListener('submit', handleTeamCreation);
                 }
                 
+                // Setup commissioner TOTP form handler
+                const totpForm = document.getElementById('commissioner-totp-form');
+                if (totpForm && typeof window.handleCommissionerTOTPLogin === 'function') {
+                  totpForm.addEventListener('submit', window.handleCommissionerTOTPLogin);
+                  console.log('[SSR] Attached commissioner TOTP form handler');
+                }
+                
                 // Setup commissioner mode button
                 const commissionerModeBtn = document.getElementById('commissioner-mode');
                 if (commissionerModeBtn) {
