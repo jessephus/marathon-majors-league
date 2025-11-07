@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Commissioner Dashboard Modularization**: Separated admin panel into dynamic, loadable components
+  - Created three panel components: `ResultsManagementPanel`, `AthleteManagementPanel`, `TeamsOverviewPanel`
+  - Implemented dynamic imports with `next/dynamic` for on-demand loading
+  - Added skeleton loaders for loading states
+  - Integrated state events system: `resultsUpdated`, `athleteUpdated`
+  - Automatic cache invalidation when results are updated
+  - All panels use centralized API client (no raw fetch calls)
+  - Comprehensive test suite for admin flows and cache invalidation
+  - Documentation: `docs/FEATURE_COMMISSIONER_PANELS.md`
 - **Roster Lock Timer**: Automatic roster locking at race time
   - Added `roster_lock_time` field to games table
   - Frontend checks lock time and prevents edits after deadline

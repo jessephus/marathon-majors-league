@@ -53,6 +53,11 @@ const tests = [
     description: 'Tests salary cap draft functionality and flows'
   },
   {
+    name: 'Commissioner Panels',
+    file: 'tests/commissioner-panels.test.js',
+    description: 'Tests commissioner panel modularization and state events'
+  },
+  {
     name: 'Performance Benchmarks',
     file: 'tests/performance-benchmarks.test.js',
     description: 'Establishes performance baseline metrics'

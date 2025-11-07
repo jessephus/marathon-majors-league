@@ -4,12 +4,12 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **35 total documents**.
+Our documentation is organized into **5 main categories** with **36 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
 - `TECH_*.md` - Technical reference (6 docs)
-- `FEATURE_*.md` - Game features (6 docs)
+- `FEATURE_*.md` - Game features (7 docs)
 - `PROCESS_*.md` - Project history (14 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 - `MIGRATION_*.md` - Migration guides (1 doc)
@@ -77,6 +77,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_ROSTER_LOCK_TIME.md](FEATURE_ROSTER_LOCK_TIME.md)** | Automatic roster locking feature | Working on roster lock logic |
 | **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
 | **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
+| **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
 
 ### 4️⃣ Process & Maintenance (Project History)
 
