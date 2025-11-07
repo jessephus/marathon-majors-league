@@ -988,8 +988,12 @@ function updateFooterButtons() {
     const footerActions = footer ? footer.querySelector('.footer-actions') : null;
     const gameSwitcher = document.querySelector('.game-switcher');
     
-    console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
-    console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    console.log('[Footer Buttons] updateFooterButtons called');
+    console.log('[Footer Buttons] anonymousSession:', anonymousSession);
+    console.log('[Footer Buttons] session token:', anonymousSession.token ? 'exists' : 'none');
+    console.log('[Footer Buttons] Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    console.log('[Footer Buttons] footer element:', footer ? 'found' : 'NOT FOUND');
+    console.log('[Footer Buttons] footerActions element:', footerActions ? 'found' : 'NOT FOUND');
     
     // Update game-switcher visibility based on commissioner status
     if (gameSwitcher) {
@@ -6463,6 +6467,9 @@ window.showPointsInfo = showPointsInfo;
 window.closePointsInfo = closePointsInfo;
 window.checkAndShowGameRecap = checkAndShowGameRecap;
 window.closeGameRecap = closeGameRecap;
+window.restoreSession = restoreSession;
+window.updateFooterButtons = updateFooterButtons;
+window.anonymousSession = anonymousSession;
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {

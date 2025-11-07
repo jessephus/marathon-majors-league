@@ -97,6 +97,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
             </p>
             <div style={criticalStyles.section}>
               <button 
+                data-session-cta
                 onClick={() => {
                   // Navigate using legacy app.js system for compatibility
                   if (typeof window !== 'undefined' && window.showPage) {

@@ -152,22 +152,23 @@ npm run dev
 
 **Test Cases:**
 
-- [ ] **TC2.2.1:** Team session detected from localStorage
+- [x] **TC2.2.1:** Team session detected from localStorage
   - After creating team, refresh the page
   - **Expected:** Button says "View My Team" or "Go to Dashboard"
   - **Verify:** No flicker during page load
 
-- [ ] **TC2.2.2:** Team session detected from URL parameter
+- [x] **TC2.2.2:** Team session detected from URL parameter
   - Clear all storage
   - Navigate to `http://localhost:3000/?session=YOUR_SESSION_TOKEN`
   - **Expected:** Button says "View My Team"
 
-- [ ] **TC2.2.3:** Team session detected from cookies
+- [x] **TC2.2.3:** Team session detected from cookies
   - After creating team, check cookies (DevTools → Application → Cookies)
-  - **Expected:** Cookie `marathon_fantasy_team` exists
-  - **Verify:** Button shows "View My Team" on page refresh
+  - **Expected:** Cookie `marathon_fantasy_team` exists with JSON session data
+  - **Verify:** Cookie contains: token, sessionType, displayName, gameId, playerCode
+  - **Verify:** Button shows "View My Team" on page refresh (SSR uses cookie)
 
-- [ ] **TC2.2.4:** View team button navigates correctly
+- [x] **TC2.2.4:** View team button navigates correctly
   - Click "View My Team" button
   - **Expected:** Navigates to team/draft page
   - **Verify:** Can see your drafted athletes or draft interface

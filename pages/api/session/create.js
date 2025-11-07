@@ -77,6 +77,56 @@ export default async function handler(req, res) {
     
     const session = result[0];
     
+    // For player sessions, add the playerCode to the game's players array
+    if (sessionType === 'player' && gameId && playerCode) {
+      try {
+        // First ensure the game exists
+        const gameExists = await sql`
+          SELECT game_id FROM games WHERE game_id = ${gameId}
+        `;
+        
+        if (gameExists.length === 0) {
+          // Create the game if it doesn't exist
+          await sql`
+            INSERT INTO games (game_id, players)
+            VALUES (${gameId}, ARRAY[${playerCode}]::TEXT[])
+            ON CONFLICT (game_id) DO NOTHING
+          `;
+        } else {
+          // Add playerCode to players array if not already present
+          await sql`
+            UPDATE games
+            SET players = CASE
+              WHEN ${playerCode} = ANY(players) THEN players
+              ELSE array_append(players, ${playerCode})
+            END
+            WHERE game_id = ${gameId}
+          `;
+        }
+      } catch (gameUpdateError) {
+        // Log but don't fail the session creation
+        console.warn('Failed to add playerCode to game players array:', gameUpdateError);
+      }
+    }
+    
+    // Set session cookie for SSR session detection
+    // This allows the server to detect the session on subsequent page loads
+    const expiresDate = new Date(session.expires_at);
+    const cookieValue = JSON.stringify({
+      token: session.session_token,
+      sessionType,
+      displayName: displayName || null,
+      gameId: gameId || null,
+      playerCode: playerCode || null
+    });
+    
+    // Set cookie with proper security flags
+    res.setHeader('Set-Cookie', [
+      `marathon_fantasy_team=${encodeURIComponent(cookieValue)}; Path=/; Max-Age=${expiryDays * 24 * 60 * 60}; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+    ]);
+    
+    console.log('[Session Create] Set cookie for session:', session.session_token);
+    
     // Return session details
     return res.status(201).json({
       message: 'Anonymous session created successfully',
@@ -85,7 +135,8 @@ export default async function handler(req, res) {
         expiresAt: session.expires_at,
         sessionType,
         displayName: displayName || null,
-        gameId: gameId || null
+        gameId: gameId || null,
+        playerCode: playerCode || null
       },
       // Generate unique URL for this session
       uniqueUrl: gameId 

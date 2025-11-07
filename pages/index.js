@@ -29,42 +29,25 @@ export async function getServerSideProps(context) {
 
 export default function Home({ serverSessionType, hasURLSession }) {
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
-  const [isProcessingSession, setIsProcessingSession] = useState(false);
   
-  // Client-side session detection and URL session handling (after hydration)
+  // Client-side session detection (after hydration)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // Check if there's a session token in the URL
       const urlParams = new URLSearchParams(window.location.search);
       const sessionToken = urlParams.get('session');
       
-      if (sessionToken && !isProcessingSession) {
-        // Process the URL session token
-        setIsProcessingSession(true);
-        
-        // Store the session token in localStorage
-        // Note: We're creating a minimal session object here
-        // The full session details can be fetched from the API if needed
-        const sessionData = {
-          token: sessionToken,
-          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days from now
-        };
-        localStorage.setItem('marathon_fantasy_team', JSON.stringify(sessionData));
-        
-        // Clean URL (remove session parameter)
-        const cleanUrl = window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-        
-        // Update session type
+      if (sessionToken) {
+        // URL session will be handled by initSSRLandingPage() in the Script tag
+        // Just update the UI state for now
         setClientSessionType(SessionType.TEAM);
-        setIsProcessingSession(false);
       } else {
         // Regular session detection from cookies/localStorage
         const detected = detectSessionType(document.cookie);
         setClientSessionType(detected);
       }
     }
-  }, [isProcessingSession]);
+  }, []);
   
   const handleCreateTeam = () => {
     // Trigger the team creation modal (compatibility with existing app.js)
@@ -142,9 +125,105 @@ export default function Home({ serverSessionType, hasURLSession }) {
               } from '/app-bridge.js';
               
               // Initialize SSR landing page
-              function initSSRLandingPage() {
+              async function initSSRLandingPage() {
                 // Remove loading overlay after hydration
                 removeLoadingOverlay();
+                
+                // Update footer buttons based on session state
+                if (typeof window.updateFooterButtons === 'function') {
+                  window.updateFooterButtons();
+                }
+                
+                // Restore session from URL if present (for ?session=TOKEN links)
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionToken = urlParams.get('session');
+                const gameId = urlParams.get('game');
+                
+                if (sessionToken) {
+                  // Session in URL - validate and restore it (overwrite existing if present)
+                  console.log('[SSR] Validating and restoring session from URL');
+                  
+                  // Show loading state on the CTA button
+                  const ctaButton = document.querySelector('[data-session-cta]');
+                  if (ctaButton) {
+                    ctaButton.disabled = true;
+                    ctaButton.textContent = 'Restoring session...';
+                  }
+                  
+                  try {
+                    // Validate the session with the server
+                    const response = await fetch('/api/session/validate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ token: sessionToken })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.valid && data.session) {
+                      // Store the validated session with full details
+                      const sessionData = {
+                        token: data.session.sessionToken,
+                        expiresAt: data.session.expiresAt,
+                        sessionType: data.session.sessionType,
+                        displayName: data.session.displayName,
+                        gameId: data.session.gameId,
+                        playerCode: data.session.playerCode
+                      };
+                      
+                      localStorage.setItem('marathon_fantasy_team', JSON.stringify(sessionData));
+                      
+                      if (data.session.gameId) {
+                        localStorage.setItem('current_game_id', data.session.gameId);
+                      }
+                      
+                      console.log('[SSR] Session restored from URL:', data.session.displayName);
+                      
+                      // Trigger app.js to reload the session from localStorage
+                      // This will update anonymousSession and footer buttons
+                      if (typeof window.restoreSession === 'function') {
+                        await window.restoreSession();
+                        console.log('[SSR] Called window.restoreSession() to update app.js state');
+                      } else if (typeof window.updateFooterButtons === 'function') {
+                        // Fallback: manually update anonymousSession and call updateFooterButtons
+                        if (typeof window.anonymousSession !== 'undefined') {
+                          window.anonymousSession = {
+                            token: data.session.sessionToken,
+                            teamName: data.session.displayName,
+                            playerCode: data.session.playerCode,
+                            ownerName: data.session.displayName,
+                            expiresAt: data.session.expiresAt,
+                            gameId: data.session.gameId
+                          };
+                        }
+                        window.updateFooterButtons();
+                        console.log('[SSR] Manually updated anonymousSession and called updateFooterButtons()');
+                      }
+                      
+                      // Re-enable button and update text
+                      if (ctaButton) {
+                        ctaButton.disabled = false;
+                        ctaButton.textContent = 'View My Team';
+                      }
+                    } else {
+                      console.warn('[SSR] Session token from URL is invalid or expired');
+                      
+                      // Show error state
+                      if (ctaButton) {
+                        ctaButton.disabled = false;
+                        ctaButton.textContent = 'Session expired - Create New Team';
+                      }
+                    }
+                  } catch (error) {
+                    console.error('[SSR] Failed to validate session:', error);
+                    
+                    // Show error state
+                    if (ctaButton) {
+                      ctaButton.disabled = false;
+                      ctaButton.textContent = 'Error - Create New Team';
+                    }
+                  }
+                }
                 
                 // Setup modal close handlers
                 setupModalCloseHandlers('team-creation-modal', 'close-team-modal', 'cancel-team-creation');
@@ -160,6 +239,15 @@ export default function Home({ serverSessionType, hasURLSession }) {
                 const commissionerModeBtn = document.getElementById('commissioner-mode');
                 if (commissionerModeBtn) {
                   commissionerModeBtn.addEventListener('click', () => openModal('commissioner-totp-modal'));
+                }
+                
+                // Setup home button - navigate to root
+                const homeButton = document.getElementById('home-button');
+                if (homeButton) {
+                  homeButton.addEventListener('click', () => {
+                    console.log('[SSR] Home button clicked, navigating to /');
+                    window.location.href = '/';
+                  });
                 }
                 
                 // Expose functions globally for React components and other scripts

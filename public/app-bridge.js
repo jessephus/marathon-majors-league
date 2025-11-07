@@ -23,7 +23,7 @@
 // ============================================================================
 
 const API_BASE = window.location.origin;
-const GAME_ID = 'default';
+const GAME_ID = 'demo-game';
 const TEAM_SESSION_KEY = 'marathon_fantasy_team';
 const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
 
@@ -253,6 +253,9 @@ export async function handleTeamCreation(e) {
             expiresAt: data.session.expiresAt
         };
         storeTeamSession(sessionData);
+        
+        // Also store the game ID separately for salary-cap-draft.js compatibility
+        localStorage.setItem('current_game_id', GAME_ID);
         
         // Close modal
         closeModal('team-creation-modal');
