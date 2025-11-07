@@ -23,9 +23,68 @@
 // ============================================================================
 
 const API_BASE = window.location.origin;
-const GAME_ID = 'demo-game';
+let GAME_ID = 'demo-game'; // Made mutable for game switching
 const TEAM_SESSION_KEY = 'marathon_fantasy_team';
 const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
+
+// Initialize GAME_ID from localStorage if available
+if (typeof localStorage !== 'undefined') {
+    const savedGameId = localStorage.getItem('current_game_id');
+    if (savedGameId) {
+        GAME_ID = savedGameId;
+    }
+}
+
+// ============================================================================
+// GAME MANAGEMENT
+// ============================================================================
+
+/**
+ * Switch to a different game
+ * @param {string} gameId - ID of game to switch to
+ */
+function switchGame(gameId) {
+    GAME_ID = gameId;
+    localStorage.setItem('current_game_id', gameId);
+    
+    // Reload to fetch new game data
+    location.reload();
+}
+
+/**
+ * Initialize game switcher dropdown
+ */
+function initializeGameSwitcher() {
+    const gameSelect = document.getElementById('game-select');
+    if (!gameSelect) {
+        console.log('[App Bridge] Game select element not found');
+        return;
+    }
+
+    // Set current game in dropdown
+    gameSelect.value = GAME_ID;
+    console.log('[App Bridge] Set game select to:', GAME_ID);
+
+    // Remove existing listener if any
+    const newGameSelect = gameSelect.cloneNode(true);
+    gameSelect.parentNode.replaceChild(newGameSelect, gameSelect);
+
+    // Handle game switch
+    newGameSelect.addEventListener('change', (e) => {
+        const newGameId = e.target.value;
+        if (newGameId !== GAME_ID) {
+            const gameName = newGameId === 'demo-game' ? 'Demo Game' : 'Default Game';
+            if (confirm(`Switch to ${gameName}? This will reload the page.`)) {
+                switchGame(newGameId);
+            } else {
+                // Reset to current game if cancelled
+                e.target.value = GAME_ID;
+            }
+        }
+    });
+
+    console.log('[App Bridge] Game switcher initialized');
+}
 
 // ============================================================================
 // PAGE NAVIGATION
@@ -397,6 +456,78 @@ async function handleCommissionerTOTPLogin(e) {
     }
 }
 
+/**
+ * Handle commissioner mode button click
+ * Checks if commissioner is already authenticated and shows page, 
+ * or opens TOTP login modal
+ */
+function handleCommissionerMode() {
+    console.log('[App Bridge] Commissioner Mode button clicked');
+    console.log('[App Bridge] Current commissionerSession:', commissionerSession);
+    
+    // Check if already authenticated via TOTP
+    if (commissionerSession && commissionerSession.isCommissioner) {
+        console.log('[App Bridge] Commissioner authenticated, showing page');
+        // Already authenticated, just show the page
+        showPage('commissioner-page');
+    } else {
+        console.log('[App Bridge] Not authenticated, opening TOTP modal');
+        // Not authenticated, show TOTP login modal
+        openModal('commissioner-totp-modal');
+    }
+}
+
+/**
+ * Handle commissioner logout
+ * Clears commissioner session (localStorage AND cookie)
+ * Does NOT clear team session - commissioner can logout without affecting their team
+ */
+async function handleCommissionerLogout() {
+    console.log('[App Bridge] Commissioner logout button clicked');
+    
+    // Confirm logout
+    const confirmed = confirm('Are you sure you want to logout from Commissioner mode?');
+    if (!confirmed) {
+        console.log('[App Bridge] Commissioner logout cancelled');
+        return;
+    }
+    
+    console.log('[App Bridge] Current commissioner session before clearing:', commissionerSession);
+    
+    // Clear commissioner session from localStorage (but preserve team session)
+    localStorage.removeItem(COMMISSIONER_SESSION_KEY);
+    commissionerSession = null;
+    if (typeof window !== 'undefined') {
+        window.commissionerSession = null;
+    }
+    
+    console.log('[App Bridge] Commissioner session cleared from localStorage');
+    console.log('[App Bridge] Team session still active:', !!anonymousSession?.token);
+    
+    // Call logout API to clear the HttpOnly cookie
+    try {
+        const response = await fetch(`${API_BASE}/api/auth/logout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            console.log('[App Bridge] Commissioner cookie cleared via API');
+        } else {
+            console.warn('[App Bridge] Failed to clear commissioner cookie via API, but proceeding with logout');
+        }
+    } catch (error) {
+        console.error('[App Bridge] Error calling commissioner logout API:', error);
+        // Continue with logout anyway
+    }
+    
+    // Update footer buttons (remove commissioner logout, keep team buttons if team session exists)
+    updateFooterButtons();
+    
+    // Navigate to home/landing page
+    showPage('landing-page');
+}
+
 // ============================================================================
 // FOOTER BUTTONS
 // ============================================================================
@@ -429,15 +560,61 @@ function updateFooterButtons() {
         console.log('[App Bridge] Found existing footer-actions');
     }
 
+    // Update game-switcher visibility based on commissioner status
+    const gameSwitcher = footer.querySelector('.game-switcher');
+    const hasCommissionerSession = commissionerSession && commissionerSession.isCommissioner;
+    
+    if (gameSwitcher) {
+        if (hasCommissionerSession) {
+            gameSwitcher.classList.add('visible');
+            console.log('[App Bridge] Game switcher shown (commissioner logged in)');
+        } else {
+            gameSwitcher.classList.remove('visible');
+            console.log('[App Bridge] Game switcher hidden (not a commissioner)');
+        }
+    }
+
     // Remove only session-specific buttons (logout/copy URL), preserve permanent ones
     const existingLogoutBtn = footerActions.querySelector('.logout-btn');
     const existingCopyUrlBtn = footerActions.querySelector('.copy-url-btn');
+    const existingCommLogoutBtn = footerActions.querySelector('.commissioner-logout-btn');
     if (existingLogoutBtn) existingLogoutBtn.remove();
     if (existingCopyUrlBtn) existingCopyUrlBtn.remove();
+    if (existingCommLogoutBtn) existingCommLogoutBtn.remove();
 
-    // Show logout and copy URL buttons for anonymous sessions
-    if (anonymousSession && anonymousSession.token) {
-        console.log('[App Bridge] Adding footer buttons for anonymous session');
+    // Determine what buttons to show based on active sessions
+    const hasTeamSession = anonymousSession && anonymousSession.token;
+
+    if (hasTeamSession && hasCommissionerSession) {
+        // Both sessions active - show team logout first, then commissioner logout
+        console.log('[App Bridge] Both team and commissioner sessions active');
+
+        // Team Logout button
+        const teamLogoutBtn = document.createElement('button');
+        teamLogoutBtn.className = 'btn btn-secondary logout-btn';
+        teamLogoutBtn.textContent = 'Logout (Team)';
+        teamLogoutBtn.onclick = handleLogout;
+        footerActions.appendChild(teamLogoutBtn);
+
+        // Copy URL button (for team)
+        const copyUrlBtn = document.createElement('button');
+        copyUrlBtn.className = 'btn btn-primary copy-url-btn';
+        copyUrlBtn.textContent = 'Copy My URL';
+        copyUrlBtn.onclick = handleCopyUrl;
+        footerActions.appendChild(copyUrlBtn);
+
+        // Commissioner Logout button
+        const commLogoutBtn = document.createElement('button');
+        commLogoutBtn.className = 'btn btn-secondary commissioner-logout-btn';
+        commLogoutBtn.textContent = 'Logout (Commissioner)';
+        commLogoutBtn.onclick = handleCommissionerLogout;
+        footerActions.appendChild(commLogoutBtn);
+
+        console.log('[App Bridge] Added team and commissioner logout buttons');
+
+    } else if (hasTeamSession) {
+        // Only team session active
+        console.log('[App Bridge] Adding footer buttons for team session');
 
         // Logout button
         const logoutBtn = document.createElement('button');
@@ -453,9 +630,21 @@ function updateFooterButtons() {
         copyUrlBtn.onclick = handleCopyUrl;
         footerActions.appendChild(copyUrlBtn);
 
-        console.log('[App Bridge] Added logout and copy URL buttons');
-    } else if (commissionerSession && commissionerSession.sessionToken) {
-        console.log('[App Bridge] Commissioner session active, no footer buttons needed');
+        console.log('[App Bridge] Added team logout and copy URL buttons');
+
+    } else if (hasCommissionerSession) {
+        // Only commissioner session active
+        console.log('[App Bridge] Adding footer button for commissioner session');
+
+        // Commissioner Logout button
+        const commLogoutBtn = document.createElement('button');
+        commLogoutBtn.className = 'btn btn-secondary commissioner-logout-btn';
+        commLogoutBtn.textContent = 'Logout (Commissioner)';
+        commLogoutBtn.onclick = handleCommissionerLogout;
+        footerActions.appendChild(commLogoutBtn);
+
+        console.log('[App Bridge] Added commissioner logout button');
+
     } else {
         console.log('[App Bridge] No active session, no footer buttons to add');
     }
@@ -562,13 +751,21 @@ if (typeof window !== 'undefined') {
         updateFooterButtons,
         handleLogout,
         handleCopyUrl,
-        handleCommissionerTOTPLogin
+        handleCommissionerTOTPLogin,
+        handleCommissionerMode,
+        handleCommissionerLogout,
+        switchGame,
+        initializeGameSwitcher
     };
 
     // Also expose these functions directly for easier access
     window.updateFooterButtons = updateFooterButtons;
     window.initializeSessions = initializeSessions;
     window.handleCommissionerTOTPLogin = handleCommissionerTOTPLogin;
+    window.handleCommissionerMode = handleCommissionerMode;
+    window.handleCommissionerLogout = handleCommissionerLogout;
+    window.switchGame = switchGame;
+    window.initializeGameSwitcher = initializeGameSwitcher;
     window.anonymousSession = anonymousSession;
     window.commissionerSession = commissionerSession;
 }

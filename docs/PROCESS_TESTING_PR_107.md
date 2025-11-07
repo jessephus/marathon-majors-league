@@ -186,17 +186,17 @@ npm run dev
 
 **Test Cases:**
 
-- [ ] **TC2.3.1:** Commissioner session detected from localStorage
+- [x] **TC2.3.1:** Commissioner session detected from localStorage
   - After logging in as commissioner, return to homepage
   - **Expected:** Button says "Go to Dashboard" or "Commissioner Dashboard"
   - **Verify:** Different styling than team button (blue vs orange)
 
-- [ ] **TC2.3.2:** Commissioner session detected from cookies
+- [x] **TC2.3.2:** Commissioner session detected from cookies
   - Check cookies after commissioner login
   - **Expected:** Cookie `marathon_fantasy_commissioner` exists
   - **Verify:** Session persists across page refreshes
 
-- [ ] **TC2.3.3:** Dashboard button navigates correctly
+- [x] **TC2.3.3:** Dashboard button navigates correctly
   - Click "Go to Dashboard"
   - **Expected:** Navigates to commissioner dashboard
   - **Verify:** Can see commissioner controls (generate codes, run draft, etc.)
@@ -215,7 +215,7 @@ npm run dev
   - Create a team session first
   - Then log in as commissioner
   - Return to homepage
-  - **Expected:** Shows "Go to Dashboard" (commissioner takes priority)
+  - **Expected:** Shows both "Go to Dashboard" and "View Team"
 
 - [ ] **TC2.4.2:** URL session parameter overrides localStorage
   - Create a team and note your session token

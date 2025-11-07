@@ -1086,6 +1086,20 @@ function handleCommissionerLogout() {
         
         console.log('[Commissioner Logout] Commissioner session cleared, team session still active:', !!anonymousSession.token);
         
+        // Call logout API to clear the HttpOnly cookie
+        fetch(`${API_BASE}/api/auth/logout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).then(response => {
+            if (response.ok) {
+                console.log('[Commissioner Logout] Commissioner cookie cleared via API');
+            } else {
+                console.warn('[Commissioner Logout] Failed to clear commissioner cookie via API');
+            }
+        }).catch(error => {
+            console.error('[Commissioner Logout] Error calling logout API:', error);
+        });
+        
         updateFooterButtons();
         showPage('landing-page');
     } else {

@@ -192,6 +192,12 @@ export default function Home({ serverSessionType, hasURLSession }) {
                           window.updateFooterButtons();
                           console.log('[SSR] Called updateFooterButtons() after URL session restore');
                         }
+                        
+                        // Initialize game switcher
+                        if (typeof window.initializeGameSwitcher === 'function') {
+                          window.initializeGameSwitcher();
+                          console.log('[SSR] Called initializeGameSwitcher() after URL session restore');
+                        }
                       }
                       
                       // Re-enable button and update text
@@ -260,6 +266,12 @@ export default function Home({ serverSessionType, hasURLSession }) {
                 if (typeof window.updateFooterButtons === 'function') {
                   window.updateFooterButtons();
                   console.log('[SSR] Updated footer buttons after initialization');
+                }
+                
+                // Initialize game switcher dropdown (for commissioners)
+                if (typeof window.initializeGameSwitcher === 'function') {
+                  window.initializeGameSwitcher();
+                  console.log('[SSR] Initialized game switcher');
                 }
                 
                 // Expose functions globally for React components and other scripts

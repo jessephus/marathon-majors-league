@@ -9,7 +9,7 @@
  * - onCreateTeam: callback for creating a new team
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SessionType } from '../lib/session-utils';
 
 // Critical CSS for above-the-fold content (inlined for faster first paint)
@@ -22,6 +22,15 @@ const criticalStyles = {
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
     textAlign: 'center',
     maxWidth: '500px',
+    margin: '0 auto',
+  },
+  cardMultiple: {
+    background: '#fff',
+    borderRadius: '10px',
+    padding: '40px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+    textAlign: 'center',
+    maxWidth: '600px',
     margin: '0 auto',
   },
   heading: {
@@ -84,14 +93,99 @@ const criticalStyles = {
 
 export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [hasTeamSession, setHasTeamSession] = useState(false);
+  const [hasCommissionerSession, setHasCommissionerSession] = useState(false);
+  const [teamName, setTeamName] = useState('');
+
+  // Check for both sessions on component mount (client-side)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const anonymousSession = window.anonymousSession;
+      const commissionerSession = window.commissionerSession;
+      
+      const hasTeam = anonymousSession && anonymousSession.token;
+      const hasCommissioner = commissionerSession && commissionerSession.isCommissioner;
+      
+      setHasTeamSession(hasTeam);
+      setHasCommissionerSession(hasCommissioner);
+      
+      // Get team name from session
+      if (hasTeam && anonymousSession.displayName) {
+        setTeamName(anonymousSession.displayName);
+      }
+    }
+  }, []);
+
   
   // Session-aware content rendering
   const renderContent = () => {
+    // Handle dual-session scenario: Show both cards when both sessions are active
+    if (hasTeamSession && hasCommissionerSession) {
+      return (
+        <>
+          <h2 style={criticalStyles.heading}>Welcome Back!</h2>
+          <p style={criticalStyles.description}>
+            You have both a team and commissioner access.
+          </p>
+          
+          {/* Team Card */}
+          <div style={criticalStyles.section}>
+            <h3 style={criticalStyles.sectionHeading}>🏃‍♂️ Your Team{teamName ? `: ${teamName}` : ''}</h3>
+            <p style={criticalStyles.sectionText}>
+              Continue drafting or check your roster.
+            </p>
+            <button 
+              data-session-cta
+              onClick={() => {
+                // Navigate using legacy app.js system for compatibility
+                if (typeof window !== 'undefined' && window.showPage) {
+                  window.showPage('salary-cap-draft-page');
+                }
+              }}
+              style={{
+                ...criticalStyles.button,
+                ...(isHovered ? criticalStyles.buttonHover : {})
+              }}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              View My Team
+            </button>
+          </div>
+          
+          {/* Commissioner Card */}
+          <div style={{...criticalStyles.section, marginTop: '20px'}}>
+            <h3 style={criticalStyles.sectionHeading}>👑 Commissioner Dashboard</h3>
+            <p style={criticalStyles.sectionText}>
+              Manage your league, enter results, and oversee the competition.
+            </p>
+            <button 
+              onClick={() => {
+                // Navigate using app-bridge handleCommissionerMode
+                if (typeof window !== 'undefined' && window.handleCommissionerMode) {
+                  window.handleCommissionerMode();
+                }
+              }}
+              style={{
+                ...criticalStyles.button,
+                ...(isHovered ? criticalStyles.buttonHover : {})
+              }}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </>
+      );
+    }
+
+    // Original switch statement for single session scenarios
     switch (sessionType) {
       case SessionType.TEAM:
         return (
           <>
-            <h2 style={criticalStyles.heading}>Welcome Back!</h2>
+            <h2 style={criticalStyles.heading}>Welcome Back{teamName ? `, ${teamName}` : ''}!</h2>
             <p style={criticalStyles.description}>
               Your team is ready. Continue drafting or check your roster.
             </p>
@@ -176,7 +270,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
   };
   
   return (
-    <div style={criticalStyles.card}>
+    <div style={hasTeamSession && hasCommissionerSession ? criticalStyles.cardMultiple : criticalStyles.card}>
       {renderContent()}
     </div>
   );
