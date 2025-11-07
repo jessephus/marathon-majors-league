@@ -176,6 +176,20 @@ function loadSession() {
         };
         
         console.log('✅ loadSession: Parsed session:', sessionWithGameId);
+        
+        // Update global anonymousSession for footer buttons (if app.js is loaded)
+        if (typeof window.anonymousSession !== 'undefined') {
+            window.anonymousSession = {
+                token: sessionWithGameId.token,
+                teamName: sessionWithGameId.displayName || sessionWithGameId.teamName,
+                playerCode: sessionWithGameId.playerCode,
+                ownerName: sessionWithGameId.displayName,
+                expiresAt: sessionWithGameId.expiresAt,
+                gameId: sessionWithGameId.gameId
+            };
+            console.log('✅ Updated window.anonymousSession for footer buttons');
+        }
+        
         return sessionWithGameId;
     } catch (error) {
         console.error('❌ loadSession: Error parsing session:', error);
@@ -213,8 +227,10 @@ async function setupSalaryCapDraft() {
     }
     
     // Update team header with team name and avatar
-    if (session.teamName) {
-        updateTeamHeader(session.teamName);
+    // Use displayName from session (matches database field)
+    const teamName = session.displayName || session.teamName || session.playerCode;
+    if (teamName) {
+        updateTeamHeader(teamName);
     }
     
     const gameId = session.gameId;
@@ -244,9 +260,9 @@ async function setupSalaryCapDraft() {
         // API returns all teams keyed by playerCode, get this player's team
         const playerTeam = data[playerCode];
         
-        if (playerTeam) {
+        if (playerTeam && playerTeam.hasSubmittedRoster) {
             const loadStart = performance.now();
-            console.log('✅ Loading existing team:', playerTeam);
+            console.log('✅ Loading existing team with submitted roster:', playerTeam);
             
             const men = playerTeam.men || [];
             const women = playerTeam.women || [];
@@ -270,6 +286,8 @@ async function setupSalaryCapDraft() {
             // Mark as locked since they already submitted
             salaryCapState.isLocked = true;
             console.log(`⏱️ Team loading took ${(performance.now() - loadStart).toFixed(2)}ms`);
+        } else if (playerTeam) {
+            console.log('ℹ️ Team session exists but no roster submitted yet:', playerCode);
         } else {
             console.log('ℹ️ No existing team found for player:', playerCode);
         }
@@ -334,7 +352,29 @@ async function setupSalaryCapDraft() {
     console.log(`⏱️ UI setup took ${(performance.now() - uiStart).toFixed(2)}ms`);
     console.log(`⏱️ Total setupSalaryCapDraft took ${(performance.now() - perfStart).toFixed(2)}ms`);
     
+    // Initialize sessions from app-bridge.js (loads anonymousSession from localStorage)
+    if (typeof window.initializeSessions === 'function') {
+        console.log('[Salary Cap Draft] Calling window.initializeSessions()...');
+        window.initializeSessions();
+    } else {
+        console.warn('[Salary Cap Draft] ⚠️ window.initializeSessions not available');
+    }
+    
+    // Update footer buttons to show logout/copy URL for active sessions
+    console.log('[Salary Cap Draft] Checking for updateFooterButtons function...');
+    console.log('[Salary Cap Draft] window.updateFooterButtons exists?', typeof window.updateFooterButtons === 'function');
+    console.log('[Salary Cap Draft] window.anonymousSession:', window.anonymousSession);
+    
+    if (typeof window.updateFooterButtons === 'function') {
+        console.log('[Salary Cap Draft] Calling window.updateFooterButtons()...');
+        window.updateFooterButtons();
+        console.log('✅ Called updateFooterButtons() to show session controls');
+    } else {
+        console.warn('[Salary Cap Draft] ⚠️ window.updateFooterButtons is not available!');
+    }
+    
     // Check if we should show the game recap modal (after everything is set up)
+
     setTimeout(async () => {
         if (typeof window.checkAndShowGameRecap === 'function') {
             await window.checkAndShowGameRecap();
@@ -546,7 +586,7 @@ function createModalAthleteItem(athlete, selectedAthleteIds) {
         <div class="modal-athlete-info">
             <div class="modal-athlete-name">${athlete.name}</div>
             <div class="modal-athlete-stats">
-                ${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}
+                ${getCountryFlagEmoji(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}
             </div>
         </div>
         <div class="modal-athlete-salary">$${athleteSalary.toLocaleString()}</div>
@@ -763,7 +803,7 @@ function updateSlot(slotId) {
             </div>
             <div class="slot-athlete-info">
                 <div class="slot-athlete-name">${athlete.name}</div>
-                <div class="slot-athlete-details">${getCountryFlag(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}</div>
+                <div class="slot-athlete-details">${getCountryFlagEmoji(athlete.country)} ${athlete.country} • ${athlete.pb} • ${rankDisplay}</div>
             </div>
             <div class="slot-athlete-salary">$${athleteSalary.toLocaleString()}</div>
             <button class="slot-remove-btn" ${salaryCapState.isLocked ? 'style="display: none;"' : ''} onclick="removeAthleteFromSlot('${slotId}'); event.stopPropagation();">×</button>
@@ -1227,15 +1267,14 @@ function updateAllSlotsLocked() {
     });
 }
 
-// Helper function to get country flag (if not already defined)
-if (typeof getCountryFlag === 'undefined') {
-    function getCountryFlag(countryCode) {
-        const codePoints = countryCode
-            .toUpperCase()
-            .split('')
-            .map(char => 127397 + char.charCodeAt());
-        return String.fromCodePoint(...codePoints);
-    }
+// Helper function to get country flag emoji from 2-letter code
+function getCountryFlag(countryCode) {
+    if (!countryCode || countryCode.length < 2) return '🏁';
+    const sanitized = countryCode.toUpperCase().replace(/[^A-Z]/g, '');
+    if (sanitized.length < 2) return '🏁';
+    
+    const codePoints = sanitized.slice(0, 2).split('').map(char => 127397 + char.charCodeAt());
+    return String.fromCodePoint(...codePoints);
 }
 
 /**

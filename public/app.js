@@ -1,3 +1,10 @@
+// Guard: Only run this script if legacy HTML structure exists
+// This prevents errors when the new WelcomeCard React component is active
+if (typeof window !== 'undefined' && !document.getElementById('landing-page')) {
+    console.log('[App.js] Legacy HTML structure not found, skipping initialization');
+    // Exit immediately without setting up event listeners
+} else {
+
 // Game State
 let gameState = {
     athletes: { men: [], women: [] },
@@ -981,8 +988,12 @@ function updateFooterButtons() {
     const footerActions = footer ? footer.querySelector('.footer-actions') : null;
     const gameSwitcher = document.querySelector('.game-switcher');
     
-    console.log('updateFooterButtons called, session token:', anonymousSession.token ? 'exists' : 'none');
-    console.log('Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    console.log('[Footer Buttons] updateFooterButtons called');
+    console.log('[Footer Buttons] anonymousSession:', anonymousSession);
+    console.log('[Footer Buttons] session token:', anonymousSession.token ? 'exists' : 'none');
+    console.log('[Footer Buttons] Commissioner session:', commissionerSession.isCommissioner ? 'active' : 'none');
+    console.log('[Footer Buttons] footer element:', footer ? 'found' : 'NOT FOUND');
+    console.log('[Footer Buttons] footerActions element:', footerActions ? 'found' : 'NOT FOUND');
     
     // Update game-switcher visibility based on commissioner status
     if (gameSwitcher) {
@@ -1074,6 +1085,20 @@ function handleCommissionerLogout() {
         commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
         
         console.log('[Commissioner Logout] Commissioner session cleared, team session still active:', !!anonymousSession.token);
+        
+        // Call logout API to clear the HttpOnly cookie
+        fetch(`${API_BASE}/api/auth/logout`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).then(response => {
+            if (response.ok) {
+                console.log('[Commissioner Logout] Commissioner cookie cleared via API');
+            } else {
+                console.warn('[Commissioner Logout] Failed to clear commissioner cookie via API');
+            }
+        }).catch(error => {
+            console.error('[Commissioner Logout] Error calling logout API:', error);
+        });
         
         updateFooterButtons();
         showPage('landing-page');
@@ -6456,6 +6481,9 @@ window.showPointsInfo = showPointsInfo;
 window.closePointsInfo = closePointsInfo;
 window.checkAndShowGameRecap = checkAndShowGameRecap;
 window.closeGameRecap = closeGameRecap;
+window.restoreSession = restoreSession;
+window.updateFooterButtons = updateFooterButtons;
+window.anonymousSession = anonymousSession;
 
 // Initialize when DOM is loaded
 if (document.readyState === 'loading') {
@@ -6463,3 +6491,5 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
+} // End of legacy mode guard

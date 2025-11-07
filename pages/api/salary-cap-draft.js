@@ -48,30 +48,22 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get salary cap draft teams for a game with display names
-      const teams = await sql`
-        SELECT DISTINCT ON (sct.player_code) 
-          sct.player_code,
-          sct.total_spent,
-          sct.submitted_at,
-          ans.display_name
-        FROM salary_cap_teams sct
-        LEFT JOIN LATERAL (
-          SELECT display_name 
-          FROM anonymous_sessions 
-          WHERE game_id = sct.game_id 
-            AND player_code = sct.player_code
-            AND is_active = true
-          ORDER BY created_at DESC
-          LIMIT 1
-        ) ans ON true
-        WHERE sct.game_id = ${gameId}
-        ORDER BY sct.player_code, sct.submitted_at DESC
+      // Get all player sessions for this game, including those without teams yet
+      const sessions = await sql`
+        SELECT 
+          player_code,
+          display_name,
+          created_at
+        FROM anonymous_sessions
+        WHERE game_id = ${gameId}
+          AND session_type = 'player'
+          AND is_active = true
+        ORDER BY created_at
       `;
 
-      // Get team details for each player
+      // Get team details for each session
       const teamDetails = {};
-      for (const team of teams) {
+      for (const session of sessions) {
         const athletes = await sql`
           SELECT 
             a.id, a.name, a.country, a.gender, a.personal_best as pb,
@@ -80,16 +72,26 @@ export default async function handler(req, res) {
           FROM salary_cap_teams sct
           JOIN athletes a ON a.id = sct.athlete_id
           WHERE sct.game_id = ${gameId} 
-            AND sct.player_code = ${team.player_code}
+            AND sct.player_code = ${session.player_code}
           ORDER BY sct.id
         `;
 
-        teamDetails[team.player_code] = {
+        // Get total spent for this team (if submitted)
+        const teamSummary = await sql`
+          SELECT total_spent, submitted_at
+          FROM salary_cap_teams
+          WHERE game_id = ${gameId} 
+            AND player_code = ${session.player_code}
+          LIMIT 1
+        `;
+
+        teamDetails[session.player_code] = {
           men: athletes.filter(a => a.team_gender === 'men'),
           women: athletes.filter(a => a.team_gender === 'women'),
-          totalSpent: team.total_spent,
-          submittedAt: team.submitted_at,
-          displayName: team.display_name || null
+          totalSpent: teamSummary[0]?.total_spent || 0,
+          submittedAt: teamSummary[0]?.submitted_at || null,
+          displayName: session.display_name || null,
+          hasSubmittedRoster: athletes.length > 0
         };
       }
 
