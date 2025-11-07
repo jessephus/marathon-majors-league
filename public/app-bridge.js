@@ -23,7 +23,7 @@
 // ============================================================================
 
 const API_BASE = window.location.origin;
-let GAME_ID = 'demo-game'; // Made mutable for game switching
+let GAME_ID = 'default'; // Made mutable for game switching
 const TEAM_SESSION_KEY = 'marathon_fantasy_team';
 const COMMISSIONER_SESSION_KEY = 'marathon_fantasy_commissioner';
 
@@ -73,7 +73,7 @@ function initializeGameSwitcher() {
     newGameSelect.addEventListener('change', (e) => {
         const newGameId = e.target.value;
         if (newGameId !== GAME_ID) {
-            const gameName = newGameId === 'demo-game' ? 'Demo Game' : 'Default Game';
+            const gameName = newGameId === 'NY2025' ? 'NY 2025' : 'Default Game';
             if (confirm(`Switch to ${gameName}? This will reload the page.`)) {
                 switchGame(newGameId);
             } else {

@@ -44,24 +44,24 @@
 
 #### Documentation Organization Rules
 
-**The /docs folder has 5 categories** (see `docs/README.md`):
+**The /docs folder has 7 categories** (see `docs/README.md`):
 
-1. **Core Guides (6 docs)** - CORE_USER_GUIDE, CORE_ARCHITECTURE, CORE_DEVELOPMENT, CORE_DEPLOYMENT, CORE_TESTING, CORE_CHANGELOG
+1. **Core Guides (5 docs)** - CORE_USER_GUIDE, CORE_ARCHITECTURE, CORE_DEVELOPMENT, CORE_DEPLOYMENT, CORE_CHANGELOG
    - These are permanent and should grow with the project
    - Never delete these without team discussion
    - Naming: `CORE_*.md` prefix
 
-2. **Technical Reference (5 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION
+2. **Technical Reference (6 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION, TECH_STATE_MANAGEMENT
    - Keep these current with code changes
    - Add sections, don't create new docs for minor updates
    - Naming: `TECH_*.md` prefix
 
-3. **Features (6 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, etc.
+3. **Features (6 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, FEATURE_ROSTER_LOCK_TIME, FEATURE_ACCOUNT_FREE_TEAMS, FEATURE_SYNC_TOP_100
    - Create new docs for major features only
    - Merge into Core Guides after 6+ months if appropriate
    - Naming: `FEATURE_*.md` prefix
 
-4. **Process & Maintenance (7 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_PHASE_2_SUMMARY, PROCESS_DOCS_HEALTH_CHECK, etc.
+4. **Process & Maintenance (14 docs)** - PROCESS_AUTH_PHASE_2_SUMMARY, PROCESS_CLEANUP_SUMMARY, PROCESS_COMPLETE_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_PLAN, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_DOCS_HEALTH_CHECK, PROCESS_EDITABLE_WA_ID_FEATURE, PROCESS_MANUAL_TESTING_CHECKLIST, PROCESS_MONOLITH_AUDIT, PROCESS_PHASE_4_LEADERBOARD_SUMMARY, PROCESS_ROUTING_PHASE1, PROCESS_SSR_STRATEGY, PROCESS_STATE_MANAGER_TESTING, PROCESS_STATE_PHASE_3_IMPLEMENTATION_SUMMARY
    - These document project history and decisions
    - Don't delete if they involve ongoing projects or migrations
    - Naming: `PROCESS_*.md` prefix
@@ -70,6 +70,16 @@
    - Configuration and setup guides
    - Update when external services change
    - Naming: `SETUP_*.md` prefix
+
+6. **Migrations (1 doc)** - MIGRATION_LANDING_PAGE_SSR
+   - Major technical migrations and transitions
+   - Document before/after, rationale, implementation steps
+   - Naming: `MIGRATION_*.md` prefix
+
+7. **Bug Fixes (1 doc)** - BUGFIX_INFINITE_REFRESH_LOOP
+   - Significant bug documentation
+   - Document symptom, root cause, solution, prevention
+   - Naming: `BUGFIX_*.md` prefix
 
 #### Before Creating New Documentation
 
@@ -109,7 +119,7 @@ Run this checklist every 3 months (or before major releases):
 #### Documentation Health Metrics
 
 Target state (check monthly):
-- **Total docs:** 20-30 files (current: 26 ✅)
+- **Total docs:** 30-40 files (current: 34 ✅)
 - **Orphaned docs:** 0 (not linked from docs/README.md)
 - **Outdated examples:** 0 (code examples match current API)
 - **Broken links:** 0 (all cross-references work)
