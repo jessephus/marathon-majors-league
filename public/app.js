@@ -407,7 +407,7 @@ function setupEventListeners() {
         gameSelect.addEventListener('change', (e) => {
             const newGameId = e.target.value;
             if (newGameId !== GAME_ID) {
-                if (confirm(`Switch to ${newGameId === 'demo-game' ? 'Demo Game' : 'Default Game'}? This will reload the page.`)) {
+                if (confirm(`Switch to ${newGameId === 'NY2025' ? 'NY 2025' : 'Default Game'}? This will reload the page.`)) {
                     switchGame(newGameId);
                 } else {
                     // Reset to current game if cancelled
