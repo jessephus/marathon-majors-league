@@ -201,7 +201,7 @@ npm run dev
   - **Expected:** Navigates to commissioner dashboard
   - **Verify:** Can see commissioner controls (generate codes, run draft, etc.)
 
-- [ ] **TC2.3.4:** Commissioner and Team sessions detected simultaneously
+- [x] **TC2.3.4:** Commissioner and Team sessions detected simultaneously
   - After logging in as commissioner, enter a homepage URL with session token to login to team session
   - Click "Home"
   - **Expected:** Navigates to landing page
@@ -211,13 +211,13 @@ npm run dev
 
 **Test Cases:**
 
-- [ ] **TC2.4.1:** Commissioner session takes priority over team session
+- [x] **TC2.4.1:** Commissioner session takes priority over team session
   - Create a team session first
   - Then log in as commissioner
   - Return to homepage
   - **Expected:** Shows both "Go to Dashboard" and "View Team"
 
-- [ ] **TC2.4.2:** URL session parameter overrides localStorage
+- [x] **TC2.4.2:** URL session parameter overrides localStorage
   - Create a team and note your session token
   - Clear localStorage but not cookies
   - Navigate with URL parameter: `/?session=YOUR_TOKEN`
@@ -234,7 +234,7 @@ npm run dev
   - Refresh page
   - **Expected:** Shows "Create a New Team" (expired session ignored)
 
-- [ ] **TC2.4.4:** Invalid session token format is rejected
+- [x] **TC2.4.4:** Invalid session token format is rejected
   - Navigate to `/?session=invalid`
   - **Expected:** Treated as anonymous session
   - **Verify:** Shows "Create a New Team" button
@@ -247,28 +247,28 @@ npm run dev
 
 **Test Cases:**
 
-- [ ] **TC3.1.1:** Loading spinner behaves correctly
+- [x] **TC3.1.1:** Loading spinner behaves correctly
   - Hard refresh the page (Cmd/Ctrl + Shift + R)
   - **Verify:** Only the circular spinner rotates
   - **Verify:** "Loading your experience..." text remains static (does NOT spin)
   - **Verify:** Spinner disappears after page loads
 
-- [ ] **TC3.1.2:** Welcome card is properly styled
+- [x] **TC3.1.2:** Welcome card is properly styled
   - **Verify:** Card has rounded corners, shadow, white background
   - **Verify:** Card is centered on page
   - **Verify:** Maximum width prevents overly wide layout
 
-- [ ] **TC3.1.2:** Button styling is consistent
+- [x] **TC3.1.3:** Button styling is consistent
   - **Verify:** Orange button for "Create Team"
   - **Verify:** Orange/blue button for "View Team"/"Dashboard"
   - **Verify:** Hover effect works (darker color on hover)
 
-- [ ] **TC3.1.3:** Typography is readable
+- [x] **TC3.1.3:** Typography is readable
   - **Verify:** Heading is large and bold
   - **Verify:** Description text is readable size
   - **Verify:** Proper line spacing
 
-- [ ] **TC3.1.4:** Inline critical CSS loads
+- [x] **TC3.1.4:** Inline critical CSS loads
   - View page source
   - Search for `<style>` tags
   - **Expected:** Inline styles present for above-the-fold content
@@ -302,11 +302,11 @@ npm run dev
 
 **Test Cases:**
 
-- [ ] **TC4.1.1:** First paint time
+- [x] **TC4.1.1:** First paint time
   - Open DevTools → Network
   - Hard refresh (Cmd/Ctrl + Shift + R)
   - Check "First Contentful Paint" in Performance tab
-  - **Expected:** FCP < 1 second on fast connection
+  - **Expected:** FCP < 1 second on fast connection -- 0.96
 
 - [ ] **TC4.1.2:** Time to Interactive
   - Check Performance tab → "Time to Interactive"

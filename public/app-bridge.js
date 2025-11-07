@@ -313,6 +313,17 @@ export async function handleTeamCreation(e) {
         };
         storeTeamSession(sessionData);
         
+        // Update global session variable
+        anonymousSession = sessionData;
+        if (typeof window !== 'undefined') {
+            window.anonymousSession = anonymousSession;
+            
+            // Dispatch event to notify components
+            window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+                detail: { anonymousSession, commissionerSession }
+            }));
+        }
+        
         // Also store the game ID separately for salary-cap-draft.js compatibility
         localStorage.setItem('current_game_id', GAME_ID);
         
@@ -373,6 +384,13 @@ function initializeSessions() {
     if (typeof window !== 'undefined') {
         window.anonymousSession = anonymousSession;
         window.commissionerSession = commissionerSession;
+        
+        // Dispatch custom event to notify components that sessions have been updated
+        window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+            detail: { anonymousSession, commissionerSession }
+        }));
+        
+        console.log('[App Bridge] Dispatched sessionsUpdated event');
     }
 }
 
@@ -432,6 +450,11 @@ async function handleCommissionerTOTPLogin(e) {
             // Update global variable
             if (typeof window !== 'undefined') {
                 window.commissionerSession = commissionerSession;
+                
+                // Dispatch event to notify components
+                window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+                    detail: { anonymousSession, commissionerSession }
+                }));
             }
             
             console.log('[App Bridge] Commissioner session saved to localStorage');
