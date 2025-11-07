@@ -244,8 +244,9 @@ export default function Home({ serverSessionType, hasURLSession }) {
                 
                 // Setup commissioner mode button
                 const commissionerModeBtn = document.getElementById('commissioner-mode');
-                if (commissionerModeBtn) {
-                  commissionerModeBtn.addEventListener('click', () => openModal('commissioner-totp-modal'));
+                if (commissionerModeBtn && typeof window.handleCommissionerMode === 'function') {
+                  commissionerModeBtn.addEventListener('click', window.handleCommissionerMode);
+                  console.log('[SSR] Attached commissioner mode handler');
                 }
                 
                 // Setup home button - navigate to root

@@ -106,6 +106,8 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
       const hasTeam = anonymousSession && anonymousSession.token;
       const hasCommissioner = commissionerSession && commissionerSession.isCommissioner;
       
+      console.log('[WelcomeCard] Session check:', { hasTeam, hasCommissioner, anonymousSession, commissionerSession });
+      
       setHasTeamSession(hasTeam);
       setHasCommissionerSession(hasCommissioner);
       
@@ -114,7 +116,25 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
         setTeamName(anonymousSession.displayName);
       }
     }
-  }, []);
+  }, []); // Empty dependency array - only run once on mount
+  
+  // Also re-check when sessionType prop changes (in case sessions load later)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const anonymousSession = window.anonymousSession;
+      const commissionerSession = window.commissionerSession;
+      
+      const hasTeam = anonymousSession && anonymousSession.token;
+      const hasCommissioner = commissionerSession && commissionerSession.isCommissioner;
+      
+      setHasTeamSession(hasTeam);
+      setHasCommissionerSession(hasCommissioner);
+      
+      if (hasTeam && anonymousSession.displayName) {
+        setTeamName(anonymousSession.displayName);
+      }
+    }
+  }, [sessionType]); // Re-run when sessionType changes
 
   
   // Session-aware content rendering

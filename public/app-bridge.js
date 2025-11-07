@@ -439,6 +439,12 @@ async function handleCommissionerTOTPLogin(e) {
             // Hide modal
             closeModal('commissioner-totp-modal');
             
+            // Update footer buttons to show game switcher
+            updateFooterButtons();
+            
+            // Initialize game switcher now that commissioner is logged in
+            initializeGameSwitcher();
+            
             // Navigate to commissioner page
             showPage('commissioner-page');
             
@@ -577,46 +583,20 @@ function updateFooterButtons() {
     // Remove only session-specific buttons (logout/copy URL), preserve permanent ones
     const existingLogoutBtn = footerActions.querySelector('.logout-btn');
     const existingCopyUrlBtn = footerActions.querySelector('.copy-url-btn');
-    const existingCommLogoutBtn = footerActions.querySelector('.commissioner-logout-btn');
     if (existingLogoutBtn) existingLogoutBtn.remove();
     if (existingCopyUrlBtn) existingCopyUrlBtn.remove();
-    if (existingCommLogoutBtn) existingCommLogoutBtn.remove();
 
     // Determine what buttons to show based on active sessions
     const hasTeamSession = anonymousSession && anonymousSession.token;
 
-    if (hasTeamSession && hasCommissionerSession) {
-        // Both sessions active - show team logout first, then commissioner logout
-        console.log('[App Bridge] Both team and commissioner sessions active');
+    // Priority: Team session logout takes precedence over commissioner logout
+    // This matches the legacy behavior where one button handles both cases
+    if (hasTeamSession) {
+        // Team session active (with or without commissioner session)
+        // Show logout button for team and copy URL button
+        console.log('[App Bridge] Team session active - showing team logout and copy URL');
 
-        // Team Logout button
-        const teamLogoutBtn = document.createElement('button');
-        teamLogoutBtn.className = 'btn btn-secondary logout-btn';
-        teamLogoutBtn.textContent = 'Logout (Team)';
-        teamLogoutBtn.onclick = handleLogout;
-        footerActions.appendChild(teamLogoutBtn);
-
-        // Copy URL button (for team)
-        const copyUrlBtn = document.createElement('button');
-        copyUrlBtn.className = 'btn btn-primary copy-url-btn';
-        copyUrlBtn.textContent = 'Copy My URL';
-        copyUrlBtn.onclick = handleCopyUrl;
-        footerActions.appendChild(copyUrlBtn);
-
-        // Commissioner Logout button
-        const commLogoutBtn = document.createElement('button');
-        commLogoutBtn.className = 'btn btn-secondary commissioner-logout-btn';
-        commLogoutBtn.textContent = 'Logout (Commissioner)';
-        commLogoutBtn.onclick = handleCommissionerLogout;
-        footerActions.appendChild(commLogoutBtn);
-
-        console.log('[App Bridge] Added team and commissioner logout buttons');
-
-    } else if (hasTeamSession) {
-        // Only team session active
-        console.log('[App Bridge] Adding footer buttons for team session');
-
-        // Logout button
+        // Logout button (logs out team)
         const logoutBtn = document.createElement('button');
         logoutBtn.className = 'btn btn-secondary logout-btn';
         logoutBtn.textContent = 'Logout';
@@ -625,7 +605,7 @@ function updateFooterButtons() {
 
         // Copy URL button
         const copyUrlBtn = document.createElement('button');
-        copyUrlBtn.className = 'btn btn-primary copy-url-btn';
+        copyUrlBtn.className = 'btn btn-secondary copy-url-btn';
         copyUrlBtn.textContent = 'Copy My URL';
         copyUrlBtn.onclick = handleCopyUrl;
         footerActions.appendChild(copyUrlBtn);
@@ -633,15 +613,15 @@ function updateFooterButtons() {
         console.log('[App Bridge] Added team logout and copy URL buttons');
 
     } else if (hasCommissionerSession) {
-        // Only commissioner session active
-        console.log('[App Bridge] Adding footer button for commissioner session');
+        // Only commissioner session active (no team session)
+        console.log('[App Bridge] Only commissioner session active - showing commissioner logout');
 
-        // Commissioner Logout button
-        const commLogoutBtn = document.createElement('button');
-        commLogoutBtn.className = 'btn btn-secondary commissioner-logout-btn';
-        commLogoutBtn.textContent = 'Logout (Commissioner)';
-        commLogoutBtn.onclick = handleCommissionerLogout;
-        footerActions.appendChild(commLogoutBtn);
+        // Logout button (logs out commissioner)
+        const logoutBtn = document.createElement('button');
+        logoutBtn.className = 'btn btn-secondary logout-btn';
+        logoutBtn.textContent = 'Logout';
+        logoutBtn.onclick = handleCommissionerLogout;
+        footerActions.appendChild(logoutBtn);
 
         console.log('[App Bridge] Added commissioner logout button');
 
