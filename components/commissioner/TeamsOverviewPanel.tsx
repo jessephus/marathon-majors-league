@@ -57,7 +57,7 @@ export default function TeamsOverviewPanel() {
       setError(null);
 
       // Load game state to get teams
-      const data = await apiClient.gameState.load('default');
+      const data: any = await apiClient.gameState.load('default');
       
       // Transform teams data
       const teamsData: Team[] = Object.entries(data.teams || {}).map(

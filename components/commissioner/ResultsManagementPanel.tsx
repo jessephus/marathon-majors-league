@@ -52,7 +52,7 @@ export default function ResultsManagementPanel() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.results.fetch('default');
+      const data: any = await apiClient.results.fetch('default');
       
       // Transform results data
       const transformedResults: AthleteResult[] = Object.entries(data.results || {}).map(
