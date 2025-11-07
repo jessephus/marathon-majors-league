@@ -338,7 +338,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
                 <label htmlFor="game-select">Game: </label>
                 <select id="game-select" className="game-select">
                   <option value="default">Default Game</option>
-                  <option value="demo-game">Demo Game</option>
+                  <option value="NY2025">NY 2025</option>
                 </select>
               </div>
             </div>
@@ -1289,7 +1289,7 @@ function getMainHTML() {
                     <label for="game-select">Game: </label>
                     <select id="game-select" class="game-select">
                         <option value="default">Default Game</option>
-                        <option value="demo-game">Demo Game</option>
+                        <option value="NY2025">NY 2025</option>
                     </select>
                 </div>
             </div>
