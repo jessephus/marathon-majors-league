@@ -2,9 +2,23 @@
 
 **Purpose:** Comprehensive inventory and analysis of the monolithic application codebase to guide the modularization sequence for [Issue #82: Componentization](https://github.com/jessephus/marathon-majors-league/issues/82).
 
-**Status:** Initial audit completed  
-**Last Updated:** November 4, 2025  
+**Status:** In Progress - Phase 1.5 (Shared Footer Component)  
+**Last Updated:** November 8, 2025  
 **Related Issues:** [#82](https://github.com/jessephus/marathon-majors-league/issues/82) (Parent - Componentization)
+
+---
+
+## 🚨 Migration Plan Deviations
+
+**November 8, 2025:** Accelerated **Phase 1.5: Shared Footer Component** ahead of schedule.
+
+**Original Plan:** Footer extraction was not explicitly documented. Phase 1 only mentioned utility function extraction.
+
+**Actual Execution:** Created `components/Footer.tsx` during active commissioner dashboard modularization work to eliminate footer duplication across 5+ pages.
+
+**Rationale:** Opportunistic extraction while touching footer code prevents future duplication as modularization continues. Low risk, high value improvement aligned with DRY principles.
+
+**Impact:** Positive acceleration of Phase 4 work. Each future component extraction saves ~42 lines of footer code. See detailed documentation in [Phase 1.5 section](#phase-15-shared-footer-component-accelerated) below.
 
 ---
 
@@ -12,14 +26,15 @@
 
 1. [Executive Summary](#executive-summary)
 2. [Phase 0: Bridge Module (Pre-Modularization)](#phase-0-bridge-module-pre-modularization)
-3. [Monolith Overview](#monolith-overview)
-4. [Global State Architecture](#global-state-architecture)
-5. [Feature Cluster Mapping](#feature-cluster-mapping)
-6. [Data Flow Analysis](#data-flow-analysis)
-7. [Coupling and Entanglement](#coupling-and-entanglement)
-8. [Extraction Targets](#extraction-targets)
-9. [Migration Strategy Recommendations](#migration-strategy-recommendations)
-10. [Appendices](#appendices)
+3. [Phase 1.5: Shared Footer Component (Accelerated)](#phase-15-shared-footer-component-accelerated)
+4. [Monolith Overview](#monolith-overview)
+5. [Global State Architecture](#global-state-architecture)
+6. [Feature Cluster Mapping](#feature-cluster-mapping)
+7. [Data Flow Analysis](#data-flow-analysis)
+8. [Coupling and Entanglement](#coupling-and-entanglement)
+9. [Extraction Targets](#extraction-targets)
+10. [Migration Strategy Recommendations](#migration-strategy-recommendations)
+11. [Appendices](#appendices)
 
 ---
 
@@ -48,6 +63,182 @@ The Fantasy NY Marathon application consists of three primary monolithic files t
 3. **DOM Coupling:** 195 `getElementById` calls and 44 `querySelector` calls spread throughout
 4. **Mixed Concerns:** Business logic, UI rendering, and API calls intermingled in most functions
 5. **Page-Based Navigation:** 30+ calls to `showPage()` function for SPA-style routing
+
+---
+
+## Phase 0: Bridge Module (Pre-Modularization)
+
+**Status:** ✅ Completed (November 2025)  
+**Created:** PR #107 - Landing Page SSR Implementation  
+**Purpose:** Minimal utility extraction to enable SSR landing page without loading full monolith
+
+---
+
+## Phase 1.5: Shared Footer Component (Accelerated)
+
+**Status:** ✅ Completed (November 8, 2025)  
+**Created:** During commissioner dashboard modularization work  
+**Purpose:** Eliminate footer duplication across 5+ pages
+
+### Background
+
+**Original Plan:** Footer extraction was not explicitly documented in the migration plan. Phase 1 only mentioned extracting utility functions like `updateFooterButtons()`.
+
+**Deviation Trigger:** While modularizing the commissioner dashboard (Phase 4 work), we discovered footer markup was **duplicated across 5+ pages**:
+- `pages/index.js` (2 instances - SSR and legacy)
+- `pages/commissioner.tsx`
+- `pages/team/[session].tsx`
+- `pages/leaderboard.tsx`
+- `pages/test-athlete-modal.tsx`
+
+**Decision Rationale:**
+1. **Active context** - Already touching footer code during commissioner dashboard work
+2. **Prevents future duplication** - As we continue modularizing pages, we need consistent footer
+3. **Low risk** - Footer has clear inputs/outputs, simple to extract
+4. **High value** - Eliminates maintenance burden of updating 5+ files for footer changes
+5. **Aligns with DRY principle** - Core development standard from documentation
+
+### What Was Created
+
+**File:** `components/Footer.tsx` (165 lines)
+
+**Props Interface:**
+```typescript
+interface FooterProps {
+  mode?: 'home' | 'commissioner' | 'team' | 'leaderboard' | 'minimal';
+  showGameSwitcher?: boolean;
+  currentGameId?: string;
+  onGameChange?: (newGameId: string) => void;
+  onLogout?: () => void;
+  showCopyright?: boolean;
+  className?: string;
+}
+```
+
+**Features:**
+- Configurable button sets based on page context (mode prop)
+- Game switcher with confirmation dialog
+- Consistent styling and behavior
+- TypeScript type safety
+- Reusable across all pages
+
+**Supported Modes:**
+| Mode | Buttons | Use Case |
+|------|---------|----------|
+| `home` | Home, Commissioner Mode | Landing page |
+| `commissioner` | Home, Logout + Game Switcher | Commissioner dashboard |
+| `team` | Back to Home | Team session page |
+| `leaderboard` | Back | Leaderboard page |
+| `minimal` | None | Custom footer needs |
+
+### Pages Updated
+
+**Immediately Migrated (November 8, 2025):**
+1. ✅ `pages/commissioner.tsx` - Commissioner dashboard
+2. ✅ `pages/team/[session].tsx` - Team session page
+3. ✅ `pages/leaderboard.tsx` - Leaderboard page
+
+**Pending Migration (During Next Phase):**
+4. ⏳ `pages/index.js` - Landing page (both SSR and legacy instances)
+5. ⏳ `pages/test-athlete-modal.tsx` - Test page
+
+### Benefits Achieved
+
+✅ **Eliminated 110+ lines of duplicated footer markup**  
+✅ **Single source of truth** for footer behavior  
+✅ **Consistent game switcher** with confirmation across all pages  
+✅ **Type safety** with TypeScript interface  
+✅ **Easier maintenance** - Update once, applies everywhere  
+✅ **Better UX consistency** - Same footer experience across app
+
+### Integration Example
+
+**Before (pages/commissioner.tsx - 42 lines):**
+```tsx
+<footer>
+  <div className="footer-actions">
+    <button className="btn btn-secondary" onClick={() => router.push('/')}>
+      Home
+    </button>
+    <button className="btn btn-secondary" onClick={handleLogout}>
+      Logout
+    </button>
+    <div className="game-switcher visible">
+      <label htmlFor="game-select">Game: </label>
+      <select id="game-select" className="game-select" value={gameState.gameId || 'default'} onChange={(e) => {
+        // ... 15 lines of game switch logic ...
+      }}>
+        <option value="default">Default Game</option>
+        <option value="NY2025">NY 2025</option>
+        <option value="demo-game">Demo Game</option>
+      </select>
+    </div>
+  </div>
+  <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
+</footer>
+```
+
+**After (pages/commissioner.tsx - 9 lines):**
+```tsx
+<Footer 
+  mode="commissioner"
+  showGameSwitcher
+  currentGameId={gameState.gameId || 'default'}
+  onGameChange={(newGameId) => {
+    localStorage.setItem('current_game_id', newGameId);
+    setGameState({ gameId: newGameId });
+    window.location.reload();
+  }}
+  onLogout={handleLogout}
+/>
+```
+
+**Code Reduction:** 42 lines → 9 lines (79% reduction)  
+**Multiply by 5 pages:** ~165 lines eliminated from duplicated footer markup
+
+### Impact on Subsequent Phases
+
+**Phase 2 (API Layer):** No impact - Footer doesn't make API calls
+
+**Phase 3 (State Management):** Positive impact
+- Footer already uses props pattern (compatible with Context API)
+- Easy to inject `useGameState()` hook later if needed
+- Demonstrates componentization pattern for other features
+
+**Phase 4 (Component Extraction):** Significant acceleration
+- When extracting Leaderboard, Salary Cap Draft, etc., footer is already modular
+- New pages can immediately use shared Footer component
+- Reduces migration work per component by ~42 lines
+
+**Phase 5 (Final Migration):** Easier completion
+- One less piece to extract from monolith
+- Footer logic already isolated and tested
+- Cleaner final state
+
+### Lessons Learned
+
+1. **Opportunistic extraction works** - Taking advantage of active context (commissioner dashboard work) made extraction natural
+2. **Visual duplication is a signal** - Seeing duplicated footer code while debugging revealed architectural debt
+3. **Small extractions compound** - Footer seems small, but 5x duplication = significant maintenance burden
+4. **Props pattern scales** - Footer component is simple but demonstrates reusable component pattern
+5. **Documentation discipline** - Recording deviations ensures migration stays organized despite opportunistic improvements
+
+### Future Enhancements
+
+Potential improvements to Footer component:
+- [ ] Add loading state for game switcher
+- [ ] Persist game selection confirmation preference (localStorage)
+- [ ] Add "Settings" button for user preferences
+- [ ] Support custom button sets via children prop
+- [ ] Add animation for button state changes
+- [ ] Integrate with i18n for multi-language support
+
+### Related Documentation
+
+- **PR #XXX:** Shared Footer Component Creation
+- **CORE_ARCHITECTURE.md:** Component architecture patterns
+- **CORE_DEVELOPMENT.md:** DRY principle and code standards
+- **Issue #82:** Parent componentization issue
 
 ---
 

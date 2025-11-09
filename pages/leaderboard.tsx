@@ -16,6 +16,7 @@ import { useStateManagerEvent } from '@/lib/use-state-manager';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import AthleteModal from '@/components/AthleteModal';
+import Footer from '@/components/Footer';
 
 interface LeaderboardPageProps {
   gameId: string;
@@ -336,12 +337,7 @@ function LeaderboardPageContent({
           </div>
         </main>
 
-        {/* Footer Navigation */}
-        <footer>
-          <button className="btn btn-secondary" onClick={() => window.history.back()}>
-            ← Back
-          </button>
-        </footer>
+        <Footer mode="leaderboard" showCopyright={false} />
       </div>
 
       {/* Athlete Modal with Scoring */}

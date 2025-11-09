@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import { AppStateProvider, useCommissionerState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
+import Footer from '@/components/Footer';
 
 // Dynamic imports for panels with skeleton loaders
 const ResultsManagementPanel = dynamic(
@@ -329,56 +330,13 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
           {activePanel === 'results' && <ResultsManagementPanel />}
           {activePanel === 'athletes' && <AthleteManagementPanel />}
           {activePanel === 'teams' && <TeamsOverviewPanel />}
-        </main>
+        {renderActivePanel()}
 
-        <footer>
-          <div className="footer-actions">
-            <button 
-              className="btn btn-secondary"
-              onClick={() => router.push('/')}
-            >
-              Home
-            </button>
-            <button 
-              className="btn btn-secondary"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-            <div className="game-switcher visible">
-              <label htmlFor="game-select">Game: </label>
-              <select 
-                id="game-select" 
-                className="game-select"
-                value={gameState.gameId || 'default'}
-                onChange={(e) => {
-                  const newGameId = e.target.value;
-                  const gameNames: Record<string, string> = {
-                    'default': 'Default Game',
-                    'NY2025': 'NY 2025',
-                    'demo-game': 'Demo Game'
-                  };
-                  
-                  if (newGameId !== gameState.gameId) {
-                    if (confirm(`Switch to ${gameNames[newGameId] || newGameId}? This will reload the page.`)) {
-                      localStorage.setItem('current_game_id', newGameId);
-                      setGameState({ gameId: newGameId });
-                      window.location.reload();
-                    } else {
-                      // Reset to current game if cancelled
-                      e.target.value = gameState.gameId || 'default';
-                    }
-                  }
-                }}
-              >
-                <option value="default">Default Game</option>
-                <option value="NY2025">NY 2025</option>
-                <option value="demo-game">Demo Game</option>
-              </select>
-            </div>
-          </div>
-          <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
-        </footer>
+        <Footer 
+          mode="commissioner"
+          showGameSwitcher
+          onLogout={handleLogout}
+        />
       </div>
     </>
   );
