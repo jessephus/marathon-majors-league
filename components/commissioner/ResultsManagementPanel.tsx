@@ -247,8 +247,11 @@ export default function ResultsManagementPanel() {
     }
 
     const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/;
-    if (!timePattern.test(newRow.time)) {
-      alert('Invalid time format. Use H:MM:SS or HH:MM:SS (e.g., 2:05:30)');
+    const isDNF = newRow.time.trim().toUpperCase() === 'DNF';
+    const isDNS = newRow.time.trim().toUpperCase() === 'DNS';
+    
+    if (!timePattern.test(newRow.time) && !isDNF && !isDNS) {
+      alert('Invalid format. Use H:MM:SS or HH:MM:SS (e.g., 2:05:30), or enter DNF/DNS');
       return;
     }
 
@@ -355,10 +358,13 @@ export default function ResultsManagementPanel() {
         return;
       }
 
-      // Validate time format (H:MM:SS or HH:MM:SS)
+      // Validate time format (H:MM:SS, HH:MM:SS, DNF, or DNS)
       const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/;
-      if (!timePattern.test(newTime)) {
-        alert('Invalid time format. Use H:MM:SS or HH:MM:SS (e.g., 2:05:30)');
+      const isDNF = newTime.trim().toUpperCase() === 'DNF';
+      const isDNS = newTime.trim().toUpperCase() === 'DNS';
+      
+      if (!timePattern.test(newTime) && !isDNF && !isDNS) {
+        alert('Invalid format. Use H:MM:SS or HH:MM:SS (e.g., 2:05:30), or enter DNF/DNS');
         return;
       }
 
@@ -412,12 +418,13 @@ export default function ResultsManagementPanel() {
         return updated;
       });
 
-      // Emit resultsUpdated event
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('resultsUpdated'));
-      }
+      // Don't emit resultsUpdated event here - we're already updating local state
+      // Other components can listen to their own data needs
+      // if (typeof window !== 'undefined') {
+      //   window.dispatchEvent(new CustomEvent('resultsUpdated'));
+      // }
 
-      // Invalidate cache
+      // Invalidate cache for leaderboard
       invalidateLeaderboardCache();
 
     } catch (err) {
