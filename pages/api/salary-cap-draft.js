@@ -54,6 +54,7 @@ export default async function handler(req, res) {
         SELECT DISTINCT
           asess.player_code,
           asess.display_name,
+          asess.session_token,
           asess.created_at,
           sct.athlete_id,
           a.name as athlete_name,
@@ -92,6 +93,7 @@ export default async function handler(req, res) {
             totalSpent: row.total_spent || 0,
             submittedAt: row.submitted_at || null,
             displayName: row.display_name || null,
+            sessionToken: row.session_token || null,
             hasSubmittedRoster: false
           };
         }

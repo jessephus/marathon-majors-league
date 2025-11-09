@@ -13,14 +13,10 @@ import SkeletonLoader from './SkeletonLoader';
 interface Team {
   playerCode: string;
   teamName: string;
-  athletes: {
-    id: number;
-    name: string;
-    gender: string;
-    salary?: number;
-  }[];
+  sessionToken: string | null;
+  athletes: Athlete[];
   totalSalary: number;
-  score?: number;
+  score: number;
   hasSubmittedRoster: boolean;
 }
 
@@ -76,13 +72,25 @@ export default function TeamsOverviewPanel() {
 
       // Load salary cap draft teams for all players
       const teamDetails: any = await apiClient.salaryCapDraft.getTeam(currentGameId);
+      console.log(`[TeamsOverview] Raw teamDetails response:`, teamDetails);
       
       // Load race results for scoring
       const resultsData: any = await apiClient.results.fetch(currentGameId);
+      console.log(`[TeamsOverview] Raw resultsData response:`, resultsData);
       
       // Transform teams object into array - SHOW ALL TEAMS
       const teamsData: Team[] = Object.entries(teamDetails || {}).map(
         ([playerCode, team]: [string, any]) => {
+          console.log(`[TeamsOverview] Processing team:`, {
+            playerCode,
+            displayName: team.displayName,
+            sessionToken: team.sessionToken,
+            totalSpent: team.totalSpent,
+            hasSubmittedRoster: team.hasSubmittedRoster,
+            menCount: team.men?.length || 0,
+            womenCount: team.women?.length || 0
+          });
+
           const athletes = [
             ...(team.men || []).map((a: any) => ({ 
               ...a, 
@@ -96,12 +104,22 @@ export default function TeamsOverviewPanel() {
             }))
           ];
 
+          console.log(`[TeamsOverview] Athletes for ${playerCode}:`, athletes.map(a => ({
+            id: a.id,
+            name: a.name || a.athlete_name,
+            gender: a.gender
+          })));
+
+          const score = calculateTeamScore(athletes, resultsData || {});
+          console.log(`[TeamsOverview] Calculated score for ${playerCode}:`, score);
+
           return {
             playerCode,
             teamName: team.displayName || playerCode,
+            sessionToken: team.sessionToken || null,
             athletes,
             totalSalary: team.totalSpent || 0,
-            score: calculateTeamScore(athletes, resultsData || {}),
+            score,
             hasSubmittedRoster: team.hasSubmittedRoster || false,
           };
         }
@@ -119,30 +137,59 @@ export default function TeamsOverviewPanel() {
     }
   }
 
-  function calculateTeamScore(athletes: any[], results: Record<string, any>): number {
-    if (!athletes) return 0;
+  function calculateTeamScore(athletes: any[], resultsData: any): number {
+    if (!athletes || athletes.length === 0) {
+      console.log('[TeamsOverview] calculateTeamScore: No athletes provided');
+      return 0;
+    }
+
+    // Results structure: { results: {...}, scored: [{athlete_id, points, ...}, ...] }
+    const scoredArray = resultsData?.scored || [];
+    console.log('[TeamsOverview] calculateTeamScore: Scored array length:', scoredArray.length);
     
-    return athletes.reduce((total, athlete) => {
-      const result = results[athlete.id];
-      if (!result || !result.points) return total;
-      return total + result.points;
+    const score = athletes.reduce((total, athlete) => {
+      // Find this athlete's scoring data in the scored array
+      const athleteScore = scoredArray.find((s: any) => s.athlete_id === athlete.id);
+      console.log(`[TeamsOverview] calculateTeamScore: Athlete ${athlete.id} (${athlete.name || athlete.athlete_name}):`, {
+        hasScore: !!athleteScore,
+        points: athleteScore?.points || 0,
+        finishTime: athleteScore?.finish_time
+      });
+      
+      if (!athleteScore || !athleteScore.points) return total;
+      return total + athleteScore.points;
     }, 0);
+
+    console.log('[TeamsOverview] calculateTeamScore: Final score:', score);
+    return score;
   }
 
-  async function handleCopyPlayerLink(playerCode: string) {
-    const playerUrl = `${window.location.origin}/salary-cap-draft?session=${playerCode}`;
+  async function handleCopyPlayerLink(sessionToken: string | null) {
+    if (!sessionToken) {
+      console.error('No session token available');
+      return;
+    }
+
+    const currentGameId = gameState.gameId || 'default';
+    const playerUrl = `${window.location.origin}/?session=${sessionToken}&game=${currentGameId}`;
     
     try {
       await navigator.clipboard.writeText(playerUrl);
-      setCopySuccess(playerCode);
+      setCopySuccess(sessionToken);
       setTimeout(() => setCopySuccess(null), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   }
 
-  function handleViewTeam(playerCode: string) {
-    const playerUrl = `${window.location.origin}/salary-cap-draft?session=${playerCode}`;
+  function handleViewTeam(sessionToken: string | null) {
+    if (!sessionToken) {
+      console.error('No session token available');
+      return;
+    }
+
+    const currentGameId = gameState.gameId || 'default';
+    const playerUrl = `${window.location.origin}/?session=${sessionToken}&game=${currentGameId}`;
     window.open(playerUrl, '_blank');
   }
 
@@ -204,7 +251,7 @@ export default function TeamsOverviewPanel() {
                 color: 'white',
               }}>
                 <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Team Name</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Player Code</th>
+                <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Player Session</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Roster Status</th>
                 <th style={{ padding: '0.5rem', textAlign: 'right', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Total Salary</th>
                 <th style={{ padding: '0.5rem', textAlign: 'right', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Score</th>
@@ -223,9 +270,11 @@ export default function TeamsOverviewPanel() {
                   <td style={{ padding: '0.5rem' }}>{team.teamName}</td>
                   <td style={{ padding: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span>{team.playerCode}</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
+                        {team.sessionToken?.substring(0, 8) || 'N/A'}
+                      </span>
                       <button
-                        onClick={() => handleCopyPlayerLink(team.playerCode)}
+                        onClick={() => handleCopyPlayerLink(team.sessionToken)}
                         className="btn btn-sm btn-secondary"
                         style={{
                           padding: '0.25rem 0.5rem',
@@ -233,8 +282,9 @@ export default function TeamsOverviewPanel() {
                           minWidth: 'auto'
                         }}
                         title="Copy player link"
+                        disabled={!team.sessionToken}
                       >
-                        {copySuccess === team.playerCode ? '✓ Copied' : '📋 Copy Link'}
+                        {copySuccess === team.sessionToken ? '✓ Copied' : '📋 Copy Link'}
                       </button>
                     </div>
                   </td>
@@ -255,8 +305,9 @@ export default function TeamsOverviewPanel() {
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       <button 
                         className="btn btn-sm btn-secondary"
-                        onClick={() => handleViewTeam(team.playerCode)}
+                        onClick={() => handleViewTeam(team.sessionToken)}
                         style={{ padding: '0.25rem 0.5rem', fontSize: '11px' }}
+                        disabled={!team.sessionToken}
                       >
                         View
                       </button>
@@ -264,11 +315,8 @@ export default function TeamsOverviewPanel() {
                         className="btn btn-sm btn-danger"
                         onClick={() => handleDeleteTeam(team.playerCode, team.teamName)}
                         style={{ 
-                          padding: '0.25rem 0.5rem', 
-                          fontSize: '11px',
-                          backgroundColor: '#dc3545',
-                          color: 'white',
-                          border: 'none'
+                          fontSize: '0.7rem',
+                          padding: '0.2rem 0.4rem'
                         }}
                       >
                         Delete
