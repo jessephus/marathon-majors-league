@@ -4926,3 +4926,320 @@ footer .btn {
         opacity: 1;
     }
 }
+
+/* ==========================================
+   Budget Tracker Component Styles
+   ========================================== */
+
+.budget-tracker {
+  margin: 1.5rem 0;
+}
+
+.budget-progress-container {
+  margin: 1rem 0;
+}
+
+.budget-progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.budget-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4caf50, #8bc34a);
+  transition: width 0.3s ease;
+}
+
+.budget-progress-fill.over-budget {
+  background: linear-gradient(90deg, #f44336, #e91e63);
+}
+
+.budget-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.budget-remaining.over-budget {
+  color: #f44336;
+}
+
+.budget-remaining.perfect {
+  color: #4caf50;
+}
+
+.budget-validation-errors {
+  background-color: #fff3cd;
+  border: 1px solid #ffecb5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.validation-error-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #856404;
+}
+
+.validation-error-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.validation-error-list li {
+  padding: 0.25rem 0;
+  color: #856404;
+}
+
+.budget-validation-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  color: #155724;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ==========================================
+   Roster Lock Notice Styles
+   ========================================== */
+
+.roster-lock-notice {
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+.roster-lock-notice.warning {
+  background-color: #fff3cd;
+  border: 2px solid #ffc107;
+  color: #856404;
+}
+
+.roster-lock-notice.locked {
+  background-color: #f8d7da;
+  border: 2px solid #f5c6cb;
+  color: #721c24;
+}
+
+/* ==========================================
+   Roster Slots Component Enhancements
+   ========================================== */
+
+.slot-gender-section {
+  margin: 1.5rem 0;
+}
+
+.slot-gender-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #333;
+}
+
+.slot-gender-slots {
+  display: grid;
+  gap: 1rem;
+}
+
+.draft-slot.locked {
+  cursor: default !important;
+  opacity: 0.7;
+}
+
+.draft-slot.locked:hover {
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+.slot-athlete-info {
+  flex: 1;
+}
+
+.athlete-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.athlete-details {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.athlete-country {
+  font-size: 1.2rem;
+}
+
+.athlete-pb {
+  color: #2196f3;
+}
+
+.slot-athlete-salary {
+  font-weight: 700;
+  color: #4caf50;
+  font-size: 1.125rem;
+}
+
+.slot-remove-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f44336;
+  color: white;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.slot-remove-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* ==========================================
+   Athlete Selection Modal Enhancements
+   ========================================== */
+
+.athlete-selection-modal .modal-content {
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-slot-label {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: normal;
+}
+
+.athlete-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.athlete-search {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.athlete-sort {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+}
+
+.athlete-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.athlete-list-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+}
+
+.athlete-card-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+}
+
+.athlete-card-info {
+  flex: 1;
+}
+
+.athlete-card-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.athlete-card-details {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #666;
+  flex-wrap: wrap;
+}
+
+.athlete-rank {
+  color: #ff9800;
+  font-weight: 600;
+}
+
+.athlete-card-sponsor {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.25rem;
+}
+
+.athlete-card-salary {
+  font-weight: 700;
+  color: #4caf50;
+  font-size: 1.25rem;
+  margin-left: 1rem;
+}
+
+.athlete-card-restriction {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  border-top: 1px solid #ffcdd2;
+}
+
+@media (max-width: 768px) {
+  .athlete-controls {
+    flex-direction: column;
+  }
+
+  .athlete-card-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .athlete-card-salary {
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .slot-gender-slots {
+    gap: 0.75rem;
+  }
+}
