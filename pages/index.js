@@ -339,6 +339,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
                 <select id="game-select" className="game-select">
                   <option value="default">Default Game</option>
                   <option value="NY2025">NY 2025</option>
+                  <option value="demo-game">Demo Game</option>
                 </select>
               </div>
             </div>
@@ -1290,6 +1291,7 @@ function getMainHTML() {
                     <select id="game-select" class="game-select">
                         <option value="default">Default Game</option>
                         <option value="NY2025">NY 2025</option>
+                        <option value="demo-game">Demo Game</option>
                     </select>
                 </div>
             </div>
