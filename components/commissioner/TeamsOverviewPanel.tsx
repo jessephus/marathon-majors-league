@@ -206,36 +206,48 @@ export default function TeamsOverviewPanel() {
     window.open(playerUrl, '_blank');
   }
 
-  async function handleSuspendTeam(playerCode: string, teamName: string) {
-    if (!confirm(`Are you sure you want to suspend team "${teamName}"? This will mark the session as inactive but keep the data.`)) {
+  async function handleSuspendTeam(sessionToken: string | null, teamName: string, isActive: boolean) {
+    if (!sessionToken) {
+      setError('Cannot suspend team: missing session token');
+      return;
+    }
+
+    const action = isActive ? 'suspend' : 'reactivate';
+    const message = isActive 
+      ? `Are you sure you want to suspend team "${teamName}"? This will mark the session as inactive but keep the data.`
+      : `Are you sure you want to reactivate team "${teamName}"? This will restore access to the team.`;
+    
+    if (!confirm(message)) {
       return;
     }
 
     try {
-      const currentGameId = gameState.gameId || 'default';
-      
-      // Soft delete the anonymous session (sets is_active = false)
+      // Toggle the is_active status using sessionToken (unique identifier)
       const response = await fetch(`/api/session/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gameId: currentGameId,
-          playerCode: playerCode
+          sessionToken: sessionToken
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to suspend team');
+        throw new Error(`Failed to ${action} team`);
       }
 
       // Reload teams list
       await loadTeams();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to suspend team');
+      setError(err instanceof Error ? err.message : `Failed to ${action} team`);
     }
   }
 
-  async function handleHardDeleteTeam(playerCode: string, teamName: string) {
+  async function handleHardDeleteTeam(sessionToken: string | null, teamName: string) {
+    if (!sessionToken) {
+      setError('Cannot delete team: missing session token');
+      return;
+    }
+
     if (!confirm(`⚠️ PERMANENT DELETE: Are you sure you want to permanently delete team "${teamName}"?\n\nThis will:\n- Delete the session\n- Delete all roster data\n- Cannot be undone\n\nType the team name to confirm.`)) {
       return;
     }
@@ -248,15 +260,12 @@ export default function TeamsOverviewPanel() {
     }
 
     try {
-      const currentGameId = gameState.gameId || 'default';
-      
-      // Hard delete via new endpoint
+      // Hard delete via sessionToken (unique identifier)
       const response = await fetch(`/api/session/hard-delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gameId: currentGameId,
-          playerCode: playerCode
+          sessionToken: sessionToken
         })
       });
 
@@ -377,7 +386,7 @@ export default function TeamsOverviewPanel() {
                       {team.isActive ? (
                         <button 
                           className="btn btn-sm"
-                          onClick={() => handleSuspendTeam(team.playerCode, team.teamName)}
+                          onClick={() => handleSuspendTeam(team.sessionToken, team.teamName, team.isActive)}
                           style={{ 
                             fontSize: '11px',
                             padding: '0.25rem 0.5rem',
@@ -392,7 +401,7 @@ export default function TeamsOverviewPanel() {
                       ) : (
                         <button 
                           className="btn btn-sm"
-                          onClick={() => handleSuspendTeam(team.playerCode, team.teamName)}
+                          onClick={() => handleSuspendTeam(team.sessionToken, team.teamName, team.isActive)}
                           style={{ 
                             fontSize: '11px',
                             padding: '0.25rem 0.5rem',
@@ -407,7 +416,7 @@ export default function TeamsOverviewPanel() {
                       )}
                       <button 
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleHardDeleteTeam(team.playerCode, team.teamName)}
+                        onClick={() => handleHardDeleteTeam(team.sessionToken, team.teamName)}
                         style={{ 
                           fontSize: '11px',
                           padding: '0.25rem 0.5rem',

@@ -86,6 +86,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Files affected:** `migrations/007_add_subsecond_precision.sql`, `public/app.js` (lines ~1975, 2160, 3390, 3415, 3798, 3810), `schema.sql`
 
+#### Session-Based Team Identification (Migration 010)
+**Problem:** Teams were identified by `playerCode` (user-chosen string) which is not globally unique. The `unique_active_game_player` constraint only ensures uniqueness among ACTIVE teams per game. Multiple suspended teams could share the same `playerCode`, causing ambiguity in delete/suspend operations.
+
+**Solution:**
+- Added `session_id INTEGER` foreign key column to three team tables: `salary_cap_teams`, `draft_teams`, `player_rankings`
+- All foreign keys reference `anonymous_sessions(id)` with `ON DELETE CASCADE`
+- Created indexes `idx_*_session_id` on all three tables for performance
+- Backfilled 192 existing rows by matching `(game_id, player_code)` composite
+- Cleaned up 6 orphaned rows from deleted test game sessions
+
+**API Changes:**
+- `/api/session/delete` and `/api/session/hard-delete` now accept `sessionToken` (preferred) or `(gameId + playerCode)` (legacy backward compatibility)
+- Both endpoints query by `sessionToken` when provided, fall back to `playerCode` composite
+- Hard-delete simplified: only deletes from `anonymous_sessions`, CASCADE handles child table cleanup
+
+**Frontend Changes:**
+- `TeamsOverviewPanel.tsx` handlers updated to pass `sessionToken` instead of `playerCode`
+- All team operations now use unique session identifier for reliable targeting
+
+**Benefits:**
+- Referential integrity: Deleting session automatically removes all related team data
+- Unique identification: Each team has globally unique `session_id` and `session_token`
+- Data cleanup: CASCADE prevents orphaned roster data
+- Backward compatible: Legacy `playerCode` method still works during transition
+
+**Files affected:** `migrations/010_add_session_id_foreign_keys.sql`, `pages/api/session/delete.js`, `pages/api/session/hard-delete.js`, `components/commissioner/TeamsOverviewPanel.tsx`
+
 #### World Athletics Scraping Limitations (Playwright)
 **Findings from automation attempts:**
 
