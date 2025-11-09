@@ -10,6 +10,17 @@ import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
 
+interface Athlete {
+  id: number;
+  name?: string;
+  athlete_name?: string;
+  gender: string;
+  pb?: string;
+  personal_best?: string;
+  salary?: number;
+  country?: string;
+}
+
 interface Team {
   playerCode: string;
   teamName: string;

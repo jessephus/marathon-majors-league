@@ -11,6 +11,7 @@
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { globalTestCleanup } from './test-utils.js';
 
 const execAsync = promisify(exec);
 
@@ -131,6 +132,14 @@ async function runAllTests() {
   console.log(`Failed: ${failed} ${failed > 0 ? '❌' : ''}`);
   console.log(`Duration: ${duration}s`);
   console.log('='.repeat(60));
+  
+  // Run global cleanup to remove any test data
+  console.log('\n🧹 Running test cleanup...');
+  try {
+    await globalTestCleanup();
+  } catch (cleanupError) {
+    console.warn('⚠️  Cleanup warning:', cleanupError.message);
+  }
   
   if (failed > 0) {
     console.log('\n⚠️  Some tests failed. Please review the output above.');
