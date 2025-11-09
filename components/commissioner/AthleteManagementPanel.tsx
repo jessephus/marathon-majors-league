@@ -15,10 +15,21 @@ interface Athlete {
   name: string;
   country: string;
   gender: string;
-  pb: string;
+  personal_best: string; // API returns personal_best
+  pb?: string; // Alias for convenience
   salary?: number;
-  worldAthleticsId?: string;
+  world_athletics_id?: string;
+  worldAthleticsId?: string; // Alias
+  marathon_rank?: number;
+  age?: number;
+  headshot_url?: string;
   confirmed?: boolean;
+}
+
+interface AthleteRace {
+  athlete_id: number;
+  race_id: number;
+  confirmed_at: string;
 }
 
 export default function AthleteManagementPanel() {
@@ -27,10 +38,14 @@ export default function AthleteManagementPanel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [confirmedAthletes, setConfirmedAthletes] = useState<Set<number>>(new Set());
   const [filter, setFilter] = useState<'all' | 'men' | 'women'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingAthlete, setEditingAthlete] = useState<Partial<Athlete> | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showOnlyConfirmed, setShowOnlyConfirmed] = useState(false);
+  const [showOnlyMissingWAID, setShowOnlyMissingWAID] = useState(false);
+  const [sortBy, setSortBy] = useState<'id' | 'name' | 'pb' | 'rank'>('id');
   
   // Track if we're already loading to prevent duplicate requests
   const loadingRef = React.useRef(false);
@@ -39,6 +54,7 @@ export default function AthleteManagementPanel() {
   useEffect(() => {
     console.log('[AthletePanel] Initial load on mount');
     loadAthletes();
+    loadConfirmedAthletes();
   }, []);
 
   // Listen for athleteUpdated events
@@ -46,6 +62,7 @@ export default function AthleteManagementPanel() {
     const handleAthleteUpdate = (e: any) => {
       console.log('[AthletePanel] Received athleteUpdated event:', e.detail);
       loadAthletes();
+      loadConfirmedAthletes();
     };
 
     if (typeof window !== 'undefined') {
@@ -54,7 +71,27 @@ export default function AthleteManagementPanel() {
     }
   }, []);
 
-  async function loadAthletes() {
+  async function loadConfirmedAthletes() {
+    try {
+      // Get active race
+      const racesData = await apiClient.races.list({ active: true });
+      if (!racesData || racesData.length === 0) {
+        return;
+      }
+      
+      const raceId = racesData[0].id;
+
+      // Fetch confirmed athletes for this race
+      const confirmations = await apiClient.athleteRaces.list({ raceId });
+      const athleteIds = new Set<number>(
+        confirmations.map((c: any) => c.athlete_id)
+      );
+      
+      setConfirmedAthletes(athleteIds);
+    } catch (err) {
+      console.error('Error loading confirmed athletes:', err);
+    }
+  }  async function loadAthletes() {
     // Prevent concurrent loads
     if (loadingRef.current) {
       console.log('[AthletePanel] Already loading, skipping duplicate request');
@@ -71,7 +108,9 @@ export default function AthleteManagementPanel() {
       
       const allAthletes = [...data.men, ...data.women].map(athlete => ({
         ...athlete,
-        confirmed: false, // TODO: load confirmation status from athlete_races
+        // Normalize field names (API returns snake_case, component uses camelCase)
+        pb: athlete.personal_best || athlete.pb,
+        worldAthleticsId: athlete.world_athletics_id || athlete.worldAthleticsId,
       }));
 
       setAthletes(allAthletes);
@@ -146,10 +185,32 @@ export default function AthleteManagementPanel() {
       setSaving(true);
       setError(null);
 
-      await apiClient.athletes.toggleConfirmation(athleteId);
+      // Get active race
+      const racesData = await apiClient.races.list({ active: true });
+      if (!racesData || racesData.length === 0) {
+        alert('No active race found. Please create a race first.');
+        setSaving(false);
+        return;
+      }
+      
+      const raceId = racesData[0].id;
+      const isCurrentlyConfirmed = confirmedAthletes.has(athleteId);
 
-      // Emit athleteUpdated event - listener will reload athletes
-      // Don't call loadAthletes() manually here to avoid double-loading
+      if (isCurrentlyConfirmed) {
+        // Remove confirmation
+        await apiClient.athleteRaces.unconfirm(athleteId, raceId);
+        setConfirmedAthletes(prev => {
+          const next = new Set(prev);
+          next.delete(athleteId);
+          return next;
+        });
+      } else {
+        // Add confirmation
+        await apiClient.athleteRaces.confirm(athleteId, raceId);
+        setConfirmedAthletes(prev => new Set(prev).add(athleteId));
+      }
+
+      // Emit athleteUpdated event
       console.log('[AthletePanel] Emitting athleteUpdated event (confirmed)');
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('athleteUpdated', { 
@@ -158,6 +219,8 @@ export default function AthleteManagementPanel() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle confirmation');
+      // Reload to sync state
+      loadConfirmedAthletes();
     } finally {
       setSaving(false);
     }
@@ -166,10 +229,22 @@ export default function AthleteManagementPanel() {
   function getFilteredAthletes() {
     let filtered = athletes;
 
+    // Gender filter
     if (filter !== 'all') {
       filtered = filtered.filter(a => a.gender.toLowerCase() === filter);
     }
 
+    // NYC Marathon confirmed filter
+    if (showOnlyConfirmed) {
+      filtered = filtered.filter(a => confirmedAthletes.has(a.id));
+    }
+
+    // Missing World Athletics ID filter
+    if (showOnlyMissingWAID) {
+      filtered = filtered.filter(a => !a.worldAthleticsId && !a.world_athletics_id);
+    }
+
+    // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(a => 
@@ -178,7 +253,22 @@ export default function AthleteManagementPanel() {
       );
     }
 
-    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+    // Sort
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'pb':
+          return (a.pb || a.personal_best || '').localeCompare(b.pb || b.personal_best || '');
+        case 'rank':
+          return (a.marathon_rank || 9999) - (b.marathon_rank || 9999);
+        case 'id':
+        default:
+          return a.id - b.id;
+      }
+    });
+
+    return filtered;
   }
 
   if (loading) {
@@ -189,96 +279,220 @@ export default function AthleteManagementPanel() {
 
   return (
     <div className="athlete-management-panel">
-      <h3>Athlete Management</h3>
-
       {error && (
-        <div className="error-message" style={{ color: 'red', marginBottom: '1rem' }}>
+        <div className="error-message" style={{ color: 'red', marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee', borderRadius: '4px' }}>
           {error}
         </div>
       )}
 
-      <div className="panel-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+      {/* Top Controls */}
+      <div style={{ marginBottom: '1.5rem' }}>
         <button 
           className="btn btn-primary" 
           onClick={() => setShowAddModal(true)}
           disabled={saving}
+          style={{
+            backgroundColor: '#2C39A2',
+            color: 'white',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '4px',
+            border: 'none',
+            fontSize: '16px',
+            fontWeight: '600',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+          }}
         >
-          ➕ Add Athlete
+          ADD NEW ATHLETE
         </button>
+      </div>
 
-        <div className="filter-buttons" style={{ display: 'flex', gap: '0.5rem' }}>
-          <button 
-            className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setFilter('all')}
+      {/* Filter Checkboxes and Controls */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={showOnlyConfirmed}
+            onChange={(e) => setShowOnlyConfirmed(e.target.checked)}
+            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '14px' }}>Show only confirmed for NYC Marathon</span>
+        </label>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={showOnlyMissingWAID}
+            onChange={(e) => setShowOnlyMissingWAID(e.target.checked)}
+            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+          />
+          <span style={{ fontSize: '14px' }}>Show only missing World Athletics ID</span>
+        </label>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontSize: '14px', fontWeight: '500' }}>Gender:</label>
+          <select 
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as 'all' | 'men' | 'women')}
+            style={{
+              padding: '0.5rem',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
           >
-            All
-          </button>
-          <button 
-            className={`btn ${filter === 'men' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setFilter('men')}
-          >
-            Men
-          </button>
-          <button 
-            className={`btn ${filter === 'women' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setFilter('women')}
-          >
-            Women
-          </button>
+            <option value="all">All</option>
+            <option value="men">Men</option>
+            <option value="women">Women</option>
+          </select>
         </div>
-
-        <input
-          type="text"
-          placeholder="Search athletes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ddd' }}
-        />
       </div>
 
-      <div className="athletes-count" style={{ marginBottom: '0.5rem', color: '#666' }}>
-        Showing {filteredAthletes.length} of {athletes.length} athletes
+      {/* Sort By Control */}
+      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <label style={{ fontSize: '14px', fontWeight: '500' }}>Sort by:</label>
+        <select 
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as 'id' | 'name' | 'pb' | 'rank')}
+          style={{
+            padding: '0.5rem',
+            borderRadius: '4px',
+            border: '1px solid #ddd',
+            fontSize: '14px',
+            cursor: 'pointer',
+          }}
+        >
+          <option value="id">ID</option>
+          <option value="name">Name</option>
+          <option value="pb">Personal Best</option>
+          <option value="rank">Marathon Rank</option>
+        </select>
       </div>
 
-      <div className="athletes-list">
+      <div className="athletes-count" style={{ marginBottom: '1rem', fontSize: '14px', color: '#666' }}>
+        {filteredAthletes.length} athlete(s) found
+      </div>
+
+      <div className="athletes-list" style={{ overflowX: 'auto' }}>
         {filteredAthletes.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>No athletes found</p>
+          <p style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>No athletes found</p>
         ) : (
-          <table className="athletes-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="athletes-table" style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse',
+            fontSize: '14px',
+          }}>
             <thead>
-              <tr>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Name</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Country</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Gender</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>PB</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>WA ID</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Confirmed</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Actions</th>
+              <tr style={{ 
+                backgroundColor: '#2C39A2',
+                color: 'white',
+              }}>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>ID</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>Name</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>Country</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>Gender</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>Personal Best</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>Marathon Rank</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>Age</th>
+                <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600' }}>World Athletics ID</th>
+                <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600' }}>NYC Confirmed</th>
+                <th style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '600' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredAthletes.map((athlete) => (
-                <tr key={athlete.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '0.5rem' }}>{athlete.name}</td>
-                  <td style={{ padding: '0.5rem' }}>{athlete.country}</td>
-                  <td style={{ padding: '0.5rem' }}>{athlete.gender}</td>
-                  <td style={{ padding: '0.5rem' }}>{athlete.pb}</td>
-                  <td style={{ padding: '0.5rem' }}>{athlete.worldAthleticsId || '-'}</td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={athlete.confirmed}
-                      onChange={() => handleToggleConfirmation(athlete.id)}
-                      disabled={saving}
-                    />
+              {filteredAthletes.map((athlete, index) => (
+                <tr 
+                  key={athlete.id} 
+                  style={{ 
+                    borderBottom: '1px solid #eee',
+                    backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9',
+                  }}
+                >
+                  <td style={{ padding: '0.75rem' }}>{athlete.id}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: '500', color: '#2C39A2' }}>{athlete.name}</td>
+                  <td style={{ padding: '0.75rem' }}>{athlete.country}</td>
+                  <td style={{ padding: '0.75rem', textTransform: 'capitalize' }}>
+                    {athlete.gender === 'men' ? 'M' : athlete.gender === 'women' ? 'F' : athlete.gender}
                   </td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => setEditingAthlete(athlete)}
+                  <td style={{ padding: '0.75rem' }}>{athlete.pb || athlete.personal_best}</td>
+                  <td style={{ padding: '0.75rem' }}>
+                    {athlete.marathon_rank ? `#${athlete.marathon_rank}` : '-'}
+                  </td>
+                  <td style={{ padding: '0.75rem' }}>{athlete.age || '-'}</td>
+                  <td style={{ padding: '0.75rem', fontFamily: 'monospace' }}>
+                    {athlete.worldAthleticsId || athlete.world_athletics_id || '-'}
+                  </td>
+                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                    <button
+                      onClick={() => handleToggleConfirmation(athlete.id)}
+                      disabled={saving}
+                      style={{
+                        backgroundColor: confirmedAthletes.has(athlete.id) ? '#28a745' : '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '0.5rem 1rem',
+                        fontSize: '13px',
+                        fontWeight: '500',
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        opacity: saving ? 0.6 : 1,
+                        minWidth: '100px',
+                      }}
                     >
-                      Edit
+                      {confirmedAthletes.has(athlete.id) ? '✓ Confirmed' : 'Confirmed'}
                     </button>
+                  </td>
+                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-sm"
+                        onClick={() => setEditingAthlete(athlete)}
+                        style={{
+                          backgroundColor: '#ff6900',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '0.5rem 1rem',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Save
+                      </button>
+                      <button 
+                        className="btn btn-sm"
+                        onClick={async () => {
+                          // Sync athlete data from World Athletics
+                          try {
+                            setSaving(true);
+                            await apiClient.athletes.sync(athlete.id);
+                            alert('Athlete synced successfully!');
+                            loadAthletes();
+                          } catch (err) {
+                            alert('Failed to sync athlete');
+                          } finally {
+                            setSaving(false);
+                          }
+                        }}
+                        disabled={saving}
+                        style={{
+                          backgroundColor: '#2C39A2',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '0.5rem 1rem',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          cursor: saving ? 'not-allowed' : 'pointer',
+                          opacity: saving ? 0.6 : 1,
+                        }}
+                      >
+                        Sync
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
