@@ -31,7 +31,7 @@ export default function ResultsManagementPanel() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<AthleteResult[]>([]);
-  const [editingResult, setEditingResult] = useState<Partial<AthleteResult> | null>(null);
+  const [editedTimes, setEditedTimes] = useState<Record<number, string>>({});
 
   // Load results on mount
   useEffect(() => {
@@ -189,31 +189,121 @@ export default function ResultsManagementPanel() {
     }
   }
 
-  function handleAddResult() {
-    setEditingResult({
-      athleteId: 0,
-      athleteName: '',
-      finishTime: '',
-      position: results.length + 1,
-    });
+  // Handle inline time edit
+  function handleTimeChange(athleteId: number, newTime: string) {
+    setEditedTimes(prev => ({
+      ...prev,
+      [athleteId]: newTime
+    }));
   }
 
-  function handleSaveEditingResult() {
-    if (!editingResult || !editingResult.athleteId || !editingResult.finishTime) {
-      alert('Please fill in athlete ID and finish time');
+  // Save individual result
+  async function handleSaveResult(athleteId: number) {
+    try {
+      const newTime = editedTimes[athleteId];
+      if (!newTime || !newTime.trim()) {
+        alert('Please enter a valid time');
+        return;
+      }
+
+      // Validate time format (H:MM:SS or HH:MM:SS)
+      const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/;
+      if (!timePattern.test(newTime)) {
+        alert('Invalid time format. Use H:MM:SS or HH:MM:SS (e.g., 2:05:30)');
+        return;
+      }
+
+      setSaving(true);
+
+      // Get current results from API
+      const gameId = gameState.gameId || 'default';
+      const data: any = await apiClient.results.fetch(gameId);
+      const currentResults = data.results || {};
+
+      // Update the specific athlete's time
+      const resultsData = {
+        ...currentResults,
+        [athleteId]: {
+          ...currentResults[athleteId],
+          finishTime: newTime,
+          finish_time: newTime
+        }
+      };
+
+      await apiClient.results.update(gameId, resultsData);
+
+      // Update local state
+      setResults(prev => prev.map(r => 
+        r.athleteId === athleteId 
+          ? { ...r, finishTime: newTime }
+          : r
+      ));
+
+      // Clear the edited time
+      setEditedTimes(prev => {
+        const updated = { ...prev };
+        delete updated[athleteId];
+        return updated;
+      });
+
+      // Emit resultsUpdated event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('resultsUpdated'));
+      }
+
+      // Invalidate cache
+      invalidateLeaderboardCache();
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save result');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Delete individual result
+  async function handleDeleteResult(athleteId: number) {
+    if (!confirm('Are you sure you want to delete this result?')) {
       return;
     }
 
-    const index = results.findIndex(r => r.athleteId === editingResult.athleteId);
-    if (index >= 0) {
-      const updated = [...results];
-      updated[index] = { ...updated[index], ...editingResult } as AthleteResult;
-      setResults(updated);
-    } else {
-      setResults([...results, editingResult as AthleteResult]);
-    }
+    try {
+      setSaving(true);
 
-    setEditingResult(null);
+      // Get current results from API
+      const gameId = gameState.gameId || 'default';
+      const data: any = await apiClient.results.fetch(gameId);
+      const currentResults = data.results || {};
+
+      // Remove the athlete's result
+      const resultsData = { ...currentResults };
+      delete resultsData[athleteId];
+
+      await apiClient.results.update(gameId, resultsData);
+
+      // Update local state
+      setResults(prev => prev.filter(r => r.athleteId !== athleteId));
+
+      // Clear any edited time
+      setEditedTimes(prev => {
+        const updated = { ...prev };
+        delete updated[athleteId];
+        return updated;
+      });
+
+      // Emit resultsUpdated event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('resultsUpdated'));
+      }
+
+      // Invalidate cache
+      invalidateLeaderboardCache();
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete result');
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -233,24 +323,18 @@ export default function ResultsManagementPanel() {
       <div className="panel-actions" style={{ marginBottom: '1rem' }}>
         <button 
           className="btn btn-primary" 
-          onClick={handleAddResult}
-          disabled={saving}
-        >
-          ➕ Add Result
-        </button>
-        <button 
-          className="btn btn-success" 
           onClick={handleUpdateResults}
-          disabled={saving || results.length === 0}
+          disabled={saving || gameState.resultsFinalized}
         >
-          {saving ? 'Saving...' : '💾 Save Results'}
+          {saving ? 'Saving...' : 'Save Results'}
         </button>
+        &nbsp;
         <button 
           className="btn btn-warning" 
           onClick={handleFinalizeResults}
           disabled={saving || gameState.resultsFinalized}
         >
-          {gameState.resultsFinalized ? '✅ Results Finalized' : '🔒 Finalize Results'}
+          {gameState.resultsFinalized ? 'Results Finalized' : '🔒 Finalize Results'}
         </button>
       </div>
 
@@ -261,28 +345,64 @@ export default function ResultsManagementPanel() {
           <table className="results-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Position</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Position</th>
                 <th style={{ padding: '0.5rem', textAlign: 'left' }}>Athlete</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Country</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Gender</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Finish Time</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Country</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Gender</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Finish Time</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {results.map((result, idx) => (
                 <tr key={result.athleteId} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '0.5rem' }}>{result.position}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.position || '-'}</td>
                   <td style={{ padding: '0.5rem' }}>{result.athleteName}</td>
-                  <td style={{ padding: '0.5rem' }}>{result.country}</td>
-                  <td style={{ padding: '0.5rem' }}>{result.gender}</td>
-                  <td style={{ padding: '0.5rem' }}>{result.finishTime}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.country}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.gender}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="H:MM:SS"
+                      value={editedTimes[result.athleteId] ?? result.finishTime}
+                      onChange={(e) => handleTimeChange(result.athleteId, e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '0',
+                        border: 'none',
+                        borderRadius: '0',
+                        background: 'transparent',
+                        fontFamily: 'inherit',
+                        fontSize: 'inherit',
+                        color: 'inherit',
+                        outline: 'none',
+                        textAlign: 'center'
+                      }}
+                    />
+                  </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                     <button 
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => setEditingResult(result)}
+                      className="btn btn-sm btn-primary"
+                      onClick={() => handleSaveResult(result.athleteId)}
+                      disabled={saving}
+                      style={{ 
+                        marginRight: '0.5rem',
+                        fontSize: '0.7rem',
+                        padding: '0.2rem 0.4rem'
+                      }}
                     >
-                      Edit
+                      Save
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleDeleteResult(result.athleteId)}
+                      disabled={saving}
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '0.2rem 0.4rem'
+                      }}
+                    >
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -291,48 +411,6 @@ export default function ResultsManagementPanel() {
           </table>
         )}
       </div>
-
-      {editingResult && (
-        <div className="modal" style={{ display: 'flex' }}>
-          <div className="modal-overlay" onClick={() => setEditingResult(null)}></div>
-          <div className="modal-content">
-            <h3>{editingResult.athleteId ? 'Edit Result' : 'Add Result'}</h3>
-            <div className="form-group">
-              <label>Athlete ID</label>
-              <input
-                type="number"
-                value={editingResult.athleteId || ''}
-                onChange={(e) => setEditingResult({ ...editingResult, athleteId: parseInt(e.target.value) })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Finish Time</label>
-              <input
-                type="text"
-                placeholder="HH:MM:SS"
-                value={editingResult.finishTime || ''}
-                onChange={(e) => setEditingResult({ ...editingResult, finishTime: e.target.value })}
-              />
-            </div>
-            <div className="form-group">
-              <label>Position</label>
-              <input
-                type="number"
-                value={editingResult.position || ''}
-                onChange={(e) => setEditingResult({ ...editingResult, position: parseInt(e.target.value) })}
-              />
-            </div>
-            <div className="form-actions">
-              <button className="btn btn-secondary" onClick={() => setEditingResult(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={handleSaveEditingResult}>
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
