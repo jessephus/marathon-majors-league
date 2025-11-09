@@ -25,6 +25,15 @@ interface AthleteResult {
   split40k?: string;
 }
 
+interface NewResultRow {
+  athleteId: number;
+  athleteName: string;
+  country: string;
+  gender: string;
+  position: number;
+  time: string;
+}
+
 export default function ResultsManagementPanel() {
   const { gameState, setGameState } = useGameState();
   const [loading, setLoading] = useState(true);
@@ -32,10 +41,25 @@ export default function ResultsManagementPanel() {
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<AthleteResult[]>([]);
   const [editedTimes, setEditedTimes] = useState<Record<number, string>>({});
+  const [selectedSplit, setSelectedSplit] = useState<string>('finishTime');
+  const [allAthletes, setAllAthletes] = useState<any[]>([]);
+  const [newRow, setNewRow] = useState<NewResultRow | null>(null);
+
+  // Split options
+  const splitOptions = [
+    { value: 'finishTime', label: 'Finish Time' },
+    { value: 'split5k', label: '5K Split' },
+    { value: 'split10k', label: '10K Split' },
+    { value: 'splitHalf', label: 'Half Marathon Split' },
+    { value: 'split30k', label: '30K Split' },
+    { value: 'split35k', label: '35K Split' },
+    { value: 'split40k', label: '40K Split' },
+  ];
 
   // Load results on mount
   useEffect(() => {
     loadResults();
+    loadAthletes();
   }, []);
 
   // Listen for resultsUpdated events
@@ -49,6 +73,16 @@ export default function ResultsManagementPanel() {
       return () => window.removeEventListener('resultsUpdated', handleResultsUpdate);
     }
   }, []);
+
+  async function loadAthletes() {
+    try {
+      const data = await apiClient.athletes.list();
+      const combined = [...data.men, ...data.women];
+      setAllAthletes(combined);
+    } catch (err) {
+      console.error('Failed to load athletes:', err);
+    }
+  }
 
   async function loadResults() {
     try {
@@ -99,46 +133,6 @@ export default function ResultsManagementPanel() {
     }
   }
 
-  async function handleUpdateResults() {
-    try {
-      setSaving(true);
-      setError(null);
-
-      // Use gameId from state manager
-      const gameId = gameState.gameId || 'default';
-
-      const resultsData = results.reduce((acc, result) => {
-        acc[result.athleteId] = {
-          finishTime: result.finishTime,
-          position: result.position,
-          split5k: result.split5k,
-          split10k: result.split10k,
-          splitHalf: result.splitHalf,
-          split30k: result.split30k,
-          split35k: result.split35k,
-          split40k: result.split40k,
-        };
-        return acc;
-      }, {} as Record<number, any>);
-
-      await apiClient.results.update(gameId, resultsData);
-
-      // Emit resultsUpdated event
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('resultsUpdated', { detail: { results: resultsData } }));
-      }
-
-      // Invalidate leaderboard cache
-      invalidateLeaderboardCache();
-
-      alert('Results updated successfully!');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update results');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleFinalizeResults() {
     if (!confirm('Are you sure you want to finalize results? This action cannot be undone.')) {
       return;
@@ -177,6 +171,133 @@ export default function ResultsManagementPanel() {
     }
   }
 
+  async function handleResetResults() {
+    if (!confirm('Are you sure you want to reset ALL results? This will delete all race data and cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const gameId = gameState.gameId || 'default';
+
+      // Clear all results by sending empty object
+      await apiClient.results.update(gameId, {});
+
+      // Update local state
+      setResults([]);
+      setEditedTimes({});
+      setNewRow(null);
+
+      // Emit resultsUpdated event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('resultsUpdated'));
+      }
+
+      // Invalidate cache
+      invalidateLeaderboardCache();
+
+      alert('All results have been reset successfully!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to reset results');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleAddResult() {
+    if (newRow) {
+      alert('Please save or cancel the current new result before adding another.');
+      return;
+    }
+
+    // Get athletes not already in results
+    const resultAthleteIds = new Set(results.map(r => r.athleteId));
+    const availableAthletes = allAthletes.filter(a => !resultAthleteIds.has(a.id));
+
+    if (availableAthletes.length === 0) {
+      alert('All athletes already have results. Delete a result to add a different athlete.');
+      return;
+    }
+
+    // Create new row with first available athlete
+    const firstAthlete = availableAthletes[0];
+    setNewRow({
+      athleteId: firstAthlete.id,
+      athleteName: firstAthlete.name,
+      country: firstAthlete.country,
+      gender: firstAthlete.gender,
+      position: 0,
+      time: ''
+    });
+  }
+
+  function handleCancelNewResult() {
+    setNewRow(null);
+  }
+
+  async function handleSaveNewResult() {
+    if (!newRow) return;
+
+    // Validate inputs
+    if (!newRow.time.trim()) {
+      alert('Please enter a time');
+      return;
+    }
+
+    const timePattern = /^[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,3})?$/;
+    if (!timePattern.test(newRow.time)) {
+      alert('Invalid time format. Use H:MM:SS or HH:MM:SS (e.g., 2:05:30)');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const gameId = gameState.gameId || 'default';
+      const data: any = await apiClient.results.fetch(gameId);
+      const currentResults = data.results || {};
+
+      // Get the API field name for the selected split
+      const splitFieldName = getSplitFieldName(selectedSplit);
+      const camelCaseField = selectedSplit === 'finishTime' ? 'finishTime' : selectedSplit;
+
+      // Add the new result
+      const resultsData = {
+        ...currentResults,
+        [newRow.athleteId]: {
+          ...currentResults[newRow.athleteId],
+          [splitFieldName]: newRow.time,
+          [camelCaseField]: newRow.time,
+          position: newRow.position
+        }
+      };
+
+      await apiClient.results.update(gameId, resultsData);
+
+      // Reload results from API
+      await loadResults();
+
+      // Clear new row
+      setNewRow(null);
+
+      // Emit resultsUpdated event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('resultsUpdated'));
+      }
+
+      // Invalidate cache
+      invalidateLeaderboardCache();
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save new result');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function invalidateLeaderboardCache() {
     // Clear localStorage cache
     if (typeof window !== 'undefined') {
@@ -195,6 +316,34 @@ export default function ResultsManagementPanel() {
       ...prev,
       [athleteId]: newTime
     }));
+  }
+
+  // Get the current split value for an athlete
+  function getSplitValue(result: AthleteResult): string {
+    switch (selectedSplit) {
+      case 'finishTime': return result.finishTime;
+      case 'split5k': return result.split5k || '';
+      case 'split10k': return result.split10k || '';
+      case 'splitHalf': return result.splitHalf || '';
+      case 'split30k': return result.split30k || '';
+      case 'split35k': return result.split35k || '';
+      case 'split40k': return result.split40k || '';
+      default: return '';
+    }
+  }
+
+  // Get split field name for API
+  function getSplitFieldName(splitType: string): string {
+    switch (splitType) {
+      case 'finishTime': return 'finish_time';
+      case 'split5k': return 'split_5k';
+      case 'split10k': return 'split_10k';
+      case 'splitHalf': return 'split_half';
+      case 'split30k': return 'split_30k';
+      case 'split35k': return 'split_35k';
+      case 'split40k': return 'split_40k';
+      default: return 'finish_time';
+    }
   }
 
   // Save individual result
@@ -220,24 +369,29 @@ export default function ResultsManagementPanel() {
       const data: any = await apiClient.results.fetch(gameId);
       const currentResults = data.results || {};
 
-      // Update the specific athlete's time
+      // Get the API field name for the selected split
+      const splitFieldName = getSplitFieldName(selectedSplit);
+      const camelCaseField = selectedSplit === 'finishTime' ? 'finishTime' : selectedSplit;
+
+      // Update the specific athlete's split time
       const resultsData = {
         ...currentResults,
         [athleteId]: {
           ...currentResults[athleteId],
-          finishTime: newTime,
-          finish_time: newTime
+          [splitFieldName]: newTime,
+          [camelCaseField]: newTime
         }
       };
 
       await apiClient.results.update(gameId, resultsData);
 
       // Update local state
-      setResults(prev => prev.map(r => 
-        r.athleteId === athleteId 
-          ? { ...r, finishTime: newTime }
-          : r
-      ));
+      setResults(prev => prev.map(r => {
+        if (r.athleteId === athleteId) {
+          return { ...r, [camelCaseField]: newTime };
+        }
+        return r;
+      }));
 
       // Clear the edited time
       setEditedTimes(prev => {
@@ -320,26 +474,62 @@ export default function ResultsManagementPanel() {
         </div>
       )}
 
-      <div className="panel-actions" style={{ marginBottom: '1rem' }}>
-        <button 
-          className="btn btn-primary" 
-          onClick={handleUpdateResults}
-          disabled={saving || gameState.resultsFinalized}
-        >
-          {saving ? 'Saving...' : 'Save Results'}
-        </button>
-        &nbsp;
-        <button 
-          className="btn btn-warning" 
-          onClick={handleFinalizeResults}
-          disabled={saving || gameState.resultsFinalized}
-        >
-          {gameState.resultsFinalized ? 'Results Finalized' : '🔒 Finalize Results'}
-        </button>
+      <div className="panel-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="panel-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+          <button 
+            className="btn btn-success" 
+            onClick={handleAddResult}
+            disabled={saving || gameState.resultsFinalized}
+            title="Add a new result for an athlete"
+          >
+            ➕ Add Result
+          </button>
+          <button 
+            className="btn btn-warning" 
+            onClick={handleFinalizeResults}
+            disabled={saving || gameState.resultsFinalized}
+            title="Lock results - cannot be undone"
+          >
+            {gameState.resultsFinalized ? 'Results Finalized' : '🔒 Finalize Results'}
+          </button>
+          <button 
+            className="btn btn-danger" 
+            onClick={handleResetResults}
+            disabled={saving || gameState.resultsFinalized || results.length === 0}
+            title="Delete all results"
+          >
+            🔄 Reset Results
+          </button>
+        </div>
+
+        <div className="split-selector" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="split-select" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+            Show Split:
+          </label>
+          <select
+            id="split-select"
+            className="form-select"
+            value={selectedSplit}
+            onChange={(e) => setSelectedSplit(e.target.value)}
+            style={{
+              padding: '0.5rem',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              fontSize: '0.9rem',
+              minWidth: '180px'
+            }}
+          >
+            {splitOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="results-list">
-        {results.length === 0 ? (
+        {results.length === 0 && !newRow ? (
           <p style={{ textAlign: 'center', color: '#666' }}>No results yet. Add results to get started.</p>
         ) : (
           <table className="results-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -349,11 +539,109 @@ export default function ResultsManagementPanel() {
                 <th style={{ padding: '0.5rem', textAlign: 'left' }}>Athlete</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center' }}>Country</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center' }}>Gender</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Finish Time</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center' }}>
+                  {splitOptions.find(opt => opt.value === selectedSplit)?.label || 'Time'}
+                </th>
                 <th style={{ padding: '0.5rem', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
+              {/* New result row (if adding) */}
+              {newRow && (
+                <tr style={{ borderBottom: '1px solid #eee', backgroundColor: '#f0f9ff' }}>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    <input
+                      type="number"
+                      placeholder="Pos"
+                      value={newRow.position || ''}
+                      onChange={(e) => setNewRow({ ...newRow, position: parseInt(e.target.value) || 0 })}
+                      style={{
+                        width: '60px',
+                        padding: '0.25rem',
+                        textAlign: 'center',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px'
+                      }}
+                    />
+                  </td>
+                  <td style={{ padding: '0.5rem' }}>
+                    <select
+                      value={newRow.athleteId}
+                      onChange={(e) => {
+                        const athleteId = parseInt(e.target.value);
+                        const athlete = allAthletes.find(a => a.id === athleteId);
+                        if (athlete) {
+                          setNewRow({
+                            ...newRow,
+                            athleteId: athlete.id,
+                            athleteName: athlete.name,
+                            country: athlete.country,
+                            gender: athlete.gender
+                          });
+                        }
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '0.25rem',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px'
+                      }}
+                    >
+                      {allAthletes
+                        .filter(a => !results.find(r => r.athleteId === a.id))
+                        .map(athlete => (
+                          <option key={athlete.id} value={athlete.id}>
+                            {athlete.name}
+                          </option>
+                        ))}
+                    </select>
+                  </td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>{newRow.country}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>{newRow.gender}</td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="H:MM:SS"
+                      value={newRow.time}
+                      onChange={(e) => setNewRow({ ...newRow, time: e.target.value })}
+                      style={{
+                        width: '100%',
+                        padding: '0.25rem',
+                        textAlign: 'center',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px'
+                      }}
+                    />
+                  </td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    <button 
+                      className="btn btn-sm btn-success"
+                      onClick={handleSaveNewResult}
+                      disabled={saving}
+                      style={{ 
+                        marginRight: '0.5rem',
+                        fontSize: '0.7rem',
+                        padding: '0.2rem 0.4rem'
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-secondary"
+                      onClick={handleCancelNewResult}
+                      disabled={saving}
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '0.2rem 0.4rem'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              )}
+
+              {/* Existing results */}
               {results.map((result, idx) => (
                 <tr key={result.athleteId} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.position || '-'}</td>
@@ -364,7 +652,7 @@ export default function ResultsManagementPanel() {
                     <input
                       type="text"
                       placeholder="H:MM:SS"
-                      value={editedTimes[result.athleteId] ?? result.finishTime}
+                      value={editedTimes[result.athleteId] ?? getSplitValue(result)}
                       onChange={(e) => handleTimeChange(result.athleteId, e.target.value)}
                       style={{
                         width: '100%',
@@ -384,14 +672,17 @@ export default function ResultsManagementPanel() {
                     <button 
                       className="btn btn-sm btn-primary"
                       onClick={() => handleSaveResult(result.athleteId)}
-                      disabled={saving}
+                      disabled={saving || !editedTimes.hasOwnProperty(result.athleteId)}
+                      title={editedTimes.hasOwnProperty(result.athleteId) ? 'Save changes' : 'No unsaved changes'}
                       style={{ 
                         marginRight: '0.5rem',
                         fontSize: '0.7rem',
-                        padding: '0.2rem 0.4rem'
+                        padding: '0.2rem 0.4rem',
+                        opacity: editedTimes.hasOwnProperty(result.athleteId) ? 1 : 0.5,
+                        cursor: editedTimes.hasOwnProperty(result.athleteId) ? 'pointer' : 'not-allowed'
                       }}
                     >
-                      Save
+                      {editedTimes.hasOwnProperty(result.athleteId) ? '💾 Save' : '🔒 Save'}
                     </button>
                     <button 
                       className="btn btn-sm btn-danger"
