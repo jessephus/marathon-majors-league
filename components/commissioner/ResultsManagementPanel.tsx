@@ -54,19 +54,25 @@ export default function ResultsManagementPanel() {
       setError(null);
       const data: any = await apiClient.results.fetch('default');
       
+      // Handle empty or null results gracefully
+      if (!data || !data.results || Object.keys(data.results).length === 0) {
+        setResults([]);
+        return;
+      }
+      
       // Transform results data
-      const transformedResults: AthleteResult[] = Object.entries(data.results || {}).map(
+      const transformedResults: AthleteResult[] = Object.entries(data.results).map(
         ([athleteId, result]: [string, any]) => ({
           athleteId: parseInt(athleteId),
-          athleteName: result.name || `Athlete ${athleteId}`,
-          finishTime: result.finishTime || '',
-          position: result.position || 0,
-          split5k: result.split5k,
-          split10k: result.split10k,
-          splitHalf: result.splitHalf,
-          split30k: result.split30k,
-          split35k: result.split35k,
-          split40k: result.split40k,
+          athleteName: result?.name || `Athlete ${athleteId}`,
+          finishTime: result?.finishTime || '',
+          position: result?.position || 0,
+          split5k: result?.split5k,
+          split10k: result?.split10k,
+          splitHalf: result?.splitHalf,
+          split30k: result?.split30k,
+          split35k: result?.split35k,
+          split40k: result?.split40k,
         })
       );
 

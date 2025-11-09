@@ -100,11 +100,18 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
   }
 
   function handleLogout() {
+    // Call logout endpoint to clear server-side cookie
+    apiClient.commissioner.logout().catch(err => {
+      console.error('Logout API error:', err);
+    });
+    
+    // Clear client-side state
     setCommissionerState({
       isCommissioner: false,
       loginTime: null,
       expiresAt: null,
     });
+    
     router.push('/');
   }
 
@@ -334,11 +341,25 @@ export default function NewCommissionerPage(props: CommissionerPageProps) {
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Check commissioner authentication from cookies
-  const commissionerToken = context.req.cookies.commissionerToken || null;
+  // Cookie name matches what's set in /api/auth/totp/verify.js
+  const commissionerCookie = context.req.cookies.marathon_fantasy_commissioner || null;
+  
+  let isAuthenticated = false;
+  
+  if (commissionerCookie) {
+    try {
+      const sessionData = JSON.parse(decodeURIComponent(commissionerCookie));
+      // Verify session has required fields and user is commissioner
+      isAuthenticated = !!(sessionData.userId && sessionData.isCommissioner);
+    } catch (err) {
+      // Invalid cookie format, treat as not authenticated
+      console.error('Failed to parse commissioner cookie:', err);
+    }
+  }
   
   return {
     props: {
-      isAuthenticated: !!commissionerToken,
+      isAuthenticated,
     },
   };
 }

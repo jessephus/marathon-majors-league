@@ -31,15 +31,20 @@ export default function AthleteManagementPanel() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingAthlete, setEditingAthlete] = useState<Partial<Athlete> | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Track if we're already loading to prevent duplicate requests
+  const loadingRef = React.useRef(false);
 
   // Load athletes on mount
   useEffect(() => {
+    console.log('[AthletePanel] Initial load on mount');
     loadAthletes();
   }, []);
 
   // Listen for athleteUpdated events
   useEffect(() => {
-    const handleAthleteUpdate = () => {
+    const handleAthleteUpdate = (e: any) => {
+      console.log('[AthletePanel] Received athleteUpdated event:', e.detail);
       loadAthletes();
     };
 
@@ -50,6 +55,15 @@ export default function AthleteManagementPanel() {
   }, []);
 
   async function loadAthletes() {
+    // Prevent concurrent loads
+    if (loadingRef.current) {
+      console.log('[AthletePanel] Already loading, skipping duplicate request');
+      return;
+    }
+    
+    console.log('[AthletePanel] loadAthletes() called');
+    loadingRef.current = true;
+    
     try {
       setLoading(true);
       setError(null);
@@ -61,15 +75,17 @@ export default function AthleteManagementPanel() {
       }));
 
       setAthletes(allAthletes);
+      console.log(`[AthletePanel] Loaded ${allAthletes.length} athletes`);
       
-      // Update game state
-      setGameState({
-        athletes: { men: data.men, women: data.women }
-      });
+      // Don't update game state here - it would trigger athleteUpdated event
+      // causing infinite loop since we're listening to that event.
+      // Game state should only be updated when athletes are modified, not loaded.
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load athletes');
+      console.error('[AthletePanel] Load error:', err);
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   }
 
@@ -80,15 +96,16 @@ export default function AthleteManagementPanel() {
 
       await apiClient.athletes.add(athleteData);
 
-      // Emit athleteUpdated event
+      setShowAddModal(false);
+      
+      // Emit athleteUpdated event - listener will reload athletes
+      // Don't call loadAthletes() manually here to avoid double-loading
+      console.log('[AthletePanel] Emitting athleteUpdated event (added)');
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('athleteUpdated', { 
           detail: { action: 'added', athlete: athleteData } 
         }));
       }
-
-      setShowAddModal(false);
-      await loadAthletes();
       
       alert('Athlete added successfully!');
     } catch (err) {
@@ -105,15 +122,16 @@ export default function AthleteManagementPanel() {
 
       await apiClient.athletes.update(athleteId, updates);
 
-      // Emit athleteUpdated event
+      setEditingAthlete(null);
+      
+      // Emit athleteUpdated event - listener will reload athletes
+      // Don't call loadAthletes() manually here to avoid double-loading
+      console.log('[AthletePanel] Emitting athleteUpdated event (updated)');
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('athleteUpdated', { 
           detail: { action: 'updated', athleteId, updates } 
         }));
       }
-
-      setEditingAthlete(null);
-      await loadAthletes();
       
       alert('Athlete updated successfully!');
     } catch (err) {
@@ -130,14 +148,14 @@ export default function AthleteManagementPanel() {
 
       await apiClient.athletes.toggleConfirmation(athleteId);
 
-      // Emit athleteUpdated event
+      // Emit athleteUpdated event - listener will reload athletes
+      // Don't call loadAthletes() manually here to avoid double-loading
+      console.log('[AthletePanel] Emitting athleteUpdated event (confirmed)');
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('athleteUpdated', { 
           detail: { action: 'confirmed', athleteId } 
         }));
       }
-
-      await loadAthletes();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle confirmation');
     } finally {

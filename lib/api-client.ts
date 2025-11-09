@@ -257,6 +257,15 @@ export const commissionerApi = {
       body: JSON.stringify({ gameId }),
     });
   },
+
+  /**
+   * Logout commissioner and clear session cookie
+   */
+  async logout() {
+    return apiRequest<{ success: boolean; message?: string }>('/api/auth/totp/logout', {
+      method: 'POST',
+    });
+  },
 };
 
 // Export unified API client
