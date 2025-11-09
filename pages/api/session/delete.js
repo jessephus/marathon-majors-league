@@ -1,22 +1,18 @@
 /**
- * Session Delete Endpoint - For Salary Cap Draft Teams
+ * Session Suspend/Reactivate Endpoint - For Salary Cap Draft Teams
  * 
- * This is the MODERN delete endpoint for salary cap draft teams.
+ * This endpoint TOGGLES the is_active status of a team:
+ *   - If active → suspends (sets is_active = false)
+ *   - If suspended → reactivates (sets is_active = true)
+ *   - ALWAYS keeps all roster data in salary_cap_teams
  * 
- * What it does:
- *   1. Soft deletes anonymous_sessions (sets is_active = false)
- *   2. Hard deletes salary_cap_teams roster data
- *   3. Does NOT touch games.players[] array (deprecated)
+ * For permanent deletion, use /api/session/hard-delete instead.
  * 
  * Used by:
- *   - TeamsOverviewPanel.tsx (delete button)
+ *   - TeamsOverviewPanel.tsx (Suspend/Reactivate buttons)
  *   - Modern commissioner dashboard
  * 
  * For legacy snake draft teams, use /api/teams/delete instead.
- * 
- * Note: Does NOT update games.players[] because that array is deprecated
- * for salary cap draft. Teams are tracked via anonymous_sessions table.
- * The legacy site (app.js) will show stale data, which is expected behavior.
  */
 import { neon } from '@neondatabase/serverless';
 
@@ -47,49 +43,51 @@ export default async function handler(req, res) {
   const sql = neon(DATABASE_URL);
 
   try {
-    console.log(`[Session Delete] Deleting session for player ${playerCode} in game ${gameId}`);
+    console.log(`[Session Suspend/Reactivate] Toggling status for player ${playerCode} in game ${gameId}`);
 
-    // 1. Soft delete the anonymous session (main record)
+    // First, get the current status
+    const currentStatus = await sql`
+      SELECT is_active FROM anonymous_sessions
+      WHERE game_id = ${gameId}
+        AND player_code = ${playerCode}
+        AND session_type = 'player'
+    `;
+
+    if (currentStatus.length === 0) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    const isCurrentlyActive = currentStatus[0].is_active;
+    const newStatus = !isCurrentlyActive; // Toggle the status
+
+    // Update the status
     const sessionResult = await sql`
       UPDATE anonymous_sessions
-      SET is_active = FALSE,
+      SET is_active = ${newStatus},
           updated_at = CURRENT_TIMESTAMP
       WHERE game_id = ${gameId}
         AND player_code = ${playerCode}
         AND session_type = 'player'
-      RETURNING player_code, display_name
+      RETURNING player_code, display_name, is_active
     `;
 
-    if (sessionResult.length === 0) {
-      return res.status(404).json({ error: 'Team not found' });
-    }
-
-    const deletedSession = sessionResult[0];
+    const updatedSession = sessionResult[0];
+    const action = newStatus ? 'reactivated' : 'suspended';
     
-    // 2. Also delete salary cap team roster data for complete cleanup
-    const teamResult = await sql`
-      DELETE FROM salary_cap_teams
-      WHERE game_id = ${gameId}
-        AND player_code = ${playerCode}
-    `;
-    
-    console.log(`[Session Delete] Soft deleted session for ${deletedSession.player_code}`);
-    console.log(`[Session Delete] Deleted ${teamResult.length} roster records from salary_cap_teams`);
+    console.log(`[Session Toggle] ${action} session for ${updatedSession.player_code} (is_active: ${updatedSession.is_active})`);
+    console.log(`[Session Toggle] Roster data retained in salary_cap_teams`);
 
     return res.status(200).json({
-      message: 'Team deleted successfully',
-      playerCode: deletedSession.player_code,
-      teamName: deletedSession.display_name || 'Unknown Team',
-      deletedRecords: {
-        sessions: 1,
-        rosterEntries: teamResult.length
-      }
+      message: `Team ${action} successfully`,
+      playerCode: updatedSession.player_code,
+      teamName: updatedSession.display_name || 'Unknown Team',
+      isActive: updatedSession.is_active
     });
 
   } catch (error) {
-    console.error('Error deleting team:', error);
+    console.error('[Session Suspend] Error suspending team:', error);
     return res.status(500).json({ 
-      error: 'Failed to delete team',
+      error: 'Failed to suspend team',
       details: error.message 
     });
   }

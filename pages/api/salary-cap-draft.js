@@ -55,6 +55,7 @@ export default async function handler(req, res) {
           asess.player_code,
           asess.display_name,
           asess.session_token,
+          asess.is_active,
           asess.created_at,
           sct.athlete_id,
           a.name as athlete_name,
@@ -75,7 +76,6 @@ export default async function handler(req, res) {
           ON a.id = sct.athlete_id
         WHERE asess.game_id = ${gameId}
           AND asess.session_type = 'player'
-          AND asess.is_active = true
         ORDER BY asess.player_code, sct.athlete_id
       `;
 
@@ -94,7 +94,8 @@ export default async function handler(req, res) {
             submittedAt: row.submitted_at || null,
             displayName: row.display_name || null,
             sessionToken: row.session_token || null,
-            hasSubmittedRoster: false
+            hasSubmittedRoster: false,
+            isActive: row.is_active !== false  // Include active status
           };
         }
         

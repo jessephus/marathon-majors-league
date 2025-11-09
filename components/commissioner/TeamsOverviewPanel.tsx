@@ -29,6 +29,7 @@ interface Team {
   totalSalary: number;
   score: number;
   hasSubmittedRoster: boolean;
+  isActive: boolean;
 }
 
 export default function TeamsOverviewPanel() {
@@ -132,6 +133,7 @@ export default function TeamsOverviewPanel() {
             totalSalary: team.totalSpent || 0,
             score,
             hasSubmittedRoster: team.hasSubmittedRoster || false,
+            isActive: team.isActive !== false, // Default to true if not specified
           };
         }
       );
@@ -163,12 +165,12 @@ export default function TeamsOverviewPanel() {
       const athleteScore = scoredArray.find((s: any) => s.athlete_id === athlete.id);
       console.log(`[TeamsOverview] calculateTeamScore: Athlete ${athlete.id} (${athlete.name || athlete.athlete_name}):`, {
         hasScore: !!athleteScore,
-        points: athleteScore?.points || 0,
+        totalPoints: athleteScore?.total_points || 0,
         finishTime: athleteScore?.finish_time
       });
       
-      if (!athleteScore || !athleteScore.points) return total;
-      return total + athleteScore.points;
+      if (!athleteScore || !athleteScore.total_points) return total;
+      return total + athleteScore.total_points;
     }, 0);
 
     console.log('[TeamsOverview] calculateTeamScore: Final score:', score);
@@ -204,15 +206,15 @@ export default function TeamsOverviewPanel() {
     window.open(playerUrl, '_blank');
   }
 
-  async function handleDeleteTeam(playerCode: string, teamName: string) {
-    if (!confirm(`Are you sure you want to delete team "${teamName}"? This will soft-delete the session.`)) {
+  async function handleSuspendTeam(playerCode: string, teamName: string) {
+    if (!confirm(`Are you sure you want to suspend team "${teamName}"? This will mark the session as inactive but keep the data.`)) {
       return;
     }
 
     try {
       const currentGameId = gameState.gameId || 'default';
       
-      // Soft delete the anonymous session
+      // Soft delete the anonymous session (sets is_active = false)
       const response = await fetch(`/api/session/delete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -223,7 +225,44 @@ export default function TeamsOverviewPanel() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete team');
+        throw new Error('Failed to suspend team');
+      }
+
+      // Reload teams list
+      await loadTeams();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to suspend team');
+    }
+  }
+
+  async function handleHardDeleteTeam(playerCode: string, teamName: string) {
+    if (!confirm(`⚠️ PERMANENT DELETE: Are you sure you want to permanently delete team "${teamName}"?\n\nThis will:\n- Delete the session\n- Delete all roster data\n- Cannot be undone\n\nType the team name to confirm.`)) {
+      return;
+    }
+
+    // Double confirmation for hard delete
+    const confirmation = prompt(`Type "${teamName}" to confirm permanent deletion:`);
+    if (confirmation !== teamName) {
+      alert('Team name did not match. Deletion cancelled.');
+      return;
+    }
+
+    try {
+      const currentGameId = gameState.gameId || 'default';
+      
+      // Hard delete via new endpoint
+      const response = await fetch(`/api/session/hard-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: currentGameId,
+          playerCode: playerCode
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete team');
       }
 
       // Reload teams list
@@ -263,6 +302,7 @@ export default function TeamsOverviewPanel() {
               }}>
                 <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Team Name</th>
                 <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Player Session</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Status</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Roster Status</th>
                 <th style={{ padding: '0.5rem', textAlign: 'right', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Total Salary</th>
                 <th style={{ padding: '0.5rem', textAlign: 'right', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Score</th>
@@ -276,9 +316,13 @@ export default function TeamsOverviewPanel() {
                   style={{ 
                     borderBottom: '1px solid #eee',
                     backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9',
+                    opacity: team.isActive ? 1 : 0.6,
                   }}
                 >
-                  <td style={{ padding: '0.5rem' }}>{team.teamName}</td>
+                  <td style={{ padding: '0.5rem' }}>
+                    {team.teamName}
+                    {!team.isActive && <span style={{ marginLeft: '0.5rem', fontSize: '11px', color: '#999' }}>(suspended)</span>}
+                  </td>
                   <td style={{ padding: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
@@ -290,7 +334,8 @@ export default function TeamsOverviewPanel() {
                         style={{
                           padding: '0.25rem 0.5rem',
                           fontSize: '11px',
-                          minWidth: 'auto'
+                          minWidth: 'auto',
+                          whiteSpace: 'nowrap'
                         }}
                         title="Copy player link"
                         disabled={!team.sessionToken}
@@ -298,6 +343,13 @@ export default function TeamsOverviewPanel() {
                         {copySuccess === team.sessionToken ? '✓ Copied' : '📋 Copy Link'}
                       </button>
                     </div>
+                  </td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    {team.isActive ? (
+                      <span style={{ color: '#28a745', fontWeight: 'bold' }}>Active</span>
+                    ) : (
+                      <span style={{ color: '#dc3545', fontWeight: 'bold' }}>Suspended</span>
+                    )}
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                     {team.hasSubmittedRoster ? (
@@ -313,21 +365,53 @@ export default function TeamsOverviewPanel() {
                     {team.score?.toFixed(1) || '-'}
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center', alignItems: 'center' }}>
                       <button 
                         className="btn btn-sm btn-secondary"
                         onClick={() => handleViewTeam(team.sessionToken)}
-                        style={{ padding: '0.25rem 0.5rem', fontSize: '11px' }}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '11px', whiteSpace: 'nowrap' }}
                         disabled={!team.sessionToken}
                       >
                         View
                       </button>
+                      {team.isActive ? (
+                        <button 
+                          className="btn btn-sm"
+                          onClick={() => handleSuspendTeam(team.playerCode, team.teamName)}
+                          style={{ 
+                            fontSize: '11px',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#ffc107',
+                            color: '#000',
+                            border: '1px solid #ffc107',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Suspend
+                        </button>
+                      ) : (
+                        <button 
+                          className="btn btn-sm"
+                          onClick={() => handleSuspendTeam(team.playerCode, team.teamName)}
+                          style={{ 
+                            fontSize: '11px',
+                            padding: '0.25rem 0.5rem',
+                            backgroundColor: '#28a745',
+                            color: '#fff',
+                            border: '1px solid #28a745',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          Reactivate
+                        </button>
+                      )}
                       <button 
                         className="btn btn-sm btn-danger"
-                        onClick={() => handleDeleteTeam(team.playerCode, team.teamName)}
+                        onClick={() => handleHardDeleteTeam(team.playerCode, team.teamName)}
                         style={{ 
-                          fontSize: '0.7rem',
-                          padding: '0.2rem 0.4rem'
+                          fontSize: '11px',
+                          padding: '0.25rem 0.5rem',
+                          whiteSpace: 'nowrap'
                         }}
                       >
                         Delete
