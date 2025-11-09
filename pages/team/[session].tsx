@@ -9,7 +9,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
-import { AppStateProvider } from '@/lib/state-provider';
+import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import Footer from '@/components/Footer';
 
