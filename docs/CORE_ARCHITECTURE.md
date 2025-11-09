@@ -191,6 +191,8 @@ All API endpoints follow RESTful conventions with game isolation via query param
 | `/api/draft` | GET, POST | Snake draft execution | `gameId` |
 | `/api/results` | GET, POST | Race results management | `gameId` |
 | `/api/init-db` | GET, POST | Database initialization & seeding | None |
+| `/api/session/delete` | POST | Suspend/reactivate team session | `sessionToken` (preferred) or `gameId` + `playerCode` (legacy) |
+| `/api/session/hard-delete` | POST | Permanently delete team session | `sessionToken` (preferred) or `gameId` + `playerCode` (legacy) |
 
 ### Request/Response Patterns
 
@@ -218,6 +220,75 @@ res.setHeader('Access-Control-Allow-Origin', '*');
 res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
 res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 ```
+
+### Session Management Endpoints
+
+#### `/api/session/delete` - Suspend/Reactivate Team
+Toggles a team's active status. Suspended teams remain in database but are hidden from UI.
+
+**Request Parameters (choose one):**
+- `sessionToken` (string, preferred) - Unique session token
+- `gameId` + `playerCode` (strings, legacy) - Backward compatibility
+
+**Request Example (sessionToken):**
+```json
+{
+  "sessionToken": "5f8a9b2c-3d4e-5f6g-7h8i-9j0k1l2m3n4o"
+}
+```
+
+**Request Example (legacy):**
+```json
+{
+  "gameId": "default",
+  "playerCode": "RUNNER"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Team suspended successfully",
+  "sessionId": 42,
+  "sessionToken": "5f8a9b2c-3d4e-5f6g-7h8i-9j0k1l2m3n4o",
+  "playerCode": "RUNNER",
+  "teamName": "Swift Runners",
+  "isActive": false
+}
+```
+
+#### `/api/session/hard-delete` - Permanently Delete Team
+Permanently removes a team and all related data (CASCADE delete).
+
+**Request Parameters (choose one):**
+- `sessionToken` (string, preferred) - Unique session token
+- `gameId` + `playerCode` (strings, legacy) - Backward compatibility
+
+**Request Example:**
+```json
+{
+  "sessionToken": "5f8a9b2c-3d4e-5f6g-7h8i-9j0k1l2m3n4o"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Team permanently deleted",
+  "sessionId": 42,
+  "playerCode": "RUNNER",
+  "teamName": "Swift Runners",
+  "deletedSessions": 1
+}
+```
+
+**CASCADE Behavior:**
+Deleting a session automatically removes related data from:
+- `salary_cap_teams` (roster assignments)
+- `draft_teams` (draft picks)
+- `player_rankings` (preference rankings)
+
+**Note:** Always prefer `sessionToken` over `playerCode` for team identification. The `sessionToken` is globally unique, while `playerCode` is user-chosen and only unique among active teams per game.
 
 ## Frontend Architecture
 

@@ -52,6 +52,7 @@ export interface AthleteResult {
 }
 
 export interface GameState {
+  gameId: string; // Current game identifier
   athletes: {
     men: Athlete[];
     women: Athlete[];
@@ -96,6 +97,9 @@ interface AppContextValue extends AppState {
 // Default stub data (matches PROCESS_SSR_STRATEGY.md)
 const DEFAULT_STATE: AppState = {
   gameState: {
+    gameId: typeof window !== 'undefined' 
+      ? localStorage.getItem('current_game_id') || 'default'
+      : 'default',
     athletes: { men: [], women: [] },
     players: [],
     currentPlayer: null,
@@ -138,6 +142,31 @@ export function AppStateProvider({
       ...prev,
       gameState: { ...prev.gameState, ...updates },
     }));
+
+    // Sync gameId changes to localStorage
+    if (typeof window !== 'undefined' && 'gameId' in updates && updates.gameId) {
+      localStorage.setItem('current_game_id', updates.gameId);
+    }
+
+    // Emit state change events
+    if (typeof window !== 'undefined') {
+      // Emit resultsUpdated event if results or resultsFinalized changed
+      if ('results' in updates || 'resultsFinalized' in updates) {
+        window.dispatchEvent(new CustomEvent('resultsUpdated', { 
+          detail: { 
+            results: updates.results,
+            finalized: updates.resultsFinalized 
+          } 
+        }));
+      }
+
+      // Emit athleteUpdated event if athletes changed
+      if ('athletes' in updates) {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { athletes: updates.athletes } 
+        }));
+      }
+    }
   }, []);
 
   const setSessionState = useCallback((updates: Partial<SessionState>) => {

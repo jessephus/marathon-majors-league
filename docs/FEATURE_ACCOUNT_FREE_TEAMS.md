@@ -118,6 +118,81 @@ ALTER TABLE user_games ADD COLUMN anonymous_access_token VARCHAR(255);
 ALTER TABLE user_games ADD COLUMN is_anonymous BOOLEAN DEFAULT FALSE;
 ```
 
+### Team-Session Relationships (Migration 010)
+
+#### Foreign Key Architecture
+All team-related tables now have proper referential integrity with the `anonymous_sessions` table through `session_id` foreign keys:
+
+**Affected Tables:**
+- `salary_cap_teams` - Roster assignments for salary cap draft mode
+- `draft_teams` - Team assignments for snake draft mode
+- `player_rankings` - Athlete preference rankings
+
+**Schema:**
+```sql
+-- Each table has this structure
+ALTER TABLE salary_cap_teams ADD COLUMN session_id INTEGER;
+ALTER TABLE salary_cap_teams ADD CONSTRAINT fk_salary_cap_teams_session 
+    FOREIGN KEY (session_id) REFERENCES anonymous_sessions(id) ON DELETE CASCADE;
+CREATE INDEX idx_salary_cap_teams_session_id ON salary_cap_teams(session_id);
+
+-- Same pattern for draft_teams and player_rankings
+```
+
+#### CASCADE Delete Behavior
+When a session is deleted (hard-delete), all related team data is automatically removed:
+
+```
+anonymous_sessions (id: 42)
+  ↓ CASCADE DELETE
+  ├─ salary_cap_teams (session_id: 42) → All roster assignments deleted
+  ├─ draft_teams (session_id: 42) → All draft picks deleted
+  └─ player_rankings (session_id: 42) → All preference rankings deleted
+```
+
+**Benefits:**
+1. **Data Integrity**: Impossible to have orphaned team data
+2. **Automatic Cleanup**: No manual deletion from multiple tables
+3. **Simplified API**: Delete session, CASCADE handles the rest
+4. **Data Quality**: Identified and cleaned up 6 orphaned rows during migration
+
+#### Team Identification Best Practices
+
+**Preferred: Use sessionToken**
+```javascript
+// Query by unique sessionToken
+const session = await sql`
+  SELECT * FROM anonymous_sessions 
+  WHERE session_token = ${sessionToken}
+`;
+
+// Get team roster using session_id
+const roster = await sql`
+  SELECT * FROM salary_cap_teams 
+  WHERE session_id = ${session[0].id}
+`;
+```
+
+**Legacy: Use playerCode (backward compatible)**
+```javascript
+// Query by (gameId, playerCode) composite
+const session = await sql`
+  SELECT * FROM anonymous_sessions 
+  WHERE game_id = ${gameId} AND player_code = ${playerCode}
+`;
+```
+
+**Key Distinction:**
+- `playerCode` = User-chosen display name (e.g., "RUNNER", "SWIFT")
+- `sessionToken` = Globally unique identifier (UUID v4)
+- `session_id` = Internal database primary key
+
+**Why sessionToken is preferred:**
+- **Globally unique**: No ambiguity, even across games
+- **Secure**: Cryptographically random, hard to guess
+- **Reliable**: Works even if playerCode is reused by suspended teams
+- **Future-proof**: Compatible with user account system upgrade path
+
 ### API Endpoints
 
 #### Session Management

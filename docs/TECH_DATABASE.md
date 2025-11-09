@@ -114,10 +114,15 @@ CREATE TABLE player_rankings (
     gender VARCHAR(10) NOT NULL,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),
     rank_order INTEGER NOT NULL,
+    session_id INTEGER REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(game_id, player_code, gender, rank_order)
 );
+
+CREATE INDEX idx_player_rankings_session_id ON player_rankings(session_id);
 ```
+
+**Note**: Teams are identified by `sessionToken` (unique) rather than `playerCode` (user-chosen). The `session_id` foreign key ensures referential integrity and automatic cleanup via CASCADE delete.
 
 #### Draft Teams Table
 Post-draft team assignments:
@@ -128,9 +133,12 @@ CREATE TABLE draft_teams (
     game_id VARCHAR(255) NOT NULL,
     player_code VARCHAR(255) NOT NULL,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),
+    session_id INTEGER REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
     drafted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(game_id, athlete_id)
 );
+
+CREATE INDEX idx_draft_teams_session_id ON draft_teams(session_id);
 ```
 
 #### Race Results Table
@@ -472,7 +480,24 @@ const teams = await sql`
   JOIN athletes a ON dt.athlete_id = a.id
   WHERE dt.game_id = ${gameId}
 `;
+
+// Get team by sessionToken (preferred over playerCode)
+const session = await sql`
+  SELECT * FROM anonymous_sessions 
+  WHERE session_token = ${sessionToken}
+`;
+
+// Get team roster using session_id
+const roster = await sql`
+  SELECT dt.*, a.name, a.country
+  FROM draft_teams dt
+  JOIN athletes a ON dt.athlete_id = a.id
+  WHERE dt.session_id = ${session[0].id}
+`;
 ```
+
+**Note on Team Identification:**  
+Teams should be queried by `sessionToken` (unique identifier) rather than `playerCode` (user-chosen display name). The `session_id` foreign key ensures each team has a unique, reliable identifier.
 
 ### SQL Injection Prevention
 

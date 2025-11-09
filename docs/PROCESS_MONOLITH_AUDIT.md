@@ -2,9 +2,28 @@
 
 **Purpose:** Comprehensive inventory and analysis of the monolithic application codebase to guide the modularization sequence for [Issue #82: Componentization](https://github.com/jessephus/marathon-majors-league/issues/82).
 
-**Status:** Initial audit completed  
-**Last Updated:** November 4, 2025  
+**Status:** In Progress - Phase 4 (Commissioner Dashboard Modularization)  
+**Last Updated:** November 8, 2025  
 **Related Issues:** [#82](https://github.com/jessephus/marathon-majors-league/issues/82) (Parent - Componentization)
+
+---
+
+## 🚨 Migration Plan Deviations
+
+**November 8, 2025:** During **Phase 4: Commissioner Dashboard** modularization, added shared Footer component ahead of schedule.
+
+**Original Plan:** Footer extraction was not explicitly documented. Phase 4 focused on extracting major components (Leaderboard, Salary Cap Draft, Commissioner Dashboard) but didn't mention shared UI components like footers.
+
+**Actual Execution:** While modularizing the commissioner dashboard, discovered footer markup was duplicated across 5+ pages. Created `components/Footer.tsx` using the Phase 3 state manager to eliminate duplication and establish pattern for future component extractions.
+
+**Rationale:** 
+- **In context of Phase 4 work** - Already touching footer code while building commissioner components
+- **Leverages Phase 3 state manager** - Uses `useGameState()` hook for centralized state management
+- **Prevents future duplication** - As Phase 4 continues, new components can immediately use shared Footer
+- **Low risk, high value** - Simple component that demonstrates Phase 3 state integration pattern
+- **Aligns with DRY principles** - Core development standard from documentation
+
+**Impact:** Positive acceleration of remaining Phase 4 work. Each future component extraction saves ~42 lines of footer code. Demonstrates how Phase 3 state manager integrates with Phase 4 component extraction. See detailed documentation in [Shared Footer Component (Phase 4)](#shared-footer-component-phase-4) section below.
 
 ---
 
@@ -19,7 +38,8 @@
 7. [Coupling and Entanglement](#coupling-and-entanglement)
 8. [Extraction Targets](#extraction-targets)
 9. [Migration Strategy Recommendations](#migration-strategy-recommendations)
-10. [Appendices](#appendices)
+10. [Shared Footer Component (Phase 4)](#shared-footer-component-phase-4)
+11. [Appendices](#appendices)
 
 ---
 
@@ -48,6 +68,14 @@ The Fantasy NY Marathon application consists of three primary monolithic files t
 3. **DOM Coupling:** 195 `getElementById` calls and 44 `querySelector` calls spread throughout
 4. **Mixed Concerns:** Business logic, UI rendering, and API calls intermingled in most functions
 5. **Page-Based Navigation:** 30+ calls to `showPage()` function for SPA-style routing
+
+---
+
+## Phase 0: Bridge Module (Pre-Modularization)
+
+**Status:** ✅ Completed (November 2025)  
+**Created:** PR #107 - Landing Page SSR Implementation  
+**Purpose:** Minimal utility extraction to enable SSR landing page without loading full monolith
 
 ---
 
@@ -1184,6 +1212,263 @@ export const useGameState = () => useContext(GameStateContext);
 - SSR improves initial page load
 - Monolith size reduced significantly
 - No regression in functionality
+
+---
+
+## Shared Footer Component (Phase 4)
+
+**Status:** ✅ Completed (November 8, 2025)  
+**Phase Context:** Created during Phase 4 Commissioner Dashboard modularization  
+**Purpose:** Eliminate footer duplication and demonstrate Phase 3 state manager integration
+
+### Background
+
+**Discovery:** While modularizing the commissioner dashboard (Phase 4 work), we discovered footer markup was **duplicated across 5+ pages**:
+- `pages/index.js` (2 instances - SSR and legacy)
+- `pages/commissioner.tsx`
+- `pages/team/[session].tsx`
+- `pages/leaderboard.tsx`
+- `pages/test-athlete-modal.tsx`
+
+**Why During Phase 4:**
+1. **Active context** - Already touching footer code during commissioner dashboard work
+2. **Architecture alignment** - Demonstrates how Phase 3 state manager enables Phase 4 components
+3. **Low risk, high value** - Clear boundaries, eliminates 110+ lines of duplication
+4. **Pattern establishment** - Shows proper integration of Phase 3 foundations
+5. **DRY principle** - Aligns with core development standards
+
+### Architecture: Phase 3 → Phase 4 Integration
+
+**Phase 3 Foundation (lib/state-provider.tsx):**
+- React Context-based state management
+- Provides `useGameState()`, `useCommissionerState()`, `useSessionState()` hooks
+- Centralized state updates via `setGameState()`
+- Replaces legacy global `gameState` object
+
+**Phase 4 Component (components/Footer.tsx):**
+- Consumes Phase 3 state manager via hooks
+- Self-contained state management (no state props needed)
+- Demonstrates proper layered architecture
+
+**Integration Pattern:**
+```typescript
+// Phase 3: State Provider
+export function GameStateProvider({ children }) {
+  const [gameState, setGameState] = useState({...});
+  return (
+    <GameStateContext.Provider value={{ gameState, setGameState }}>
+      {children}
+    </GameStateContext.Provider>
+  );
+}
+
+// Phase 4: Footer Component
+import { useGameState } from '@/lib/state-provider'; // Phase 3
+
+export default function Footer({ mode, showGameSwitcher, onLogout }) {
+  const { gameState, setGameState } = useGameState(); // Consume Phase 3 state
+  
+  const handleGameChange = (newGameId: string) => {
+    localStorage.setItem('current_game_id', newGameId);
+    setGameState({ gameId: newGameId }); // Update via Phase 3
+    window.location.reload();
+  };
+  
+  return (
+    <footer>
+      {showGameSwitcher && (
+        <select 
+          value={gameState.gameId || 'default'} // Read from Phase 3
+          onChange={(e) => handleGameChange(e.target.value)}
+        >
+          {/* game options */}
+        </select>
+      )}
+      {/* mode-specific buttons */}
+    </footer>
+  );
+}
+```
+
+### What Was Created
+
+**File:** `components/Footer.tsx` (165 lines)
+
+**Props Interface (Simplified via Phase 3):**
+```typescript
+interface FooterProps {
+  mode?: 'home' | 'commissioner' | 'team' | 'leaderboard' | 'minimal';
+  showGameSwitcher?: boolean;
+  onLogout?: () => void;           // Callback only
+  showCopyright?: boolean;
+  className?: string;
+  // Removed: currentGameId, onGameChange (Phase 3 handles internally)
+}
+```
+
+**Key Features:**
+- ✅ Consumes Phase 3 state manager (`useGameState()` hook)
+- ✅ Self-contained state management (no external state props)
+- ✅ Configurable button sets based on page context
+- ✅ Game switcher with confirmation dialog
+- ✅ TypeScript type safety
+- ✅ Consistent styling and behavior
+
+**Supported Modes:**
+| Mode | Buttons | Use Case |
+|------|---------|----------|
+| `home` | Home, Commissioner Mode | Landing page |
+| `commissioner` | Home, Logout + Game Switcher | Commissioner dashboard |
+| `team` | Back to Home | Team session page |
+| `leaderboard` | Back | Leaderboard page |
+| `minimal` | None | Custom footer needs |
+
+### Pages Updated with Simplified API
+
+**Phase 4 Migrations (November 8, 2025):**
+1. ✅ `pages/commissioner.tsx` - Commissioner dashboard
+2. ✅ `pages/team/[session].tsx` - Team session page
+3. ✅ `pages/leaderboard.tsx` - Leaderboard page
+
+**Pending (During Continued Phase 4):**
+4. ⏳ `pages/index.js` - Landing page (SSR and legacy)
+5. ⏳ `pages/test-athlete-modal.tsx` - Test page
+
+### Before/After Comparison
+
+**Before Phase 3 + Phase 4 (pages/commissioner.tsx - 42 lines):**
+```tsx
+<footer>
+  <div className="footer-actions">
+    <button onClick={() => router.push('/')}>Home</button>
+    <button onClick={handleLogout}>Logout</button>
+    <div className="game-switcher">
+      <select value={gameState.gameId || 'default'} onChange={(e) => {
+        const newGameId = e.target.value;
+        if (newGameId !== gameState.gameId && confirm('Switch game?')) {
+          localStorage.setItem('current_game_id', newGameId);
+          setGameState({ gameId: newGameId });
+          window.location.reload();
+        }
+      }}>
+        <option value="default">Default</option>
+        <option value="NY2025">NY 2025</option>
+      </select>
+    </div>
+  </div>
+  <p>© 2025</p>
+</footer>
+```
+
+**After Phase 3 + Phase 4 (pages/commissioner.tsx - 4 lines):**
+```tsx
+<Footer 
+  mode="commissioner"
+  showGameSwitcher
+  onLogout={handleLogout}
+/>
+```
+
+**Benefits:**
+- 📉 **90% code reduction** (42 lines → 4 lines)
+- 🏗️ **Architectural clarity** - Phase 3 state → Phase 4 component
+- 🔒 **State encapsulation** - Footer manages its own state via hooks
+- ♻️ **Reusability** - Same pattern for all Phase 4 components
+- 📝 **API simplicity** - Only pass callbacks, not state
+
+### Impact on Migration Phases
+
+**Phase 3 (State Management) Validation:**
+- ✅ Proves state manager enables component extraction
+- ✅ Demonstrates hook-based consumption pattern
+- ✅ Shows centralized state updates work correctly
+
+**Phase 4 (Component Extraction) Acceleration:**
+- ✅ Footer already modular for remaining extractions
+- ✅ Pattern established: consume Phase 3, emit callbacks
+- ✅ Reduces migration work per component (~40 lines saved)
+- ✅ New pages immediately use shared Footer
+
+**Phase 5 (Final Migration):**
+- ✅ Footer extracted and tested
+- ✅ Pattern repeatable for remaining components
+- ✅ Demonstrates proper layered architecture
+
+### Lessons Learned
+
+**Architecture:**
+1. **Phase sequencing matters** - Phase 3 state manager must exist before Phase 4 components
+2. **Hooks enable extraction** - `useGameState()` pattern makes components self-contained
+3. **Layered architecture works** - Clear separation: Phase 3 (state) → Phase 4 (components)
+4. **State props are anti-pattern** - When using Context, don't pass state as props
+
+**Process:**
+1. **Opportunistic extraction** - Active context (commissioner work) made extraction natural
+2. **Visual duplication signal** - Seeing repeated code revealed architectural debt
+3. **Small wins compound** - Footer seems small, but 5× duplication = significant burden
+4. **Document deviations** - Recording keeps migration organized despite opportunism
+
+**Technical:**
+1. **TypeScript helps** - Props interface enforces correct usage
+2. **Single responsibility** - Footer handles its own state, emits callbacks only
+3. **Testing is easier** - Mocking state provider simpler than managing props
+4. **API simplicity scales** - Fewer props = easier to use and maintain
+
+### Pattern for Future Phase 4 Components
+
+```typescript
+// 1. Import Phase 3 state manager
+import { useGameState } from '@/lib/state-provider';
+
+// 2. Define props (callbacks only, no state)
+interface MyComponentProps {
+  onAction?: () => void;  // Callbacks OK
+  config?: any;            // Configuration OK
+  // DON'T: currentState, onStateChange (use hooks instead)
+}
+
+// 3. Consume state via hooks
+export default function MyComponent({ onAction, config }: MyComponentProps) {
+  const { gameState, setGameState } = useGameState(); // Phase 3
+  
+  // 4. Read from state, update via setState
+  const value = gameState.someValue;
+  const handleUpdate = () => setGameState({ someValue: newValue });
+  
+  // 5. Emit callbacks for external coordination
+  const handleAction = () => {
+    // Internal state updates
+    setGameState({ ... });
+    
+    // External notification
+    onAction?.();
+  };
+  
+  return <div>{/* component */}</div>;
+}
+```
+
+### Future Enhancements
+
+**Footer Improvements:**
+- [ ] Add loading state during game switching
+- [ ] Persist confirmation preference (localStorage)
+- [ ] Add "Settings" button for user preferences
+- [ ] Support custom button sets via children prop
+- [ ] Add animation for button state changes
+
+**Pattern Improvements:**
+- [ ] Create component extraction checklist
+- [ ] Document state manager integration patterns
+- [ ] Add testing examples for hooked components
+- [ ] Create generator for Phase 4 component boilerplate
+
+### Related Documentation
+
+- **lib/state-provider.tsx** - Phase 3 state manager implementation
+- **CORE_ARCHITECTURE.md** - Component architecture patterns
+- **CORE_DEVELOPMENT.md** - DRY principle and code standards
+- **Issue #82** - Parent componentization epic
 
 ---
 

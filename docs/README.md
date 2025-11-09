@@ -4,12 +4,12 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **7 main categories** with **34 total documents**.
+Our documentation is organized into **7 main categories** with **35 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
 - `TECH_*.md` - Technical reference (6 docs)
-- `FEATURE_*.md` - Game features (6 docs)
+- `FEATURE_*.md` - Game features (7 docs)
 - `PROCESS_*.md` - Project history (14 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 - `MIGRATION_*.md` - Migration guides (1 doc)
@@ -56,7 +56,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 
-### 2️⃣ Technical Reference (Architecture & Data)
+#### Technical Reference (6 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -66,6 +66,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
 | **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
 | **[TECH_STATE_MANAGEMENT.md](TECH_STATE_MANAGEMENT.md)** | Centralized state manager (GameStateManager) | Working with application state |
+| **[TECH_GAMES_PLAYERS_ARRAY_DEPRECATION.md](TECH_GAMES_PLAYERS_ARRAY_DEPRECATION.md)** | games.players[] array deprecation guide | Understanding deprecated patterns |
 
 ### 3️⃣ Features (Game Mechanics & Functionality)
 
@@ -77,6 +78,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_ROSTER_LOCK_TIME.md](FEATURE_ROSTER_LOCK_TIME.md)** | Automatic roster locking feature | Working on roster lock logic |
 | **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
 | **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
+| **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
 
 ### 4️⃣ Process & Maintenance (Project History)
 

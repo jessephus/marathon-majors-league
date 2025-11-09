@@ -6,17 +6,31 @@
  * Run with: node tests/salary-cap-draft.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert';
+import { generateTestId, cleanupTestGame, cleanupTestSessions } from './test-utils.js';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
+const TEST_GAME_ID = generateTestId('salarycap-test');
 
 console.log('🧪 Testing Salary Cap Draft functionality at:', BASE_URL);
-
-// Helper to generate unique test IDs
-const generateTestId = () => `test-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+console.log('🎮 Test game ID:', TEST_GAME_ID);
 
 describe('Salary Cap Draft System Tests', () => {
+  
+  // Cleanup after all tests complete
+  after(async () => {
+    console.log('\n🧹 Cleaning up test data...');
+    try {
+      // Clean up the test game
+      await cleanupTestGame(TEST_GAME_ID);
+      // Clean up any test sessions created
+      await cleanupTestSessions('Test Team%');
+      console.log('✅ Test data cleaned up successfully\n');
+    } catch (error) {
+      console.error('⚠️  Cleanup warning:', error.message, '\n');
+    }
+  });
   
   describe('Team Session Creation Flow', () => {
     it('should create a new player session via API', async () => {
@@ -28,7 +42,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -70,7 +84,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: displayName1,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -83,7 +97,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: displayName2,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -112,7 +126,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Verify Test ${generateTestId()}`,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -148,7 +162,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Extend Test ${generateTestId()}`,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -202,7 +216,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Draft Test ${generateTestId()}`,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -262,7 +276,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Validation Test ${generateTestId()}`,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       
@@ -369,7 +383,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Invalid IDs Test ${generateTestId()}`,
-          gameId: 'test-game'
+          gameId: TEST_GAME_ID
         })
       });
       

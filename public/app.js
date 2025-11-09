@@ -108,12 +108,19 @@ function getRunnerSvg(gender) {
 }
 
 // Load game state from database
+// ⚠️ LEGACY FUNCTION - gameState.players[] is DEPRECATED
+// This function loads the games.players[] array which is no longer maintained
+// for salary cap draft teams. It will show stale data for new teams.
+// 
+// Modern implementation:
+//   - See TeamsOverviewPanel.tsx (queries anonymous_sessions table)
+//   - Use /api/salary-cap-draft endpoint for team data
 async function loadGameState() {
     try {
         const response = await fetch(`${API_BASE}/api/game-state?gameId=${GAME_ID}`);
         if (response.ok) {
             const data = await response.json();
-            gameState.players = data.players || [];
+            gameState.players = data.players || []; // ⚠️ DEPRECATED - Stale for salary cap draft
             gameState.draftComplete = data.draftComplete || false;
             gameState.resultsFinalized = data.resultsFinalized || false;
             gameState.rosterLockTime = data.rosterLockTime || null;
@@ -674,7 +681,12 @@ async function handleTeamCreation(e) {
         gameState.currentPlayer = playerCode;
         document.getElementById('player-name').textContent = teamName;
         
-        // Add to players list if not already there
+        // ⚠️ DEPRECATED: Add to players list
+        // This updates games.players[] array which is no longer the source of truth
+        // for salary cap draft teams. Teams are tracked in anonymous_sessions table.
+        // This is only maintained for legacy compatibility - the commissioner view
+        // in this legacy site will show stale data and should be replaced with
+        // TeamsOverviewPanel.tsx which queries the correct tables.
         if (!gameState.players.includes(playerCode)) {
             gameState.players.push(playerCode);
             await saveGameState();
@@ -1694,9 +1706,29 @@ async function displayPlayerCodes() {
     display.innerHTML = '';
 }
 
+/**
+ * Display teams table in commissioner view
+ * 
+ * ⚠️ LEGACY FUNCTION - Shows STALE DATA for salary cap draft teams
+ * This function loops through gameState.players[] which is a DEPRECATED array
+ * that is no longer maintained for salary cap draft teams.
+ * 
+ * Teams created after deprecation will NOT appear in this view.
+ * 
+ * For accurate team data, use the modern Teams Overview Panel:
+ *   - Location: components/commissioner/TeamsOverviewPanel.tsx
+ *   - Data source: anonymous_sessions table (queried via /api/salary-cap-draft)
+ *   - Features: Real-time team list, copy links, view team, delete team
+ * 
+ * This legacy function is kept for backward compatibility with snake draft mode only.
+ */
 async function displayTeamsTable() {
     const tableBody = document.getElementById('teams-status-table-body');
     tableBody.innerHTML = '';
+    
+    // ⚠️ DEPRECATED: Loops through games.players[] array
+    // This will not include salary cap teams created after deprecation.
+    // Use TeamsOverviewPanel.tsx for accurate data.
     
     // Batch create sessions for all players concurrently
     const sessionPromises = gameState.players.map(code => 

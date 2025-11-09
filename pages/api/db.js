@@ -386,6 +386,24 @@ export async function getAthleteProfile(athleteId, options = {}) {
 // GAMES
 // ============================================================================
 
+/**
+ * Get game state from database
+ * 
+ * ⚠️ DEPRECATION NOTICE - games.players[] array:
+ * The `players` array is DEPRECATED and only maintained for legacy site compatibility.
+ * 
+ * For salary cap draft teams, DO NOT USE games.players[].
+ * Instead, query anonymous_sessions table directly:
+ *   SELECT * FROM anonymous_sessions WHERE game_id = ? AND is_active = true
+ * 
+ * New code should use:
+ *   - TeamsOverviewPanel (commissioner view)
+ *   - /api/salary-cap-draft endpoint (teams query)
+ * 
+ * The players[] array was a holdover from snake draft mode and is no longer 
+ * maintained for new salary cap teams. Legacy site (app.js) still uses it,
+ * but will show stale data for teams created after this deprecation.
+ */
 export async function getGameState(gameId) {
   const [game] = await sql`
     SELECT game_id, players, draft_complete, results_finalized, roster_lock_time, created_at, updated_at
@@ -398,7 +416,7 @@ export async function getGameState(gameId) {
   }
   
   return {
-    players: game.players || [],
+    players: game.players || [], // ⚠️ DEPRECATED - Query anonymous_sessions instead
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
     roster_lock_time: game.roster_lock_time,
@@ -407,6 +425,16 @@ export async function getGameState(gameId) {
   };
 }
 
+/**
+ * Create a new game
+ * 
+ * ⚠️ DEPRECATION NOTICE - players parameter:
+ * The `players` parameter is DEPRECATED for salary cap draft games.
+ * It's only used for legacy snake draft mode.
+ * 
+ * For salary cap draft, teams are tracked in anonymous_sessions table.
+ * Do not add teams to games.players[] array.
+ */
 export async function createGame(gameId, players = []) {
   const [game] = await sql`
     INSERT INTO games (game_id, players, draft_complete, results_finalized)
@@ -415,7 +443,7 @@ export async function createGame(gameId, players = []) {
   `;
   
   return {
-    players: game.players || [],
+    players: game.players || [], // ⚠️ DEPRECATED - Don't use for salary cap draft
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
     roster_lock_time: game.roster_lock_time,

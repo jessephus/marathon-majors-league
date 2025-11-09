@@ -6,12 +6,13 @@
  * Or: npm test (if test script is added to package.json)
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert';
+import { generateTestId, cleanupTestGame } from './test-utils.js';
 
 // Configuration
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
-const GAME_ID = 'test-game-' + Date.now();
+const GAME_ID = generateTestId('test-game');
 
 console.log('🧪 Testing API endpoints at:', BASE_URL);
 console.log('🎮 Using test game ID:', GAME_ID);
@@ -43,6 +44,17 @@ async function apiRequest(endpoint, options = {}) {
 
 // Test Suite
 describe('API Endpoints - Post Migration Tests', () => {
+  
+  // Cleanup after all tests complete
+  after(async () => {
+    console.log('\n🧹 Cleaning up test data...');
+    try {
+      await cleanupTestGame(GAME_ID);
+      console.log('✅ Test data cleaned up successfully\n');
+    } catch (error) {
+      console.error('⚠️  Cleanup warning:', error.message, '\n');
+    }
+  });
   
   describe('GET /api/init-db', () => {
     it('should initialize database successfully', async () => {

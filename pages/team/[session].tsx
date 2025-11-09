@@ -5,12 +5,13 @@
  * Phase 1: Stub data with client-side hydration.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
+import Footer from '@/components/Footer';
 
 interface TeamSessionPageProps {
   sessionToken: string;
@@ -203,11 +204,7 @@ function TeamSessionPageContent({ sessionToken }: TeamSessionPageProps) {
           </div>
         </main>
 
-        <footer>
-          <button className="btn btn-secondary" onClick={() => router.push('/')}>
-            ← Back to Home
-          </button>
-        </footer>
+        <Footer mode="team" showCopyright={false} />
       </div>
     </>
   );

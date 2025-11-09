@@ -1,3 +1,21 @@
+/**
+ * Game State API - Manages game configuration and state
+ * 
+ * ⚠️ DEPRECATION NOTICE - /api/game-state endpoint:
+ * This endpoint is primarily used by the legacy site (public/app.js).
+ * 
+ * The `players` field in the response is DEPRECATED for salary cap draft.
+ * It only contains snake draft players and stale salary cap team data.
+ * 
+ * For salary cap draft teams:
+ *   - Use /api/salary-cap-draft endpoint instead
+ *   - Query anonymous_sessions table directly
+ *   - See TeamsOverviewPanel.tsx for reference implementation
+ * 
+ * This endpoint is maintained for backward compatibility with:
+ *   - Legacy snake draft mode
+ *   - Legacy commissioner view (public/app.js displayTeamsTable)
+ */
 import { getGameState, updateGameState, getPlayerRankings, getDraftTeams, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
 
 export default async function handler(req, res) {
@@ -31,7 +49,7 @@ export default async function handler(req, res) {
       }
 
       res.status(200).json({
-        players: gameState?.players || [],
+        players: gameState?.players || [], // ⚠️ DEPRECATED - Use /api/salary-cap-draft instead
         draftComplete: gameState?.draft_complete || false,
         resultsFinalized: gameState?.results_finalized || false,
         rosterLockTime: gameState?.roster_lock_time || null,

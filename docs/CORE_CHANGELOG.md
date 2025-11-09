@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Commissioner Dashboard Modularization**: Separated admin panel into dynamic, loadable components
+  - Created three panel components: `ResultsManagementPanel`, `AthleteManagementPanel`, `TeamsOverviewPanel`
+  - Implemented dynamic imports with `next/dynamic` for on-demand loading
+  - Added skeleton loaders for loading states
+  - Integrated state events system: `resultsUpdated`, `athleteUpdated`
+  - Automatic cache invalidation when results are updated
+  - All panels use centralized API client (no raw fetch calls)
+  - Comprehensive test suite for admin flows and cache invalidation
+  - Documentation: `docs/FEATURE_COMMISSIONER_PANELS.md`
 - **Roster Lock Timer**: Automatic roster locking at race time
   - Added `roster_lock_time` field to games table
   - Frontend checks lock time and prevents edits after deadline
@@ -76,6 +85,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supports formats: `2:05:30` (backward compatible), `2:05:30.1`, `2:05:30.12`, `2:05:30.123`
 
 **Files affected:** `migrations/007_add_subsecond_precision.sql`, `public/app.js` (lines ~1975, 2160, 3390, 3415, 3798, 3810), `schema.sql`
+
+#### Session-Based Team Identification (Migration 010)
+**Problem:** Teams were identified by `playerCode` (user-chosen string) which is not globally unique. The `unique_active_game_player` constraint only ensures uniqueness among ACTIVE teams per game. Multiple suspended teams could share the same `playerCode`, causing ambiguity in delete/suspend operations.
+
+**Solution:**
+- Added `session_id INTEGER` foreign key column to three team tables: `salary_cap_teams`, `draft_teams`, `player_rankings`
+- All foreign keys reference `anonymous_sessions(id)` with `ON DELETE CASCADE`
+- Created indexes `idx_*_session_id` on all three tables for performance
+- Backfilled 192 existing rows by matching `(game_id, player_code)` composite
+- Cleaned up 6 orphaned rows from deleted test game sessions
+
+**API Changes:**
+- `/api/session/delete` and `/api/session/hard-delete` now accept `sessionToken` (preferred) or `(gameId + playerCode)` (legacy backward compatibility)
+- Both endpoints query by `sessionToken` when provided, fall back to `playerCode` composite
+- Hard-delete simplified: only deletes from `anonymous_sessions`, CASCADE handles child table cleanup
+
+**Frontend Changes:**
+- `TeamsOverviewPanel.tsx` handlers updated to pass `sessionToken` instead of `playerCode`
+- All team operations now use unique session identifier for reliable targeting
+
+**Benefits:**
+- Referential integrity: Deleting session automatically removes all related team data
+- Unique identification: Each team has globally unique `session_id` and `session_token`
+- Data cleanup: CASCADE prevents orphaned roster data
+- Backward compatible: Legacy `playerCode` method still works during transition
+
+**Files affected:** `migrations/010_add_session_id_foreign_keys.sql`, `pages/api/session/delete.js`, `pages/api/session/hard-delete.js`, `components/commissioner/TeamsOverviewPanel.tsx`
 
 #### World Athletics Scraping Limitations (Playwright)
 **Findings from automation attempts:**

@@ -1,3 +1,26 @@
+/**
+ * Legacy Team Delete Endpoint
+ * 
+ * ⚠️ LEGACY ENDPOINT - For Snake Draft Mode Only
+ * This endpoint is used by the legacy site (public/app.js) for snake draft games.
+ * 
+ * It performs HARD DELETE and updates games.players[] array.
+ * 
+ * For salary cap draft teams, DO NOT USE THIS ENDPOINT.
+ * Use /api/session/delete instead, which:
+ *   - Soft deletes anonymous_sessions (is_active = false)
+ *   - Hard deletes salary_cap_teams roster
+ *   - Does NOT touch games.players[] (deprecated array)
+ * 
+ * Tables modified by this endpoint:
+ *   - draft_teams (snake draft data)
+ *   - player_rankings (snake draft data)
+ *   - anonymous_sessions (hard delete)
+ *   - games.players[] array (DEPRECATED)
+ * 
+ * See: /api/session/delete.js for modern implementation
+ * See: components/commissioner/TeamsOverviewPanel.tsx for usage
+ */
 import { neon } from '@neondatabase/serverless';
 
 // Initialize Neon SQL client
@@ -55,7 +78,10 @@ export default async function handler(req, res) {
       console.log(`[Delete Team] Deleted ${deletedSessions} session records`);
     }
 
-    // Remove player from games.players array
+    // ⚠️ DEPRECATED: Remove player from games.players array
+    // This array is no longer maintained for salary cap draft teams.
+    // Only kept for legacy snake draft compatibility.
+    // Modern code queries anonymous_sessions table instead.
     const gameResult = await sql`
       SELECT players FROM games WHERE game_id = ${gameId}
     `;
@@ -69,7 +95,7 @@ export default async function handler(req, res) {
         SET players = ${updatedPlayers}
         WHERE game_id = ${gameId}
       `;
-      console.log(`[Delete Team] Removed ${playerCode} from games.players array`);
+      console.log(`[Delete Team] Removed ${playerCode} from games.players[] (deprecated array)`);
     }
 
     res.status(200).json({

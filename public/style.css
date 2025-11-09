@@ -1192,12 +1192,12 @@ footer .btn {
     border-collapse: collapse;
     background: var(--white);
     box-shadow: var(--shadow);
-    border-radius: 5px;
+    border-radius: 8px;
     overflow: hidden;
 }
 
 .athlete-table thead {
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue) 100%);
     color: var(--white);
 }
 
@@ -4763,7 +4763,7 @@ footer .btn {
 }
 
 .results-table thead {
-    background: linear-gradient(135deg, var(--primary-orange) 0%, #d95700 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue) 100%);
     color: white;
 }
 
@@ -4912,5 +4912,17 @@ footer .btn {
     
     .draft-status-column {
         display: none; /* Hide draft status on mobile */
+    }
+}
+
+/* Toast notification animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
 }

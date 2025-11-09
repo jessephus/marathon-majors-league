@@ -5,11 +5,12 @@
  * Run with: node tests/game-flow.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert';
+import { generateTestId, cleanupTestGame } from './test-utils.js';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
-const GAME_ID = 'e2e-test-' + Date.now();
+const GAME_ID = generateTestId('e2e-test');
 
 console.log('🧪 Testing complete game flow at:', BASE_URL);
 console.log('🎮 Game ID:', GAME_ID);
@@ -39,6 +40,17 @@ async function apiRequest(endpoint, options = {}) {
 describe('Complete Game Flow Test', () => {
   let athletes = null;
   let playerCodes = ['ALPHA', 'BRAVO', 'CHARLIE'];
+  
+  // Cleanup after all tests complete
+  after(async () => {
+    console.log('\n🧹 Cleaning up test data...');
+    try {
+      await cleanupTestGame(GAME_ID);
+      console.log('✅ Test data cleaned up successfully\n');
+    } catch (error) {
+      console.error('⚠️  Cleanup warning:', error.message, '\n');
+    }
+  });
   
   describe('1. Game Setup', () => {
     it('should load athletes', async () => {
