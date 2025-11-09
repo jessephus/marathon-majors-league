@@ -330,7 +330,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
           {activePanel === 'results' && <ResultsManagementPanel />}
           {activePanel === 'athletes' && <AthleteManagementPanel />}
           {activePanel === 'teams' && <TeamsOverviewPanel />}
-        {renderActivePanel()}
+        </main>
 
         <Footer 
           mode="commissioner"
