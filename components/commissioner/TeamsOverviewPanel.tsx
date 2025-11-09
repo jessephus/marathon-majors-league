@@ -5,7 +5,7 @@
  * Integrates with state events and API client.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
@@ -21,6 +21,7 @@ interface Team {
   }[];
   totalSalary: number;
   score?: number;
+  hasSubmittedRoster: boolean;
 }
 
 export default function TeamsOverviewPanel() {
@@ -28,12 +29,27 @@ export default function TeamsOverviewPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  
+  // Prevent duplicate loads on mount (React 18 double-render in dev mode)
+  const hasLoadedRef = useRef(false);
+  const lastGameIdRef = useRef<string | null>(null);
 
-  // Load teams on mount
+  // Load teams on mount and when gameId changes
   useEffect(() => {
+    const currentGameId = gameState.gameId || 'default';
+    
+    // Skip if already loaded this gameId (prevents duplicate API calls)
+    if (hasLoadedRef.current && lastGameIdRef.current === currentGameId) {
+      return;
+    }
+    
+    hasLoadedRef.current = true;
+    lastGameIdRef.current = currentGameId;
+
+    console.log(`[TeamsOverview] Loading teams for gameId: "${currentGameId}"`);
     loadTeams();
-  }, []);
+  }, [gameState.gameId]);
 
   // Listen for state updates
   useEffect(() => {
@@ -56,24 +72,45 @@ export default function TeamsOverviewPanel() {
       setLoading(true);
       setError(null);
 
-      // Load game state to get teams
-      const data: any = await apiClient.gameState.load('default');
+      const currentGameId = gameState.gameId || 'default';
+
+      // Load salary cap draft teams for all players
+      const teamDetails: any = await apiClient.salaryCapDraft.getTeam(currentGameId);
       
-      // Transform teams data
-      const teamsData: Team[] = Object.entries(data.teams || {}).map(
+      // Load race results for scoring
+      const resultsData: any = await apiClient.results.fetch(currentGameId);
+      
+      // Transform teams object into array - SHOW ALL TEAMS
+      const teamsData: Team[] = Object.entries(teamDetails || {}).map(
         ([playerCode, team]: [string, any]) => {
-          const totalSalary = team.athletes?.reduce((sum: number, a: any) => sum + (a.salary || 0), 0) || 0;
-          
+          const athletes = [
+            ...(team.men || []).map((a: any) => ({ 
+              ...a, 
+              gender: 'men',
+              pb: a.pb || a.personal_best 
+            })),
+            ...(team.women || []).map((a: any) => ({ 
+              ...a, 
+              gender: 'women',
+              pb: a.pb || a.personal_best 
+            }))
+          ];
+
           return {
             playerCode,
-            teamName: team.teamName || playerCode,
-            athletes: team.athletes || [],
-            totalSalary,
-            score: calculateTeamScore(team.athletes, data.results || {}),
+            teamName: team.displayName || playerCode,
+            athletes,
+            totalSalary: team.totalSpent || 0,
+            score: calculateTeamScore(athletes, resultsData || {}),
+            hasSubmittedRoster: team.hasSubmittedRoster || false,
           };
         }
       );
 
+      setTeams(teamsData);
+
+      console.log(`[TeamsOverview] Final teams array:`, teamsData);
+      console.log(`[TeamsOverview] Submitted teams count:`, teamsData.length);
       setTeams(teamsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams');
@@ -92,8 +129,50 @@ export default function TeamsOverviewPanel() {
     }, 0);
   }
 
-  function handleViewTeam(team: Team) {
-    setSelectedTeam(team);
+  async function handleCopyPlayerLink(playerCode: string) {
+    const playerUrl = `${window.location.origin}/salary-cap-draft?session=${playerCode}`;
+    
+    try {
+      await navigator.clipboard.writeText(playerUrl);
+      setCopySuccess(playerCode);
+      setTimeout(() => setCopySuccess(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  }
+
+  function handleViewTeam(playerCode: string) {
+    const playerUrl = `${window.location.origin}/salary-cap-draft?session=${playerCode}`;
+    window.open(playerUrl, '_blank');
+  }
+
+  async function handleDeleteTeam(playerCode: string, teamName: string) {
+    if (!confirm(`Are you sure you want to delete team "${teamName}"? This will soft-delete the session.`)) {
+      return;
+    }
+
+    try {
+      const currentGameId = gameState.gameId || 'default';
+      
+      // Soft delete the anonymous session
+      const response = await fetch(`/api/session/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: currentGameId,
+          playerCode: playerCode
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete team');
+      }
+
+      // Reload teams list
+      await loadTeams();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete team');
+    }
   }
 
   if (loading) {
@@ -110,46 +189,62 @@ export default function TeamsOverviewPanel() {
         </div>
       )}
 
-      <div className="teams-summary" style={{ marginBottom: '1rem' }}>
-        <div className="stats-row" style={{ display: 'flex', gap: '1rem' }}>
-          <div className="stat-card" style={{ flex: 1, padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-            <div className="stat-label" style={{ fontSize: '0.875rem', color: '#666' }}>Total Teams</div>
-            <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{teams.length}</div>
-          </div>
-          <div className="stat-card" style={{ flex: 1, padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-            <div className="stat-label" style={{ fontSize: '0.875rem', color: '#666' }}>Total Players</div>
-            <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{gameState.players.length}</div>
-          </div>
-          <div className="stat-card" style={{ flex: 1, padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-            <div className="stat-label" style={{ fontSize: '0.875rem', color: '#666' }}>Draft Status</div>
-            <div className="stat-value" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-              {gameState.draftComplete ? '✅ Complete' : '⏳ Pending'}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="teams-list">
         {teams.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#666' }}>No teams yet</p>
         ) : (
-          <table className="teams-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="teams-table" style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse',
+            fontSize: '14px',
+          }}>
             <thead>
-              <tr>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Team Name</th>
-                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Player Code</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Athletes</th>
-                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total Salary</th>
-                <th style={{ padding: '0.5rem', textAlign: 'right' }}>Score</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center' }}>Actions</th>
+              <tr style={{ 
+                backgroundColor: '#2C39A2',
+                color: 'white',
+              }}>
+                <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Team Name</th>
+                <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Player Code</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Roster Status</th>
+                <th style={{ padding: '0.5rem', textAlign: 'right', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Total Salary</th>
+                <th style={{ padding: '0.5rem', textAlign: 'right', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Score</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {teams.map((team) => (
-                <tr key={team.playerCode} style={{ borderBottom: '1px solid #eee' }}>
+              {teams.map((team, index) => (
+                <tr 
+                  key={team.playerCode} 
+                  style={{ 
+                    borderBottom: '1px solid #eee',
+                    backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9',
+                  }}
+                >
                   <td style={{ padding: '0.5rem' }}>{team.teamName}</td>
-                  <td style={{ padding: '0.5rem' }}>{team.playerCode}</td>
-                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>{team.athletes.length}</td>
+                  <td style={{ padding: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>{team.playerCode}</span>
+                      <button
+                        onClick={() => handleCopyPlayerLink(team.playerCode)}
+                        className="btn btn-sm btn-secondary"
+                        style={{
+                          padding: '0.25rem 0.5rem',
+                          fontSize: '11px',
+                          minWidth: 'auto'
+                        }}
+                        title="Copy player link"
+                      >
+                        {copySuccess === team.playerCode ? '✓ Copied' : '📋 Copy Link'}
+                      </button>
+                    </div>
+                  </td>
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    {team.hasSubmittedRoster ? (
+                      <span style={{ color: '#28a745', fontWeight: 'bold' }}>✓ Submitted</span>
+                    ) : (
+                      <span style={{ color: '#6c757d' }}>Pending</span>
+                    )}
+                  </td>
                   <td style={{ padding: '0.5rem', textAlign: 'right' }}>
                     ${team.totalSalary.toLocaleString()}
                   </td>
@@ -157,12 +252,28 @@ export default function TeamsOverviewPanel() {
                     {team.score?.toFixed(1) || '-'}
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => handleViewTeam(team)}
-                    >
-                      View
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <button 
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => handleViewTeam(team.playerCode)}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '11px' }}
+                      >
+                        View
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleDeleteTeam(team.playerCode, team.teamName)}
+                        style={{ 
+                          padding: '0.25rem 0.5rem', 
+                          fontSize: '11px',
+                          backgroundColor: '#dc3545',
+                          color: 'white',
+                          border: 'none'
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -170,58 +281,6 @@ export default function TeamsOverviewPanel() {
           </table>
         )}
       </div>
-
-      {/* Team Detail Modal */}
-      {selectedTeam && (
-        <div className="modal" style={{ display: 'flex' }}>
-          <div className="modal-overlay" onClick={() => setSelectedTeam(null)}></div>
-          <div className="modal-content">
-            <h3>{selectedTeam.teamName}</h3>
-            
-            <div className="team-details" style={{ marginBottom: '1rem' }}>
-              <p><strong>Player Code:</strong> {selectedTeam.playerCode}</p>
-              <p><strong>Total Salary:</strong> ${selectedTeam.totalSalary.toLocaleString()}</p>
-              {selectedTeam.score !== undefined && (
-                <p><strong>Current Score:</strong> {selectedTeam.score.toFixed(1)} points</p>
-              )}
-            </div>
-
-            <h4>Team Roster</h4>
-            <div className="roster-list">
-              {selectedTeam.athletes.length === 0 ? (
-                <p style={{ color: '#666' }}>No athletes selected</p>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>Name</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'left' }}>Gender</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Salary</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedTeam.athletes.map((athlete) => (
-                      <tr key={athlete.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '0.5rem' }}>{athlete.name}</td>
-                        <td style={{ padding: '0.5rem' }}>{athlete.gender}</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right' }}>
-                          ${athlete.salary?.toLocaleString() || '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <div className="form-actions" style={{ marginTop: '1rem' }}>
-              <button className="btn btn-secondary" onClick={() => setSelectedTeam(null)}>
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -67,15 +67,36 @@ CREATE TABLE IF NOT EXISTS athlete_races (
 CREATE INDEX idx_athlete_races_athlete ON athlete_races(athlete_id);
 CREATE INDEX idx_athlete_races_race ON athlete_races(race_id);
 
--- Games table (replacing game-state.json)
+-- Fantasy NY Marathon Database Schema
+-- Neon Postgres (Serverless PostgreSQL)
+
+-- ============================================================================
+-- GAMES TABLE - Game configuration and state
+-- ============================================================================
+--
+-- ⚠️ DEPRECATION NOTICE - players column:
+-- The `players` TEXT[] column is DEPRECATED for salary cap draft games.
+-- It's only used for legacy snake draft mode compatibility.
+--
+-- For salary cap draft teams:
+--   - Teams are tracked in anonymous_sessions table
+--   - Query: SELECT * FROM anonymous_sessions WHERE game_id = ? AND is_active = true
+--   - Do NOT add/remove from players[] array
+--
+-- The players[] array was a cache from before proper database tables existed.
+-- Modern code should query anonymous_sessions directly.
+--
+-- See: components/commissioner/TeamsOverviewPanel.tsx for reference
+-- See: /api/salary-cap-draft for team queries
+--
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) UNIQUE NOT NULL,
-    players TEXT[] NOT NULL DEFAULT '{}',
+    players TEXT[] NOT NULL DEFAULT '{}',  -- ⚠️ DEPRECATED - Use anonymous_sessions table
     draft_complete BOOLEAN DEFAULT FALSE,
     results_finalized BOOLEAN DEFAULT FALSE,
-    commissioner_password VARCHAR(255) DEFAULT 'kipchoge',
     roster_lock_time TIMESTAMP WITH TIME ZONE,
+    commissioner_password VARCHAR(255) DEFAULT 'kipchoge',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

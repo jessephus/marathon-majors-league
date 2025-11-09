@@ -196,10 +196,13 @@ export const salaryCapDraftApi = {
   },
 
   /**
-   * Get team roster
+   * Get team roster (for specific player or all teams if playerCode omitted)
    */
-  async getTeam(gameId: string, playerCode: string) {
-    return apiRequest(`/api/salary-cap-draft?gameId=${gameId}&playerCode=${playerCode}`);
+  async getTeam(gameId: string, playerCode?: string) {
+    const params = playerCode 
+      ? `?gameId=${gameId}&playerCode=${playerCode}`
+      : `?gameId=${gameId}`;
+    return apiRequest(`/api/salary-cap-draft${params}`);
   },
 };
 
