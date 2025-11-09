@@ -196,9 +196,16 @@ export const salaryCapDraftApi = {
 export const resultsApi = {
   /**
    * Fetch race results
+   * @param gameId - Game identifier
+   * @param options - Optional fetch options
+   * @param options.skipDNS - Skip fetching DNS athletes for better performance (default: false)
    */
-  async fetch(gameId: string = 'default') {
-    return apiRequest(`/api/results?gameId=${gameId}`);
+  async fetch(gameId: string = 'default', options?: { skipDNS?: boolean }) {
+    const params = new URLSearchParams({ gameId });
+    if (options?.skipDNS) {
+      params.append('skipDNS', 'true');
+    }
+    return apiRequest(`/api/results?${params.toString()}`);
   },
 
   /**

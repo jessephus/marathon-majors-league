@@ -5,7 +5,7 @@
  * Integrates with state events and API client.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
@@ -44,6 +44,9 @@ export default function ResultsManagementPanel() {
   const [selectedSplit, setSelectedSplit] = useState<string>('finishTime');
   const [allAthletes, setAllAthletes] = useState<any[]>([]);
   const [newRow, setNewRow] = useState<NewResultRow | null>(null);
+  
+  // Track if initial load is in progress to prevent duplicate fetches
+  const loadingRef = useRef(false);
 
   // Split options
   const splitOptions = [
@@ -58,8 +61,19 @@ export default function ResultsManagementPanel() {
 
   // Load results on mount
   useEffect(() => {
-    loadResults();
-    loadAthletes();
+    // Prevent duplicate fetches during React Strict Mode double-mounting
+    if (loadingRef.current) return;
+    
+    loadingRef.current = true;
+    const initializeData = async () => {
+      await Promise.all([
+        loadResults(),
+        loadAthletes()
+      ]);
+      loadingRef.current = false;
+    };
+
+    initializeData();
   }, []);
 
   // Listen for resultsUpdated events
@@ -92,7 +106,8 @@ export default function ResultsManagementPanel() {
       // Use gameId from state manager
       const gameId = gameState.gameId || 'default';
       
-      const data: any = await apiClient.results.fetch(gameId);
+      // Skip DNS athletes for better performance in management panel
+      const data: any = await apiClient.results.fetch(gameId, { skipDNS: true });
       
       // Use the scored array which has full athlete info (matches legacy behavior)
       const scoredResults = data.scored || [];
