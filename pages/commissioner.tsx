@@ -48,12 +48,22 @@ type ActivePanel = 'dashboard' | 'results' | 'athletes' | 'teams';
 function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerPageProps) {
   const router = useRouter();
   const { commissionerState, setCommissionerState } = useCommissionerState();
-  const { gameState } = useGameState();
+  const { gameState, setGameState } = useGameState();
   const [showTOTPModal, setShowTOTPModal] = useState(!initialAuth);
   const [totpCode, setTotpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('dashboard');
+
+  // Initialize gameId from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedGameId = localStorage.getItem('current_game_id') || 'default';
+      if (gameState.gameId !== savedGameId) {
+        setGameState({ gameId: savedGameId });
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!commissionerState.isCommissioner && !initialAuth) {

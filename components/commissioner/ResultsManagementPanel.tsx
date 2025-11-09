@@ -13,6 +13,8 @@ import SkeletonLoader from './SkeletonLoader';
 interface AthleteResult {
   athleteId: number;
   athleteName: string;
+  country: string;
+  gender: string;
   finishTime: string;
   position: number;
   split5k?: string;
@@ -52,29 +54,42 @@ export default function ResultsManagementPanel() {
     try {
       setLoading(true);
       setError(null);
-      const data: any = await apiClient.results.fetch('default');
       
-      // Handle empty or null results gracefully
-      if (!data || !data.results || Object.keys(data.results).length === 0) {
+      // Use gameId from state manager
+      const gameId = gameState.gameId || 'default';
+      
+      const data: any = await apiClient.results.fetch(gameId);
+      
+      // Use the scored array which has full athlete info (matches legacy behavior)
+      const scoredResults = data.scored || [];
+      
+      // Filter to only athletes with ANY results
+      const athletesWithResults = scoredResults.filter((result: any) => {
+        return result.finish_time || result.split_5k || result.split_10k || 
+               result.split_half || result.split_30k || result.split_35k || result.split_40k;
+      });
+      
+      // Handle empty results gracefully
+      if (athletesWithResults.length === 0) {
         setResults([]);
         return;
       }
       
-      // Transform results data
-      const transformedResults: AthleteResult[] = Object.entries(data.results).map(
-        ([athleteId, result]: [string, any]) => ({
-          athleteId: parseInt(athleteId),
-          athleteName: result?.name || `Athlete ${athleteId}`,
-          finishTime: result?.finishTime || '',
-          position: result?.position || 0,
-          split5k: result?.split5k,
-          split10k: result?.split10k,
-          splitHalf: result?.splitHalf,
-          split30k: result?.split30k,
-          split35k: result?.split35k,
-          split40k: result?.split40k,
-        })
-      );
+      // Transform to our interface
+      const transformedResults: AthleteResult[] = athletesWithResults.map((result: any) => ({
+        athleteId: result.athlete_id,
+        athleteName: result.athlete_name || `Athlete ${result.athlete_id}`,
+        country: result.country || '-',
+        gender: result.gender ? result.gender.charAt(0).toUpperCase() + result.gender.slice(1) : 'Unknown',
+        finishTime: result.finish_time || '',
+        position: result.placement || 0,
+        split5k: result.split_5k,
+        split10k: result.split_10k,
+        splitHalf: result.split_half,
+        split30k: result.split_30k,
+        split35k: result.split_35k,
+        split40k: result.split_40k,
+      }));
 
       setResults(transformedResults);
     } catch (err) {
@@ -88,6 +103,9 @@ export default function ResultsManagementPanel() {
     try {
       setSaving(true);
       setError(null);
+
+      // Use gameId from state manager
+      const gameId = gameState.gameId || 'default';
 
       const resultsData = results.reduce((acc, result) => {
         acc[result.athleteId] = {
@@ -103,7 +121,7 @@ export default function ResultsManagementPanel() {
         return acc;
       }, {} as Record<number, any>);
 
-      await apiClient.results.update('default', resultsData);
+      await apiClient.results.update(gameId, resultsData);
 
       // Emit resultsUpdated event
       if (typeof window !== 'undefined') {
@@ -130,8 +148,11 @@ export default function ResultsManagementPanel() {
       setSaving(true);
       setError(null);
 
+      // Use gameId from state manager
+      const gameId = gameState.gameId || 'default';
+
       // Update game state with finalized flag
-      await apiClient.gameState.save('default', {
+      await apiClient.gameState.save(gameId, {
         ...gameState,
         resultsFinalized: true,
       });
@@ -242,6 +263,8 @@ export default function ResultsManagementPanel() {
               <tr>
                 <th style={{ padding: '0.5rem', textAlign: 'left' }}>Position</th>
                 <th style={{ padding: '0.5rem', textAlign: 'left' }}>Athlete</th>
+                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Country</th>
+                <th style={{ padding: '0.5rem', textAlign: 'left' }}>Gender</th>
                 <th style={{ padding: '0.5rem', textAlign: 'left' }}>Finish Time</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center' }}>Actions</th>
               </tr>
@@ -251,6 +274,8 @@ export default function ResultsManagementPanel() {
                 <tr key={result.athleteId} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '0.5rem' }}>{result.position}</td>
                   <td style={{ padding: '0.5rem' }}>{result.athleteName}</td>
+                  <td style={{ padding: '0.5rem' }}>{result.country}</td>
+                  <td style={{ padding: '0.5rem' }}>{result.gender}</td>
                   <td style={{ padding: '0.5rem' }}>{result.finishTime}</td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                     <button 
