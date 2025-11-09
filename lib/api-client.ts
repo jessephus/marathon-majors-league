@@ -38,9 +38,11 @@ async function apiRequest<T>(
 export const athleteApi = {
   /**
    * Fetch all athletes
+   * @param confirmedOnly - If true, only return athletes confirmed for active race (default: false for admin)
    */
-  async list() {
-    return apiRequest<{ men: any[]; women: any[] }>('/api/athletes');
+  async list(params?: { confirmedOnly?: boolean }) {
+    const confirmedOnly = params?.confirmedOnly ?? false;
+    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}`);
   },
 
   /**
