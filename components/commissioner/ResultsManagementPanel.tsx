@@ -364,28 +364,40 @@ export default function ResultsManagementPanel() {
 
       setSaving(true);
 
-      // Get current results from API
-      const gameId = gameState.gameId || 'default';
-      const data: any = await apiClient.results.fetch(gameId);
-      const currentResults = data.results || {};
-
       // Get the API field name for the selected split
       const splitFieldName = getSplitFieldName(selectedSplit);
       const camelCaseField = selectedSplit === 'finishTime' ? 'finishTime' : selectedSplit;
 
-      // Update the specific athlete's split time
+      // Get current result for this athlete only
+      const currentResult = results.find(r => r.athleteId === athleteId);
+      const gameId = gameState.gameId || 'default';
+
+      // Prepare minimal update - only this athlete's data
+      const athleteUpdate = {
+        [splitFieldName]: newTime,
+        [camelCaseField]: newTime,
+        // Preserve existing data
+        finish_time: currentResult?.finishTime || '',
+        split_5k: currentResult?.split5k || '',
+        split_10k: currentResult?.split10k || '',
+        split_half: currentResult?.splitHalf || '',
+        split_30k: currentResult?.split30k || '',
+        split_35k: currentResult?.split35k || '',
+        split_40k: currentResult?.split40k || '',
+        position: currentResult?.position || 0,
+      };
+
+      // Override with the new time
+      athleteUpdate[splitFieldName] = newTime;
+
+      // Send only this athlete's update
       const resultsData = {
-        ...currentResults,
-        [athleteId]: {
-          ...currentResults[athleteId],
-          [splitFieldName]: newTime,
-          [camelCaseField]: newTime
-        }
+        [athleteId]: athleteUpdate
       };
 
       await apiClient.results.update(gameId, resultsData);
 
-      // Update local state
+      // Update local state immediately (optimistic update)
       setResults(prev => prev.map(r => {
         if (r.athleteId === athleteId) {
           return { ...r, [camelCaseField]: newTime };
