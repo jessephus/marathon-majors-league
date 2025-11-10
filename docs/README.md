@@ -4,16 +4,15 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **7 main categories** with **35 total documents**.
+Our documentation is organized into **7 main categories** with **32 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
-- `TECH_*.md` - Technical reference (6 docs)
+- `TECH_*.md` - Technical reference (7 docs)
 - `FEATURE_*.md` - Game features (7 docs)
-- `PROCESS_*.md` - Project history (14 docs)
+- `PROCESS_*.md` - Project history (10 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
-- `MIGRATION_*.md` - Migration guides (1 doc)
-- `BUGFIX_*.md` - Bug fix documentation (1 doc)
+- `MANUAL_*.md` - Testing documentation (1 doc)
 
 ---
 
@@ -89,23 +88,11 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
 | **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
 | **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
-| **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
-| **[PROCESS_LANDING_PAGE_SSR_MIGRATION.md](PROCESS_LANDING_PAGE_SSR_MIGRATION.md)** | Landing page SSR migration guide | Implementing/understanding SSR |
-| **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
-| **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
-| **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
-| **[PROCESS_CLEANUP_SUMMARY.md](PROCESS_CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
-| **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
-| **[PROCESS_AUTH_PHASE_2_SUMMARY.md](PROCESS_AUTH_PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
 | **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
-| **[PROCESS_MANUAL_TESTING_CHECKLIST.md](PROCESS_MANUAL_TESTING_CHECKLIST.md)** | Manual testing checklist for releases | Pre-release testing |
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
-| **[PROCESS_PHASE_4_LEADERBOARD_SUMMARY.md](PROCESS_PHASE_4_LEADERBOARD_SUMMARY.md)** | Leaderboard Phase 4 implementation | Understanding leaderboard features |
 | **[PROCESS_ROUTING_PHASE1.md](PROCESS_ROUTING_PHASE1.md)** | Routing Phase 1 implementation summary | Understanding new page structure |
 | **[PROCESS_SSR_STRATEGY.md](PROCESS_SSR_STRATEGY.md)** | Server-side rendering strategy for Next.js migration | Understanding SSR implementation |
-| **[PROCESS_STATE_MANAGER_TESTING.md](PROCESS_STATE_MANAGER_TESTING.md)** | State manager testing documentation | Testing state management |
-| **[PROCESS_STATE_PHASE_3_IMPLEMENTATION_SUMMARY.md](PROCESS_STATE_PHASE_3_IMPLEMENTATION_SUMMARY.md)** | State Phase 3 implementation summary | Understanding state architecture |
 
 ### 5️⃣ Setup & Authentication
 
@@ -113,17 +100,17 @@ Learn how to join games, rank athletes, and follow live results.
 |----------|---------|--------------|
 | **[SETUP_AUTHENTICATION.md](SETUP_AUTHENTICATION.md)** | Email/SMS service configuration | Setting up authentication |
 
-### 6️⃣ Migrations
+### 6️⃣ Technical Debt & Maintenance
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[MIGRATION_LANDING_PAGE_SSR.md](MIGRATION_LANDING_PAGE_SSR.md)** | Landing page SSR migration guide | Implementing/understanding SSR |
+| **[TECH_UI_HELPER_DUPLICATION.md](TECH_UI_HELPER_DUPLICATION.md)** | UI helper function duplication tracking | Understanding technical debt |
 
-### 7️⃣ Bug Fixes
+### 7️⃣ Manual Testing
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[BUGFIX_INFINITE_REFRESH_LOOP.md](BUGFIX_INFINITE_REFRESH_LOOP.md)** | Infinite refresh loop bug fix | Understanding session management fixes |
+| **[MANUAL_TESTING_DRAFT_EXTRACTION.md](MANUAL_TESTING_DRAFT_EXTRACTION.md)** | Manual testing plan for PR #111 draft feature extraction | Testing draft validation refactoring |
 
 ---
 
@@ -151,7 +138,6 @@ Learn how to join games, rank athletes, and follow live results.
 | Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, PROCESS_EDITABLE_WA_ID_FEATURE.md |
 | Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_AUTH_PHASE_2_SUMMARY.md |
 | Anonymous Teams | [FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md) | CORE_USER_GUIDE.md, CORE_ARCHITECTURE.md |
-| SSR Landing Page | [MIGRATION_LANDING_PAGE_SSR.md](MIGRATION_LANDING_PAGE_SSR.md) | PROCESS_SSR_STRATEGY.md, CORE_ARCHITECTURE.md |
 
 ---
 
@@ -180,16 +166,6 @@ Our documentation follows these categories:
    - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CLEANUP_SUMMARY.md
    - Format: Chronological with decision rationale
    - Naming: `PROCESS_*.md` prefix (or `CORE_`/`TECH_` if ongoing)
-
-5. **Migrations** - Major technical migrations and transitions
-   - Examples: MIGRATION_LANDING_PAGE_SSR.md
-   - Format: Before/after, rationale, implementation steps, rollback
-   - Naming: `MIGRATION_*.md` prefix
-
-6. **Bug Fixes** - Significant bug documentation
-   - Examples: BUGFIX_INFINITE_REFRESH_LOOP.md
-   - Format: Symptom, root cause, solution, prevention
-   - Naming: `BUGFIX_*.md` prefix
 
 ### When Creating New Documentation
 
@@ -257,14 +233,14 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 34 files | Well-organized with category prefixes |
+| Total Documents | 32 docs + 1 index (33 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
-| Outdated Docs | 0 | Recently updated for SSR migration |
+| Outdated Docs | 0 | Recently updated for merge cleanup |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
-**Last Update:** November 2025 (SSR landing page migration)  
+**Last Audit:** November 10, 2025 (Added MANUAL_TESTING_DRAFT_EXTRACTION.md)  
 **Next Review:** February 2026
 
 ---
@@ -284,6 +260,6 @@ Our documentation follows these categories:
 
 ---
 
-**Last Updated:** November 7, 2025  
+**Last Updated:** November 10, 2025  
 **Documentation Maintainer:** Project Contributors  
-**Version:** 2.1 (Post-SSR Migration)
+**Version:** 2.2 (Post-Merge Audit)
