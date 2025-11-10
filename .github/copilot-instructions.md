@@ -109,7 +109,7 @@ Run this checklist every 3 months (or before major releases):
 #### Documentation Health Metrics
 
 Target state (check monthly):
-- **Total docs:** 20-30 files (current: 27 ✅)
+- **Total docs:** 20-30 files (current: 26 ✅)
 - **Orphaned docs:** 0 (not linked from docs/README.md)
 - **Outdated examples:** 0 (code examples match current API)
 - **Broken links:** 0 (all cross-references work)

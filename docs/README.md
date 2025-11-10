@@ -4,10 +4,10 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **27 total documents**.
+Our documentation is organized into **5 main categories** with **26 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
-- `CORE_*.md` - Essential guides (6 docs)
+- `CORE_*.md` - Essential guides (5 docs)
 - `TECH_*.md` - Technical reference (5 docs)
 - `FEATURE_*.md` - Game features (6 docs)
 - `PROCESS_*.md` - Project history (9 docs)
@@ -216,7 +216,7 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 27 files | Well-organized with category prefixes |
+| Total Documents | 26 files | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently consolidated and renamed |
 | Missing Docs | 0 | All features documented |
