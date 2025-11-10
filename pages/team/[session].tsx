@@ -83,11 +83,11 @@ function TeamSessionPageContent({
   const [selectedGender, setSelectedGender] = useState<'men' | 'women'>('men');
   
   // Track if roster has been submitted (and not in edit mode)
-  const [hasSubmittedRoster, setHasSubmittedRoster] = useState(() => {
+  const [hasSubmittedRoster, setHasSubmittedRoster] = useState<boolean>(() => {
     // If existing roster exists with all 6 athletes, it's been submitted
-    return existingRoster && 
+    return !!(existingRoster && 
       existingRoster.M1 && existingRoster.M2 && existingRoster.M3 &&
-      existingRoster.W1 && existingRoster.W2 && existingRoster.W3;
+      existingRoster.W1 && existingRoster.W2 && existingRoster.W3);
   });
   const [isEditingRoster, setIsEditingRoster] = useState(false);
   
@@ -224,7 +224,7 @@ function TeamSessionPageContent({
       console.error('Failed to submit team:', err);
       alert(`Failed to submit team: ${err instanceof Error ? err.message : 'Please try again.'}`);
     }
-  }, [roster, sessionData, sessionToken, router, setHasSubmittedRoster, setIsEditingRoster]);
+  }, [roster, sessionData, sessionToken, router]);
 
   // Error state
   if (!sessionData.valid) {
