@@ -6,7 +6,7 @@
  * Matches legacy vanilla JS implementation styling.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { canAffordAthlete, isAthleteInRoster } from '@/lib/budget-utils';
 import { getRunnerSvg } from '@/lib/ui-helpers';
 import AthleteModal from './AthleteModal';
@@ -57,6 +57,22 @@ export default function AthleteSelectionModal({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [showConfirmedOnly, setShowConfirmedOnly] = useState(true);
+
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen && !isDetailModalOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+      };
+    }
+  }, [isOpen, isDetailModalOpen, onClose]);
 
   // Helper function to convert time string to seconds for sorting
   const convertTimeToSeconds = (timeStr: string): number => {

@@ -74,6 +74,57 @@ RANKING_URL_TEMPLATE = f"{BASE_URL}/world-rankings/marathon/{{gender}}?regionTyp
 REQUEST_TIMEOUT = 30
 DELAY_BETWEEN_REQUESTS = 2  # Be polite to the server
 DELAY_BETWEEN_PROFILES = 3  # Even more polite for profile fetches
+IMAGE_TEST_TIMEOUT = 5  # Timeout for testing image URLs
+
+# ============================================================================
+# IMAGE TESTING HELPER
+# ============================================================================
+
+def normalize_wa_id(wa_id: str) -> str:
+    """
+    Normalize World Athletics ID by removing leading zeros.
+    
+    World Athletics sometimes includes leading zeros in URLs (e.g., 014845463)
+    but the canonical ID is without leading zeros (14845463).
+    
+    Args:
+        wa_id: World Athletics ID, possibly with leading zeros
+        
+    Returns:
+        Normalized ID without leading zeros
+    """
+    if not wa_id:
+        return wa_id
+    return wa_id.lstrip('0') or '0'  # Keep '0' if the ID is all zeros
+
+
+def test_image_accessible(url: str) -> bool:
+    """
+    Test if an image URL is accessible.
+    
+    Returns True if the URL returns a successful response, False otherwise.
+    This is used to check if World Athletics headshot URLs are working or
+    if we should use placeholder images.
+    """
+    try:
+        response = requests.head(url, timeout=IMAGE_TEST_TIMEOUT, allow_redirects=True)
+        return response.status_code == 200
+    except requests.RequestException:
+        # If HEAD fails, try GET with timeout
+        try:
+            response = requests.get(url, timeout=IMAGE_TEST_TIMEOUT, stream=True)
+            return response.status_code == 200
+        except requests.RequestException:
+            return False
+
+
+def get_placeholder_url(gender: str) -> str:
+    """Get the appropriate placeholder image URL based on gender."""
+    gender_lower = gender.lower() if gender else 'men'
+    if 'women' in gender_lower or 'woman' in gender_lower:
+        return '/images/woman-runner.png'
+    else:
+        return '/images/man-runner.png'
 
 # ============================================================================
 # PART 1: EXTRACTING RANKINGS
@@ -123,7 +174,7 @@ def scrape_rankings_page(gender: str, page: int, rank_date: str) -> List[Dict]:
                     parts = profile_url.split('/')[-1].split('-')
                     for part in reversed(parts):
                         if part.isdigit() and len(part) >= 7:
-                            athlete_id = part
+                            athlete_id = normalize_wa_id(part)
                             break
                 
                 cells = row.select('td')
@@ -282,7 +333,7 @@ def find_dropped_athletes(gender: str, existing_athlete_ids: set, top_100_ids: s
 # PART 2: ENRICHING ATHLETE PROFILES
 # ============================================================================
 
-def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str) -> Optional[Dict]:
+def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str, gender: str = 'men') -> Optional[Dict]:
     """
     Fetch detailed athlete data from their profile page.
     
@@ -309,7 +360,7 @@ def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str) -> Optio
         
         if not json_match:
             print(f"    ⚠️  No __NEXT_DATA__ found, trying fallback methods")
-            return fetch_profile_fallback(athlete_id, html, name)
+            return fetch_profile_fallback(athlete_id, html, name, gender)
         
         try:
             next_data = json.loads(json_match.group(1))
@@ -317,14 +368,24 @@ def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str) -> Optio
             
             if not competitor:
                 print(f"    ⚠️  No competitor data found")
-                return fetch_profile_fallback(athlete_id, html, name)
+                return fetch_profile_fallback(athlete_id, html, name, gender)
             
             # Extract all available data
             result = {
                 'world_athletics_id': athlete_id,
                 'profile_url': profile_url,
-                'headshot_url': f"https://media.aws.iaaf.org/athletes/{athlete_id}.jpg"
             }
+            
+            # Test if World Athletics headshot is accessible, use placeholder if not
+            wa_headshot_url = f"https://media.aws.iaaf.org/athletes/{athlete_id}.jpg"
+            if test_image_accessible(wa_headshot_url):
+                result['headshot_url'] = wa_headshot_url
+                print(f"    ✓ Headshot URL verified")
+            else:
+                # Use gender-appropriate placeholder
+                placeholder_url = get_placeholder_url(gender)
+                result['headshot_url'] = placeholder_url
+                print(f"    ⚠️  WA headshot unavailable - using placeholder")
             
             # World Rankings
             world_rankings = competitor.get('worldRankings', {}).get('current', [])
@@ -388,21 +449,30 @@ def fetch_athlete_profile(athlete_id: str, profile_url: str, name: str) -> Optio
             
         except json.JSONDecodeError as e:
             print(f"    ❌ Failed to parse JSON: {e}")
-            return fetch_profile_fallback(athlete_id, html, name)
+            return fetch_profile_fallback(athlete_id, html, name, gender)
     
     except requests.RequestException as e:
         print(f"    ❌ Error fetching profile: {e}")
         return None
 
 
-def fetch_profile_fallback(athlete_id: str, html: str, name: str) -> Dict:
+def fetch_profile_fallback(athlete_id: str, html: str, name: str, gender: str = 'men') -> Dict:
     """
     Fallback method to extract basic data from HTML when JSON parsing fails.
     """
     result = {
         'world_athletics_id': athlete_id,
-        'headshot_url': f"https://media.aws.iaaf.org/athletes/{athlete_id}.jpg"
     }
+    
+    # Test if World Athletics headshot is accessible, use placeholder if not
+    wa_headshot_url = f"https://media.aws.iaaf.org/athletes/{athlete_id}.jpg"
+    if test_image_accessible(wa_headshot_url):
+        result['headshot_url'] = wa_headshot_url
+        print(f"    ✓ Headshot URL verified (fallback)")
+    else:
+        placeholder_url = get_placeholder_url(gender)
+        result['headshot_url'] = placeholder_url
+        print(f"    ⚠️  WA headshot unavailable - using placeholder (fallback)")
     
     # Try to extract rankings from HTML text
     marathon_rank_match = re.search(r'#(\d+)\s+(?:Man\'s|Woman\'s)\s+marathon', html, re.IGNORECASE)
@@ -457,8 +527,8 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
             
             if existing_score and current_score and existing_score == current_score:
                 print(f"  ⏭️  Score unchanged ({current_score}) - using cached data")
+                
                 # Copy enrichment data from existing record
-                athlete['headshot_url'] = existing.get('headshot_url')
                 athlete['marathon_rank'] = existing.get('marathon_rank')
                 athlete['road_running_rank'] = existing.get('road_running_rank')
                 athlete['overall_rank'] = existing.get('overall_rank')
@@ -467,6 +537,26 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
                 athlete['age'] = existing.get('age')
                 athlete['date_of_birth'] = existing.get('date_of_birth')
                 athlete['sponsor'] = existing.get('sponsor')
+                
+                # Check if we should try to restore placeholder headshot
+                existing_headshot = existing.get('headshot_url') or ''
+                is_placeholder = '/images/' in existing_headshot
+                
+                if is_placeholder and athlete.get('world_athletics_id'):
+                    # Try to restore World Athletics URL
+                    wa_url = f"https://media.aws.iaaf.org/athletes/{athlete['world_athletics_id']}.jpg"
+                    print(f"  🔄 Testing if WA headshot is now available...")
+                    
+                    if test_image_accessible(wa_url):
+                        print(f"  ✅ WA headshot restored: {wa_url}")
+                        athlete['headshot_url'] = wa_url
+                    else:
+                        print(f"  ⏸️  WA headshot still unavailable - keeping placeholder")
+                        athlete['headshot_url'] = existing_headshot
+                else:
+                    # Use existing headshot URL as-is
+                    athlete['headshot_url'] = existing_headshot
+                
                 enriched.append(athlete)
                 skipped_count += 1
                 continue
@@ -474,7 +564,8 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
         profile_data = fetch_athlete_profile(
             athlete['world_athletics_id'],
             athlete['profile_url'],
-            athlete['name']
+            athlete['name'],
+            athlete.get('gender', 'men')
         )
         
         if profile_data:
@@ -576,29 +667,29 @@ def get_db_connection():
 
 def run_migration(conn):
     """
-    Run database migration to add sync tracking fields if they don't exist.
+    Ensure database schema has sync tracking fields.
     This is idempotent and safe to run multiple times.
     """
     migration_path = Path(__file__).parent.parent / 'migrations' / 'add_sync_tracking_fields.sql'
     
     if not migration_path.exists():
-        print("⚠️  Migration file not found, skipping migration")
+        print("⚠️  Schema check file not found, skipping")
         return
     
-    print("🔄 Running database migration...")
+    print("🔄 Checking database schema...")
     
     with conn.cursor() as cur:
         with open(migration_path) as f:
             migration_sql = f.read()
         
         try:
-            # Execute the entire migration
+            # Execute the schema additions (idempotent)
             cur.execute(migration_sql)
             conn.commit()
-            print("✅ Migration completed successfully")
+            print("✅ Database schema verified")
         except Exception as e:
             conn.rollback()
-            print(f"⚠️  Migration error (may already be applied): {e}")
+            print(f"⚠️  Schema check warning (fields may already exist): {e}")
 
 
 def compute_hash(athlete: Dict) -> str:
@@ -913,7 +1004,7 @@ def sync_single_athlete(athlete_id: str, dry_run: bool = False):
         
         # Fetch profile data
         print(f"\n📥 Fetching profile data...")
-        profile_data = fetch_athlete_profile(athlete_id, profile_url, athlete['name'])
+        profile_data = fetch_athlete_profile(athlete_id, profile_url, athlete['name'], athlete.get('gender', 'men'))
         
         if not profile_data:
             print(f"❌ Failed to fetch profile data for {athlete['name']}")

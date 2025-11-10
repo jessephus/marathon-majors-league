@@ -132,8 +132,6 @@ WHERE game_id = 'default';
 ✅ Budget tracker still shows but is not interactive
 
 
-*********** STOPPPED HERE ***************
-
 ## Test Scenario 7: Submit Complete Roster
 
 ### Prerequisites:

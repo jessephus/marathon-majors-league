@@ -12,7 +12,7 @@ import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
-import { createTeamAvatarSVG } from '@/lib/ui-helpers';
+import { createTeamAvatarSVG, getRunnerSvg } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
@@ -81,6 +81,15 @@ function TeamSessionPageContent({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedGender, setSelectedGender] = useState<'men' | 'women'>('men');
+  
+  // Track if roster has been submitted (and not in edit mode)
+  const [hasSubmittedRoster, setHasSubmittedRoster] = useState(() => {
+    // If existing roster exists with all 6 athletes, it's been submitted
+    return existingRoster && 
+      existingRoster.M1 && existingRoster.M2 && existingRoster.M3 &&
+      existingRoster.W1 && existingRoster.W2 && existingRoster.W3;
+  });
+  const [isEditingRoster, setIsEditingRoster] = useState(false);
   
   // Roster state (convert from TeamRoster to RosterSlot[] format)
   const [roster, setRoster] = useState(() => {
@@ -160,33 +169,62 @@ function TeamSessionPageContent({
 
   // Handle roster submission
   const handleSubmitRoster = useCallback(async () => {
-    if (!sessionData.session?.playerCode) {
-      alert('Session error: No player code found');
+    if (!sessionToken) {
+      alert('Session error: No session token found');
       return;
     }
 
     try {
       // Convert roster to API format
-      const team = roster.reduce((acc, slot) => {
-        if (slot.athleteId) {
-          acc[slot.slotId] = slot.athleteId;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      const team = {
+        men: [] as { id: number }[],
+        women: [] as { id: number }[]
+      };
 
-      await apiClient.salaryCapDraft.submitTeam(
-        sessionData.session.gameId,
-        sessionData.session.playerCode,
-        team
-      );
+      roster.forEach(slot => {
+        if (slot.athleteId) {
+          if (slot.slotId.startsWith('M')) {
+            team.men.push({ id: slot.athleteId });
+          } else if (slot.slotId.startsWith('W')) {
+            team.women.push({ id: slot.athleteId });
+          }
+        }
+      });
+
+      // Calculate total spent
+      const totalSpent = roster.reduce((sum, slot) => sum + (slot.salary || 0), 0);
+
+      // Make API call with session token in Authorization header
+      const response = await fetch('/api/salary-cap-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({
+          gameId: sessionData.session?.gameId || 'default',
+          team,
+          totalSpent,
+          teamName: sessionData.session?.displayName || 'My Team'
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to submit team');
+      }
+
+      // Mark roster as submitted
+      setHasSubmittedRoster(true);
+      setIsEditingRoster(false);
 
       alert('Team submitted successfully!');
       router.push('/leaderboard');
     } catch (err) {
       console.error('Failed to submit team:', err);
-      alert('Failed to submit team. Please try again.');
+      alert(`Failed to submit team: ${err instanceof Error ? err.message : 'Please try again.'}`);
     }
-  }, [roster, sessionData, router]);
+  }, [roster, sessionData, sessionToken, router, setHasSubmittedRoster, setIsEditingRoster]);
 
   // Error state
   if (!sessionData.valid) {
@@ -224,6 +262,10 @@ function TeamSessionPageContent({
   const totalSpent = roster.reduce((sum, slot) => sum + (slot.salary || 0), 0);
   
   const allFilledSlots = roster.every(slot => slot.athleteId !== null);
+  
+  // Determine roster editing state
+  const isRosterLocked_computed = isRosterLocked(gameStateData.rosterLockTime);
+  const isRosterEditable = !isRosterLocked_computed && (!hasSubmittedRoster || isEditingRoster);
 
   // Format lock time display
   const lockTimeDisplay = formatLockTime(gameStateData.rosterLockTime);
@@ -250,11 +292,11 @@ function TeamSessionPageContent({
           {/* Team Header - Legacy Style */}
           <div className="team-header-orange">
             <div className="team-avatar-wrapper">
-              {createTeamAvatarSVG(sessionState.teamName || 'My Team', 48)}
+              {createTeamAvatarSVG(sessionData.session?.displayName || sessionState.teamName || 'My Team', 48)}
             </div>
             <div className="team-header-info">
               <div className="team-label">TEAM</div>
-              <h2 className="team-name-heading">{sessionState.teamName || 'My Team'}</h2>
+              <h2 className="team-name-heading">{sessionData.session?.displayName || sessionState.teamName || 'My Team'}</h2>
             </div>
             <div className="team-budget-stats">
               <div className="budget-stat">
@@ -274,8 +316,8 @@ function TeamSessionPageContent({
 
           {/* Roster Lock Notice */}
           {gameStateData.rosterLockTime && (
-            <div className={`roster-lock-notice ${locked ? 'locked' : 'warning'}`}>
-              {locked ? (
+            <div className={`roster-lock-notice ${isRosterLocked_computed ? 'locked' : 'warning'}`}>
+              {isRosterLocked_computed ? (
                 <>🔒 Roster locked as of {lockTimeDisplay}</>
               ) : timeUntilLock && !timeUntilLock.isPast ? (
                 <>⏰ Roster locks at {lockTimeDisplay}</>
@@ -292,12 +334,18 @@ function TeamSessionPageContent({
                 ? (slot.slotId.startsWith('M') ? menAthletes : womenAthletes).find(a => a.id === slot.athleteId)
                 : null;
 
+              // Get gender for fallback images
+              const gender = slot.slotId.startsWith('M') ? 'men' : 'women';
+              
+              // Use headshot URL with fallback to placeholder
+              const athleteHeadshotUrl = athlete?.headshotUrl || getRunnerSvg(gender);
+
               return (
                 <div 
                   key={slot.slotId}
-                  className={`roster-slot-legacy ${athlete ? 'filled' : 'empty'} ${locked ? 'locked' : ''}`}
-                  onClick={() => !locked && handleSlotClick(slot.slotId, slot.athleteId)}
-                  style={{ cursor: locked ? 'not-allowed' : 'pointer' }}
+                  className={`roster-slot-legacy ${athlete ? 'filled' : 'empty'} ${!isRosterEditable ? 'locked' : ''}`}
+                  onClick={() => isRosterEditable && handleSlotClick(slot.slotId, slot.athleteId)}
+                  style={{ cursor: !isRosterEditable ? 'not-allowed' : 'pointer' }}
                 >
                   <div className="slot-label-legacy">{slot.slotId}</div>
                   <div className="slot-content-legacy">
@@ -305,11 +353,12 @@ function TeamSessionPageContent({
                       <>
                         <div className="slot-headshot-legacy">
                           <img 
-                            src={athlete.headshotUrl || (slot.slotId.startsWith('M') ? '/images/man-runner.png' : '/images/woman-runner.png')} 
+                            src={athleteHeadshotUrl}
                             alt={athlete.name}
                             className="slot-headshot-img-legacy"
                             onError={(e) => {
-                              e.currentTarget.src = slot.slotId.startsWith('M') ? '/images/man-runner.png' : '/images/woman-runner.png';
+                              // Set fallback image on error (same as modal pattern)
+                              e.currentTarget.src = getRunnerSvg(gender);
                             }}
                           />
                         </div>
@@ -322,7 +371,7 @@ function TeamSessionPageContent({
                         <div className="slot-athlete-salary-legacy">
                           ${(athlete.salary || 5000).toLocaleString()}
                         </div>
-                        {!locked && (
+                        {isRosterEditable && (
                           <button 
                             className="slot-remove-btn-legacy"
                             onClick={(e) => {
@@ -345,13 +394,23 @@ function TeamSessionPageContent({
 
           {/* Submit Container */}
           <div className="draft-submit-container">
-            <button 
-              className="btn btn-primary btn-large" 
-              disabled={!allFilledSlots || locked}
-              onClick={handleSubmitRoster}
-            >
-              {locked ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
-            </button>
+            {/* Show Edit button when roster is submitted but not locked */}
+            {hasSubmittedRoster && !isEditingRoster && !isRosterLocked_computed ? (
+              <button 
+                className="btn btn-secondary btn-large" 
+                onClick={() => setIsEditingRoster(true)}
+              >
+                Edit Roster
+              </button>
+            ) : (
+              <button 
+                className="btn btn-primary btn-large" 
+                disabled={!allFilledSlots || isRosterLocked_computed}
+                onClick={handleSubmitRoster}
+              >
+                {isRosterLocked_computed ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
+              </button>
+            )}
             
             <button 
               className="btn btn-secondary"
@@ -363,8 +422,7 @@ function TeamSessionPageContent({
           </div>
 
           <div className="session-info" style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#666' }}>
-            <p>💡 Tip: Share your session link with friends to join the same game!</p>
-            <p>🔗 Session: /team/{sessionToken}</p>
+            <p>🔗 Session ID: {sessionToken}</p>
           </div>
         </main>
 
@@ -451,28 +509,37 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
     // Fetch existing roster (if any)
     let existingRoster = null;
-    if (sessionData.session.playerCode) {
-      try {
-        const rosterResponse = await fetch(
-          `${baseUrl}/api/salary-cap-draft?gameId=${gameId}&playerCode=${sessionData.session.playerCode}`
-        );
-        const rosterData = await rosterResponse.json();
-        
-        if (rosterData.team) {
-          // Convert roster to TeamRoster format
-          existingRoster = {
-            M1: athletesData.men.find((a: Athlete) => a.id === rosterData.team.M1) || null,
-            M2: athletesData.men.find((a: Athlete) => a.id === rosterData.team.M2) || null,
-            M3: athletesData.men.find((a: Athlete) => a.id === rosterData.team.M3) || null,
-            W1: athletesData.women.find((a: Athlete) => a.id === rosterData.team.W1) || null,
-            W2: athletesData.women.find((a: Athlete) => a.id === rosterData.team.W2) || null,
-            W3: athletesData.women.find((a: Athlete) => a.id === rosterData.team.W3) || null,
-          };
+    try {
+      // Fetch all rosters for this game
+      const rosterResponse = await fetch(
+        `${baseUrl}/api/salary-cap-draft?gameId=${gameId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          }
         }
-      } catch (err) {
-        console.error('Failed to fetch existing roster:', err);
-        // Continue without existing roster
+      );
+      const rosterData = await rosterResponse.json();
+      
+      // Find the roster using displayName (which equals playerCode)
+      const playerCode = sessionData.session.displayName; // displayName = playerCode
+      
+      if (playerCode && rosterData[playerCode] && rosterData[playerCode].hasSubmittedRoster) {
+        const teamData = rosterData[playerCode];
+        
+        // Convert roster arrays to slot-based format
+        existingRoster = {
+          M1: teamData.men[0] || null,
+          M2: teamData.men[1] || null,
+          M3: teamData.men[2] || null,
+          W1: teamData.women[0] || null,
+          W2: teamData.women[1] || null,
+          W3: teamData.women[2] || null,
+        };
       }
+    } catch (err) {
+      console.error('Failed to fetch existing roster:', err);
+      // Continue without existing roster
     }
 
     return {

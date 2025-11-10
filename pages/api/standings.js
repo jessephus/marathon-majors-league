@@ -11,6 +11,7 @@ const sql = neon(process.env.DATABASE_URL);
 /**
  * Calculate and update standings for a game
  * Now supports temporary scoring based on splits when final results aren't available
+ * Also shows teams with submitted rosters even when no race results exist yet
  */
 async function calculateStandings(gameId) {
   // Get all players in the game
@@ -18,12 +19,27 @@ async function calculateStandings(gameId) {
     SELECT players, results_finalized FROM games WHERE game_id = ${gameId}
   `;
   
-  if (!game || !game.players) {
-    return { standings: [], isTemporary: false, projectionInfo: null };
+  if (!game) {
+    return { standings: [], isTemporary: false, projectionInfo: null, hasResults: false };
   }
   
-  const players = game.players;
+  const players = game.players || [];
   const isFinalized = game.results_finalized || false;
+  
+  // Get all teams with submitted rosters (from salary_cap_teams)
+  const submittedTeams = await sql`
+    SELECT DISTINCT 
+      player_code,
+      COUNT(athlete_id) as roster_count
+    FROM salary_cap_teams
+    WHERE game_id = ${gameId}
+    GROUP BY player_code
+    HAVING COUNT(athlete_id) = 6
+  `;
+  
+  const teamsWithRosters = submittedTeams.map(t => t.player_code);
+  console.log('📊 Teams with rosters:', teamsWithRosters);
+  console.log('📊 Submitted teams query result:', submittedTeams);
   
   // Get all race results for this game to determine if we need temporary scoring
   const allResults = await sql`
@@ -64,8 +80,13 @@ async function calculateStandings(gameId) {
   
   const standings = [];
   
-  // Calculate stats for each player
-  for (const playerCode of players) {
+  // Calculate stats for each player who has a submitted roster
+  // If no results exist yet, show all teams with 0 points
+  const playersToShow = hasAnyResults ? players : teamsWithRosters;
+  
+  console.log('📊 About to iterate. hasAnyResults:', hasAnyResults, 'playersToShow:', playersToShow);
+  
+  for (const playerCode of playersToShow) {
     // Get player's team - try both salary_cap_teams and draft_teams
     let team = await sql`
       SELECT athlete_id
@@ -163,6 +184,7 @@ async function calculateStandings(gameId) {
     standings,
     isTemporary: useTemporaryScoring,
     hasFinishTimes: hasAnyFinishTimes,
+    hasResults: hasAnyResults,
     projectionInfo: useTemporaryScoring ? projectionInfo : null
   };
 }
@@ -220,8 +242,34 @@ export default async function handler(req, res) {
       `;
       const hasResults = resultsCount.length > 0 && resultsCount[0].count > 0;
       
-      // If no results, return early
+      // If no results, check if there are any submitted teams to show
       if (!hasResults) {
+        // Get teams with submitted rosters
+        const submittedTeams = await sql`
+          SELECT DISTINCT 
+            player_code,
+            COUNT(athlete_id) as roster_count
+          FROM salary_cap_teams
+          WHERE game_id = ${gameId}
+          GROUP BY player_code
+          HAVING COUNT(athlete_id) = 6
+        `;
+        
+        // If there are submitted teams, calculate standings (will show 0 points)
+        if (submittedTeams.length > 0) {
+          const standingsData = await calculateStandings(gameId);
+          
+          res.status(200).json({
+            gameId,
+            standings: standingsData.standings || [],
+            hasResults: false,
+            isTemporary: false,
+            cached: false
+          });
+          return;
+        }
+        
+        // Otherwise return empty standings
         res.status(200).json({
           gameId,
           standings: [],

@@ -109,7 +109,7 @@ export default async function handler(req, res) {
             pb: row.pb,
             salary: row.salary,
             marathon_rank: row.marathon_rank,
-            headshot_url: row.headshot_url
+            headshotUrl: row.headshot_url
           };
           
           if (row.team_gender === 'men') {
