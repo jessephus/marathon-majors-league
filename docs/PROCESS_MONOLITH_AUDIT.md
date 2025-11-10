@@ -894,22 +894,44 @@ if (anonymousSession.token) {
 
 #### 1.2 UI Utility Functions Module
 
-**Target:** `utils/ui-helpers.js`
+**Status:** ✅ **COMPLETED** (November 9, 2025)
 
-**Functions to Extract:**
-- `getRunnerSvg()` (merge duplicates)
-- `getTeamInitials()` (merge duplicates)
-- `createTeamAvatarSVG()` (merge duplicates)
-- `getCountryFlag()`
-- `createHeadshotElement()`
-- `enrichAthleteData()`
+**Target:** `lib/ui-helpers.tsx` (262 lines)
 
-**Benefits:**
-- ✅ Eliminates code duplication
-- ✅ Clear, testable functions
-- ✅ Improves maintainability
+**Functions Extracted:**
+- ✅ `getRunnerSvg()` - Default athlete avatar URLs
+- ✅ `getTeamInitials()` - Extract 1-2 letter team initials
+- ✅ `createTeamAvatarSVG()` - React JSX version for components
+- ✅ `createTeamAvatarSVGElement()` - DOM version for vanilla JS
+- ✅ `getCountryFlag()` - ISO 3166-1 alpha-3 to emoji conversion
+- ✅ `createHeadshotElement()` - Athlete image with error handling
+- ✅ `enrichAthleteData()` - Merge saved data with current database
 
-**Effort:** 🟢 **Low** (2-3 hours)
+**Implementation Details:**
+- Created `lib/ui-helpers.tsx` with TypeScript + JSDoc
+- Provides both React (JSX) and DOM versions for different contexts
+- Eliminated code duplication from 3 locations:
+  - ✅ `pages/team/[session].tsx` - Migrated (74 lines eliminated)
+  - ⏳ `public/app.js` - Pending (vanilla JS integration challenge)
+  - ⏳ `public/salary-cap-draft.js` - Pending (vanilla JS integration challenge)
+
+**Benefits Achieved:**
+- ✅ Single source of truth for UI utilities
+- ✅ TypeScript type safety
+- ✅ Eliminates React component duplication
+- ✅ Testable pure functions
+- ⚠️ Vanilla JS files (app.js, salary-cap-draft.js) still have duplicates due to ES6 module limitation
+
+**Vanilla JS Migration Strategy:**
+- **Decision:** Keep legacy duplicates in app.js/salary-cap-draft.js for now
+- **Rationale:** Files aren't ES6 modules, can't use import statements
+- **Future Plan:** Address during Phase 4 when converting to React components
+- **Options:** (1) Compile to JS, (2) Convert files to modules, (3) Hybrid window globals
+
+**Effort:** 🟢 **Low** (3 hours actual)
+
+**Related Work:**
+- See "Shared Footer Component" section below for Phase 3 → Phase 4 integration pattern
 
 ---
 
@@ -1217,7 +1239,7 @@ export const useGameState = () => useContext(GameStateContext);
 
 ## Shared Footer Component (Phase 4)
 
-**Status:** ✅ Completed (November 8, 2025)  
+**Status:** ✅ **COMPLETED with Session-Aware Enhancements** (November 8-9, 2025)  
 **Phase Context:** Created during Phase 4 Commissioner Dashboard modularization  
 **Purpose:** Eliminate footer duplication and demonstrate Phase 3 state manager integration
 
@@ -1249,6 +1271,7 @@ export const useGameState = () => useContext(GameStateContext);
 - Consumes Phase 3 state manager via hooks
 - Self-contained state management (no state props needed)
 - Demonstrates proper layered architecture
+- **Session-aware features** added November 9, 2025
 
 **Integration Pattern:**
 ```typescript
@@ -1262,29 +1285,54 @@ export function GameStateProvider({ children }) {
   );
 }
 
-// Phase 4: Footer Component
-import { useGameState } from '@/lib/state-provider'; // Phase 3
+// Phase 4: Footer Component (with session-aware features)
+import { useGameState, useSessionState, useCommissionerState } from '@/lib/state-provider';
 
 export default function Footer({ mode, showGameSwitcher, onLogout }) {
-  const { gameState, setGameState } = useGameState(); // Consume Phase 3 state
+  const { gameState, setGameState } = useGameState();
+  const { sessionState } = useSessionState();
+  const { commissionerState } = useCommissionerState();
   
   const handleGameChange = (newGameId: string) => {
     localStorage.setItem('current_game_id', newGameId);
-    setGameState({ gameId: newGameId }); // Update via Phase 3
+    setGameState({ gameId: newGameId });
     window.location.reload();
+  };
+  
+  const handleCopyURL = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Team URL copied! Bookmark this link to return to your team.');
   };
   
   return (
     <footer>
-      {showGameSwitcher && (
+      {/* Session-aware button rendering */}
+      <button onClick={() => router.push('/')}>Home</button>
+      
+      {/* Copy URL - only when in team session */}
+      {sessionState.token && mode === 'team' && (
+        <button onClick={handleCopyURL}>📋 Copy URL</button>
+      )}
+      
+      {/* Commissioner Mode - only when NOT logged in */}
+      {!commissionerState.isCommissioner && !sessionState.token && (
+        <button onClick={() => router.push('/commissioner')}>Commissioner Mode</button>
+      )}
+      
+      {/* Game switcher - when commissioner OR explicitly requested */}
+      {(showGameSwitcher || commissionerState.isCommissioner) && (
         <select 
-          value={gameState.gameId || 'default'} // Read from Phase 3
+          value={gameState.gameId || 'default'}
           onChange={(e) => handleGameChange(e.target.value)}
         >
           {/* game options */}
         </select>
       )}
-      {/* mode-specific buttons */}
+      
+      {/* Logout - when commissioner OR in team session */}
+      {(commissionerState.isCommissioner || sessionState.token) && (
+        <button onClick={onLogout}>Logout</button>
+      )}
     </footer>
   );
 }
@@ -1292,7 +1340,7 @@ export default function Footer({ mode, showGameSwitcher, onLogout }) {
 
 ### What Was Created
 
-**File:** `components/Footer.tsx` (165 lines)
+**File:** `components/Footer.tsx` (238 lines)
 
 **Props Interface (Simplified via Phase 3):**
 ```typescript
@@ -1307,21 +1355,50 @@ interface FooterProps {
 ```
 
 **Key Features:**
-- ✅ Consumes Phase 3 state manager (`useGameState()` hook)
+- ✅ Consumes Phase 3 state manager (`useGameState()`, `useSessionState()`, `useCommissionerState()` hooks)
 - ✅ Self-contained state management (no external state props)
-- ✅ Configurable button sets based on page context
-- ✅ Game switcher with confirmation dialog
+- ✅ **Session-aware buttons** - Shows/hides based on authentication state
+- ✅ **Copy URL button** - Appears in team sessions for bookmarking
+- ✅ **Conditional Commissioner Mode** - Hidden when already logged in
+- ✅ **Smart Game Selector** - Auto-shows for commissioners
+- ✅ **Context-aware Logout** - Handles both commissioner and team sessions
 - ✅ TypeScript type safety
 - ✅ Consistent styling and behavior
 
 **Supported Modes:**
 | Mode | Buttons | Use Case |
 |------|---------|----------|
-| `home` | Home, Commissioner Mode | Landing page |
+| `home` | Home, Commissioner Mode (if not logged in) | Landing page |
 | `commissioner` | Home, Logout + Game Switcher | Commissioner dashboard |
-| `team` | Back to Home | Team session page |
+| `team` | Home, Copy URL, Logout | Team session page |
 | `leaderboard` | Back | Leaderboard page |
 | `minimal` | None | Custom footer needs |
+
+### Session-Aware Features (Added November 9, 2025)
+
+**Enhancement:** Footer now responds to user authentication state
+
+**Copy URL Button:**
+- Shows when: `sessionState.token` exists AND `mode === 'team'`
+- Purpose: Allow team members to bookmark their unique session URL
+- Behavior: Copies current URL to clipboard with helpful alert
+
+**Commissioner Mode Button:**
+- Shows when: `!commissionerState.isCommissioner` AND `!sessionState.token`
+- Purpose: Only visible to anonymous users
+- Behavior: Navigates to `/commissioner` for login
+
+**Game Selector:**
+- Shows when: `commissionerState.isCommissioner` OR `showGameSwitcher === true`
+- Purpose: Automatically visible for commissioners
+- Behavior: Switch games with confirmation dialog
+
+**Logout Button:**
+- Shows when: `commissionerState.isCommissioner` OR `sessionState.token` exists
+- Purpose: Universal logout for any authenticated user
+- Behavior: 
+  - Commissioner: Clears localStorage, navigates to home
+  - Team session: Confirmation dialog, clears sessionStorage, navigates to home
 
 ### Pages Updated with Simplified API
 
@@ -1537,6 +1614,53 @@ If changing state structure:
 
 ---
 
+## Recent Completions Summary (November 2025)
+
+### Priority 1.2: UI Utility Functions Module ✅
+
+**Completed:** November 9, 2025  
+**Status:** Partially migrated (React components complete, vanilla JS pending)
+
+**Achievements:**
+- ✅ Created `lib/ui-helpers.tsx` (262 lines)
+- ✅ Migrated `pages/team/[session].tsx` (eliminated 74 duplicate lines)
+- ✅ Provides both React (JSX) and DOM versions for flexibility
+- ✅ TypeScript types and JSDoc documentation
+- ⏳ `public/app.js` and `public/salary-cap-draft.js` still have duplicates (ES6 module limitation)
+
+**Impact:**
+- Single source of truth for UI utilities
+- Eliminated React component duplication
+- Foundation for future vanilla JS migration
+
+**Next Steps:**
+- Address vanilla JS integration during Phase 4 component migration
+- Options: Compile to JS, convert to modules, or hybrid window globals approach
+
+### Shared Footer Component with Session Awareness ✅
+
+**Completed:** November 8-9, 2025  
+**Status:** Fully implemented with session-aware features
+
+**Achievements:**
+- ✅ Created `components/Footer.tsx` (238 lines)
+- ✅ Integrated Phase 3 state manager (useGameState, useSessionState, useCommissionerState)
+- ✅ Session-aware buttons (Copy URL, Conditional Commissioner Mode, Smart Logout)
+- ✅ Eliminated 110+ lines of duplication across 3 pages
+- ✅ Demonstrates proper Phase 3 → Phase 4 integration pattern
+
+**Impact:**
+- DRY principle applied to footer across application
+- Session-aware UX improvements
+- Foundation for remaining Phase 4 component extractions
+- Pattern established for future component migrations
+
+**Next Steps:**
+- Migrate remaining pages (`pages/index.js`, `pages/test-athlete-modal.tsx`)
+- Continue Phase 4 component extractions following this pattern
+
+---
+
 ## Appendices
 
 ### Appendix A: Duplicated Code Summary
@@ -1547,7 +1671,8 @@ If changing state structure:
 2. **getTeamInitials(teamName)** - Lines: app.js:3135, salary-cap-draft.js:20
 3. **createTeamAvatarSVG(teamName, size)** - Lines: app.js:3153, salary-cap-draft.js:40
 
-**Recommendation:** Extract to `utils/ui-helpers.js` as first priority
+**Status:** ✅ Extracted to `lib/ui-helpers.tsx` (React components migrated)  
+**Remaining:** Vanilla JS files (app.js, salary-cap-draft.js) still have duplicates
 
 ---
 

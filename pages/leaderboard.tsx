@@ -101,9 +101,14 @@ function LeaderboardPageContent({
       ]);
 
       if (!standingsResponse.ok) {
-        throw new Error('Failed to fetch standings');
+        const errorText = await standingsResponse.text();
+        console.error('❌ Standings API error:', standingsResponse.status, errorText);
+        throw new Error(`Failed to fetch standings: ${standingsResponse.status}`);
       }
       const standingsData = await standingsResponse.json();
+      console.log('📊 Standings data received:', standingsData);
+      console.log('📊 Has standings array?', !!standingsData.standings);
+      console.log('📊 Standings length:', standingsData.standings?.length || 0);
       setStandings(standingsData);
 
       if (!resultsResponse.ok) {
@@ -218,6 +223,24 @@ function LeaderboardPageContent({
   // Current player code - prefer playerCode, fallback to teamName for backwards compatibility
   const currentPlayerCode = sessionState.playerCode || sessionState.teamName || null;
 
+  // Sort standings to put current player's team at top (if they have a session)
+  const sortedStandings = React.useMemo(() => {
+    if (!standings?.standings || !currentPlayerCode) {
+      return standings?.standings || [];
+    }
+
+    const standingsCopy = [...standings.standings];
+    const currentPlayerIndex = standingsCopy.findIndex(s => s.player_code === currentPlayerCode);
+    
+    if (currentPlayerIndex > 0) {
+      // Move current player to top
+      const [currentPlayer] = standingsCopy.splice(currentPlayerIndex, 1);
+      standingsCopy.unshift(currentPlayer);
+    }
+    
+    return standingsCopy;
+  }, [standings, currentPlayerCode]);
+
   // Format time since last update
   const timeSinceUpdate = Math.floor((Date.now() - lastUpdate) / 1000);
   const updateTimeText = timeSinceUpdate < 60 
@@ -279,18 +302,42 @@ function LeaderboardPageContent({
               <div id="leaderboard-display">
                 {loading && !standings ? (
                   <div className="loading-spinner">Loading leaderboard...</div>
-                ) : !standings || (standings.hasResults === false && (!standings.standings || standings.standings.length === 0)) ? (
-                  <p>No race results available yet. Check back once the race begins!</p>
+                ) : !standings || (!standings.standings || standings.standings.length === 0) ? (
+                  <p>No teams have submitted rosters yet. Be the first to create a team!</p>
                 ) : (
-                  <LeaderboardTable
-                    standings={standings?.standings || []}
-                    currentPlayerCode={currentPlayerCode}
-                    isTemporary={standings?.isTemporary || false}
-                    hasFinishTimes={standings?.hasFinishTimes || false}
-                    projectionInfo={standings?.projectionInfo || null}
-                    resultsFinalized={gameState.resultsFinalized}
-                    onPlayerClick={handlePlayerClick}
-                  />
+                  <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 20px 20px' }}>
+                    {/* Show info message when no race results yet */}
+                    {!standings.hasResults && (
+                      <div className="info-banner" style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        marginBottom: '12px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                        border: '2px solid #2C39A2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                      }}>
+                        <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🏁</span>
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ display: 'block', marginBottom: '4px', color: '#2C39A2' }}>Pre-Race Standings</strong>
+                          <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                            The race hasn't started yet. Teams will earn points once results are entered.
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <LeaderboardTable
+                      standings={sortedStandings}
+                      currentPlayerCode={currentPlayerCode}
+                      isTemporary={standings?.isTemporary || false}
+                      hasFinishTimes={standings?.hasFinishTimes || false}
+                      projectionInfo={standings?.projectionInfo || null}
+                      resultsFinalized={gameState.resultsFinalized}
+                      onPlayerClick={handlePlayerClick}
+                    />
+                  </div>
                 )}
               </div>
             </div>

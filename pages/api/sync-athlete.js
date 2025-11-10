@@ -183,11 +183,11 @@ export default async function handler(req, res) {
         // Always update profile URL
         await sql`UPDATE athletes SET world_athletics_profile_url = ${profileUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
 
-        // Fetch updated athlete data
+        // Fetch updated athlete data (including world_athletics_id)
         const result = await sql`
           SELECT 
             id, name, personal_best, marathon_rank, road_running_rank,
-            age, date_of_birth, season_best, updated_at
+            age, date_of_birth, season_best, updated_at, world_athletics_id
           FROM athletes
           WHERE id = ${athleteId}
         `;
@@ -207,7 +207,9 @@ export default async function handler(req, res) {
             age: updatedAthlete.age,
             dateOfBirth: updatedAthlete.date_of_birth,
             seasonBest: updatedAthlete.season_best,
-            updatedAt: updatedAthlete.updated_at
+            updatedAt: updatedAthlete.updated_at,
+            world_athletics_id: updatedAthlete.world_athletics_id,
+            worldAthleticsId: updatedAthlete.world_athletics_id
           }
         });
 

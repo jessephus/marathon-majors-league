@@ -55,6 +55,13 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('dashboard');
+  const [hasLoggedOut, setHasLoggedOut] = useState(false);
+  
+  // Game statistics state
+  const [teamCount, setTeamCount] = useState(0);
+  const [confirmedAthletesCount, setConfirmedAthletesCount] = useState(0);
+  const [rosterLockTime, setRosterLockTime] = useState<string | null>(null);
+  const [resultsStatus, setResultsStatus] = useState<'Pre-Race' | 'In Progress' | 'Finished' | 'Certified'>('Pre-Race');
 
   // Initialize gameId from localStorage on mount
   useEffect(() => {
@@ -65,6 +72,18 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
       }
     }
   }, []);
+
+  // Sync SSR authentication state with React state
+  // BUT skip this if user has explicitly logged out
+  useEffect(() => {
+    if (initialAuth && !commissionerState.isCommissioner && !hasLoggedOut) {
+      setCommissionerState({
+        isCommissioner: true,
+        loginTime: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+  }, [initialAuth, commissionerState.isCommissioner, hasLoggedOut]);
 
   useEffect(() => {
     if (!commissionerState.isCommissioner && !initialAuth) {
@@ -85,6 +104,71 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
       return () => document.removeEventListener('keydown', handleEscape);
     }
   }, [showTOTPModal, router]);
+
+  // Fetch game statistics
+  useEffect(() => {
+    async function fetchGameStats() {
+      if (!commissionerState.isCommissioner) return;
+      
+      try {
+        // Fetch team count
+        const teamsResponse = await fetch(`/api/salary-cap-draft?gameId=${gameState.gameId}`);
+        const teamsData = await teamsResponse.json();
+        const teams = Object.keys(teamsData).filter(key => teamsData[key]?.hasSubmittedRoster);
+        setTeamCount(teams.length);
+        
+        // Fetch confirmed athletes count
+        const athletesResponse = await fetch('/api/athletes?confirmedOnly=true');
+        const athletesData = await athletesResponse.json();
+        const totalConfirmed = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
+        setConfirmedAthletesCount(totalConfirmed);
+        
+        // Fetch game state for roster lock time
+        const gameStateResponse = await fetch(`/api/game-state?gameId=${gameState.gameId}`);
+        const gameStateData = await gameStateResponse.json();
+        setRosterLockTime(gameStateData.rosterLockTime || null);
+        
+        // Fetch results to determine status
+        const resultsResponse = await fetch(`/api/results?gameId=${gameState.gameId}`);
+        const resultsData = await resultsResponse.json();
+        
+        // Determine results status
+        if (gameStateData.resultsFinalized) {
+          setResultsStatus('Certified');
+        } else {
+          const resultsArray = Object.values(resultsData.results || {});
+          const hasFinishTimes = resultsArray.some((r: any) => r?.finishTime);
+          const hasSplits = resultsArray.some((r: any) => 
+            r?.split5k || r?.split10k || r?.splitHalf || r?.split30k || r?.split35k || r?.split40k
+          );
+          
+          if (hasFinishTimes) {
+            setResultsStatus('Finished');
+          } else if (hasSplits) {
+            setResultsStatus('In Progress');
+          } else {
+            setResultsStatus('Pre-Race');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch game statistics:', err);
+      }
+    }
+    
+    fetchGameStats();
+    
+    // Listen for updates
+    const handleResultsUpdated = () => fetchGameStats();
+    const handleAthleteUpdated = () => fetchGameStats();
+    
+    window.addEventListener('resultsUpdated', handleResultsUpdated);
+    window.addEventListener('athleteUpdated', handleAthleteUpdated);
+    
+    return () => {
+      window.removeEventListener('resultsUpdated', handleResultsUpdated);
+      window.removeEventListener('athleteUpdated', handleAthleteUpdated);
+    };
+  }, [commissionerState.isCommissioner, gameState.gameId]);
 
   async function handleTOTPLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -110,19 +194,48 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
     }
   }
 
-  function handleLogout() {
-    // Call logout endpoint to clear server-side cookie
-    apiClient.commissioner.logout().catch(err => {
-      console.error('Logout API error:', err);
-    });
+  async function handleLogout() {
+    // Set logout flag FIRST to prevent SSR sync from re-enabling session
+    setHasLoggedOut(true);
     
-    // Clear client-side state
+    // Clear client-side storage FIRST (synchronously, before any async operations)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('marathon_fantasy_commissioner');
+      localStorage.removeItem('commissioner_state'); // Legacy cleanup
+      
+      // Clear commissioner session global (for app.js compatibility)
+      if (window.commissionerSession) {
+        window.commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+      }
+    }
+    
+    // Then call logout endpoint to clear server-side cookie
+    try {
+      await apiClient.commissioner.logout();
+      console.log('[Commissioner Logout] Server-side cookie cleared');
+    } catch (err) {
+      console.error('Logout API error:', err);
+      // Continue with logout even if API fails
+    }
+    
+    // Update React state (this will also try to remove localStorage, but it's already gone)
     setCommissionerState({
       isCommissioner: false,
       loginTime: null,
       expiresAt: null,
     });
     
+    // Dispatch custom event to notify other components (like WelcomeCard)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+        detail: { 
+          commissionerSession: window.commissionerSession,
+          teamSession: window.anonymousSession 
+        }
+      }));
+    }
+    
+    // Navigate to home page
     router.push('/');
   }
 
@@ -255,6 +368,57 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
           {activePanel === 'dashboard' && (
             <div className="commissioner-dashboard">
               <div className="dashboard-section">
+                <h3>Game Statistics</h3>
+                <div className="stats-grid-three">
+                  <div className="stat-card">
+                    <div className="stat-label">Game ID</div>
+                    <div className="stat-value" style={{ fontSize: '1rem' }}>{gameState.gameId}</div>
+                    {rosterLockTime && (
+                      <div className="stat-sublabel">
+                        Lock: {new Date(rosterLockTime).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          timeZoneName: 'short'
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div 
+                    className="stat-card stat-card-clickable"
+                    onClick={() => setActivePanel('teams')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setActivePanel('teams')}
+                  >
+                    <div className="stat-label">Teams</div>
+                    <div className="stat-value">{teamCount}</div>
+                  </div>
+                  <div 
+                    className="stat-card stat-card-clickable"
+                    onClick={() => setActivePanel('athletes')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setActivePanel('athletes')}
+                  >
+                    <div className="stat-label">Confirmed Athletes</div>
+                    <div className="stat-value">{confirmedAthletesCount}</div>
+                  </div>
+                  <div 
+                    className="stat-card stat-card-clickable"
+                    onClick={() => setActivePanel('results')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setActivePanel('results')}
+                  >
+                    <div className="stat-label">Results Status</div>
+                    <div className="stat-value" style={{ fontSize: '1rem' }}>{resultsStatus}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="dashboard-section">
                 <h3>Game Management</h3>
                 <div className="button-group">
                   <button 
@@ -279,28 +443,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
               </div>
 
               <div className="dashboard-section">
-                <h3>Game Statistics</h3>
-                <div className="stats-grid">
-                  <div className="stat-card">
-                    <div className="stat-label">Teams</div>
-                    <div className="stat-value">{Object.keys(gameState.teams).length}</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">Players</div>
-                    <div className="stat-value">{gameState.players.length}</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">Draft Status</div>
-                    <div className="stat-value">{gameState.draftComplete ? 'Complete' : 'Pending'}</div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-label">Results Status</div>
-                    <div className="stat-value">{gameState.resultsFinalized ? 'Final' : 'In Progress'}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="dashboard-section">
                 <h3>Administrative Actions</h3>
                 <div className="button-group">
                   <button 
@@ -314,12 +456,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
                     onClick={handleLoadDemoData}
                   >
                     📥 Load Demo Data
-                  </button>
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={handleLogout}
-                  >
-                    🚪 Logout
                   </button>
                 </div>
               </div>

@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react'
 import WelcomeCard from '../components/WelcomeCard'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
 
-// Feature flag for new SSR WelcomeCard component
-const USE_NEW_WELCOME_CARD = process.env.NEXT_PUBLIC_USE_NEW_WELCOME_CARD === 'true';
-
 export async function getServerSideProps(context) {
   const { req, query } = context;
   
@@ -69,7 +66,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <style dangerouslySetInnerHTML={{ __html: `
           body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
           .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-          header { background: linear-gradient(135deg, #ff6900 0%, #e05500 100%); color: white; padding: 1rem; text-align: center; }
+          header { background: linear-gradient(135deg, #ff6900 0%, #2C39A2 100%); color: white; padding: 1rem; text-align: center; }
           header h1 { margin: 0; font-size: 2rem; }
           .loading-spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: #ff6900; font-size: 16px; font-weight: 600; }
           .loading-spinner::before { content: ''; display: block; width: 40px; height: 40px; margin-bottom: 20px; border: 4px solid rgba(255, 105, 0, 0.2); border-top-color: #ff6900; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -103,18 +100,13 @@ export default function Home({ serverSessionType, hasURLSession }) {
       <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
       <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
       
-      {/* Load app.js only in legacy mode - it expects specific DOM structure */}
-      {!USE_NEW_WELCOME_CARD && <Script src="/app.js" strategy="afterInteractive" />}
-      
       {/* Always load salary-cap-draft.js */}
       <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 
       {/* Load app-bridge.js for SSR mode - shared utilities without monolith */}
-      {USE_NEW_WELCOME_CARD && (
-        <>
-          <Script src="/app-bridge.js" type="module" strategy="afterInteractive" />
-          <Script id="init-ssr-handlers" type="module" strategy="afterInteractive">
-            {`
+      <Script src="/app-bridge.js" type="module" strategy="afterInteractive" />
+      <Script id="init-ssr-handlers" type="module" strategy="afterInteractive">
+        {`
               import { 
                 showPage, 
                 closeModal,
@@ -289,66 +281,59 @@ export default function Home({ serverSessionType, hasURLSession }) {
               }
             `}
           </Script>
-        </>
-      )}
 
-      {/* Conditionally render new WelcomeCard component or legacy HTML */}
-      {USE_NEW_WELCOME_CARD ? (
-        <div className="container">
-          {/* Initial Loading Overlay */}
-          <div id="app-loading-overlay" style={{ 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            background: '#fff', 
-            zIndex: 9999, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center' 
-          }}>
-            <h1 style={{ color: '#ff6900', marginBottom: '20px' }}>🗽 Fantasy NY Marathon</h1>
-            <div className="loading-spinner">Loading your experience...</div>
+      <div className="container">
+        {/* Initial Loading Overlay */}
+        <div id="app-loading-overlay" style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          background: '#fff', 
+          zIndex: 9999, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
+          <h1 style={{ color: '#ff6900', marginBottom: '20px' }}>🗽 Fantasy NY Marathon</h1>
+          <div className="loading-spinner">Loading your experience...</div>
+        </div>
+        
+        <header>
+          <h1>🗽 Fantasy NY Marathon</h1>
+        </header>
+        
+        <main id="app">
+          {/* Landing Page with new WelcomeCard component */}
+          <div id="landing-page" className="page active">
+            <WelcomeCard 
+              sessionType={clientSessionType} 
+              onCreateTeam={handleCreateTeam}
+            />
           </div>
           
-          <header>
-            <h1>🗽 Fantasy NY Marathon</h1>
-          </header>
-          
-          <main id="app">
-            {/* Landing Page with new WelcomeCard component */}
-            <div id="landing-page" className="page active">
-              <WelcomeCard 
-                sessionType={clientSessionType} 
-                onCreateTeam={handleCreateTeam}
-              />
+          {/* Keep all other legacy pages/modals via dangerouslySetInnerHTML */}
+          <div dangerouslySetInnerHTML={{ __html: getLegacyPagesHTML() }} />
+        </main>
+        
+        <footer>
+          <div className="footer-actions">
+            <button id="home-button" className="btn btn-secondary">Home</button>
+            <button id="commissioner-mode" className="btn btn-secondary">Commissioner Mode</button>
+            <div className="game-switcher">
+              <label htmlFor="game-select">Game: </label>
+              <select id="game-select" className="game-select">
+                <option value="default">Default Game</option>
+                <option value="NY2025">NY 2025</option>
+                <option value="demo-game">Demo Game</option>
+              </select>
             </div>
-            
-            {/* Keep all other legacy pages/modals via dangerouslySetInnerHTML */}
-            <div dangerouslySetInnerHTML={{ __html: getLegacyPagesHTML() }} />
-          </main>
-          
-          <footer>
-            <div className="footer-actions">
-              <button id="home-button" className="btn btn-secondary">Home</button>
-              <button id="commissioner-mode" className="btn btn-secondary">Commissioner Mode</button>
-              <div className="game-switcher">
-                <label htmlFor="game-select">Game: </label>
-                <select id="game-select" className="game-select">
-                  <option value="default">Default Game</option>
-                  <option value="NY2025">NY 2025</option>
-                  <option value="demo-game">Demo Game</option>
-                </select>
-              </div>
-            </div>
-            <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
-          </footer>
-        </div>
-      ) : (
-        <div dangerouslySetInnerHTML={{ __html: getMainHTML() }} />
-      )}
+          </div>
+          <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
+        </footer>
+      </div>
     </>
   )
 }
@@ -446,7 +431,15 @@ function getLegacyPagesHTML() {
             </div>
 
             <!-- Salary Cap Draft Page -->
+            <!-- Salary Cap Draft Page - DEPRECATED: Use /team/[session] instead -->
+            <!-- This page is maintained for backward compatibility only -->
             <div id="salary-cap-draft-page" class="page">
+                <!-- DEPRECATION WARNING BANNER -->
+                <div style="background: #ff6900; color: white; padding: 12px 16px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #cc5200; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <strong>⚠️ DEPRECATED PAGE</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">This is the old team draft page. For the best experience, use the new team session pages at <code>/team/[session]</code>. This page will be removed in a future update.</p>
+                </div>
+                
                 <!-- Header with Team Info and Budget -->
                 <div class="draft-header">
                     <div class="team-info">
@@ -730,8 +723,15 @@ function getLegacyPagesHTML() {
                 <button id="view-teams" class="btn btn-primary">View Teams</button>
             </div>
 
-            <!-- Teams Page -->
+            <!-- Teams Page - DEPRECATED: Use /team/[session] instead -->
+            <!-- This page is maintained for backward compatibility only -->
             <div id="teams-page" class="page">
+                <!-- DEPRECATION WARNING BANNER -->
+                <div style="background: #ff6900; color: white; padding: 12px 16px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #cc5200; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <strong>⚠️ DEPRECATED PAGE</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">This is the old team view page. For the best experience, use the new team session pages at <code>/team/[session]</code>. This page will be removed in a future update.</p>
+                </div>
+                
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
                 <div class="page-actions">
@@ -783,8 +783,28 @@ function getLegacyPagesHTML() {
                 </div>
             </div>
 
-            <!-- Commissioner Page -->
+            <!-- ============================================ -->
+            <!-- DEPRECATED: Legacy Commissioner Page         -->
+            <!-- This page is deprecated. Use /commissioner   -->
+            <!-- ============================================ -->
             <div id="commissioner-page" class="page">
+                <!-- Deprecation Warning Banner -->
+                <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 6px solid #c92a2a; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                        <span style="font-size: 28px;">⚠️</span>
+                        <h3 style="margin: 0; font-size: 1.3em; font-weight: 600;">Deprecated Page</h3>
+                    </div>
+                    <p style="margin: 0 0 12px 0; font-size: 1.05em; line-height: 1.5;">
+                        <strong>This is the old legacy commissioner page.</strong> It has been replaced with a new, improved interface.
+                    </p>
+                    <p style="margin: 0 0 16px 0; font-size: 0.95em; opacity: 0.95;">
+                        Please use the new commissioner dashboard for better performance and new features.
+                    </p>
+                    <button onclick="window.location.href='/commissioner'" style="background: white; color: #c92a2a; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 1em; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'">
+                        → Go to New Commissioner Dashboard
+                    </button>
+                </div>
+
                 <h2>Commissioner Dashboard</h2>
                 <div class="commissioner-actions">
                     <div class="action-card">

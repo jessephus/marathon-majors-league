@@ -390,9 +390,8 @@ function setupEventListeners() {
     document.getElementById('home-button').addEventListener('click', async () => {
         // Navigate based on session state
         if (anonymousSession.token) {
-            // Team session - always go to salary cap draft page (shows roster when locked)
-            await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page');
+            // Team session - navigate to new React-based team page
+            window.location.href = `/team/${anonymousSession.token}`;
         } else if (commissionerSession.isCommissioner) {
             // Commissioner session - go to commissioner page
             handleCommissionerMode();
@@ -430,12 +429,13 @@ function setupEventListeners() {
     });
     document.getElementById('submit-rankings').addEventListener('click', handleSubmitRankings);
 
-    // Draft page
+    // Draft page - DEPRECATED: View Teams button navigates to old teams-page
+    // TODO: Remove this and update all references to use /team/[session] instead
     document.getElementById('view-teams').addEventListener('click', async () => {
         // Reload game state to get latest results (use cache)
         await loadGameStateCached();
-        displayTeams();
-        showPage('teams-page');
+        displayTeams(); // DEPRECATED: Use /team/[session] instead
+        showPage('teams-page'); // DEPRECATED: Navigate to /team/[session] instead
     });
 
     // Teams page
@@ -486,7 +486,13 @@ function setupEventListeners() {
             btn.textContent = originalText;
         }
     });
-    document.getElementById('back-to-roster')?.addEventListener('click', () => showPage('salary-cap-draft-page'));
+    document.getElementById('back-to-roster')?.addEventListener('click', () => {
+        if (window.anonymousSession?.token) {
+            window.location.href = `/team/${window.anonymousSession.token}`;
+        } else {
+            console.error('No session token for back-to-roster navigation');
+        }
+    });
     
     // Leaderboard tab switching
     document.querySelectorAll('.leaderboard-tab').forEach(tab => {
@@ -693,7 +699,7 @@ async function handleTeamCreation(e) {
         }
         
         // Show success message with unique URL
-        const uniqueURL = `${window.location.origin}/?session=${data.session.token}`;
+        const uniqueURL = `${window.location.origin}/team/${data.session.token}`;
         alert(`✅ Team created!\n\n📋 Team: ${teamName}\n\n🔗 Your unique URL (save this to access your team from other devices):\n${uniqueURL}\n\nThis URL will be saved in your browser.`);
         
         hideWelcomeCard();  // Hide welcome card after team creation
@@ -701,12 +707,17 @@ async function handleTeamCreation(e) {
         // Update footer buttons
         updateFooterButtons();
         
-        // Hide modal and go to salary cap draft page
+        // Hide modal and navigate to new team session page
         hideTeamCreationModal();
         
-        // Always go to salary cap draft page (it shows roster when locked)
-        await setupSalaryCapDraft();
-        showPage('salary-cap-draft-page');
+        // Navigate to new React-based team session page using the token we just received
+        const sessionToken = data.session.token;
+        if (sessionToken) {
+            window.location.href = `/team/${sessionToken}`;
+        } else {
+            console.error('No session token available after team creation');
+            alert('Team created but navigation failed. Please refresh the page.');
+        }
         
     } catch (error) {
         console.error('Error creating team:', error);
@@ -734,7 +745,18 @@ function hideCommissionerTOTPModal() {
     document.getElementById('commissioner-totp-form').reset();
 }
 
+/**
+ * DEPRECATED: This function is part of the legacy commissioner page system.
+ * 
+ * New behavior: Use the version in app-bridge.js instead, which navigates to /commissioner
+ * 
+ * This version is maintained for backward compatibility only and should not be used
+ * for new features. It still shows the old commissioner-page which has a deprecation banner.
+ * 
+ * @deprecated Use app-bridge.js handleCommissionerTOTPLogin() which redirects to /commissioner
+ */
 async function handleCommissionerTOTPLogin(e) {
+    console.warn('[DEPRECATED] app.js handleCommissionerTOTPLogin is deprecated. Use app-bridge.js version instead.');
     e.preventDefault();
     
     const totpCode = document.getElementById('totp-code').value.trim();
@@ -873,10 +895,13 @@ async function verifyAndLoadSession(token) {
             console.log('Draft complete?', gameState.draftComplete);
             console.log('Has rankings?', !!gameState.rankings[playerCode]);
             
-            // Always navigate to salary cap draft page (shows roster when locked)
-            console.log('Navigating to salary cap draft page');
-            await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page');
+            // Navigate to new React-based team session page
+            console.log('Navigating to team session page');
+            if (window.anonymousSession?.token) {
+                window.location.href = `/team/${window.anonymousSession.token}`;
+            } else {
+                console.error('No session token available');
+            }
             
             return true;
         } else {
@@ -975,9 +1000,12 @@ async function restoreSession() {
             // If user is both commissioner and has a team, prioritize team view
             // (they can switch to commissioner mode via the button)
             if (hasTeamSession) {
-                console.log('[Session Restore] Navigating to salary cap draft page (team session)');
-                await setupSalaryCapDraft();
-                showPage('salary-cap-draft-page');
+                console.log('[Session Restore] Navigating to team session page');
+                if (window.anonymousSession?.token) {
+                    window.location.href = `/team/${window.anonymousSession.token}`;
+                } else {
+                    console.error('No session token available');
+                }
             } else if (hasCommissionerSession) {
                 console.log('[Session Restore] Navigating to commissioner page (commissioner-only session)');
                 handleCommissionerMode();
@@ -1121,8 +1149,7 @@ function handleCommissionerLogout() {
 
 // Handle copy URL
 function handleCopyUrl() {
-    const gameId = GAME_ID;
-    const sessionUrl = `${window.location.origin}${window.location.pathname}?session=${anonymousSession.token}&game=${gameId}`;
+    const sessionUrl = `${window.location.origin}/team/${anonymousSession.token}`;
     
     navigator.clipboard.writeText(sessionUrl).then(() => {
         const originalText = document.getElementById('copy-url-button').textContent;
@@ -1154,14 +1181,15 @@ async function handleEnterGame() {
     gameState.currentPlayer = code;
     document.getElementById('player-name').textContent = code;
 
-    // Always go to salary cap draft page (it shows roster when locked)
-    await setupSalaryCapDraft();
-    showPage('salary-cap-draft-page');
+    // Navigate to new React-based team session page
+    if (window.anonymousSession?.token) {
+        window.location.href = `/team/${window.anonymousSession.token}`;
+    } else {
+        console.error('No session token available');
+        alert('Error navigating to team page. Please refresh.');
+    }
     
-    // Delay slightly to ensure page is fully rendered, then check for game recap
-    setTimeout(async () => {
-        await checkAndShowGameRecap();
-    }, 500);
+    // Note: Game recap now handled on team session page
 }
 
 // Handle create new game (Account-Free)
@@ -1210,14 +1238,29 @@ async function handleCreateNewGame() {
     }
 }
 
-// Handle commissioner mode
+/**
+ * ============================================
+ * DEPRECATED: handleCommissionerMode
+ * ============================================
+ * This function is DEPRECATED and should not be used.
+ * The old commissioner page (commissioner-page) has been replaced.
+ * 
+ * NEW BEHAVIOR:
+ * - Use window.handleCommissionerMode from app-bridge.js instead
+ * - That function navigates to /commissioner (React-based page)
+ * 
+ * This function remains for backward compatibility only.
+ * It shows the old deprecated commissioner-page with a warning banner.
+ */
 function handleCommissionerMode() {
+    console.log('[DEPRECATED] handleCommissionerMode in app.js called - this function is deprecated');
     console.log('[Commissioner Mode] Attempting to access commissioner mode');
     console.log('[Commissioner Mode] Current commissionerSession:', commissionerSession);
     
     // Check if already authenticated via TOTP
     if (commissionerSession.isCommissioner) {
-        console.log('[Commissioner Mode] Commissioner authenticated, showing page');
+        console.log('[Commissioner Mode] Commissioner authenticated, showing DEPRECATED page');
+        console.warn('[DEPRECATED] Showing old commissioner-page. Use /commissioner instead.');
         // Already authenticated, just show the page
         showPage('commissioner-page');
         // Refresh player codes display if players exist
@@ -3080,6 +3123,17 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     `;
 }
 
+/**
+ * Display teams on the legacy teams page
+ * 
+ * ⚠️ DEPRECATED: This function displays teams in the old teams-page view (index.js).
+ * New implementation: Use /team/[session] React component instead (pages/team/[session].tsx)
+ * 
+ * This function is maintained for backward compatibility only and will be removed
+ * in a future version. All new team viewing should use the React-based team session pages.
+ * 
+ * @deprecated Use /team/[session] page instead
+ */
 function displayTeams() {
     const container = document.getElementById('teams-display');
     container.innerHTML = '';

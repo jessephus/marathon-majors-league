@@ -19,12 +19,14 @@ Phase 1 establishes Next.js page structure with feature flags, enabling parallel
 
 | Route | File | Purpose | Bundle Size |
 |-------|------|---------|-------------|
-| `/landing` | `pages/landing.tsx` | Team creation entry point | 2.56 KB |
+| `/` | `pages/index.js` | Landing page with SSR (PR #107) | SSR-enabled |
 | `/leaderboard` | `pages/leaderboard.tsx` | Fantasy/race results | 2.33 KB |
 | `/commissioner` | `pages/commissioner.tsx` | Admin dashboard | 2.71 KB |
 | `/team/[session]` | `pages/team/[session].tsx` | Salary cap draft | 2.79 KB |
 
-**Total new code:** ~10 KB (excluding shared framework)  
+**Note:** The experimental `/landing` route (pages/landing.tsx) has been **deprecated and removed** as of November 9, 2025. The primary landing page is now `/` (pages/index.js) with full SSR support.
+
+**Total new code:** ~8 KB (excluding shared framework)  
 **Shared framework:** 97.5 KB (React, Next.js, state provider)
 
 ### Shared Infrastructure
@@ -148,7 +150,7 @@ npm test
 ### Accessing Pages
 
 With feature flags enabled:
-- Landing: `http://localhost:3000/landing`
+- Landing: `http://localhost:3000/` (SSR-enabled with feature flag)
 - Leaderboard: `http://localhost:3000/leaderboard`
 - Commissioner: `http://localhost:3000/commissioner`
 - Team Session: `http://localhost:3000/team/[token]`
@@ -220,11 +222,13 @@ pages/
 
 ```
 Route                  Size       First Load JS
-/landing              2.56 kB     100 kB
+/ (index)             SSR        Varies (feature flag)
 /leaderboard          2.33 kB     99.8 kB
 /commissioner         2.71 kB     100 kB
 /team/[session]       2.79 kB     100 kB
 ```
+
+**Note:** The `/landing` route has been removed (deprecated November 9, 2025). The primary landing is now `/` with SSR support.
 
 **Shared bundle:** 97.5 kB (React 19, Next.js 15.5.6)
 
@@ -299,8 +303,8 @@ Route                  Size       First Load JS
 # Rebuild types
 npm run build
 
-# Check specific file
-npx tsc --noEmit pages/landing.tsx
+# Check specific file (example with team session page)
+npx tsc --noEmit pages/team/[session].tsx
 ```
 
 ### Feature Flags Not Working

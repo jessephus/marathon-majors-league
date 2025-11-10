@@ -95,6 +95,42 @@ export default async function handler(req, res) {
       // Check if requesting a specific athlete by ID
       const athleteId = req.query.id ? parseInt(req.query.id, 10) : null;
       
+      // Check if requesting multiple athletes by IDs (comma-separated)
+      const athleteIds = req.query.ids ? req.query.ids.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)) : null;
+      
+      // If requesting multiple specific athletes, fetch them
+      if (athleteIds && athleteIds.length > 0) {
+        try {
+          const athletes = await sql`
+            SELECT 
+              id, 
+              name, 
+              country, 
+              gender, 
+              personal_best as pb, 
+              headshot_url as "headshotUrl",
+              world_athletics_id as "worldAthleticsId",
+              world_athletics_profile_url as "worldAthleticsProfileUrl",
+              marathon_rank as "marathonRank",
+              road_running_rank as "roadRunningRank",
+              overall_rank as "overallRank",
+              age,
+              date_of_birth as "dateOfBirth",
+              sponsor,
+              salary,
+              season_best as "seasonBest"
+            FROM athletes 
+            WHERE id = ANY(${athleteIds}::int[])
+            ORDER BY gender DESC, marathon_rank ASC NULLS LAST, personal_best ASC NULLS LAST
+          `;
+          
+          return res.status(200).json(athletes);
+        } catch (error) {
+          console.error('Error fetching athletes by IDs:', error);
+          return res.status(500).json({ error: 'Failed to fetch athletes', details: error.message });
+        }
+      }
+      
       // If requesting specific athlete, return profile with optional progression/results
       if (athleteId) {
         const includeProgression = req.query.include?.includes('progression') || req.query.progression === 'true';

@@ -198,17 +198,18 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
           </p>
           
           {/* Team Card */}
+                    {/* Team Card */}
           <div style={criticalStyles.section}>
-            <h3 style={criticalStyles.sectionHeading}>🏃‍♂️ Your Team{teamName ? `: ${teamName}` : ''}</h3>
+            <h3 style={criticalStyles.sectionHeading}>👤 Your Team</h3>
             <p style={criticalStyles.sectionText}>
-              Continue drafting or check your roster.
+              {teamName || 'Your Fantasy Marathon Team'}
             </p>
             <button 
               data-session-cta
               onClick={() => {
-                // Navigate using legacy app.js system for compatibility
-                if (typeof window !== 'undefined' && window.showPage) {
-                  window.showPage('salary-cap-draft-page');
+                // Navigate to new React-based team session page
+                if (typeof window !== 'undefined' && window.anonymousSession?.token) {
+                  window.location.href = `/team/${window.anonymousSession.token}`;
                 }
               }}
               style={{
@@ -254,17 +255,17 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
       case SessionType.TEAM:
         return (
           <>
-            <h2 style={criticalStyles.heading}>Welcome Back{teamName ? `, ${teamName}` : ''}!</h2>
+            <h2 style={criticalStyles.heading}>Welcome Back!</h2>
             <p style={criticalStyles.description}>
-              Your team is ready. Continue drafting or check your roster.
+              {teamName || 'Your Fantasy Marathon Team'}
             </p>
             <div style={criticalStyles.section}>
               <button 
                 data-session-cta
                 onClick={() => {
-                  // Navigate using legacy app.js system for compatibility
-                  if (typeof window !== 'undefined' && window.showPage) {
-                    window.showPage('salary-cap-draft-page');
+                  // Navigate to new React-based team session page
+                  if (typeof window !== 'undefined' && window.anonymousSession?.token) {
+                    window.location.href = `/team/${window.anonymousSession.token}`;
                   }
                 }}
                 style={{

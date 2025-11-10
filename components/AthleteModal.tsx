@@ -32,15 +32,28 @@ interface AthleteModalProps {
 }
 
 interface AthleteDetailedData extends Athlete {
-  raceLog?: Array<{
-    date: string;
-    race: string;
-    time: string;
-    place: number;
+  raceResults?: Array<{
+    id: number;
+    athleteId: number;
+    year: number;
+    competitionDate: string;
+    competitionName: string;
+    venue: string;
+    discipline: string;
+    position: number | null;
+    finishTime: string | null;
+    racePoints: number | null;
   }>;
   progression?: Array<{
-    year: number;
-    bestTime: string;
+    id: number;
+    athleteId: number;
+    discipline: string;
+    season: number;
+    mark: string;
+    venue: string;
+    competitionDate: string | null;
+    competitionName: string | null;
+    resultScore: number | null;
   }>;
   news?: Array<{
     date: string;
@@ -53,6 +66,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
   const [activeTab, setActiveTab] = useState<'bio' | 'raceLog' | 'progression' | 'news' | 'scoring'>('bio');
   const [detailedData, setDetailedData] = useState<AthleteDetailedData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   // If showScoring is true, default to scoring tab
   useEffect(() => {
@@ -65,28 +79,45 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
 
   useEffect(() => {
     if (!isOpen || !athlete) return;
-    
+
     async function fetchDetailedData() {
       setLoading(true);
-      // Phase 1: Just use the athlete data we have
-      // Phase 2+: Fetch extended data from API
-      setDetailedData({
-        ...athlete,
-        raceLog: [],
-        progression: [],
-        news: [],
-      });
-      setLoading(false);
+      try {
+        // Fetch athlete profile with progression and race results (all disciplines)
+        const response = await fetch(`/api/athletes?id=${athlete.id}&progression=true&results=true`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch athlete data');
+        }
+        
+        const data = await response.json();
+        
+        setDetailedData({
+          ...athlete,
+          raceResults: data.raceResults || [],
+          progression: data.progression || [],
+          news: [], // News feed coming soon
+        });
+      } catch (error) {
+        console.error('Error fetching athlete details:', error);
+        // Fallback to basic athlete data
+        setDetailedData({
+          ...athlete,
+          raceResults: [],
+          progression: [],
+          news: [],
+        });
+      } finally {
+        setLoading(false);
+      }
     }
     
     fetchDetailedData();
-  }, [isOpen, athlete]);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+  }, [isOpen, athlete]);  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      onClose();
+      handleClose();
     }
-  }, [onClose]);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -99,15 +130,30 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
     };
   }, [isOpen, handleKeyDown]);
 
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 400); // Match slideUp/slideDown animation duration
+  };
+
   if (!isOpen || !athlete) {
     return null;
   }
 
   return (
-    <div className="modal athlete-modal active">
-      <div className="modal-overlay" onClick={onClose}></div>
-      <div className="athlete-card-container">
-        <button className="modal-close" onClick={onClose}>
+    <div className="modal athlete-modal active" style={{ zIndex: 10002 }}>
+      <div className="modal-overlay" onClick={handleClose} style={{ zIndex: 10002 }}></div>
+      <div 
+        className="athlete-card-container" 
+        style={{ 
+          zIndex: 10003,
+          transform: isClosing ? 'translateY(100%)' : 'translateY(0)',
+          transition: 'transform 0.4s ease-in-out'
+        }}
+      >
+        <button className="modal-close" onClick={handleClose}>
           &times;
         </button>
 
@@ -283,19 +329,60 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
 
               {activeTab === 'raceLog' && (
                 <div className="tab-panel">
-                  <p className="empty-state-message">Race history will be available in a future update</p>
+                  {detailedData?.raceResults && detailedData.raceResults.length > 0 ? (
+                    <div className="results-list">
+                      {detailedData.raceResults.map((result) => {
+                        const date = new Date(result.competitionDate);
+                        const formattedDate = date.toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric' 
+                        });
+                        
+                        return (
+                          <div key={result.id} className="result-item">
+                            <div className="result-header">
+                              <div className="result-competition">{result.competitionName}</div>
+                              <div className="result-position">
+                                {result.position ? `${result.position}.` : 'N/A'}
+                              </div>
+                            </div>
+                            <div className="result-details">
+                              <div className="result-time">{result.finishTime || 'N/A'}</div>
+                              <div className="result-venue">{result.venue}</div>
+                              <div className="result-date">{formattedDate}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <div className="empty-icon">📅</div>
+                      <p>No race results available for this athlete yet</p>
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === 'progression' && (
                 <div className="tab-panel">
-                  <p className="empty-state-message">Performance progression chart coming soon</p>
+                  {detailedData?.progression && detailedData.progression.length > 0 ? (
+                    <ProgressionChart progression={detailedData.progression} />
+                  ) : (
+                    <div className="empty-state">
+                      <div className="empty-icon">📈</div>
+                      <p>No progression data available for this athlete yet</p>
+                    </div>
+                  )}
                 </div>
               )}
 
               {activeTab === 'news' && (
                 <div className="tab-panel">
-                  <p className="empty-state-message">Recent news will be available in a future update</p>
+                  <div className="empty-state">
+                    <div className="empty-icon">📰</div>
+                    <p>News feed coming soon</p>
+                  </div>
                 </div>
               )}
 
@@ -661,6 +748,278 @@ const countryCodeMap: Record<string, string> = {
   'OMA': 'OM', 'JOR': 'JO', 'LIB': 'LB', 'SYR': 'SY', 'IRQ': 'IQ',
   'IRI': 'IR', 'AFG': 'AF', 'NEP': 'NP', 'SRI': 'LK', 'MYA': 'MM'
 };
+
+// ProgressionChart component with Chart.js integration
+interface ProgressionChartProps {
+  progression: Array<{
+    id: number;
+    athleteId: number;
+    discipline: string;
+    season: number;
+    mark: string;
+    venue: string;
+    competitionDate: string | null;
+    competitionName: string | null;
+    resultScore: number | null;
+  }>;
+}
+
+function ProgressionChart({ progression }: ProgressionChartProps) {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const chartRef = React.useRef<any>(null);
+  const [selectedDiscipline, setSelectedDiscipline] = useState<string>('Marathon');
+  const [selectedRace, setSelectedRace] = useState<any>(null);
+
+  // Get unique disciplines
+  const disciplines = React.useMemo(() => {
+    console.log('📊 ProgressionChart - progression data:', progression);
+    return [...new Set(progression.map(item => item.discipline))].sort();
+  }, [progression]);
+
+  // Set default discipline
+  useEffect(() => {
+    console.log('📊 ProgressionChart - disciplines:', disciplines);
+    if (disciplines.length > 0) {
+      setSelectedDiscipline(disciplines.includes('Marathon') ? 'Marathon' : disciplines[0]);
+    }
+  }, [disciplines]);
+
+  // Render chart when discipline changes or component mounts
+  useEffect(() => {
+    console.log('📊 ProgressionChart - render effect triggered');
+    console.log('  - canvasRef.current:', !!canvasRef.current);
+    console.log('  - window.Chart:', typeof (window as any).Chart);
+    console.log('  - selectedDiscipline:', selectedDiscipline);
+    console.log('  - progression length:', progression.length);
+    
+    if (!canvasRef.current || typeof window === 'undefined' || !(window as any).Chart) {
+      console.warn('📊 ProgressionChart - Missing requirements:', {
+        canvas: !!canvasRef.current,
+        window: typeof window !== 'undefined',
+        Chart: typeof (window as any).Chart
+      });
+      return;
+    }
+
+    const Chart = (window as any).Chart;
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return;
+
+    // Filter by discipline and group by season (best mark per season)
+    const filtered = progression.filter(item => item.discipline === selectedDiscipline);
+    const grouped = filtered.reduce((acc, item) => {
+      const season = item.season;
+      if (!acc[season] || item.mark < acc[season].mark) {
+        acc[season] = item;
+      }
+      return acc;
+    }, {} as Record<number, any>);
+
+    // Sort by season and limit to last 7 years
+    const sorted = Object.values(grouped).sort((a: any, b: any) => 
+      parseInt(a.season) - parseInt(b.season)
+    );
+    const limited = sorted.slice(-7);
+
+    // Convert time strings to seconds for plotting
+    const timeToSeconds = (timeStr: string): number | null => {
+      if (!timeStr) return null;
+      const parts = timeStr.split(':').map(Number);
+      if (parts.length === 3) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      } else if (parts.length === 2) {
+        return parts[0] * 60 + parts[1];
+      }
+      return null;
+    };
+
+    const secondsToTime = (seconds: number): string => {
+      if (!seconds) return 'N/A';
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      }
+      return `${minutes}:${String(secs).padStart(2, '0')}`;
+    };
+
+    const chartData = limited.map(item => ({
+      x: item.season,
+      y: timeToSeconds(item.mark),
+      ...item
+    }));
+
+    // Destroy previous chart if exists
+    if (chartRef.current) {
+      chartRef.current.destroy();
+    }
+
+    // Create new chart
+    chartRef.current = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: selectedDiscipline,
+          data: chartData,
+          borderColor: '#ff6900',
+          backgroundColor: 'rgba(255, 105, 0, 0.1)',
+          borderWidth: 3,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          pointBackgroundColor: '#ff6900',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          tension: 0.2,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          intersect: false,
+          mode: 'nearest'
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: false
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: {
+              display: true,
+              text: 'Year',
+              font: {
+                weight: 'bold',
+                size: 13
+              }
+            },
+            ticks: {
+              callback: function(value: any) {
+                return Math.floor(value);
+              },
+              stepSize: 1
+            },
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            reverse: true, // Lower times are better
+            title: {
+              display: true,
+              text: 'Time',
+              font: {
+                weight: 'bold',
+                size: 13
+              }
+            },
+            ticks: {
+              callback: function(value: any) {
+                return secondsToTime(value);
+              }
+            }
+          }
+        },
+        onClick: (event: any, elements: any) => {
+          if (elements.length > 0) {
+            const index = elements[0].index;
+            const data = chartData[index];
+            setSelectedRace(data);
+          }
+        }
+      }
+    });
+
+    // Cleanup
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+      }
+    };
+  }, [progression, selectedDiscipline]);
+
+  return (
+    <>
+      <div className="tab-content-header">
+        <h3 className="tab-content-title">Season's Best: {selectedDiscipline}</h3>
+        {disciplines.length > 1 && (
+          <select 
+            className="discipline-selector"
+            value={selectedDiscipline}
+            onChange={(e) => setSelectedDiscipline(e.target.value)}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          >
+            {disciplines.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      
+      <div className="chart-container" style={{ 
+        height: '300px', 
+        marginBottom: '16px',
+        padding: '16px',
+        background: '#fff',
+        borderRadius: '8px'
+      }}>
+        <canvas ref={canvasRef}></canvas>
+      </div>
+
+      {selectedRace && (
+        <div 
+          className="selected-race-info"
+          style={{
+            background: '#f8f9fa',
+            padding: '16px',
+            borderRadius: '8px',
+            marginTop: '16px'
+          }}
+        >
+          <h4 style={{ 
+            marginTop: 0, 
+            marginBottom: '12px',
+            fontSize: '16px',
+            fontWeight: 'bold'
+          }}>
+            Race Details
+          </h4>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Year</div>
+              <div style={{ fontSize: '14px', fontWeight: '600' }}>{selectedRace.season}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Time</div>
+              <div style={{ fontSize: '14px', fontWeight: '600' }}>{selectedRace.mark}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Venue</div>
+              <div style={{ fontSize: '14px', fontWeight: '600' }}>{selectedRace.venue || 'Unknown'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Discipline</div>
+              <div style={{ fontSize: '14px', fontWeight: '600' }}>{selectedRace.discipline}</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 function getCountryFlag(countryCode: string): string {
   // Convert 3-letter code to 2-letter ISO code

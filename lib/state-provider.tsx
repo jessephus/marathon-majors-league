@@ -135,7 +135,75 @@ export function AppStateProvider({
   children: ReactNode; 
   initialState?: AppState;
 }) {
-  const [state, setState] = useState<AppState>(initialState);
+  const [state, setState] = useState<AppState>(() => {
+    // Initialize state with localStorage data if available
+    if (typeof window !== 'undefined') {
+      let loadedCommissionerState = null;
+      let loadedSessionState = null;
+      
+      // One-time migration: move old commissioner_state to unified key
+      const oldCommissionerState = localStorage.getItem('commissioner_state');
+      if (oldCommissionerState) {
+        try {
+          const parsed = JSON.parse(oldCommissionerState);
+          if (parsed.expiresAt && new Date(parsed.expiresAt) > new Date()) {
+            // Migrate to unified key
+            localStorage.setItem('marathon_fantasy_commissioner', oldCommissionerState);
+          }
+        } catch (e) {
+          console.error('Failed to migrate commissioner state:', e);
+        }
+        // Clean up old key
+        localStorage.removeItem('commissioner_state');
+      }
+      
+      // Load commissioner state from unified key
+      const savedCommissionerState = localStorage.getItem('marathon_fantasy_commissioner');
+      if (savedCommissionerState) {
+        try {
+          const parsed = JSON.parse(savedCommissionerState);
+          // Check if commissioner session is still valid
+          if (parsed.expiresAt && new Date(parsed.expiresAt) > new Date()) {
+            loadedCommissionerState = parsed;
+          } else {
+            // Expired, remove from storage
+            localStorage.removeItem('marathon_fantasy_commissioner');
+          }
+        } catch (e) {
+          console.error('Failed to parse commissioner state:', e);
+          localStorage.removeItem('marathon_fantasy_commissioner');
+        }
+      }
+      
+      // Load team session state from localStorage
+      const savedTeamSession = localStorage.getItem('marathon_fantasy_team');
+      if (savedTeamSession) {
+        try {
+          const parsed = JSON.parse(savedTeamSession);
+          // Check if team session is still valid (if expiresAt exists)
+          if (!parsed.expiresAt || new Date(parsed.expiresAt) > new Date()) {
+            loadedSessionState = parsed;
+          } else {
+            // Expired, remove from storage
+            localStorage.removeItem('marathon_fantasy_team');
+          }
+        } catch (e) {
+          console.error('Failed to parse team session state:', e);
+          localStorage.removeItem('marathon_fantasy_team');
+        }
+      }
+      
+      // Return combined initial state
+      if (loadedCommissionerState || loadedSessionState) {
+        return {
+          ...initialState,
+          ...(loadedCommissionerState && { commissionerState: loadedCommissionerState }),
+          ...(loadedSessionState && { sessionState: loadedSessionState }),
+        };
+      }
+    }
+    return initialState;
+  });
 
   const setGameState = useCallback((updates: Partial<GameState>) => {
     setState((prev) => ({
@@ -170,17 +238,45 @@ export function AppStateProvider({
   }, []);
 
   const setSessionState = useCallback((updates: Partial<SessionState>) => {
-    setState((prev) => ({
-      ...prev,
-      sessionState: { ...prev.sessionState, ...updates },
-    }));
+    setState((prev) => {
+      const newSessionState = { ...prev.sessionState, ...updates };
+      
+      // Persist to localStorage for consistency with commissioner sessions
+      if (typeof window !== 'undefined') {
+        if (newSessionState.token) {
+          // Only persist if there's a valid token
+          localStorage.setItem('marathon_fantasy_team', JSON.stringify(newSessionState));
+        } else {
+          // Clear localStorage if token is cleared
+          localStorage.removeItem('marathon_fantasy_team');
+        }
+      }
+      
+      return {
+        ...prev,
+        sessionState: newSessionState,
+      };
+    });
   }, []);
 
   const setCommissionerState = useCallback((updates: Partial<CommissionerState>) => {
-    setState((prev) => ({
-      ...prev,
-      commissionerState: { ...prev.commissionerState, ...updates },
-    }));
+    setState((prev) => {
+      const newCommissionerState = { ...prev.commissionerState, ...updates };
+      
+      // Persist to localStorage using the same key as legacy code
+      if (typeof window !== 'undefined') {
+        if (newCommissionerState.isCommissioner) {
+          localStorage.setItem('marathon_fantasy_commissioner', JSON.stringify(newCommissionerState));
+        } else {
+          localStorage.removeItem('marathon_fantasy_commissioner');
+        }
+      }
+      
+      return {
+        ...prev,
+        commissionerState: newCommissionerState,
+      };
+    });
   }, []);
 
   const resetState = useCallback(() => {

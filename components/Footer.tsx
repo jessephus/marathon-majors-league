@@ -1,17 +1,31 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { useGameState } from '@/lib/state-provider';
+import { useGameState, useSessionState, useCommissionerState } from '@/lib/state-provider';
 
-export interface FooterProps {
-  /** Display mode for footer buttons */
+// Extend Window interface for app.js globals
+declare global {
+  interface Window {
+    anonymousSession?: {
+      token: string | null;
+      teamName: string | null;
+      playerCode: string | null;
+      ownerName: string | null;
+      expiresAt: string | null;
+    };
+    commissionerSession?: {
+      isCommissioner: boolean;
+      loginTime: string | null;
+      expiresAt: string | null;
+    };
+    handleCommissionerMode?: () => void;
+  }
+}
+
+interface FooterProps {
   mode?: 'home' | 'commissioner' | 'team' | 'leaderboard' | 'minimal';
-  /** Show the game switcher dropdown */
   showGameSwitcher?: boolean;
-  /** Callback for logout button (commissioner mode) */
   onLogout?: () => void;
-  /** Show copyright text */
   showCopyright?: boolean;
-  /** Additional CSS classes */
   className?: string;
 }
 
@@ -22,11 +36,14 @@ export interface FooterProps {
  * Uses Phase 3 state manager for centralized game state management.
  * Eliminates code duplication across 5+ pages.
  * 
+ * Game Switcher Display Logic:
+ * - Shows ONLY when commissionerState.isCommissioner is true
+ * - The showGameSwitcher prop is deprecated and no longer affects display
+ * 
  * @example
  * // Commissioner page
  * <Footer 
  *   mode="commissioner" 
- *   showGameSwitcher 
  *   onLogout={handleLogout}
  * />
  * 
@@ -40,13 +57,22 @@ export interface FooterProps {
  */
 export default function Footer({
   mode = 'home',
-  showGameSwitcher = false,
+  showGameSwitcher = false, // Deprecated: no longer used
   onLogout,
   showCopyright = true,
   className = ''
 }: FooterProps) {
   const router = useRouter();
   const { gameState, setGameState } = useGameState();
+  const { sessionState } = useSessionState();
+  const { commissionerState } = useCommissionerState();
+  
+  // Fix hydration mismatch: only render session-dependent buttons after mount
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleGameSwitcherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGameId = e.target.value;
@@ -70,72 +96,205 @@ export default function Footer({
     }
   };
 
-  const renderButtons = () => {
-    switch (mode) {
-      case 'commissioner':
-        return (
-          <>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => router.push('/')}
-            >
-              Home
-            </button>
-            <button 
-              className="btn btn-secondary"
-              onClick={onLogout}
-            >
-              Logout
-            </button>
-          </>
-        );
+  const handleCopyURL = () => {
+    const currentURL = window.location.href;
+    navigator.clipboard.writeText(currentURL).then(() => {
+      alert('Team URL copied to clipboard! Bookmark this link to return to your team.');
+    }).catch(err => {
+      console.error('Failed to copy URL:', err);
+      // Fallback: show URL in prompt for manual copy
+      prompt('Copy this URL to return to your team:', currentURL);
+    });
+  };
 
-      case 'team':
-        return (
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => router.push('/')}
-          >
-            ← Back to Home
-          </button>
-        );
-
-      case 'leaderboard':
-        return (
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => window.history.back()}
-          >
-            ← Back
-          </button>
-        );
-
-      case 'home':
-        return (
-          <>
-            <button 
-              id="home-button" 
-              className="btn btn-secondary"
-              onClick={() => router.push('/')}
-            >
-              Home
-            </button>
-            <button 
-              id="commissioner-mode" 
-              className="btn btn-secondary"
-              onClick={() => router.push('/commissioner')}
-            >
-              Commissioner Mode
-            </button>
-          </>
-        );
-
-      case 'minimal':
-        return null;
-
-      default:
-        return null;
+  const handleLogout = () => {
+    // Check if we're in a commissioner session or team session
+    // Note: We check the raw state here (not the isMounted-guarded version)
+    // because this handler is only called from buttons that are already rendered
+    const isInCommissionerSession = commissionerState.isCommissioner;
+    const isInTeamSession = !!sessionState.token;
+    
+    // PRIORITY: If both sessions are active, always logout the team session first
+    // Only logout commissioner session if it's the only active session
+    if (isInTeamSession) {
+      // Team session logout (takes priority when both sessions exist)
+      if (confirm('Are you sure you want to log out? You will need your unique URL to return to your team.')) {
+        console.log('[Footer Logout] Team session logout initiated');
+        
+        // Clear team session from both sessionStorage and localStorage
+        sessionStorage.removeItem('sessionToken');
+        sessionStorage.removeItem('teamName');
+        sessionStorage.removeItem('playerCode');
+        sessionStorage.removeItem('ownerName');
+        
+        localStorage.removeItem('marathon_fantasy_team');
+        
+        // Clear anonymous session global (for app.js compatibility)
+        if (typeof window !== 'undefined' && window.anonymousSession) {
+          window.anonymousSession = { 
+            token: null, 
+            teamName: null, 
+            playerCode: null, 
+            ownerName: null, 
+            expiresAt: null 
+          };
+        }
+        
+        // Dispatch custom event to notify other components
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+            detail: { 
+              teamSession: null, 
+              commissionerSession: window.commissionerSession 
+            }
+          }));
+        }
+        
+        // Navigate to home - should show commissioner card if still logged in as commissioner
+        router.push('/');
+      }
+    } else if (isInCommissionerSession) {
+      // Commissioner logout (only if no team session)
+      if (onLogout) {
+        // Use the provided logout handler from parent component (e.g., commissioner.tsx)
+        onLogout();
+      } else {
+        // Default commissioner logout behavior
+        if (confirm('Are you sure you want to logout from Commissioner mode?')) {
+          console.log('[Footer Logout] Commissioner logout initiated');
+          
+          // Clear all commissioner session keys from localStorage
+          localStorage.removeItem('marathon_fantasy_commissioner'); // Primary key
+          localStorage.removeItem('commissioner_state'); // Legacy cleanup
+          localStorage.removeItem('commissionerLoginTime');
+          localStorage.removeItem('commissionerExpiresAt');
+          
+          // Clear commissioner session global (for app.js compatibility)
+          if (typeof window !== 'undefined' && window.commissionerSession) {
+            window.commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+          }
+          
+          // Call logout API to clear the HttpOnly cookie
+          fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          }).then(response => {
+            if (response.ok) {
+              console.log('[Footer Logout] Commissioner cookie cleared via API');
+            } else {
+              console.warn('[Footer Logout] Failed to clear commissioner cookie via API');
+            }
+          }).catch(error => {
+            console.error('[Footer Logout] Error calling logout API:', error);
+          });
+          
+          // Dispatch custom event to notify other components (like WelcomeCard)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+              detail: { 
+                commissionerSession: window.commissionerSession,
+                teamSession: window.anonymousSession 
+              }
+            }));
+          }
+          
+          // Navigate to home - should show commissioner card if still has team session
+          router.push('/');
+        }
+      }
     }
+  };
+
+  // Session-aware button rendering
+  const renderButtons = () => {
+    const buttons = [];
+
+    // Determine if we're in a team session or commissioner session
+    // Only check these AFTER component has mounted to avoid hydration mismatch
+    const isTeamSession = isMounted && !!sessionState.token;
+    const isCommissioner = isMounted && commissionerState.isCommissioner;
+
+    // 1. Home button (always show except in minimal mode)
+    if (mode !== 'minimal') {
+      buttons.push(
+        <button 
+          key="home"
+          id="home-button" 
+          className="btn btn-secondary"
+          onClick={() => router.push('/')}
+        >
+          Home
+        </button>
+      );
+    }
+
+    // 2. Copy URL button (only show when in team session)
+    if (isTeamSession && mode === 'team') {
+      buttons.push(
+        <button 
+          key="copy-url"
+          id="copy-url-button" 
+          className="btn btn-secondary"
+          onClick={handleCopyURL}
+          title="Copy your unique team URL"
+        >
+          📋 Copy URL
+        </button>
+      );
+    }
+
+    // 3. Commissioner Mode button
+    // Show on all pages EXCEPT commissioner page itself
+    // Behavior depends on whether there's an active commissioner session:
+    // - If no session: Launch auth modal
+    // - If session: Navigate to /commissioner page
+    if (mode !== 'commissioner') {
+      const handleCommissionerModeClick = () => {
+        if (isCommissioner) {
+          // Already logged in as commissioner - navigate to commissioner page
+          router.push('/commissioner');
+        } else {
+          // Not logged in - trigger the commissioner auth modal
+          // Use the global function from app-bridge.js if available
+          if (typeof window !== 'undefined' && window.handleCommissionerMode) {
+            window.handleCommissionerMode();
+          } else {
+            // Fallback: navigate to commissioner page which will show auth modal
+            router.push('/commissioner');
+          }
+        }
+      };
+
+      buttons.push(
+        <button 
+          key="commissioner-mode"
+          id="commissioner-mode" 
+          className="btn btn-secondary"
+          onClick={handleCommissionerModeClick}
+        >
+          Commissioner Mode
+        </button>
+      );
+    }
+
+    // 4. Game Selector (only show when commissioner OR explicitly requested)
+    // This is handled separately below as a <select> element
+
+    // 5. Logout button (show when commissioner OR in team session)
+    if (isCommissioner || isTeamSession) {
+      buttons.push(
+        <button 
+          key="logout"
+          id="logout-button" 
+          className="btn btn-secondary"
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      );
+    }
+
+    return buttons.length > 0 ? buttons : null;
   };
 
   return (
@@ -143,8 +302,10 @@ export default function Footer({
       <div className="footer-actions">
         {renderButtons()}
         
-        {showGameSwitcher && (
-          <div className={`game-switcher ${showGameSwitcher ? 'visible' : ''}`}>
+        {/* Game switcher shows ONLY when commissioner session is active */}
+        {/* Guard with isMounted to prevent hydration mismatch */}
+        {isMounted && commissionerState.isCommissioner && (
+          <div className={`game-switcher visible`}>
             <label htmlFor="game-select">Game: </label>
             <select 
               id="game-select" 

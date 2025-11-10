@@ -330,8 +330,8 @@ export async function handleTeamCreation(e) {
         // Close modal
         closeModal('team-creation-modal');
         
-        // Navigate to salary cap draft page
-        showPage('salary-cap-draft-page');
+        // Redirect to new team session page with SSR
+        window.location.href = `/team/${data.session.token}`;
     } catch (error) {
         console.error('Error creating team:', error);
         alert('Failed to create team. Please try again.');
@@ -468,8 +468,9 @@ async function handleCommissionerTOTPLogin(e) {
             // Initialize game switcher now that commissioner is logged in
             initializeGameSwitcher();
             
-            // Navigate to commissioner page
-            showPage('commissioner-page');
+            // UPDATED: Navigate to new React-based /commissioner page
+            console.log('[App Bridge] Redirecting to /commissioner');
+            window.location.href = '/commissioner';
             
             // Clear the form
             document.getElementById('totp-code').value = '';
@@ -487,8 +488,13 @@ async function handleCommissionerTOTPLogin(e) {
 
 /**
  * Handle commissioner mode button click
- * Checks if commissioner is already authenticated and shows page, 
- * or opens TOTP login modal
+ * 
+ * UPDATED: Now redirects to new React-based /commissioner page
+ * Old behavior: Checked auth and showed legacy 'commissioner-page' or opened TOTP modal
+ * New behavior: Navigate to /commissioner (handles auth check there)
+ * 
+ * Checks if commissioner is already authenticated and navigates to page, 
+ * or opens TOTP login modal for authentication first
  */
 function handleCommissionerMode() {
     console.log('[App Bridge] Commissioner Mode button clicked');
@@ -496,9 +502,9 @@ function handleCommissionerMode() {
     
     // Check if already authenticated via TOTP
     if (commissionerSession && commissionerSession.isCommissioner) {
-        console.log('[App Bridge] Commissioner authenticated, showing page');
-        // Already authenticated, just show the page
-        showPage('commissioner-page');
+        console.log('[App Bridge] Commissioner authenticated, navigating to /commissioner');
+        // Already authenticated, navigate to new React page
+        window.location.href = '/commissioner';
     } else {
         console.log('[App Bridge] Not authenticated, opening TOTP modal');
         // Not authenticated, show TOTP login modal
@@ -712,8 +718,8 @@ async function handleCopyUrl() {
         return;
     }
 
-    // Construct session URL
-    const sessionUrl = `${window.location.origin}/?session=${anonymousSession.token}`;
+    // Construct session URL using new /team/[session] route
+    const sessionUrl = `${window.location.origin}/team/${anonymousSession.token}`;
     console.log('[App Bridge] Session URL:', sessionUrl);
 
     try {
