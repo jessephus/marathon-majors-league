@@ -176,12 +176,23 @@ function TeamSessionPageContent({
   useEffect(() => {
     const totalAthletes = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
     
+    console.log('[Team Session] Auto-load check:', {
+      totalAthletes,
+      hasExistingRoster: !!existingRoster,
+      fullAthletesLoaded,
+      loadingFullAthletes,
+      athletesDataMen: athletesData.men?.length,
+      athletesDataWomen: athletesData.women?.length,
+      gameStateMen: gameState.athletes?.men?.length,
+      gameStateWomen: gameState.athletes?.women?.length
+    });
+    
     // If SSR passed empty arrays (new team, no roster yet), load all athletes
     if (totalAthletes === 0 && !existingRoster && !fullAthletesLoaded && !loadingFullAthletes) {
       console.log('[Team Session] Auto-loading athletes for new team');
       loadFullAthleteList();
     }
-  }, [athletesData, existingRoster, fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList]);
+  }, [athletesData, existingRoster, fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList, gameState.athletes]);
   
   // Handle entering edit mode
   const handleEnterEditMode = useCallback(async () => {
@@ -321,6 +332,14 @@ function TeamSessionPageContent({
     salary: a.salary || 5000
   }));
   const totalAthletes = menAthletes.length + womenAthletes.length;
+  
+  console.log('[Team Session] Athletes for modal:', {
+    menCount: menAthletes.length,
+    womenCount: womenAthletes.length,
+    total: totalAthletes,
+    fromGameState: !!(gameState.athletes?.men || gameState.athletes?.women),
+    fromProps: !!(athletesData.men || athletesData.women)
+  });
   
   // Calculate total spent from roster
   const totalSpent = roster.reduce((sum, slot) => sum + (slot.salary || 0), 0);
