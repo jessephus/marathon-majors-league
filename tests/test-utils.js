@@ -218,6 +218,40 @@ export async function cleanupTestSessions(namePattern = 'Test Team%') {
 }
 
 /**
+ * Clean up test games with roster locks
+ * Useful for cleaning up roster lock feature testing
+ * 
+ * @returns {Promise<number>} - Number of games cleaned up
+ */
+export async function cleanupRosterLockTestData() {
+  console.log('🧹 Cleaning up test games with roster locks...');
+  
+  try {
+    const testGamesWithLocks = await getSql()`
+      SELECT game_id FROM games 
+      WHERE roster_lock_time IS NOT NULL 
+      AND (
+        game_id LIKE 'test-%' 
+        OR game_id LIKE 'e2e-%' 
+        OR game_id LIKE 'integration-%'
+      )
+    `;
+    
+    console.log(`   Found ${testGamesWithLocks.length} test games with roster locks`);
+    
+    for (const game of testGamesWithLocks) {
+      await cleanupTestGame(game.game_id);
+    }
+    
+    console.log(`✅ Cleaned up ${testGamesWithLocks.length} test games with roster locks`);
+    return testGamesWithLocks.length;
+  } catch (error) {
+    console.error('❌ Error cleaning up roster lock test data:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Hook to run after all tests complete
  * Cleans up any remaining test data
  * 
@@ -233,6 +267,9 @@ export async function globalTestCleanup() {
     await cleanupTestGames('integration-%');
     await cleanupTestSessions('Test Team%');
     await cleanupTestSessions('Test%');
+    
+    // Clean up any test games with roster locks set (for roster lock testing)
+    await cleanupRosterLockTestData();
     
     console.log('✅ Global cleanup complete\n');
   } catch (error) {

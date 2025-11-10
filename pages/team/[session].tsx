@@ -97,6 +97,14 @@ function TeamSessionPageContent({
 
   // Initialize state from SSR props
   useEffect(() => {
+    // Debug: Log roster lock time data
+    console.log('[Team Session] Roster Lock Debug:', {
+      rosterLockTime: gameStateData.rosterLockTime,
+      resultsFinalized: gameStateData.resultsFinalized,
+      locked: isRosterLocked(gameStateData.rosterLockTime) || gameStateData.resultsFinalized,
+      gameId: sessionData.session?.gameId
+    });
+    
     if (sessionData.valid && sessionData.session) {
       setSessionState({
         token: sessionToken,
@@ -372,7 +380,7 @@ function TeamSessionPageContent({
           onClose={() => setIsModalOpen(false)}
         />
 
-        <Footer mode="team" showCopyright={true} />
+        <Footer mode="team" showGameSwitcher={true} showCopyright={true} />
       </div>
     </>
   );

@@ -389,10 +389,13 @@ function setupEventListeners() {
     // Footer buttons
     document.getElementById('home-button').addEventListener('click', async () => {
         // Navigate based on session state
+        // DEPRECATED: This navigation logic uses old salary-cap-draft-page
+        // TODO: Redirect to /team/[session] for team sessions instead
         if (anonymousSession.token) {
             // Team session - always go to salary cap draft page (shows roster when locked)
+            // DEPRECATED: Should navigate to /team/[session] instead
             await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page');
+            showPage('salary-cap-draft-page'); // DEPRECATED: Use /team/[session]
         } else if (commissionerSession.isCommissioner) {
             // Commissioner session - go to commissioner page
             handleCommissionerMode();
@@ -430,12 +433,13 @@ function setupEventListeners() {
     });
     document.getElementById('submit-rankings').addEventListener('click', handleSubmitRankings);
 
-    // Draft page
+    // Draft page - DEPRECATED: View Teams button navigates to old teams-page
+    // TODO: Remove this and update all references to use /team/[session] instead
     document.getElementById('view-teams').addEventListener('click', async () => {
         // Reload game state to get latest results (use cache)
         await loadGameStateCached();
-        displayTeams();
-        showPage('teams-page');
+        displayTeams(); // DEPRECATED: Use /team/[session] instead
+        showPage('teams-page'); // DEPRECATED: Navigate to /team/[session] instead
     });
 
     // Teams page
@@ -3080,6 +3084,17 @@ function createRaceResultRow(result, athlete, splitType = 'finish') {
     `;
 }
 
+/**
+ * Display teams on the legacy teams page
+ * 
+ * ⚠️ DEPRECATED: This function displays teams in the old teams-page view (index.js).
+ * New implementation: Use /team/[session] React component instead (pages/team/[session].tsx)
+ * 
+ * This function is maintained for backward compatibility only and will be removed
+ * in a future version. All new team viewing should use the React-based team session pages.
+ * 
+ * @deprecated Use /team/[session] page instead
+ */
 function displayTeams() {
     const container = document.getElementById('teams-display');
     container.innerHTML = '';

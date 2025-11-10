@@ -446,7 +446,15 @@ function getLegacyPagesHTML() {
             </div>
 
             <!-- Salary Cap Draft Page -->
+            <!-- Salary Cap Draft Page - DEPRECATED: Use /team/[session] instead -->
+            <!-- This page is maintained for backward compatibility only -->
             <div id="salary-cap-draft-page" class="page">
+                <!-- DEPRECATION WARNING BANNER -->
+                <div style="background: #ff6900; color: white; padding: 12px 16px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #cc5200; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <strong>⚠️ DEPRECATED PAGE</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">This is the old team draft page. For the best experience, use the new team session pages at <code>/team/[session]</code>. This page will be removed in a future update.</p>
+                </div>
+                
                 <!-- Header with Team Info and Budget -->
                 <div class="draft-header">
                     <div class="team-info">
@@ -730,8 +738,15 @@ function getLegacyPagesHTML() {
                 <button id="view-teams" class="btn btn-primary">View Teams</button>
             </div>
 
-            <!-- Teams Page -->
+            <!-- Teams Page - DEPRECATED: Use /team/[session] instead -->
+            <!-- This page is maintained for backward compatibility only -->
             <div id="teams-page" class="page">
+                <!-- DEPRECATION WARNING BANNER -->
+                <div style="background: #ff6900; color: white; padding: 12px 16px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #cc5200; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <strong>⚠️ DEPRECATED PAGE</strong>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em;">This is the old team view page. For the best experience, use the new team session pages at <code>/team/[session]</code>. This page will be removed in a future update.</p>
+                </div>
+                
                 <h2>Team Rosters</h2>
                 <div id="teams-display"></div>
                 <div class="page-actions">
