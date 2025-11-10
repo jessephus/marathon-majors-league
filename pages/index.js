@@ -66,7 +66,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <style dangerouslySetInnerHTML={{ __html: `
           body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
           .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-          header { background: linear-gradient(135deg, #ff6900 0%, #e05500 100%); color: white; padding: 1rem; text-align: center; }
+          header { background: linear-gradient(135deg, #ff6900 0%, #2C39A2 100%); color: white; padding: 1rem; text-align: center; }
           header h1 { margin: 0; font-size: 2rem; }
           .loading-spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: #ff6900; font-size: 16px; font-weight: 600; }
           .loading-spinner::before { content: ''; display: block; width: 40px; height: 40px; margin-bottom: 20px; border: 4px solid rgba(255, 105, 0, 0.2); border-top-color: #ff6900; border-radius: 50%; animation: spin 1s linear infinite; }
