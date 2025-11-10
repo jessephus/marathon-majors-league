@@ -131,6 +131,11 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
     if (typeof window !== 'undefined') {
       localStorage.removeItem('marathon_fantasy_commissioner');
       localStorage.removeItem('commissioner_state'); // Legacy cleanup
+      
+      // Clear commissioner session global (for app.js compatibility)
+      if (window.commissionerSession) {
+        window.commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+      }
     }
     
     // Then call logout endpoint to clear server-side cookie
@@ -148,6 +153,16 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
       loginTime: null,
       expiresAt: null,
     });
+    
+    // Dispatch custom event to notify other components (like WelcomeCard)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+        detail: { 
+          commissionerSession: window.commissionerSession,
+          teamSession: window.anonymousSession 
+        }
+      }));
+    }
     
     // Navigate to home page
     router.push('/');

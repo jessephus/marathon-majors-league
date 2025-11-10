@@ -188,46 +188,19 @@ export default function Footer({
             console.error('[Footer Logout] Error calling logout API:', error);
           });
           
+          // Dispatch custom event to notify other components (like WelcomeCard)
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+              detail: { 
+                commissionerSession: window.commissionerSession,
+                teamSession: window.anonymousSession 
+              }
+            }));
+          }
+          
           // Navigate to home - should show commissioner card if still has team session
           router.push('/');
         }
-      }
-    } else if (isInTeamSession) {
-      // Team session logout
-      if (confirm('Are you sure you want to log out? You will need your unique URL to return to your team.')) {
-        console.log('[Footer Logout] Team session logout initiated');
-        
-        // Clear team session from both sessionStorage and localStorage
-        sessionStorage.removeItem('sessionToken');
-        sessionStorage.removeItem('teamName');
-        sessionStorage.removeItem('playerCode');
-        sessionStorage.removeItem('ownerName');
-        
-        localStorage.removeItem('marathon_fantasy_team');
-        
-        // Clear anonymous session global (for app.js compatibility)
-        if (typeof window !== 'undefined' && window.anonymousSession) {
-          window.anonymousSession = { 
-            token: null, 
-            teamName: null, 
-            playerCode: null, 
-            ownerName: null, 
-            expiresAt: null 
-          };
-        }
-        
-        // Dispatch custom event to notify other components
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('sessionsUpdated', {
-            detail: { 
-              teamSession: null, 
-              commissionerSession: window.commissionerSession 
-            }
-          }));
-        }
-        
-        // Navigate to home - should show anonymous card or commissioner card
-        router.push('/');
       }
     }
   };
