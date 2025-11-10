@@ -55,6 +55,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ActivePanel>('dashboard');
+  const [hasLoggedOut, setHasLoggedOut] = useState(false);
 
   // Initialize gameId from localStorage on mount
   useEffect(() => {
@@ -65,6 +66,18 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
       }
     }
   }, []);
+
+  // Sync SSR authentication state with React state
+  // BUT skip this if user has explicitly logged out
+  useEffect(() => {
+    if (initialAuth && !commissionerState.isCommissioner && !hasLoggedOut) {
+      setCommissionerState({
+        isCommissioner: true,
+        loginTime: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      });
+    }
+  }, [initialAuth, commissionerState.isCommissioner, hasLoggedOut]);
 
   useEffect(() => {
     if (!commissionerState.isCommissioner && !initialAuth) {
@@ -110,19 +123,33 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
     }
   }
 
-  function handleLogout() {
-    // Call logout endpoint to clear server-side cookie
-    apiClient.commissioner.logout().catch(err => {
-      console.error('Logout API error:', err);
-    });
+  async function handleLogout() {
+    // Set logout flag FIRST to prevent SSR sync from re-enabling session
+    setHasLoggedOut(true);
     
-    // Clear client-side state
+    // Clear client-side storage FIRST (synchronously, before any async operations)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('marathon_fantasy_commissioner');
+      localStorage.removeItem('commissioner_state'); // Legacy cleanup
+    }
+    
+    // Then call logout endpoint to clear server-side cookie
+    try {
+      await apiClient.commissioner.logout();
+      console.log('[Commissioner Logout] Server-side cookie cleared');
+    } catch (err) {
+      console.error('Logout API error:', err);
+      // Continue with logout even if API fails
+    }
+    
+    // Update React state (this will also try to remove localStorage, but it's already gone)
     setCommissionerState({
       isCommissioner: false,
       loginTime: null,
       expiresAt: null,
     });
     
+    // Navigate to home page
     router.push('/');
   }
 
@@ -314,12 +341,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
                     onClick={handleLoadDemoData}
                   >
                     📥 Load Demo Data
-                  </button>
-                  <button 
-                    className="btn btn-secondary"
-                    onClick={handleLogout}
-                  >
-                    🚪 Logout
                   </button>
                 </div>
               </div>

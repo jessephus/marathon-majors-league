@@ -66,6 +66,13 @@ export default function Footer({
   const { gameState, setGameState } = useGameState();
   const { sessionState } = useSessionState();
   const { commissionerState } = useCommissionerState();
+  
+  // Fix hydration mismatch: only render session-dependent buttons after mount
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleGameSwitcherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGameId = e.target.value;
@@ -101,16 +108,64 @@ export default function Footer({
   };
 
   const handleLogout = () => {
-    if (commissionerState.isCommissioner) {
-      // Commissioner logout
+    // Check if we're in a commissioner session or team session
+    // Note: We check the raw state here (not the isMounted-guarded version)
+    // because this handler is only called from buttons that are already rendered
+    const isInCommissionerSession = commissionerState.isCommissioner;
+    const isInTeamSession = !!sessionState.token;
+    
+    // PRIORITY: If both sessions are active, always logout the team session first
+    // Only logout commissioner session if it's the only active session
+    if (isInTeamSession) {
+      // Team session logout (takes priority when both sessions exist)
+      if (confirm('Are you sure you want to log out? You will need your unique URL to return to your team.')) {
+        console.log('[Footer Logout] Team session logout initiated');
+        
+        // Clear team session from both sessionStorage and localStorage
+        sessionStorage.removeItem('sessionToken');
+        sessionStorage.removeItem('teamName');
+        sessionStorage.removeItem('playerCode');
+        sessionStorage.removeItem('ownerName');
+        
+        localStorage.removeItem('marathon_fantasy_team');
+        
+        // Clear anonymous session global (for app.js compatibility)
+        if (typeof window !== 'undefined' && window.anonymousSession) {
+          window.anonymousSession = { 
+            token: null, 
+            teamName: null, 
+            playerCode: null, 
+            ownerName: null, 
+            expiresAt: null 
+          };
+        }
+        
+        // Dispatch custom event to notify other components
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+            detail: { 
+              teamSession: null, 
+              commissionerSession: window.commissionerSession 
+            }
+          }));
+        }
+        
+        // Navigate to home - should show commissioner card if still logged in as commissioner
+        router.push('/');
+      }
+    } else if (isInCommissionerSession) {
+      // Commissioner logout (only if no team session)
       if (onLogout) {
+        // Use the provided logout handler from parent component (e.g., commissioner.tsx)
         onLogout();
       } else {
         // Default commissioner logout behavior
         if (confirm('Are you sure you want to logout from Commissioner mode?')) {
           console.log('[Footer Logout] Commissioner logout initiated');
           
-          // Clear commissioner session from localStorage
+          // Clear all commissioner session keys from localStorage
+          localStorage.removeItem('marathon_fantasy_commissioner'); // Primary key
+          localStorage.removeItem('commissioner_state'); // Legacy cleanup
           localStorage.removeItem('commissionerLoginTime');
           localStorage.removeItem('commissionerExpiresAt');
           
@@ -137,7 +192,7 @@ export default function Footer({
           router.push('/');
         }
       }
-    } else if (sessionState.token) {
+    } else if (isInTeamSession) {
       // Team session logout
       if (confirm('Are you sure you want to log out? You will need your unique URL to return to your team.')) {
         console.log('[Footer Logout] Team session logout initiated');
@@ -182,8 +237,9 @@ export default function Footer({
     const buttons = [];
 
     // Determine if we're in a team session or commissioner session
-    const isTeamSession = !!sessionState.token;
-    const isCommissioner = commissionerState.isCommissioner;
+    // Only check these AFTER component has mounted to avoid hydration mismatch
+    const isTeamSession = isMounted && !!sessionState.token;
+    const isCommissioner = isMounted && commissionerState.isCommissioner;
 
     // 1. Home button (always show except in minimal mode)
     if (mode !== 'minimal') {
@@ -274,7 +330,8 @@ export default function Footer({
         {renderButtons()}
         
         {/* Game switcher shows ONLY when commissioner session is active */}
-        {commissionerState.isCommissioner && (
+        {/* Guard with isMounted to prevent hydration mismatch */}
+        {isMounted && commissionerState.isCommissioner && (
           <div className={`game-switcher visible`}>
             <label htmlFor="game-select">Game: </label>
             <select 

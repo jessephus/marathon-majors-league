@@ -745,7 +745,18 @@ function hideCommissionerTOTPModal() {
     document.getElementById('commissioner-totp-form').reset();
 }
 
+/**
+ * DEPRECATED: This function is part of the legacy commissioner page system.
+ * 
+ * New behavior: Use the version in app-bridge.js instead, which navigates to /commissioner
+ * 
+ * This version is maintained for backward compatibility only and should not be used
+ * for new features. It still shows the old commissioner-page which has a deprecation banner.
+ * 
+ * @deprecated Use app-bridge.js handleCommissionerTOTPLogin() which redirects to /commissioner
+ */
 async function handleCommissionerTOTPLogin(e) {
+    console.warn('[DEPRECATED] app.js handleCommissionerTOTPLogin is deprecated. Use app-bridge.js version instead.');
     e.preventDefault();
     
     const totpCode = document.getElementById('totp-code').value.trim();
@@ -1227,14 +1238,29 @@ async function handleCreateNewGame() {
     }
 }
 
-// Handle commissioner mode
+/**
+ * ============================================
+ * DEPRECATED: handleCommissionerMode
+ * ============================================
+ * This function is DEPRECATED and should not be used.
+ * The old commissioner page (commissioner-page) has been replaced.
+ * 
+ * NEW BEHAVIOR:
+ * - Use window.handleCommissionerMode from app-bridge.js instead
+ * - That function navigates to /commissioner (React-based page)
+ * 
+ * This function remains for backward compatibility only.
+ * It shows the old deprecated commissioner-page with a warning banner.
+ */
 function handleCommissionerMode() {
+    console.log('[DEPRECATED] handleCommissionerMode in app.js called - this function is deprecated');
     console.log('[Commissioner Mode] Attempting to access commissioner mode');
     console.log('[Commissioner Mode] Current commissionerSession:', commissionerSession);
     
     // Check if already authenticated via TOTP
     if (commissionerSession.isCommissioner) {
-        console.log('[Commissioner Mode] Commissioner authenticated, showing page');
+        console.log('[Commissioner Mode] Commissioner authenticated, showing DEPRECATED page');
+        console.warn('[DEPRECATED] Showing old commissioner-page. Use /commissioner instead.');
         // Already authenticated, just show the page
         showPage('commissioner-page');
         // Refresh player codes display if players exist

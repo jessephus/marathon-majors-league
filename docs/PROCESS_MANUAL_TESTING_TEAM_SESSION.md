@@ -131,6 +131,9 @@ WHERE game_id = 'default';
 ✅ Roster is view-only but displays correctly
 ✅ Budget tracker still shows but is not interactive
 
+
+*********** STOPPPED HERE ***************
+
 ## Test Scenario 7: Submit Complete Roster
 
 ### Prerequisites:
