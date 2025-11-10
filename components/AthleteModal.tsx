@@ -150,7 +150,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
         style={{ 
           zIndex: 10003,
           transform: isClosing ? 'translateY(100%)' : 'translateY(0)',
-          transition: 'transform 0.4s ease'
+          transition: 'transform 0.4s ease-in-out'
         }}
       >
         <button className="modal-close" onClick={handleClose}>

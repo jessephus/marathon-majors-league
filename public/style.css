@@ -1668,7 +1668,6 @@ footer .btn {
     max-height: 90vh;
     overflow: hidden;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-    animation: slideUp 0.4s ease;
     display: flex;
     flex-direction: column;
     z-index: 10001; /* Above modal overlay */
@@ -3353,7 +3352,7 @@ footer .btn {
     background: white;
     box-shadow: -4px 0 16px rgba(0,0,0,0.2);
     z-index: 1000;
-    transition: right 0.4s ease;
+    transition: right 0.4s ease-in-out;
     display: flex;
     flex-direction: column;
 }

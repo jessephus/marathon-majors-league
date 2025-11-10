@@ -91,6 +91,10 @@ function TeamSessionPageContent({
   });
   const [isEditingRoster, setIsEditingRoster] = useState(false);
   
+  // Track if full athlete list has been loaded (for edit mode)
+  const [fullAthletesLoaded, setFullAthletesLoaded] = useState(false);
+  const [loadingFullAthletes, setLoadingFullAthletes] = useState(false);
+  
   // Roster state (convert from TeamRoster to RosterSlot[] format)
   const [roster, setRoster] = useState(() => {
     const initialRoster = [
@@ -131,10 +135,51 @@ function TeamSessionPageContent({
         gameId: sessionData.session.gameId,
       });
     }
+    
+    // Check if we received full athlete list in SSR (for non-locked rosters)
+    // If athletesData has more than 10 athletes, it's the full list
+    const totalAthletes = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
+    if (totalAthletes > 10) {
+      setFullAthletesLoaded(true);
+    }
   }, [sessionData, athletesData, gameStateData, sessionToken, setSessionState, setGameState]);
 
   // Check if roster is locked
   const locked = isRosterLocked(gameStateData.rosterLockTime) || gameStateData.resultsFinalized;
+  
+  // Load full athlete list when entering edit mode (if not already loaded)
+  const loadFullAthleteList = useCallback(async () => {
+    if (fullAthletesLoaded || loadingFullAthletes) return;
+    
+    setLoadingFullAthletes(true);
+    try {
+      const response = await fetch('/api/athletes?confirmedOnly=false');
+      if (!response.ok) throw new Error('Failed to fetch athletes');
+      
+      const athletes = await response.json();
+      
+      // Update game state with full athlete list
+      setGameState({
+        athletes: athletes
+      });
+      
+      setFullAthletesLoaded(true);
+    } catch (error) {
+      console.error('Failed to load full athlete list:', error);
+      alert('Failed to load athletes. Please try again.');
+    } finally {
+      setLoadingFullAthletes(false);
+    }
+  }, [fullAthletesLoaded, loadingFullAthletes, setGameState]);
+  
+  // Handle entering edit mode
+  const handleEnterEditMode = useCallback(async () => {
+    // Load full athlete list if not already loaded
+    if (!fullAthletesLoaded) {
+      await loadFullAthleteList();
+    }
+    setIsEditingRoster(true);
+  }, [fullAthletesLoaded, loadFullAthleteList]);
   
   // Handle slot click (open athlete selection modal)
   const handleSlotClick = useCallback((slotId: string, currentAthleteId: number | null) => {
@@ -398,9 +443,10 @@ function TeamSessionPageContent({
             {hasSubmittedRoster && !isEditingRoster && !isRosterLocked_computed ? (
               <button 
                 className="btn btn-secondary btn-large" 
-                onClick={() => setIsEditingRoster(true)}
+                onClick={handleEnterEditMode}
+                disabled={loadingFullAthletes}
               >
-                Edit Roster
+                {loadingFullAthletes ? 'Loading athletes...' : 'Edit Roster'}
               </button>
             ) : (
               <button 
@@ -498,17 +544,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       };
     }
 
-    // Fetch athletes
-    const athletesResponse = await fetch(`${baseUrl}/api/athletes?confirmedOnly=false`);
-    const athletesData = await athletesResponse.json();
-
-    // Fetch game state
+    // Fetch game state first
     const gameId = sessionData.session.gameId || 'default';
     const gameStateResponse = await fetch(`${baseUrl}/api/game-state?gameId=${gameId}`);
     const gameStateData = await gameStateResponse.json();
 
     // Fetch existing roster (if any)
     let existingRoster = null;
+    let athleteIds: number[] = [];
+    
     try {
       // Fetch all rosters for this game
       const rosterResponse = await fetch(
@@ -536,17 +580,45 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           W2: teamData.women[1] || null,
           W3: teamData.women[2] || null,
         };
+        
+        // Extract athlete IDs for minimal fetch
+        athleteIds = [
+          teamData.men[0]?.id,
+          teamData.men[1]?.id,
+          teamData.men[2]?.id,
+          teamData.women[0]?.id,
+          teamData.women[1]?.id,
+          teamData.women[2]?.id,
+        ].filter((id): id is number => id != null);
       }
     } catch (err) {
       console.error('Failed to fetch existing roster:', err);
       // Continue without existing roster
     }
 
+    // Only fetch athletes if we have a roster (for locked view)
+    // If no roster yet, pass empty arrays (client will fetch all when editing)
+    let athletesData = { men: [], women: [] };
+    
+    if (existingRoster && athleteIds.length > 0) {
+      // Fetch only the specific athletes in the roster
+      const athletesResponse = await fetch(
+        `${baseUrl}/api/athletes?ids=${athleteIds.join(',')}`
+      );
+      const athletes = await athletesResponse.json();
+      
+      // Organize by gender (API should return flat array when using ?ids)
+      athletesData = {
+        men: athletes.filter((a: any) => a.gender === 'men'),
+        women: athletes.filter((a: any) => a.gender === 'women')
+      };
+    }
+
     return {
       props: {
         sessionToken,
         sessionData,
-        athletesData,
+        athletesData, // Now only 6 athletes instead of 158+
         gameStateData: {
           rosterLockTime: gameStateData.rosterLockTime || null,
           resultsFinalized: gameStateData.resultsFinalized || false,
