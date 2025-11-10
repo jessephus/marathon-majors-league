@@ -25,7 +25,7 @@ interface Athlete {
   country: string;
   gender: string;
   pb: string;
-  salary: number;
+  salary?: number; // Make salary optional to match state-provider type
   headshotUrl?: string;
   marathonRank?: number;
   age?: number;
@@ -139,7 +139,7 @@ function TeamSessionPageContent({
     // Check if we received full athlete list in SSR (for non-locked rosters)
     // If athletesData has more than 10 athletes, it's the full list
     const totalAthletes = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
-    if (totalAthletes > 10) {
+    if (totalAthletes > 6) {
       setFullAthletesLoaded(true);
     }
   }, [sessionData, athletesData, gameStateData, sessionToken, setSessionState, setGameState]);
@@ -171,6 +171,17 @@ function TeamSessionPageContent({
       setLoadingFullAthletes(false);
     }
   }, [fullAthletesLoaded, loadingFullAthletes, setGameState]);
+  
+  // Auto-load athletes for new teams (no existing roster)
+  useEffect(() => {
+    const totalAthletes = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
+    
+    // If SSR passed empty arrays (new team, no roster yet), load all athletes
+    if (totalAthletes === 0 && !existingRoster && !fullAthletesLoaded && !loadingFullAthletes) {
+      console.log('[Team Session] Auto-loading athletes for new team');
+      loadFullAthleteList();
+    }
+  }, [athletesData, existingRoster, fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList]);
   
   // Handle entering edit mode
   const handleEnterEditMode = useCallback(async () => {
@@ -299,8 +310,16 @@ function TeamSessionPageContent({
     );
   }
 
-  const menAthletes = athletesData.men || [];
-  const womenAthletes = athletesData.women || [];
+  // Use gameState.athletes (which gets updated by loadFullAthleteList) instead of athletesData (SSR prop)
+  // Ensure all athletes have required salary field (fallback to 5000 if missing)
+  const menAthletes = (gameState.athletes?.men || athletesData.men || []).map(a => ({
+    ...a,
+    salary: a.salary || 5000
+  }));
+  const womenAthletes = (gameState.athletes?.women || athletesData.women || []).map(a => ({
+    ...a,
+    salary: a.salary || 5000
+  }));
   const totalAthletes = menAthletes.length + womenAthletes.length;
   
   // Calculate total spent from roster
