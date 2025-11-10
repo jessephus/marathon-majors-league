@@ -815,11 +815,53 @@ footer .btn {
     gap: 16px;
 }
 
+.stats-grid-three {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+/* On larger screens, try to fit all 4 cards in one row */
+@media (min-width: 900px) {
+    .stats-grid-three {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* On medium screens, show 2 cards per row */
+@media (min-width: 600px) and (max-width: 899px) {
+    .stats-grid-three {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* On small screens, stack vertically */
+@media (max-width: 599px) {
+    .stats-grid-three {
+        grid-template-columns: 1fr;
+    }
+}
+
 .stat-card {
     background: var(--light-gray);
     padding: 20px;
     border-radius: 8px;
     text-align: center;
+}
+
+.stat-card-clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.stat-card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+}
+
+.stat-card-clickable:active {
+    transform: translateY(0);
 }
 
 .stat-label {
@@ -835,6 +877,13 @@ footer .btn {
     font-size: 2rem;
     color: var(--primary-blue);
     font-weight: bold;
+}
+
+.stat-sublabel {
+    font-size: 0.75rem;
+    color: var(--dark-gray);
+    margin-top: 8px;
+    line-height: 1.4;
 }
 
 .action-card {

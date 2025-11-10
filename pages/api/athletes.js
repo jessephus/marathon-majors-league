@@ -102,7 +102,24 @@ export default async function handler(req, res) {
       if (athleteIds && athleteIds.length > 0) {
         try {
           const athletes = await sql`
-            SELECT * FROM athletes 
+            SELECT 
+              id, 
+              name, 
+              country, 
+              gender, 
+              personal_best as pb, 
+              headshot_url as "headshotUrl",
+              world_athletics_id as "worldAthleticsId",
+              world_athletics_profile_url as "worldAthleticsProfileUrl",
+              marathon_rank as "marathonRank",
+              road_running_rank as "roadRunningRank",
+              overall_rank as "overallRank",
+              age,
+              date_of_birth as "dateOfBirth",
+              sponsor,
+              salary,
+              season_best as "seasonBest"
+            FROM athletes 
             WHERE id = ANY(${athleteIds}::int[])
             ORDER BY gender DESC, marathon_rank ASC NULLS LAST, personal_best ASC NULLS LAST
           `;
