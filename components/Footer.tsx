@@ -17,6 +17,7 @@ declare global {
       loginTime: string | null;
       expiresAt: string | null;
     };
+    handleCommissionerMode?: () => void;
   }
 }
 
@@ -35,11 +36,14 @@ interface FooterProps {
  * Uses Phase 3 state manager for centralized game state management.
  * Eliminates code duplication across 5+ pages.
  * 
+ * Game Switcher Display Logic:
+ * - Shows ONLY when commissionerState.isCommissioner is true
+ * - The showGameSwitcher prop is deprecated and no longer affects display
+ * 
  * @example
  * // Commissioner page
  * <Footer 
  *   mode="commissioner" 
- *   showGameSwitcher 
  *   onLogout={handleLogout}
  * />
  * 
@@ -53,7 +57,7 @@ interface FooterProps {
  */
 export default function Footer({
   mode = 'home',
-  showGameSwitcher = false,
+  showGameSwitcher = false, // Deprecated: no longer used
   onLogout,
   showCopyright = true,
   className = ''
@@ -210,14 +214,34 @@ export default function Footer({
       );
     }
 
-    // 3. Commissioner Mode button (only show when NOT commissioner AND NOT in team session)
-    if (!isCommissioner && !isTeamSession && mode === 'home') {
+    // 3. Commissioner Mode button
+    // Show on all pages EXCEPT commissioner page itself
+    // Behavior depends on whether there's an active commissioner session:
+    // - If no session: Launch auth modal
+    // - If session: Navigate to /commissioner page
+    if (mode !== 'commissioner') {
+      const handleCommissionerModeClick = () => {
+        if (isCommissioner) {
+          // Already logged in as commissioner - navigate to commissioner page
+          router.push('/commissioner');
+        } else {
+          // Not logged in - trigger the commissioner auth modal
+          // Use the global function from app-bridge.js if available
+          if (typeof window !== 'undefined' && window.handleCommissionerMode) {
+            window.handleCommissionerMode();
+          } else {
+            // Fallback: navigate to commissioner page which will show auth modal
+            router.push('/commissioner');
+          }
+        }
+      };
+
       buttons.push(
         <button 
           key="commissioner-mode"
           id="commissioner-mode" 
           className="btn btn-secondary"
-          onClick={() => router.push('/commissioner')}
+          onClick={handleCommissionerModeClick}
         >
           Commissioner Mode
         </button>
@@ -249,8 +273,8 @@ export default function Footer({
       <div className="footer-actions">
         {renderButtons()}
         
-        {/* Game switcher shows when commissioner OR explicitly requested */}
-        {(showGameSwitcher || commissionerState.isCommissioner) && (
+        {/* Game switcher shows ONLY when commissioner session is active */}
+        {commissionerState.isCommissioner && (
           <div className={`game-switcher visible`}>
             <label htmlFor="game-select">Game: </label>
             <select 

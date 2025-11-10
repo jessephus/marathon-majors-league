@@ -712,8 +712,8 @@ async function handleCopyUrl() {
         return;
     }
 
-    // Construct session URL
-    const sessionUrl = `${window.location.origin}/?session=${anonymousSession.token}`;
+    // Construct session URL using new /team/[session] route
+    const sessionUrl = `${window.location.origin}/team/${anonymousSession.token}`;
     console.log('[App Bridge] Session URL:', sessionUrl);
 
     try {

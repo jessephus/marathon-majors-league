@@ -380,7 +380,7 @@ function TeamSessionPageContent({
           onClose={() => setIsModalOpen(false)}
         />
 
-        <Footer mode="team" showGameSwitcher={true} showCopyright={true} />
+        <Footer mode="team" showCopyright={true} />
       </div>
     </>
   );

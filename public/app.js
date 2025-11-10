@@ -699,7 +699,7 @@ async function handleTeamCreation(e) {
         }
         
         // Show success message with unique URL
-        const uniqueURL = `${window.location.origin}/?session=${data.session.token}`;
+        const uniqueURL = `${window.location.origin}/team/${data.session.token}`;
         alert(`✅ Team created!\n\n📋 Team: ${teamName}\n\n🔗 Your unique URL (save this to access your team from other devices):\n${uniqueURL}\n\nThis URL will be saved in your browser.`);
         
         hideWelcomeCard();  // Hide welcome card after team creation
@@ -710,9 +710,10 @@ async function handleTeamCreation(e) {
         // Hide modal and navigate to new team session page
         hideTeamCreationModal();
         
-        // Navigate to new React-based team session page
-        if (window.anonymousSession?.token) {
-            window.location.href = `/team/${window.anonymousSession.token}`;
+        // Navigate to new React-based team session page using the token we just received
+        const sessionToken = data.session.token;
+        if (sessionToken) {
+            window.location.href = `/team/${sessionToken}`;
         } else {
             console.error('No session token available after team creation');
             alert('Team created but navigation failed. Please refresh the page.');
@@ -1137,8 +1138,7 @@ function handleCommissionerLogout() {
 
 // Handle copy URL
 function handleCopyUrl() {
-    const gameId = GAME_ID;
-    const sessionUrl = `${window.location.origin}${window.location.pathname}?session=${anonymousSession.token}&game=${gameId}`;
+    const sessionUrl = `${window.location.origin}/team/${anonymousSession.token}`;
     
     navigator.clipboard.writeText(sessionUrl).then(() => {
         const originalText = document.getElementById('copy-url-button').textContent;

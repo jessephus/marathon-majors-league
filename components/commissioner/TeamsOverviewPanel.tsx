@@ -183,8 +183,7 @@ export default function TeamsOverviewPanel() {
       return;
     }
 
-    const currentGameId = gameState.gameId || 'default';
-    const playerUrl = `${window.location.origin}/?session=${sessionToken}&game=${currentGameId}`;
+    const playerUrl = `${window.location.origin}/team/${sessionToken}`;
     
     try {
       await navigator.clipboard.writeText(playerUrl);
@@ -201,8 +200,7 @@ export default function TeamsOverviewPanel() {
       return;
     }
 
-    const currentGameId = gameState.gameId || 'default';
-    const playerUrl = `${window.location.origin}/?session=${sessionToken}&game=${currentGameId}`;
+    const playerUrl = `${window.location.origin}/team/${sessionToken}`;
     window.open(playerUrl, '_blank');
   }
 
