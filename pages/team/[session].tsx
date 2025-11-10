@@ -7,6 +7,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import Head from 'next/head';
+import Script from 'next/script';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
@@ -226,6 +227,12 @@ function TeamSessionPageContent({
         <meta name="description" content="Build your fantasy marathon team with salary cap draft" />
       </Head>
 
+      {/* Load Chart.js for athlete progression charts */}
+      <Script 
+        src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
+        strategy="beforeInteractive" 
+      />
+
       <div className="container">
         <header>
           <h1>🗽 Fantasy NY Marathon</h1>
@@ -330,13 +337,6 @@ function TeamSessionPageContent({
 
           {/* Submit Container */}
           <div className="draft-submit-container">
-            <p className="athlete-pool-info">
-              {totalAthletes > 0 
-                ? `${totalAthletes} elite athletes available (${menAthletes.length} men, ${womenAthletes.length} women)`
-                : 'Loading athlete database...'
-              }
-            </p>
-            
             <button 
               className="btn btn-primary btn-large" 
               disabled={!allFilledSlots || locked}

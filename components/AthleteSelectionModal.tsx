@@ -3,10 +3,13 @@
  * 
  * Modal for selecting athletes to add to roster slots.
  * Filters by gender, shows salary, and prevents duplicates.
+ * Matches legacy vanilla JS implementation styling.
  */
 
 import React, { useState, useMemo } from 'react';
 import { canAffordAthlete, isAthleteInRoster } from '@/lib/budget-utils';
+import { getRunnerSvg } from '@/lib/ui-helpers';
+import AthleteModal from './AthleteModal';
 
 interface Athlete {
   id: number;
@@ -19,6 +22,7 @@ interface Athlete {
   marathonRank?: number;
   age?: number;
   sponsor?: string;
+  nycConfirmed?: boolean;
 }
 
 interface RosterSlot {
@@ -48,41 +52,49 @@ export default function AthleteSelectionModal({
   onSelect,
   onClose,
 }: AthleteSelectionModalProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'rank' | 'name' | 'salary' | 'pb'>('rank');
+  const [sortBy, setSortBy] = useState<'salary' | 'pb' | 'rank'>('salary');
+  const [detailAthlete, setDetailAthlete] = useState<Athlete | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [showConfirmedOnly, setShowConfirmedOnly] = useState(true);
+
+  // Helper function to convert time string to seconds for sorting
+  const convertTimeToSeconds = (timeStr: string): number => {
+    const parts = timeStr.split(':');
+    if (parts.length === 3) {
+      const hours = parseInt(parts[0]);
+      const minutes = parseInt(parts[1]);
+      const seconds = parseFloat(parts[2]); // Use parseFloat for sub-second precision
+      return hours * 3600 + minutes * 60 + seconds;
+    }
+    return 999999; // Invalid time, sort to end
+  };
 
   // Filter and sort athletes
-  const filteredAthletes = useMemo(() => {
-    let filtered = athletes.filter(athlete => {
-      // Filter by search query
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          athlete.name.toLowerCase().includes(query) ||
-          athlete.country.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
+  const sortedAthletes = useMemo(() => {
+    let sorted = [...athletes];
+
+    // Filter by NYC confirmation status
+    if (showConfirmedOnly) {
+      sorted = sorted.filter(athlete => athlete.nycConfirmed === true);
+    }
 
     // Sort athletes
-    filtered.sort((a, b) => {
+    sorted.sort((a, b) => {
       switch (sortBy) {
-        case 'rank':
-          return (a.marathonRank || 999) - (b.marathonRank || 999);
-        case 'name':
-          return a.name.localeCompare(b.name);
         case 'salary':
-          return b.salary - a.salary; // Descending
+          return b.salary - a.salary; // Descending (highest first)
         case 'pb':
-          return a.pb.localeCompare(b.pb);
+          return convertTimeToSeconds(a.pb) - convertTimeToSeconds(b.pb); // Ascending (fastest first)
+        case 'rank':
+          return (a.marathonRank || 999) - (b.marathonRank || 999); // Ascending (best rank first)
         default:
           return 0;
       }
     });
 
-    return filtered;
-  }, [athletes, searchQuery, sortBy]);
+    return sorted;
+  }, [athletes, sortBy, showConfirmedOnly]);
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -116,110 +128,183 @@ export default function AthleteSelectionModal({
     return { canSelect: true };
   };
 
-  // Handle athlete selection
+  // Handle athlete selection (only when clicking + button)
   const handleSelectAthlete = (athlete: Athlete) => {
     const { canSelect } = canSelectAthlete(athlete);
     if (canSelect) {
       onSelect(athlete);
-      setSearchQuery(''); // Reset search
     }
   };
 
-  // Handle close
+  // Handle showing athlete detail modal
+  const handleShowAthleteDetail = (athlete: Athlete) => {
+    setDetailAthlete(athlete);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handle closing athlete detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setTimeout(() => setDetailAthlete(null), 300);
+  };
+
+  // Handle closing selection modal with animation
   const handleClose = () => {
-    setSearchQuery(''); // Reset search
-    onClose();
+    setIsClosing(true);
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+    }, 400); // Match CSS transition duration (increased to 0.4s for smoother feel)
   };
 
   if (!isOpen) return null;
 
+  // Get current slot athlete if any
+  const currentSlotAthlete = currentRoster.find(s => s.slotId === slotId);
+
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content athlete-selection-modal" onClick={(e) => e.stopPropagation()}>
+    <>
+      {/* Modal Overlay */}
+      <div className="modal-overlay" onClick={handleClose} style={{ display: 'block', zIndex: 10000 }}></div>
+      
+      {/* Selection Modal (slides in from right, full screen height) */}
+      <div className={`selection-modal ${isOpen && !isClosing ? 'active' : ''}`} id="athlete-selection-modal" style={{ zIndex: 10001 }}>
+        {/* Modal Header */}
         <div className="modal-header">
-          <h2>Select {gender === 'men' ? 'Male' : 'Female'} Athlete</h2>
-          <span className="modal-slot-label">for slot {slotId}</span>
-          <button className="modal-close-btn" onClick={handleClose} aria-label="Close">
-            ×
+          <button className="modal-back-btn" onClick={handleClose} aria-label="Back">
+            <span className="back-arrow">←</span>
+          </button>
+          <h3 id="selection-modal-title">
+            Select {gender === 'men' ? 'Male' : 'Female'} Athlete ({slotId})
+          </h3>
+        </div>
+
+        {/* Sort Tabs */}
+        <div className="modal-sort-tabs">
+          <button
+            className={`sort-tab ${sortBy === 'salary' ? 'active' : ''}`}
+            onClick={() => setSortBy('salary')}
+          >
+            Salary
+          </button>
+          <button
+            className={`sort-tab ${sortBy === 'pb' ? 'active' : ''}`}
+            onClick={() => setSortBy('pb')}
+          >
+            PB
+          </button>
+          <button
+            className={`sort-tab ${sortBy === 'rank' ? 'active' : ''}`}
+            onClick={() => setSortBy('rank')}
+          >
+            Rank
           </button>
         </div>
 
-        <div className="modal-body">
-          {/* Search and Sort Controls */}
-          <div className="athlete-controls">
+        {/* Filter Options */}
+        <div style={{ 
+          padding: '12px 16px', 
+          borderBottom: '1px solid #e5e7eb',
+          backgroundColor: '#f9fafb'
+        }}>
+          <label style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            color: '#374151'
+          }}>
             <input
-              type="text"
-              className="athlete-search"
-              placeholder="Search by name or country..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              type="checkbox"
+              checked={showConfirmedOnly}
+              onChange={(e) => setShowConfirmedOnly(e.target.checked)}
+              style={{ 
+                width: '16px', 
+                height: '16px',
+                cursor: 'pointer'
+              }}
             />
-            <select
-              className="athlete-sort"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="rank">Sort by Rank</option>
-              <option value="name">Sort by Name</option>
-              <option value="salary">Sort by Salary</option>
-              <option value="pb">Sort by PB</option>
-            </select>
-          </div>
-
-          {/* Athlete List */}
-          <div className="athlete-list">
-            {filteredAthletes.length === 0 ? (
-              <div className="athlete-list-empty">
-                No athletes found matching "{searchQuery}"
-              </div>
-            ) : (
-              filteredAthletes.map((athlete) => {
-                const { canSelect, reason } = canSelectAthlete(athlete);
-                
-                return (
-                  <div
-                    key={athlete.id}
-                    className={`athlete-card ${!canSelect ? 'disabled' : ''}`}
-                    onClick={() => handleSelectAthlete(athlete)}
-                    style={{ cursor: canSelect ? 'pointer' : 'not-allowed' }}
-                  >
-                    <div className="athlete-card-main">
-                      <div className="athlete-card-info">
-                        <div className="athlete-card-name">{athlete.name}</div>
-                        <div className="athlete-card-details">
-                          <span>{getCountryFlag(athlete.country)}</span>
-                          {athlete.marathonRank && (
-                            <span className="athlete-rank">#{athlete.marathonRank}</span>
-                          )}
-                          <span className="athlete-pb">PB: {athlete.pb}</span>
-                          {athlete.age && <span>Age: {athlete.age}</span>}
-                        </div>
-                        {athlete.sponsor && (
-                          <div className="athlete-card-sponsor">{athlete.sponsor}</div>
-                        )}
-                      </div>
-                      <div className="athlete-card-salary">
-                        {formatCurrency(athlete.salary)}
-                      </div>
-                    </div>
-                    {!canSelect && reason && (
-                      <div className="athlete-card-restriction">
-                        {reason}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+            <span>Show only confirmed for NYC Marathon</span>
+          </label>
         </div>
 
-        <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={handleClose}>
-            Cancel
-          </button>
+        {/* Athlete List */}
+        <div className="modal-athlete-list" id="modal-athlete-list">
+          {sortedAthletes.length === 0 ? (
+            <div className="athlete-list-empty">
+              No {gender === 'men' ? 'male' : 'female'} athletes available
+            </div>
+          ) : (
+            sortedAthletes.map((athlete) => {
+              const { canSelect, reason } = canSelectAthlete(athlete);
+              const isInRoster = isAthleteInRoster(currentRoster, athlete.id);
+              const isInCurrentSlot = currentSlotAthlete?.athleteId === athlete.id;
+              
+              // Get headshot URL or fallback to runner SVG
+              const headshotUrl = athlete.headshotUrl || getRunnerSvg(gender);
+              
+              // Get rank display
+              const rankDisplay = athlete.marathonRank ? `Rank: #${athlete.marathonRank}` : 'Unranked';
+              
+              return (
+                <div
+                  key={athlete.id}
+                  className={`modal-athlete-item ${
+                    isInRoster && !isInCurrentSlot ? 'selected' : ''
+                  } ${!canSelect ? 'disabled' : ''}`}
+                  onClick={() => handleShowAthleteDetail(athlete)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {/* Athlete Headshot */}
+                  <div className="modal-athlete-headshot">
+                    <img 
+                      src={headshotUrl} 
+                      alt={athlete.name}
+                      onError={(e) => {
+                        e.currentTarget.src = getRunnerSvg(gender);
+                      }}
+                    />
+                  </div>
+
+                  {/* Athlete Info */}
+                  <div className="modal-athlete-info">
+                    <div className="modal-athlete-name">{athlete.name}</div>
+                    <div className="modal-athlete-stats">
+                      {getCountryFlag(athlete.country)} {athlete.country} • {athlete.pb} • {rankDisplay}
+                    </div>
+                  </div>
+
+                  {/* Salary */}
+                  <div className="modal-athlete-salary">
+                    {formatCurrency(athlete.salary)}
+                  </div>
+
+                  {/* Add Button */}
+                  <button 
+                    className="modal-add-btn" 
+                    disabled={!canSelect}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectAthlete(athlete);
+                    }}
+                  >
+                    {isInCurrentSlot ? '✓' : '+'}
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
-    </div>
+
+      {/* Athlete Detail Modal */}
+      <AthleteModal
+        athlete={detailAthlete}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        showScoring={false}
+      />
+    </>
   );
 }

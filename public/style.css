@@ -3353,7 +3353,7 @@ footer .btn {
     background: white;
     box-shadow: -4px 0 16px rgba(0,0,0,0.2);
     z-index: 1000;
-    transition: right 0.3s ease;
+    transition: right 0.4s ease;
     display: flex;
     flex-direction: column;
 }
