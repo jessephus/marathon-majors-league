@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All panels use centralized API client (no raw fetch calls)
   - Comprehensive test suite for admin flows and cache invalidation
   - Documentation: `docs/FEATURE_COMMISSIONER_PANELS.md`
-- **Roster Lock Timer**: Automatic roster locking at race time
   - Added `roster_lock_time` field to games table
   - Frontend checks lock time and prevents edits after deadline
   - UI displays lock time with countdown before deadline
@@ -51,6 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fallback to legacy time-based display for compatibility
 - Comprehensive documentation for points scoring system
 - Migration script with utility functions and seeded records
+- **Roster Lock Timer**: Automatic roster locking at race time
+  - Added `roster_lock_time` field to games table
+  - Frontend checks lock time and prevents edits after deadline
+  - UI displays lock time with countdown before deadline
+  - Lock time set to 8:35 AM EST on November 2, 2025 for default game
+  - Migration script `005_roster_lock_time.sql` to add field
+  - Migration runner `run-roster-lock-migration.js` to apply changes
+  - Documentation in `docs/ROSTER_LOCK_TIME.md`
 
 ### Changed
 - Game state API now includes `rosterLockTime` field
@@ -58,6 +65,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Results API now auto-triggers scoring calculation
 - Team cards enhanced with points display alongside legacy time display
 - Leaderboard prioritizes points-based standings with fallback
+
+### Removed
+- **Deprecated `/landing` route** (November 9, 2025)
+  - Removed experimental `pages/landing.tsx` stub page
+  - Primary landing page is now `/` (pages/index.js) with full SSR support
+  - Updated documentation in PROCESS_ROUTING_PHASE1.md to reflect current routes
 
 ### Technical
 - Database helper functions updated for roster lock time

@@ -1,17 +1,12 @@
 import React from 'react';
 import { useRouter } from 'next/router';
-import { useGameState } from '@/lib/state-provider';
+import { useGameState, useSessionState, useCommissionerState } from '@/lib/state-provider';
 
-export interface FooterProps {
-  /** Display mode for footer buttons */
+interface FooterProps {
   mode?: 'home' | 'commissioner' | 'team' | 'leaderboard' | 'minimal';
-  /** Show the game switcher dropdown */
   showGameSwitcher?: boolean;
-  /** Callback for logout button (commissioner mode) */
   onLogout?: () => void;
-  /** Show copyright text */
   showCopyright?: boolean;
-  /** Additional CSS classes */
   className?: string;
 }
 
@@ -47,6 +42,8 @@ export default function Footer({
 }: FooterProps) {
   const router = useRouter();
   const { gameState, setGameState } = useGameState();
+  const { sessionState } = useSessionState();
+  const { commissionerState } = useCommissionerState();
 
   const handleGameSwitcherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newGameId = e.target.value;
@@ -70,72 +67,110 @@ export default function Footer({
     }
   };
 
-  const renderButtons = () => {
-    switch (mode) {
-      case 'commissioner':
-        return (
-          <>
-            <button 
-              className="btn btn-secondary"
-              onClick={() => router.push('/')}
-            >
-              Home
-            </button>
-            <button 
-              className="btn btn-secondary"
-              onClick={onLogout}
-            >
-              Logout
-            </button>
-          </>
-        );
+  const handleCopyURL = () => {
+    const currentURL = window.location.href;
+    navigator.clipboard.writeText(currentURL).then(() => {
+      alert('Team URL copied to clipboard! Bookmark this link to return to your team.');
+    }).catch(err => {
+      console.error('Failed to copy URL:', err);
+      // Fallback: show URL in prompt for manual copy
+      prompt('Copy this URL to return to your team:', currentURL);
+    });
+  };
 
-      case 'team':
-        return (
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => router.push('/')}
-          >
-            ← Back to Home
-          </button>
-        );
-
-      case 'leaderboard':
-        return (
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => window.history.back()}
-          >
-            ← Back
-          </button>
-        );
-
-      case 'home':
-        return (
-          <>
-            <button 
-              id="home-button" 
-              className="btn btn-secondary"
-              onClick={() => router.push('/')}
-            >
-              Home
-            </button>
-            <button 
-              id="commissioner-mode" 
-              className="btn btn-secondary"
-              onClick={() => router.push('/commissioner')}
-            >
-              Commissioner Mode
-            </button>
-          </>
-        );
-
-      case 'minimal':
-        return null;
-
-      default:
-        return null;
+  const handleLogout = () => {
+    if (commissionerState.isCommissioner) {
+      // Commissioner logout
+      if (onLogout) {
+        onLogout();
+      } else {
+        // Default commissioner logout behavior
+        localStorage.removeItem('commissionerLoginTime');
+        localStorage.removeItem('commissionerExpiresAt');
+        router.push('/');
+      }
+    } else if (sessionState.token) {
+      // Team session logout
+      if (confirm('Are you sure you want to log out? You will need your unique URL to return to your team.')) {
+        // Clear session state
+        sessionStorage.removeItem('sessionToken');
+        sessionStorage.removeItem('teamName');
+        sessionStorage.removeItem('playerCode');
+        sessionStorage.removeItem('ownerName');
+        router.push('/');
+      }
     }
+  };
+
+  // Session-aware button rendering
+  const renderButtons = () => {
+    const buttons = [];
+
+    // Determine if we're in a team session or commissioner session
+    const isTeamSession = !!sessionState.token;
+    const isCommissioner = commissionerState.isCommissioner;
+
+    // 1. Home button (always show except in minimal mode)
+    if (mode !== 'minimal') {
+      buttons.push(
+        <button 
+          key="home"
+          id="home-button" 
+          className="btn btn-secondary"
+          onClick={() => router.push('/')}
+        >
+          Home
+        </button>
+      );
+    }
+
+    // 2. Copy URL button (only show when in team session)
+    if (isTeamSession && mode === 'team') {
+      buttons.push(
+        <button 
+          key="copy-url"
+          id="copy-url-button" 
+          className="btn btn-secondary"
+          onClick={handleCopyURL}
+          title="Copy your unique team URL"
+        >
+          📋 Copy URL
+        </button>
+      );
+    }
+
+    // 3. Commissioner Mode button (only show when NOT commissioner AND NOT in team session)
+    if (!isCommissioner && !isTeamSession && mode === 'home') {
+      buttons.push(
+        <button 
+          key="commissioner-mode"
+          id="commissioner-mode" 
+          className="btn btn-secondary"
+          onClick={() => router.push('/commissioner')}
+        >
+          Commissioner Mode
+        </button>
+      );
+    }
+
+    // 4. Game Selector (only show when commissioner OR explicitly requested)
+    // This is handled separately below as a <select> element
+
+    // 5. Logout button (show when commissioner OR in team session)
+    if (isCommissioner || isTeamSession) {
+      buttons.push(
+        <button 
+          key="logout"
+          id="logout-button" 
+          className="btn btn-secondary"
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
+      );
+    }
+
+    return buttons.length > 0 ? buttons : null;
   };
 
   return (
@@ -143,8 +178,9 @@ export default function Footer({
       <div className="footer-actions">
         {renderButtons()}
         
-        {showGameSwitcher && (
-          <div className={`game-switcher ${showGameSwitcher ? 'visible' : ''}`}>
+        {/* Game switcher shows when commissioner OR explicitly requested */}
+        {(showGameSwitcher || commissionerState.isCommissioner) && (
+          <div className={`game-switcher visible`}>
             <label htmlFor="game-select">Game: </label>
             <select 
               id="game-select" 

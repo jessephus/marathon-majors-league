@@ -11,6 +11,7 @@ import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
+import { createTeamAvatarSVG } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
@@ -209,6 +210,10 @@ function TeamSessionPageContent({
   const menAthletes = athletesData.men || [];
   const womenAthletes = athletesData.women || [];
   const totalAthletes = menAthletes.length + womenAthletes.length;
+  
+  // Calculate total spent from roster
+  const totalSpent = roster.reduce((sum, slot) => sum + (slot.salary || 0), 0);
+  
   const allFilledSlots = roster.every(slot => slot.athleteId !== null);
 
   // Format lock time display
@@ -227,19 +232,27 @@ function TeamSessionPageContent({
         </header>
 
         <main className="page active" id="salary-cap-draft-page">
-          {/* Draft Header with Team Info */}
-          <div className="draft-header">
-            <div className="team-info">
-              <div className="team-avatar-placeholder">
-                <div className="avatar-circle">
-                  <div className="avatar-initials">
-                    {sessionState.teamName ? sessionState.teamName.charAt(0).toUpperCase() : 'T'}
-                  </div>
-                </div>
+          {/* Team Header - Legacy Style */}
+          <div className="team-header-orange">
+            <div className="team-avatar-wrapper">
+              {createTeamAvatarSVG(sessionState.teamName || 'My Team', 48)}
+            </div>
+            <div className="team-header-info">
+              <div className="team-label">TEAM</div>
+              <h2 className="team-name-heading">{sessionState.teamName || 'My Team'}</h2>
+            </div>
+            <div className="team-budget-stats">
+              <div className="budget-stat">
+                <div className="budget-label">CAP</div>
+                <div className="budget-value">${DEFAULT_BUDGET.toLocaleString()}</div>
               </div>
-              <div className="team-name-display">
-                <div className="team-name-label">Your Team</div>
-                <div className="team-name-value">{sessionState.teamName || 'My Team'}</div>
+              <div className="budget-stat">
+                <div className="budget-label">SPENT</div>
+                <div className="budget-value">${totalSpent.toLocaleString()}</div>
+              </div>
+              <div className="budget-stat">
+                <div className="budget-label">LEFT</div>
+                <div className="budget-value">${(DEFAULT_BUDGET - totalSpent).toLocaleString()}</div>
               </div>
             </div>
           </div>
@@ -257,17 +270,63 @@ function TeamSessionPageContent({
             </div>
           )}
 
-          {/* Budget Tracker */}
-          <BudgetTracker roster={roster} totalBudget={DEFAULT_BUDGET} />
+          {/* Roster Slots - Legacy Style (No Gender Sections) */}
+          <div className="roster-slots-container-legacy">
+            {roster.map(slot => {
+              const athlete = slot.athleteId 
+                ? (slot.slotId.startsWith('M') ? menAthletes : womenAthletes).find(a => a.id === slot.athleteId)
+                : null;
 
-          {/* Roster Slots */}
-          <RosterSlots
-            roster={roster}
-            athletes={athletesData}
-            isLocked={locked}
-            onSlotClick={handleSlotClick}
-            onRemoveAthlete={handleRemoveAthlete}
-          />
+              return (
+                <div 
+                  key={slot.slotId}
+                  className={`roster-slot-legacy ${athlete ? 'filled' : 'empty'} ${locked ? 'locked' : ''}`}
+                  onClick={() => !locked && handleSlotClick(slot.slotId, slot.athleteId)}
+                  style={{ cursor: locked ? 'not-allowed' : 'pointer' }}
+                >
+                  <div className="slot-label-legacy">{slot.slotId}</div>
+                  <div className="slot-content-legacy">
+                    {athlete ? (
+                      <>
+                        <div className="slot-headshot-legacy">
+                          <img 
+                            src={athlete.headshotUrl || (slot.slotId.startsWith('M') ? '/images/man-runner.png' : '/images/woman-runner.png')} 
+                            alt={athlete.name}
+                            className="slot-headshot-img-legacy"
+                            onError={(e) => {
+                              e.currentTarget.src = slot.slotId.startsWith('M') ? '/images/man-runner.png' : '/images/woman-runner.png';
+                            }}
+                          />
+                        </div>
+                        <div className="slot-athlete-info-legacy">
+                          <div className="slot-athlete-name-legacy">{athlete.name}</div>
+                          <div className="slot-athlete-details-legacy">
+                            {athlete.country} • {athlete.pb} • #{athlete.marathonRank || 'N/A'}
+                          </div>
+                        </div>
+                        <div className="slot-athlete-salary-legacy">
+                          ${(athlete.salary || 5000).toLocaleString()}
+                        </div>
+                        {!locked && (
+                          <button 
+                            className="slot-remove-btn-legacy"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveAthlete(slot.slotId);
+                            }}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div className="slot-placeholder-legacy">Tap to select</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           {/* Submit Container */}
           <div className="draft-submit-container">
@@ -297,7 +356,7 @@ function TeamSessionPageContent({
 
           <div className="session-info" style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#666' }}>
             <p>💡 Tip: Share your session link with friends to join the same game!</p>
-            <p>🔗 Session: {typeof window !== 'undefined' ? window.location.href : ''}</p>
+            <p>🔗 Session: /team/{sessionToken}</p>
           </div>
         </main>
 
@@ -313,7 +372,7 @@ function TeamSessionPageContent({
           onClose={() => setIsModalOpen(false)}
         />
 
-        <Footer mode="team" showCopyright={false} />
+        <Footer mode="team" showCopyright={true} />
       </div>
     </>
   );
