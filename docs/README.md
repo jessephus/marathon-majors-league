@@ -4,10 +4,10 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **27 total documents**.
+Our documentation is organized into **5 main categories** with **26 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
-- `CORE_*.md` - Essential guides (6 docs)
+- `CORE_*.md` - Essential guides (5 docs)
 - `TECH_*.md` - Technical reference (5 docs)
 - `FEATURE_*.md` - Game features (6 docs)
 - `PROCESS_*.md` - Project history (9 docs)
@@ -80,13 +80,13 @@ Learn how to join games, rank athletes, and follow live results.
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
-| **[MIGRATION_LANDING_PAGE_SSR.md](MIGRATION_LANDING_PAGE_SSR.md)** | Landing page SSR migration guide | Implementing/understanding SSR |
+| **[PROCESS_LANDING_PAGE_SSR_MIGRATION.md](PROCESS_LANDING_PAGE_SSR_MIGRATION.md)** | Landing page SSR migration guide | Implementing/understanding SSR |
 | **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
 | **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
 | **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
 | **[PROCESS_CLEANUP_SUMMARY.md](PROCESS_CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
 | **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
-| **[PROCESS_PHASE_2_SUMMARY.md](PROCESS_PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
+| **[PROCESS_AUTH_PHASE_2_SUMMARY.md](PROCESS_AUTH_PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
 
 ### 5️⃣ Setup & Authentication
@@ -119,7 +119,7 @@ Learn how to join games, rank athletes, and follow live results.
 | Salary Cap Draft | [FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md) | FEATURE_GAME_MODES.md, FEATURE_POINTS_SCORING_SYSTEM.md |
 | Points Scoring | [FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md) | CORE_DEPLOYMENT.md, CORE_CHANGELOG.md |
 | Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, PROCESS_EDITABLE_WA_ID_FEATURE.md |
-| Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_PHASE_2_SUMMARY.md |
+| Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_AUTH_PHASE_2_SUMMARY.md |
 | Anonymous Teams | [FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md) | CORE_USER_GUIDE.md, CORE_ARCHITECTURE.md |
 
 ---

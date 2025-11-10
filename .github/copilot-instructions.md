@@ -46,7 +46,7 @@
 
 **The /docs folder has 5 categories** (see `docs/README.md`):
 
-1. **Core Guides (6 docs)** - CORE_USER_GUIDE, CORE_ARCHITECTURE, CORE_DEVELOPMENT, CORE_DEPLOYMENT, CORE_TESTING, CORE_CHANGELOG
+1. **Core Guides (5 docs)** - CORE_USER_GUIDE, CORE_ARCHITECTURE, CORE_DEVELOPMENT, CORE_DEPLOYMENT, CORE_CHANGELOG
    - These are permanent and should grow with the project
    - Never delete these without team discussion
    - Naming: `CORE_*.md` prefix
@@ -61,7 +61,7 @@
    - Merge into Core Guides after 6+ months if appropriate
    - Naming: `FEATURE_*.md` prefix
 
-4. **Process & Maintenance (7 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_PHASE_2_SUMMARY, PROCESS_DOCS_HEALTH_CHECK, etc.
+4. **Process & Maintenance (9 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_AUTH_PHASE_2_SUMMARY, PROCESS_DOCS_HEALTH_CHECK, etc.
    - These document project history and decisions
    - Don't delete if they involve ongoing projects or migrations
    - Naming: `PROCESS_*.md` prefix

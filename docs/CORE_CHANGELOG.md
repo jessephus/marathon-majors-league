@@ -63,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - `/api/results` now tolerates legacy payloads and stores expanded scoring data, and `race_results` schema is auto-migrated to include all scoring columns.
 - Fixed a regression where fantasy standings and team detail cards always showed 0 pts by auto-triggering the points engine on results/standings fetches and enriching responses with athlete metadata so every recorded finisher appears in Race Results.
+- **Infinite Refresh Loop with Feature Flag Toggle**: Fixed issue where toggling `NEXT_PUBLIC_USE_NEW_WELCOME_CARD` environment variable caused infinite page refresh with "Cannot read properties of null" error. Solution: Conditionally load `app.js` only when feature flag is OFF (legacy mode) since it expects specific DOM structure. Added guard clause in `app.js` for defense-in-depth protection. Files affected: `pages/index.js`, `public/app.js`.
 
 ### Technical Implementation Notes
 
