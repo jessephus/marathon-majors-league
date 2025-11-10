@@ -4238,6 +4238,13 @@ async function handleLoadDemoData() {
         
         const data = await response.json();
         
+        // Switch to demo game
+        GAME_ID = 'demo-game';
+        localStorage.setItem('current_game_id', 'demo-game');
+        
+        // Reload game state for demo game
+        await loadGameState();
+        
         // Display results in modal
         displayDemoDataResults(data);
         
@@ -4245,7 +4252,10 @@ async function handleLoadDemoData() {
         setTimeout(() => {
             btn.textContent = originalText;
             btn.disabled = false;
-        }, 3000);
+            
+            // Refresh the page to show demo game data
+            window.location.reload();
+        }, 2000);
         
     } catch (error) {
         console.error('Demo data error:', error);
