@@ -330,8 +330,8 @@ export async function handleTeamCreation(e) {
         // Close modal
         closeModal('team-creation-modal');
         
-        // Navigate to salary cap draft page
-        showPage('salary-cap-draft-page');
+        // Redirect to new team session page with SSR
+        window.location.href = `/team/${data.session.token}`;
     } catch (error) {
         console.error('Error creating team:', error);
         alert('Failed to create team. Please try again.');
