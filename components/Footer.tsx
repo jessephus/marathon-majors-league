@@ -2,6 +2,24 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import { useGameState, useSessionState, useCommissionerState } from '@/lib/state-provider';
 
+// Extend Window interface for app.js globals
+declare global {
+  interface Window {
+    anonymousSession?: {
+      token: string | null;
+      teamName: string | null;
+      playerCode: string | null;
+      ownerName: string | null;
+      expiresAt: string | null;
+    };
+    commissionerSession?: {
+      isCommissioner: boolean;
+      loginTime: string | null;
+      expiresAt: string | null;
+    };
+  }
+}
+
 interface FooterProps {
   mode?: 'home' | 'commissioner' | 'team' | 'leaderboard' | 'minimal';
   showGameSwitcher?: boolean;
@@ -85,18 +103,71 @@ export default function Footer({
         onLogout();
       } else {
         // Default commissioner logout behavior
-        localStorage.removeItem('commissionerLoginTime');
-        localStorage.removeItem('commissionerExpiresAt');
-        router.push('/');
+        if (confirm('Are you sure you want to logout from Commissioner mode?')) {
+          console.log('[Footer Logout] Commissioner logout initiated');
+          
+          // Clear commissioner session from localStorage
+          localStorage.removeItem('commissionerLoginTime');
+          localStorage.removeItem('commissionerExpiresAt');
+          
+          // Clear commissioner session global (for app.js compatibility)
+          if (typeof window !== 'undefined' && window.commissionerSession) {
+            window.commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
+          }
+          
+          // Call logout API to clear the HttpOnly cookie
+          fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          }).then(response => {
+            if (response.ok) {
+              console.log('[Footer Logout] Commissioner cookie cleared via API');
+            } else {
+              console.warn('[Footer Logout] Failed to clear commissioner cookie via API');
+            }
+          }).catch(error => {
+            console.error('[Footer Logout] Error calling logout API:', error);
+          });
+          
+          // Navigate to home - should show commissioner card if still has team session
+          router.push('/');
+        }
       }
     } else if (sessionState.token) {
       // Team session logout
       if (confirm('Are you sure you want to log out? You will need your unique URL to return to your team.')) {
-        // Clear session state
+        console.log('[Footer Logout] Team session logout initiated');
+        
+        // Clear team session from both sessionStorage and localStorage
         sessionStorage.removeItem('sessionToken');
         sessionStorage.removeItem('teamName');
         sessionStorage.removeItem('playerCode');
         sessionStorage.removeItem('ownerName');
+        
+        localStorage.removeItem('marathon_fantasy_team');
+        
+        // Clear anonymous session global (for app.js compatibility)
+        if (typeof window !== 'undefined' && window.anonymousSession) {
+          window.anonymousSession = { 
+            token: null, 
+            teamName: null, 
+            playerCode: null, 
+            ownerName: null, 
+            expiresAt: null 
+          };
+        }
+        
+        // Dispatch custom event to notify other components
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('sessionsUpdated', {
+            detail: { 
+              teamSession: null, 
+              commissionerSession: window.commissionerSession 
+            }
+          }));
+        }
+        
+        // Navigate to home - should show anonymous card or commissioner card
         router.push('/');
       }
     }

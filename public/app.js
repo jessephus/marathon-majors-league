@@ -389,13 +389,9 @@ function setupEventListeners() {
     // Footer buttons
     document.getElementById('home-button').addEventListener('click', async () => {
         // Navigate based on session state
-        // DEPRECATED: This navigation logic uses old salary-cap-draft-page
-        // TODO: Redirect to /team/[session] for team sessions instead
         if (anonymousSession.token) {
-            // Team session - always go to salary cap draft page (shows roster when locked)
-            // DEPRECATED: Should navigate to /team/[session] instead
-            await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page'); // DEPRECATED: Use /team/[session]
+            // Team session - navigate to new React-based team page
+            window.location.href = `/team/${anonymousSession.token}`;
         } else if (commissionerSession.isCommissioner) {
             // Commissioner session - go to commissioner page
             handleCommissionerMode();
@@ -490,7 +486,13 @@ function setupEventListeners() {
             btn.textContent = originalText;
         }
     });
-    document.getElementById('back-to-roster')?.addEventListener('click', () => showPage('salary-cap-draft-page'));
+    document.getElementById('back-to-roster')?.addEventListener('click', () => {
+        if (window.anonymousSession?.token) {
+            window.location.href = `/team/${window.anonymousSession.token}`;
+        } else {
+            console.error('No session token for back-to-roster navigation');
+        }
+    });
     
     // Leaderboard tab switching
     document.querySelectorAll('.leaderboard-tab').forEach(tab => {
@@ -705,12 +707,16 @@ async function handleTeamCreation(e) {
         // Update footer buttons
         updateFooterButtons();
         
-        // Hide modal and go to salary cap draft page
+        // Hide modal and navigate to new team session page
         hideTeamCreationModal();
         
-        // Always go to salary cap draft page (it shows roster when locked)
-        await setupSalaryCapDraft();
-        showPage('salary-cap-draft-page');
+        // Navigate to new React-based team session page
+        if (window.anonymousSession?.token) {
+            window.location.href = `/team/${window.anonymousSession.token}`;
+        } else {
+            console.error('No session token available after team creation');
+            alert('Team created but navigation failed. Please refresh the page.');
+        }
         
     } catch (error) {
         console.error('Error creating team:', error);
@@ -877,10 +883,13 @@ async function verifyAndLoadSession(token) {
             console.log('Draft complete?', gameState.draftComplete);
             console.log('Has rankings?', !!gameState.rankings[playerCode]);
             
-            // Always navigate to salary cap draft page (shows roster when locked)
-            console.log('Navigating to salary cap draft page');
-            await setupSalaryCapDraft();
-            showPage('salary-cap-draft-page');
+            // Navigate to new React-based team session page
+            console.log('Navigating to team session page');
+            if (window.anonymousSession?.token) {
+                window.location.href = `/team/${window.anonymousSession.token}`;
+            } else {
+                console.error('No session token available');
+            }
             
             return true;
         } else {
@@ -979,9 +988,12 @@ async function restoreSession() {
             // If user is both commissioner and has a team, prioritize team view
             // (they can switch to commissioner mode via the button)
             if (hasTeamSession) {
-                console.log('[Session Restore] Navigating to salary cap draft page (team session)');
-                await setupSalaryCapDraft();
-                showPage('salary-cap-draft-page');
+                console.log('[Session Restore] Navigating to team session page');
+                if (window.anonymousSession?.token) {
+                    window.location.href = `/team/${window.anonymousSession.token}`;
+                } else {
+                    console.error('No session token available');
+                }
             } else if (hasCommissionerSession) {
                 console.log('[Session Restore] Navigating to commissioner page (commissioner-only session)');
                 handleCommissionerMode();
@@ -1158,14 +1170,15 @@ async function handleEnterGame() {
     gameState.currentPlayer = code;
     document.getElementById('player-name').textContent = code;
 
-    // Always go to salary cap draft page (it shows roster when locked)
-    await setupSalaryCapDraft();
-    showPage('salary-cap-draft-page');
+    // Navigate to new React-based team session page
+    if (window.anonymousSession?.token) {
+        window.location.href = `/team/${window.anonymousSession.token}`;
+    } else {
+        console.error('No session token available');
+        alert('Error navigating to team page. Please refresh.');
+    }
     
-    // Delay slightly to ensure page is fully rendered, then check for game recap
-    setTimeout(async () => {
-        await checkAndShowGameRecap();
-    }, 500);
+    // Note: Game recap now handled on team session page
 }
 
 // Handle create new game (Account-Free)

@@ -114,7 +114,7 @@ WHERE game_id = 'default';
 Set a roster lock time in the past:
 ```sql
 UPDATE games 
-SET roster_lock_time = NOW() - INTERVAL '1 hour'
+SET roster_lock_time = NOW() - INTERVAL '5 MINUTE'
 WHERE game_id = 'default';
 ```
 
