@@ -1,10 +1,16 @@
 /**
  * Salary Cap Draft System - New Slot-Based Design
  * Six slots (M1, M2, M3, W1, W2, W3) that open selection modals
+ * 
+ * NOTE: This file contains duplicate UI helper functions that also exist in lib/ui-helpers.js
+ * These duplicates should be removed when this file is converted to an ES6 module.
+ * See: lib/ui-helpers.js for the source of truth
+ * Related: Issue #82 (Extraction), PROCESS_MONOLITH_AUDIT.md
  */
 
 /**
  * Get runner image fallback based on gender
+ * DUPLICATE: See lib/ui-helpers.js
  */
 function getRunnerSvg(gender) {
     // Return image URLs for default runner avatars
@@ -16,6 +22,7 @@ function getRunnerSvg(gender) {
 
 /**
  * Helper function to generate team initials
+ * DUPLICATE: See lib/ui-helpers.js
  */
 function getTeamInitials(teamName) {
     if (!teamName) return 'T';
@@ -36,6 +43,7 @@ function getTeamInitials(teamName) {
 
 /**
  * Helper function to create SVG avatar placeholder
+ * DUPLICATE: See lib/ui-helpers.js
  */
 function createTeamAvatarSVG(teamName, size = 48) {
     const initials = getTeamInitials(teamName);

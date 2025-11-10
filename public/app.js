@@ -1,3 +1,20 @@
+/**
+ * Fantasy Marathon - Core Application Logic (Legacy Monolith)
+ * 
+ * ⚠️ TECHNICAL DEBT WARNING:
+ * This file contains duplicate UI helper functions that also exist in lib/ui-helpers.js:
+ * - getRunnerSvg() (line ~100)
+ * - getTeamInitials() (line ~3246)
+ * - createTeamAvatarSVG() (line ~3264)
+ * 
+ * These duplicates cannot be easily removed because this file is loaded as a plain
+ * script tag (not an ES6 module). They should be removed during Phase 4 modularization.
+ * 
+ * See: lib/ui-helpers.js for the source of truth
+ * See: PROCESS_MONOLITH_AUDIT.md for the extraction plan
+ * Related: Issue #82 (Componentization)
+ */
+
 // Guard: Only run this script if legacy HTML structure exists
 // This prevents errors when the new WelcomeCard React component is active
 if (typeof window !== 'undefined' && !document.getElementById('landing-page')) {
@@ -94,6 +111,7 @@ function switchGame(gameId) {
 
 /**
  * Get gender-specific runner SVG fallback for athletes without headshots
+ * DUPLICATE: See lib/ui-helpers.js
  * @param {string} gender - 'men' or 'women'
  * @returns {string} Data URI of SVG image
  */
@@ -3242,7 +3260,10 @@ function formatAthleteDetails(athlete, includePersonalBest = false) {
     return detailsParts.join(' • ');
 }
 
-// Helper function to generate team initials
+/**
+ * Helper function to generate team initials
+ * DUPLICATE: See lib/ui-helpers.js
+ */
 function getTeamInitials(teamName) {
     if (!teamName) return 'T';
     
@@ -3260,7 +3281,10 @@ function getTeamInitials(teamName) {
     return initials;
 }
 
-// Helper function to create SVG avatar placeholder
+/**
+ * Helper function to create SVG avatar placeholder
+ * DUPLICATE: See lib/ui-helpers.js
+ */
 function createTeamAvatarSVG(teamName, size = 48) {
     const initials = getTeamInitials(teamName);
     
