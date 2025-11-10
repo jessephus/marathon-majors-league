@@ -135,7 +135,31 @@ export function AppStateProvider({
   children: ReactNode; 
   initialState?: AppState;
 }) {
-  const [state, setState] = useState<AppState>(initialState);
+  const [state, setState] = useState<AppState>(() => {
+    // Initialize state with localStorage data if available
+    if (typeof window !== 'undefined') {
+      const savedCommissionerState = localStorage.getItem('commissioner_state');
+      if (savedCommissionerState) {
+        try {
+          const parsed = JSON.parse(savedCommissionerState);
+          // Check if commissioner session is still valid
+          if (parsed.expiresAt && new Date(parsed.expiresAt) > new Date()) {
+            return {
+              ...initialState,
+              commissionerState: parsed,
+            };
+          } else {
+            // Expired, remove from storage
+            localStorage.removeItem('commissioner_state');
+          }
+        } catch (e) {
+          console.error('Failed to parse commissioner state:', e);
+          localStorage.removeItem('commissioner_state');
+        }
+      }
+    }
+    return initialState;
+  });
 
   const setGameState = useCallback((updates: Partial<GameState>) => {
     setState((prev) => ({
@@ -177,10 +201,23 @@ export function AppStateProvider({
   }, []);
 
   const setCommissionerState = useCallback((updates: Partial<CommissionerState>) => {
-    setState((prev) => ({
-      ...prev,
-      commissionerState: { ...prev.commissionerState, ...updates },
-    }));
+    setState((prev) => {
+      const newCommissionerState = { ...prev.commissionerState, ...updates };
+      
+      // Persist to localStorage
+      if (typeof window !== 'undefined') {
+        if (newCommissionerState.isCommissioner) {
+          localStorage.setItem('commissioner_state', JSON.stringify(newCommissionerState));
+        } else {
+          localStorage.removeItem('commissioner_state');
+        }
+      }
+      
+      return {
+        ...prev,
+        commissionerState: newCommissionerState,
+      };
+    });
   }, []);
 
   const resetState = useCallback(() => {

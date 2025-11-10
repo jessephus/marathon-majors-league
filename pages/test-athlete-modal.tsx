@@ -221,3 +221,8 @@ export default function AthleteModalTestPage() {
     </AppStateProvider>
   );
 }
+
+// Prevent static export - this is a test page that needs runtime data
+export const getServerSideProps = () => {
+  return { props: {} };
+};
