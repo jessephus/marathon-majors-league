@@ -129,6 +129,10 @@ async function openAppropriateAthleteModal(athlete) {
     }
 }
 
+// API configuration
+const API_BASE = window.location.origin === 'null' ? '' : window.location.origin;
+const GAME_ID = localStorage.getItem('current_game_id') || 'default';
+
 // Salary cap configuration
 const SALARY_CAP_CONFIG = {
     totalCap: 30000,
@@ -136,6 +140,46 @@ const SALARY_CAP_CONFIG = {
     menPerTeam: 3,
     womenPerTeam: 3
 };
+
+/**
+ * Ensure athletes are loaded in window.gameState
+ * Uses app.js loadAthletes() if available, otherwise loads directly
+ */
+async function ensureAthletesLoaded() {
+    // Check if already loaded
+    if (window.gameState?.athletes?.men?.length > 0 && window.gameState?.athletes?.women?.length > 0) {
+        console.log('✅ Athletes already loaded');
+        return;
+    }
+    
+    // Try to use app.js loadAthletes() if available
+    if (typeof window.loadAthletes === 'function') {
+        console.log('🔄 Loading athletes via app.js...');
+        await window.loadAthletes();
+        return;
+    }
+    
+    // Load athletes directly
+    console.log('🔄 Loading athletes directly...');
+    try {
+        const response = await fetch(`${API_BASE}/api/athletes`);
+        if (!response.ok) {
+            throw new Error(`Failed to load athletes: ${response.status}`);
+        }
+        const athletes = await response.json();
+        
+        // Initialize window.gameState if it doesn't exist
+        if (!window.gameState) {
+            window.gameState = {};
+        }
+        
+        window.gameState.athletes = athletes;
+        console.log(`✅ Loaded ${athletes.men.length} men and ${athletes.women.length} women athletes`);
+    } catch (error) {
+        console.error('❌ Failed to load athletes:', error);
+        throw error;
+    }
+}
 
 // Salary cap draft state
 let salaryCapState = {
@@ -243,6 +287,9 @@ async function setupSalaryCapDraft() {
     
     const gameId = session.gameId;
     const playerCode = session.playerCode;
+    
+    // Load athletes if not already loaded
+    await ensureAthletesLoaded();
     
     // Fetch team data, check results, and get game state in parallel
     const fetchStart = performance.now();
@@ -521,8 +568,13 @@ function renderModalAthleteList() {
     
     if (!salaryCapState.currentGender) return;
     
-    // Get athletes of the current gender
-    let athletes = [...gameState.athletes[salaryCapState.currentGender]];
+    // Get athletes of the current gender from window.gameState (loaded by app.js)
+    if (!window.gameState || !window.gameState.athletes || !window.gameState.athletes[salaryCapState.currentGender]) {
+        console.error('Athletes not loaded in window.gameState');
+        return;
+    }
+    
+    let athletes = [...window.gameState.athletes[salaryCapState.currentGender]];
     
     // Sort athletes
     athletes.sort((a, b) => {
@@ -1042,8 +1094,8 @@ async function handleSubmitSalaryCapTeam() {
         salaryCapState.isLocked = true;
         
         // Update local state
-        gameState.teams[session.teamName] = team;
-        gameState.draftComplete = true;
+        salaryCapState.gameState.teams[session.teamName] = team;
+        salaryCapState.gameState.draftComplete = true;
         
         // Show subtle success message
         showSuccessNotification('✅ Roster saved successfully');
