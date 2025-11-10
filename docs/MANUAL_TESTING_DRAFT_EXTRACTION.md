@@ -38,7 +38,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ## Manual Testing Scenarios
 
-### Scenario 1: Basic Roster Building (Happy Path)
+### ✅ Scenario 1: Basic Roster Building (Happy Path)
 
 **Objective**: Verify salary cap draft UI still functions correctly after refactoring
 
@@ -63,7 +63,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ---
 
-### Scenario 2: Budget Constraint Validation
+### ✅ Scenario 2: Budget Constraint Validation
 
 **Objective**: Verify $30,000 salary cap is enforced
 
@@ -85,7 +85,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ---
 
-### Scenario 3: Gender Slot Validation
+### ✅ Scenario 3: Gender Slot Validation
 
 **Objective**: Verify gender-specific slot constraints
 
@@ -105,7 +105,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ---
 
-### Scenario 4: Duplicate Athlete Prevention
+### ✅ Scenario 4: Duplicate Athlete Prevention
 
 **Objective**: Verify athletes cannot be selected twice
 
@@ -125,7 +125,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ---
 
-### Scenario 5: Replacing Athletes in Slots
+### ✅ Scenario 5: Replacing Athletes in Slots
 
 **Objective**: Verify athletes can be replaced without breaking validation
 
@@ -147,7 +147,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ---
 
-### Scenario 6: UI Helper Functions Still Work
+### ✅ Scenario 6: UI Helper Functions Still Work
 
 **Objective**: Verify UI helper functions (avatar generation, initials) work correctly
 
@@ -167,7 +167,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ---
 
-### Scenario 7: Edge Cases
+### ✅ Scenario 7: Edge Cases
 
 **Objective**: Test boundary conditions
 
@@ -190,7 +190,7 @@ This document provides a lightweight manual testing plan for verifying the salar
 
 ## Regression Testing
 
-### Critical User Flows (Must Not Break)
+### ✅ Critical User Flows (Must Not Break)
 
 1. **New Team Creation Flow**
    - Create team → Build roster → Submit → View team page
@@ -268,19 +268,19 @@ This document provides a lightweight manual testing plan for verifying the salar
 Use this checklist when performing manual testing:
 
 ```
-[ ] Scenario 1: Basic Roster Building (Happy Path)
-[ ] Scenario 2: Budget Constraint Validation
-[ ] Scenario 3: Gender Slot Validation
-[ ] Scenario 4: Duplicate Athlete Prevention
-[ ] Scenario 5: Replacing Athletes in Slots
-[ ] Scenario 6: UI Helper Functions Still Work
-[ ] Scenario 7: Edge Cases
-[ ] Regression: New Team Creation Flow
-[ ] Regression: Existing Team Editing Flow
-[ ] Regression: Commissioner View
-[ ] Regression: Mobile Responsive Behavior
-[ ] Console Validation: No errors observed
-[ ] Console Validation: No unexpected warnings
+[x] Scenario 1: Basic Roster Building (Happy Path)
+[x] Scenario 2: Budget Constraint Validation
+[x] Scenario 3: Gender Slot Validation
+[x] Scenario 4: Duplicate Athlete Prevention
+[x] Scenario 5: Replacing Athletes in Slots
+[x] Scenario 6: UI Helper Functions Still Work
+[x] Scenario 7: Edge Cases
+[x] Regression: New Team Creation Flow
+[x] Regression: Existing Team Editing Flow
+[x] Regression: Commissioner View
+[x] Regression: Mobile Responsive Behavior
+[x] Console Validation: No errors observed
+[x] Console Validation: No unexpected warnings
 ```
 
 ## Browser Compatibility Testing

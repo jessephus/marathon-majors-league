@@ -110,14 +110,6 @@ function TeamSessionPageContent({
 
   // Initialize state from SSR props
   useEffect(() => {
-    // Debug: Log roster lock time data
-    console.log('[Team Session] Roster Lock Debug:', {
-      rosterLockTime: gameStateData.rosterLockTime,
-      resultsFinalized: gameStateData.resultsFinalized,
-      locked: isRosterLocked(gameStateData.rosterLockTime) || gameStateData.resultsFinalized,
-      gameId: sessionData.session?.gameId
-    });
-    
     if (sessionData.valid && sessionData.session) {
       setSessionState({
         token: sessionToken,
@@ -176,20 +168,8 @@ function TeamSessionPageContent({
   useEffect(() => {
     const totalAthletes = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
     
-    console.log('[Team Session] Auto-load check:', {
-      totalAthletes,
-      hasExistingRoster: !!existingRoster,
-      fullAthletesLoaded,
-      loadingFullAthletes,
-      athletesDataMen: athletesData.men?.length,
-      athletesDataWomen: athletesData.women?.length,
-      gameStateMen: gameState.athletes?.men?.length,
-      gameStateWomen: gameState.athletes?.women?.length
-    });
-    
     // If SSR passed empty arrays (new team, no roster yet), load all athletes
     if (totalAthletes === 0 && !existingRoster && !fullAthletesLoaded && !loadingFullAthletes) {
-      console.log('[Team Session] Auto-loading athletes for new team');
       loadFullAthleteList();
     }
   }, [athletesData, existingRoster, fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList, gameState.athletes]);
@@ -333,14 +313,6 @@ function TeamSessionPageContent({
   }));
   const totalAthletes = menAthletes.length + womenAthletes.length;
   
-  console.log('[Team Session] Athletes for modal:', {
-    menCount: menAthletes.length,
-    womenCount: womenAthletes.length,
-    total: totalAthletes,
-    fromGameState: !!(gameState.athletes?.men || gameState.athletes?.women),
-    fromProps: !!(athletesData.men || athletesData.women)
-  });
-  
   // Calculate total spent from roster
   const totalSpent = roster.reduce((sum, slot) => sum + (slot.salary || 0), 0);
   
@@ -374,9 +346,12 @@ function TeamSessionPageContent({
         <main className="page active" id="salary-cap-draft-page">
           {/* Team Header - Legacy Style */}
           <div className="team-header-orange">
-            <div className="team-avatar-wrapper">
-              {createTeamAvatarSVG(sessionData.session?.displayName || sessionState.teamName || 'My Team', 48)}
-            </div>
+            <div 
+              className="team-avatar-wrapper"
+              dangerouslySetInnerHTML={{ 
+                __html: createTeamAvatarSVG(sessionData.session?.displayName || sessionState.teamName || 'My Team', 48) 
+              }}
+            />
             <div className="team-header-info">
               <div className="team-label">TEAM</div>
               <h2 className="team-name-heading">{sessionData.session?.displayName || sessionState.teamName || 'My Team'}</h2>

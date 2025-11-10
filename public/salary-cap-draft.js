@@ -44,6 +44,7 @@ function getTeamInitials(teamName) {
 /**
  * Helper function to create SVG avatar placeholder
  * DUPLICATE: See lib/ui-helpers.js
+ * UPDATED: Now returns HTML string for SSR compatibility
  */
 function createTeamAvatarSVG(teamName, size = 48) {
     const initials = getTeamInitials(teamName);
@@ -62,38 +63,33 @@ function createTeamAvatarSVG(teamName, size = 48) {
     const saturation = 65;
     const lightness = 55;
     
-    const svgNS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNS, "svg");
-    svg.setAttribute("width", size);
-    svg.setAttribute("height", size);
-    svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
-    svg.style.borderRadius = "50%";
-    svg.style.flexShrink = "0";
-    svg.style.border = "3px solid white";
-    svg.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-    
-    // Background circle
-    const circle = document.createElementNS(svgNS, "circle");
-    circle.setAttribute("cx", size / 2);
-    circle.setAttribute("cy", size / 2);
-    circle.setAttribute("r", size / 2);
-    circle.setAttribute("fill", `hsl(${hue}, ${saturation}%, ${lightness}%)`);
-    svg.appendChild(circle);
-    
-    // Text (initials)
-    const text = document.createElementNS(svgNS, "text");
-    text.setAttribute("x", "50%");
-    text.setAttribute("y", "50%");
-    text.setAttribute("dominant-baseline", "middle");
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("fill", "white");
-    text.setAttribute("font-size", size * 0.4);
-    text.setAttribute("font-weight", "bold");
-    text.setAttribute("font-family", "system-ui, -apple-system, sans-serif");
-    text.textContent = initials;
-    svg.appendChild(text);
-    
-    return svg;
+    // Return HTML string instead of DOM element for SSR compatibility
+    return `
+    <svg 
+      width="${size}" 
+      height="${size}" 
+      viewBox="0 0 ${size} ${size}"
+      style="border-radius: 50%; flex-shrink: 0; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle 
+        cx="${size / 2}" 
+        cy="${size / 2}" 
+        r="${size / 2}" 
+        fill="hsl(${hue}, ${saturation}%, ${lightness}%)"
+      />
+      <text 
+        x="50%" 
+        y="50%" 
+        dominant-baseline="middle" 
+        text-anchor="middle" 
+        fill="white" 
+        font-size="${size * 0.4}" 
+        font-weight="bold" 
+        font-family="system-ui, -apple-system, sans-serif"
+      >${initials}</text>
+    </svg>
+  `.trim();
 }
 
 /**
@@ -945,9 +941,9 @@ function updateTeamHeader(teamName) {
         avatarContainer.innerHTML = '';
         
         // Create and append SVG avatar
-        const avatarSvg = createTeamAvatarSVG(teamName, 48);
-        avatarSvg.style.border = 'none';  // Remove border since SVG is already circular
-        avatarContainer.appendChild(avatarSvg);
+        // Note: createTeamAvatarSVG now returns HTML string for SSR compatibility
+        const avatarSvgHtml = createTeamAvatarSVG(teamName, 48);
+        avatarContainer.innerHTML = avatarSvgHtml;
     }
 }
 
