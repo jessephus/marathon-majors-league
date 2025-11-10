@@ -15,8 +15,6 @@ import {
   isAthleteInRoster,
   findAvailableSlot,
   DEFAULT_BUDGET,
-  REQUIRED_SLOTS,
-  SLOT_CONFIG,
 } from "../lib/budget-utils.js";
 
 function assert(condition, message) {

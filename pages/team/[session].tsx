@@ -557,8 +557,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   try {
     // Verify session token
+    const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'https';
     const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
+      ? `${protocol}://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000';
     
     const sessionResponse = await fetch(
@@ -656,7 +657,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       props: {
         sessionToken,
         sessionData,
-        athletesData, // Now only 6 athletes instead of 158+
+        athletesData, // SSR optimization: 6 athletes if roster exists, empty if no roster (client fetches all on demand)
         gameStateData: {
           rosterLockTime: gameStateData.rosterLockTime || null,
           resultsFinalized: gameStateData.resultsFinalized || false,

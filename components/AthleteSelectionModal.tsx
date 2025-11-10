@@ -184,7 +184,7 @@ export default function AthleteSelectionModal({
       <div className="modal-overlay" onClick={handleClose} style={{ display: 'block', zIndex: 10000 }}></div>
       
       {/* Selection Modal (slides in from right, full screen height) */}
-      <div className={`selection-modal ${isOpen && !isClosing ? 'active' : ''}`} id="athlete-selection-modal" style={{ zIndex: 10001 }}>
+      <div className={`selection-modal ${!isClosing ? 'active' : ''}`} id="athlete-selection-modal" style={{ zIndex: 10001 }}>
         {/* Modal Header */}
         <div className="modal-header">
           <button className="modal-back-btn" onClick={handleClose} aria-label="Back">
@@ -253,7 +253,7 @@ export default function AthleteSelectionModal({
             </div>
           ) : (
             sortedAthletes.map((athlete) => {
-              const { canSelect, reason } = canSelectAthlete(athlete);
+              const { canSelect } = canSelectAthlete(athlete);
               const isInRoster = isAthleteInRoster(currentRoster, athlete.id);
               const isInCurrentSlot = currentSlotAthlete?.athleteId === athlete.id;
               
