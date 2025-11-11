@@ -292,39 +292,16 @@ function LeaderboardPageContent({
                 ) : !standings || (!standings.standings || standings.standings.length === 0) ? (
                   <p>No teams have submitted rosters yet. Be the first to create a team!</p>
                 ) : (
-                  <div style={{ maxWidth: '600px', margin: '0 auto', padding: '0 20px 20px' }}>
-                    {/* Show info message when no race results yet */}
-                    {!standings.hasResults && (
-                      <div className="info-banner" style={{
-                        background: 'white',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        marginBottom: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                        border: '2px solid #2C39A2',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px'
-                      }}>
-                        <span style={{ fontSize: '1.5rem', flexShrink: 0 }}>🏁</span>
-                        <div style={{ flex: 1 }}>
-                          <strong style={{ display: 'block', marginBottom: '4px', color: '#2C39A2' }}>Pre-Race Standings</strong>
-                          <span style={{ fontSize: '0.9rem', color: '#666' }}>
-                            The race hasn't started yet. Teams will earn points once results are entered.
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    <LeaderboardTable
-                      standings={sortedStandings}
-                      currentPlayerCode={currentPlayerCode}
-                      isTemporary={standings?.isTemporary || false}
-                      hasFinishTimes={standings?.hasFinishTimes || false}
-                      projectionInfo={standings?.projectionInfo || null}
-                      resultsFinalized={gameState.resultsFinalized}
-                      onPlayerClick={handlePlayerClick}
-                    />
-                  </div>
+                  <LeaderboardTable
+                    standings={sortedStandings}
+                    currentPlayerCode={currentPlayerCode}
+                    isTemporary={standings?.isTemporary || false}
+                    hasFinishTimes={standings?.hasFinishTimes || false}
+                    hasResults={standings?.hasResults}
+                    projectionInfo={standings?.projectionInfo || null}
+                    resultsFinalized={gameState.resultsFinalized}
+                    onPlayerClick={handlePlayerClick}
+                  />
                 )}
               </div>
             </div>

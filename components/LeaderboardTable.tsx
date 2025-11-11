@@ -20,6 +20,7 @@ interface LeaderboardTableProps {
   currentPlayerCode: string | null;
   isTemporary?: boolean;
   hasFinishTimes?: boolean;
+  hasResults?: boolean;
   projectionInfo?: {
     mostCommonSplit: string;
   } | null;
@@ -32,6 +33,7 @@ export default function LeaderboardTable({
   currentPlayerCode,
   isTemporary = false,
   hasFinishTimes = false,
+  hasResults = false,
   projectionInfo = null,
   resultsFinalized = false,
   onPlayerClick,
@@ -138,9 +140,23 @@ export default function LeaderboardTable({
 
   // Determine banner state
   const raceFinishedNotFinalized = hasFinishTimes && !resultsFinalized && standings.length > 0;
+  const preRaceState = !hasResults && standings.length > 0;
 
   return (
     <div className="leaderboard-container">
+      {/* Pre-race banner */}
+      {preRaceState && (
+        <div className="temporary-scores-banner" style={{ background: 'linear-gradient(135deg, #2C39A2 0%, #1e2870 100%)', boxShadow: '0 3px 12px rgba(44, 57, 162, 0.3)' }}>
+          <span className="banner-icon">🏁</span>
+          <div className="banner-content">
+            <strong>Pre-Race Standings</strong>
+            <span className="banner-detail">
+              The race hasn't started yet. Teams will earn points once results are entered.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Banners for temporary scores or manual review */}
       {raceFinishedNotFinalized && (
         <div className="temporary-scores-banner review-state">
