@@ -13,6 +13,7 @@ import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
+import { apiClient } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import AthleteModal from '@/components/AthleteModal';
@@ -93,13 +94,15 @@ function LeaderboardPageContent({
       setLoading(true);
       setError(null);
 
-      // Fetch standings, results, and game state in parallel
-      const [standingsResponse, resultsResponse, gameStateResponse] = await Promise.all([
-        fetch(`/api/standings?gameId=${gameId}`),
-        fetch(`/api/results?gameId=${gameId}`),
-        fetch(`/api/game-state?gameId=${gameId}`)
+      // Fetch standings, results, and game state in parallel using API client
+      // Note: standings endpoint doesn't have an API client method yet, keep raw fetch
+      const [standingsResponse, resultsData, gameStateData] = await Promise.all([
+        fetch(`/api/standings?gameId=${gameId}`), // TODO: Add to API client
+        apiClient.results.fetch(gameId),
+        apiClient.gameState.load(gameId)
       ]);
 
+      // Handle standings response
       if (!standingsResponse.ok) {
         const errorText = await standingsResponse.text();
         console.error('❌ Standings API error:', standingsResponse.status, errorText);
@@ -111,18 +114,10 @@ function LeaderboardPageContent({
       console.log('📊 Standings length:', standingsData.standings?.length || 0);
       setStandings(standingsData);
 
-      if (!resultsResponse.ok) {
-        throw new Error('Failed to fetch results');
-      }
-      const resultsData = await resultsResponse.json();
+      // Results and game state already fetched via API client
       setResults(resultsData);
 
-      // Get game state for resultsFinalized flag
-      let isFinalized = false;
-      if (gameStateResponse.ok) {
-        const gameStateData = await gameStateResponse.json();
-        isFinalized = gameStateData.resultsFinalized || false;
-      }
+      const isFinalized = gameStateData.resultsFinalized || false;
 
       setLastUpdate(Date.now());
       setGameState({ 

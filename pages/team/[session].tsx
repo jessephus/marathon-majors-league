@@ -145,10 +145,7 @@ function TeamSessionPageContent({
     
     setLoadingFullAthletes(true);
     try {
-      const response = await fetch('/api/athletes?confirmedOnly=false');
-      if (!response.ok) throw new Error('Failed to fetch athletes');
-      
-      const athletes = await response.json();
+      const athletes = await apiClient.athletes.list({ confirmedOnly: false });
       
       // Update game state with full athlete list
       setGameState({

@@ -111,26 +111,24 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
       if (!commissionerState.isCommissioner) return;
       
       try {
-        // Fetch team count
-        const teamsResponse = await fetch(`/api/salary-cap-draft?gameId=${gameState.gameId}`);
-        const teamsData = await teamsResponse.json();
+        // Fetch team count, confirmed athletes, game state, and results in parallel using API client
+        const [teamsData, athletesData, gameStateData, resultsData] = await Promise.all([
+          apiClient.salaryCapDraft.getTeam(gameState.gameId),
+          apiClient.athletes.list({ confirmedOnly: true }),
+          apiClient.gameState.load(gameState.gameId),
+          apiClient.results.fetch(gameState.gameId)
+        ]);
+        
+        // Calculate team count
         const teams = Object.keys(teamsData).filter(key => teamsData[key]?.hasSubmittedRoster);
         setTeamCount(teams.length);
         
-        // Fetch confirmed athletes count
-        const athletesResponse = await fetch('/api/athletes?confirmedOnly=true');
-        const athletesData = await athletesResponse.json();
+        // Calculate confirmed athletes count
         const totalConfirmed = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
         setConfirmedAthletesCount(totalConfirmed);
         
-        // Fetch game state for roster lock time
-        const gameStateResponse = await fetch(`/api/game-state?gameId=${gameState.gameId}`);
-        const gameStateData = await gameStateResponse.json();
+        // Set roster lock time
         setRosterLockTime(gameStateData.rosterLockTime || null);
-        
-        // Fetch results to determine status
-        const resultsResponse = await fetch(`/api/results?gameId=${gameState.gameId}`);
-        const resultsData = await resultsResponse.json();
         
         // Determine results status
         if (gameStateData.resultsFinalized) {
