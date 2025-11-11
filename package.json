@@ -22,7 +22,8 @@
     "test:performance": "node tests/performance-benchmarks.test.js",
     "test:legacy": "node tests/legacy-regression.test.js",
     "test:quality": "node scripts/validate-test-quality.js",
-    "test:verify": "node scripts/verify-tests-catch-bugs.js"
+    "test:verify": "node scripts/verify-tests-catch-bugs.js",
+    "test:draft": "node src/features/draft/__tests__/validation.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

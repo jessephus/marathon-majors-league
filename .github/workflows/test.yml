@@ -44,6 +44,12 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      # Draft Feature Tests (no server required)
+      - name: Run draft validation tests
+        id: test-draft
+        run: npm run test:draft
+        continue-on-error: true
+      
       - name: Build application
         run: npm run build
         env:
@@ -172,6 +178,7 @@ jobs:
               
               // Get individual test step results
               const testResults = {
+                'Draft Validation Tests': '${{ steps.test-draft.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
@@ -275,6 +282,12 @@ jobs:
         if: always()
         run: |
           echo "Checking test results..."
+          
+          # Check draft validation tests (run early, no server required)
+          if [ "${{ steps.test-draft.outcome }}" != "success" ]; then
+            echo "❌ Draft validation tests failed"
+            TESTS_FAILED=true
+          fi
           
           # Check each test outcome
           if [ "${{ steps.test-api.outcome }}" != "success" ]; then
