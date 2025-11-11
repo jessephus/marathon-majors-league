@@ -2,6 +2,7 @@
  * Team Session SSR Integration Tests
  * 
  * Tests SSR data fetching, roster lock logic, and component integration
+ * 
  */
 
 import { isRosterLocked, getTimeUntilLock, formatLockTime, validateRoster } from '../lib/budget-utils.js';

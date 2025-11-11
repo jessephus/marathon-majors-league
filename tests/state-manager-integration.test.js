@@ -2,6 +2,7 @@
  * Integration Tests for GameStateManager
  * 
  * Tests event-driven updates, TTL expiration behavior, and state consistency.
+ * 
  */
 
 import { 

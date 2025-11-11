@@ -5,6 +5,7 @@
  * - Retry logic with exponential backoff
  * - Error handling and classification
  * - Cache configuration
+ *
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
