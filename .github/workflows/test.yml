@@ -58,6 +58,12 @@ jobs:
         run: npm run test:state:integration
         continue-on-error: true
       
+      # Draft Feature Tests (no server required)
+      - name: Run draft validation tests
+        id: test-draft
+        run: npm run test:draft
+        continue-on-error: true
+      
       - name: Build application
         run: npm run build
         env:
@@ -188,6 +194,7 @@ jobs:
               const testResults = {
                 'State Manager Unit Tests': '${{ steps.test-state-unit.outcome }}',
                 'State Manager Integration Tests': '${{ steps.test-state-integration.outcome }}',
+                'Draft Validation Tests': '${{ steps.test-draft.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
@@ -300,6 +307,12 @@ jobs:
           
           if [ "${{ steps.test-state-integration.outcome }}" != "success" ]; then
             echo "❌ State manager integration tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check draft validation tests (run early, no server required)
+          if [ "${{ steps.test-draft.outcome }}" != "success" ]; then
+            echo "❌ Draft validation tests failed"
             TESTS_FAILED=true
           fi
           

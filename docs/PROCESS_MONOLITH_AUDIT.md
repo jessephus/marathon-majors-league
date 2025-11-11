@@ -894,7 +894,7 @@ if (anonymousSession.token) {
 
 #### 1.2 UI Utility Functions Module
 
-**Status:** ✅ **COMPLETED** (November 9, 2025)
+**Status:** ✅ **COMPLETED** (November 9-10, 2025)
 
 **Target:** `lib/ui-helpers.tsx` (262 lines)
 
@@ -909,11 +909,12 @@ if (anonymousSession.token) {
 
 **Implementation Details:**
 - Created `lib/ui-helpers.tsx` with TypeScript + JSDoc
+- Created `lib/ui-helpers.js` as vanilla JS bridge for legacy files
 - Provides both React (JSX) and DOM versions for different contexts
 - Eliminated code duplication from 3 locations:
   - ✅ `pages/team/[session].tsx` - Migrated (74 lines eliminated)
-  - ⏳ `public/app.js` - Pending (vanilla JS integration challenge)
-  - ⏳ `public/salary-cap-draft.js` - Pending (vanilla JS integration challenge)
+  - ⚠️ `public/app.js` - **Documented duplicates** (lines ~100, ~3246, ~3264)
+  - ⚠️ `public/salary-cap-draft.js` - **Documented duplicates** (lines ~15, ~27, ~47)
 
 **Benefits Achieved:**
 - ✅ Single source of truth for UI utilities
@@ -922,20 +923,86 @@ if (anonymousSession.token) {
 - ✅ Testable pure functions
 - ⚠️ Vanilla JS files (app.js, salary-cap-draft.js) still have duplicates due to ES6 module limitation
 
-**Vanilla JS Migration Strategy:**
-- **Decision:** Keep legacy duplicates in app.js/salary-cap-draft.js for now
-- **Rationale:** Files aren't ES6 modules, can't use import statements
-- **Future Plan:** Address during Phase 4 when converting to React components
-- **Options:** (1) Compile to JS, (2) Convert files to modules, (3) Hybrid window globals
+**Technical Debt:**
+- Legacy files loaded as plain `<script>` tags, not ES6 modules
+- Cannot use `import` statements without refactoring
+- Duplicates **documented with comments** referencing source of truth
+- See: `docs/TECH_UI_HELPER_DUPLICATION.md` for full analysis and resolution plan
 
-**Effort:** 🟢 **Low** (3 hours actual)
+**Vanilla JS Migration Strategy:**
+- **Decision:** Keep documented duplicates in app.js/salary-cap-draft.js for now
+- **Rationale:** Files aren't ES6 modules, can't use import statements safely
+- **Future Plan:** Address during Phase 4 when converting to React components
+- **Options:** (1) Convert to modules, (2) Convert files to React, (3) Build step
+
+**Effort:** 🟢 **Low** (4 hours actual - including documentation)
 
 **Related Work:**
 - See "Shared Footer Component" section below for Phase 3 → Phase 4 integration pattern
+- See `docs/TECH_UI_HELPER_DUPLICATION.md` for duplication analysis
 
 ---
 
-#### 1.3 API Client Module
+#### 1.3 Draft Validation Module
+
+**Status:** ✅ **COMPLETED** (November 10, 2025)
+
+**Target:** `src/features/draft/validation.js` (Pure validation functions)
+
+**Functions Extracted:**
+- ✅ `validateAllSlotsFilled()` - Check all 6 slots filled
+- ✅ `validateMenSlots()` - Validate 3 men's slots (3M requirement)
+- ✅ `validateWomenSlots()` - Validate 3 women's slots (3W requirement)
+- ✅ `calculateTotalSpent()` - Sum athlete salaries
+- ✅ `validateBudget()` - Check $30,000 cap constraint
+- ✅ `validateNoDuplicates()` - No duplicate athletes
+- ✅ `validateSlotGenders()` - Gender matches slot type
+- ✅ `validateRoster()` - Comprehensive validation
+- ✅ `canAddAthleteToSlot()` - Check if athlete can be added
+
+**State Machine:** `src/features/draft/state-machine.js`
+- ✅ `createInitialState()` - Initialize draft state
+- ✅ `addAthleteToSlot()` - Add athlete to roster
+- ✅ `removeAthleteFromSlot()` - Remove athlete from roster
+- ✅ `canEditRoster()` / `canSubmitRoster()` - State checks
+- ✅ `getRosterSummary()` - Current status summary
+
+**Testing:**
+- ✅ 30 pure unit tests (all passing)
+- ✅ No DOM coupling
+- ✅ Independent test execution
+
+**Test Coverage:**
+- ✅ Empty roster validation
+- ✅ 3M+3W requirement validation
+- ✅ Budget calculation ($30,000 cap)
+- ✅ Over budget detection
+- ✅ Duplicate athlete detection
+- ✅ Gender slot validation
+- ✅ Edge cases (default salaries, custom budgets)
+
+**Benefits:**
+- ✅ Pure functions, no side effects
+- ✅ Easy to test (30 tests, 100% passing)
+- ✅ Reusable in React, API routes, or vanilla JS
+- ✅ No breaking changes
+- ✅ Clean separation from UI
+- ✅ No direct references to legacy draft JS
+
+**Integration:**
+- Can be imported by React components, API endpoints, or future modules
+- Complements existing `lib/budget-utils.js`
+- Ready for Phase 4 component extraction
+
+**Documentation:**
+- `src/features/draft/README.md` - Full API reference
+- Tests demonstrate all use cases
+
+**Effort:** 🟢 **Low** (4 hours actual)
+
+---
+
+#### 1.4 API Client Module
 
 **Target:** `lib/api-client.js`
 
