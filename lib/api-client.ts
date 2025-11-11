@@ -1,7 +1,12 @@
 /**
  * API Client
  * 
- * Centralized API communication layer for the new Next.js page structure.
+ * Centralized API communication layer with:
+ * - Unified error handling
+ * - Exponential backoff retry for transient network errors
+ * - Caching strategy with stale-while-revalidate
+ * - Consistent cache-control headers
+ * 
  * This replaces scattered fetch() calls throughout app.js and salary-cap-draft.js
  * during the migration.
  */
@@ -10,10 +15,78 @@ const API_BASE = typeof window !== 'undefined'
   ? (window.location.origin === 'null' ? '' : window.location.origin)
   : '';
 
-// Helper function for making API requests
+/**
+ * Cache configuration per endpoint type
+ */
+interface CacheConfig {
+  maxAge: number; // Browser cache duration in seconds
+  sMaxAge: number; // CDN cache duration in seconds
+  staleWhileRevalidate: number; // Stale-while-revalidate duration
+}
+
+const CACHE_CONFIGS: Record<string, CacheConfig> = {
+  athletes: { maxAge: 3600, sMaxAge: 7200, staleWhileRevalidate: 86400 }, // 1h/2h/24h - athletes change infrequently
+  gameState: { maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 }, // 30s/60s/5m - game state changes moderately
+  results: { maxAge: 15, sMaxAge: 30, staleWhileRevalidate: 120 }, // 15s/30s/2m - results update frequently during race
+  default: { maxAge: 60, sMaxAge: 120, staleWhileRevalidate: 300 }, // 1m/2m/5m - default for other endpoints
+};
+
+/**
+ * Exponential backoff configuration
+ */
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelayMs: 300,
+  maxDelayMs: 5000,
+  backoffMultiplier: 2,
+  retryableStatusCodes: [408, 429, 500, 502, 503, 504], // Request Timeout, Too Many Requests, Server Errors
+};
+
+/**
+ * Check if an error is transient and should be retried
+ */
+function isTransientError(error: any, statusCode?: number): boolean {
+  // Network errors (no status code)
+  if (!statusCode && (error.name === 'TypeError' || error.message?.includes('fetch failed'))) {
+    return true;
+  }
+  
+  // Specific HTTP status codes that warrant retry
+  if (statusCode && RETRY_CONFIG.retryableStatusCodes.includes(statusCode)) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Sleep helper for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Calculate exponential backoff delay with jitter
+ */
+function getRetryDelay(attempt: number): number {
+  const exponentialDelay = Math.min(
+    RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt),
+    RETRY_CONFIG.maxDelayMs
+  );
+  
+  // Add jitter (±25% randomization) to prevent thundering herd
+  const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);
+  return Math.floor(exponentialDelay + jitter);
+}
+
+/**
+ * Enhanced API request with retry logic and error handling
+ */
 async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retryAttempt = 0
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   
@@ -24,15 +97,67 @@ async function apiRequest<T>(
     },
   };
 
-  const response = await fetch(url, { ...defaultOptions, ...options });
+  try {
+    const response = await fetch(url, { ...defaultOptions, ...options });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(errorData.error || `API error: ${response.statusText}`);
+    if (!response.ok) {
+      // Check if we should retry
+      if (isTransientError(null, response.status) && retryAttempt < RETRY_CONFIG.maxRetries) {
+        const delay = getRetryDelay(retryAttempt);
+        console.warn(`API request failed (${response.status}), retrying in ${delay}ms (attempt ${retryAttempt + 1}/${RETRY_CONFIG.maxRetries})`);
+        await sleep(delay);
+        return apiRequest<T>(endpoint, options, retryAttempt + 1);
+      }
+
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || `API error: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error: any) {
+    // Handle network errors with retry
+    if (isTransientError(error) && retryAttempt < RETRY_CONFIG.maxRetries) {
+      const delay = getRetryDelay(retryAttempt);
+      console.warn(`Network error, retrying in ${delay}ms (attempt ${retryAttempt + 1}/${RETRY_CONFIG.maxRetries}):`, error.message);
+      await sleep(delay);
+      return apiRequest<T>(endpoint, options, retryAttempt + 1);
+    }
+    
+    // Final error - throw with context
+    throw new Error(`API request failed: ${error.message}`);
   }
-
-  return response.json();
 }
+
+/**
+ * Cache utilities for server-side cache header management
+ * These should be used in API route handlers
+ */
+export const cacheUtils = {
+  /**
+   * Get cache configuration for a specific endpoint type
+   */
+  getCacheConfig(type: 'athletes' | 'gameState' | 'results' | 'default'): CacheConfig {
+    return CACHE_CONFIGS[type] || CACHE_CONFIGS.default;
+  },
+
+  /**
+   * Generate Cache-Control header string
+   */
+  getCacheControlHeader(config: CacheConfig): string {
+    return `public, max-age=${config.maxAge}, s-maxage=${config.sMaxAge}, stale-while-revalidate=${config.staleWhileRevalidate}`;
+  },
+
+  /**
+   * Set cache headers on a Next.js API response
+   * Usage in API routes: cacheUtils.setCacheHeaders(res, 'athletes')
+   */
+  setCacheHeaders(res: any, type: 'athletes' | 'gameState' | 'results' | 'default' = 'default'): void {
+    const config = this.getCacheConfig(type);
+    res.setHeader('Cache-Control', this.getCacheControlHeader(config));
+    res.setHeader('CDN-Cache-Control', `max-age=${config.sMaxAge}`);
+    res.setHeader('Vary', 'Accept-Encoding');
+  },
+};
 
 // Athlete API
 export const athleteApi = {

@@ -48,6 +48,12 @@ export default async function handler(req, res) {
         sessionInfo = await verifyAnonymousSession(sessionToken);
       }
 
+      // Set cache headers for game state (moderate caching with stale-while-revalidate)
+      // Game state changes moderately during roster lock/draft/finalization
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300');
+      res.setHeader('CDN-Cache-Control', 'max-age=60');
+      res.setHeader('Vary', 'Accept-Encoding');
+
       res.status(200).json({
         players: gameState?.players || [], // ⚠️ DEPRECATED - Use /api/salary-cap-draft instead
         draftComplete: gameState?.draft_complete || false,

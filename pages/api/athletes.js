@@ -180,6 +180,12 @@ export default async function handler(req, res) {
         }
       }
       
+      // Set cache headers for athlete data (stale-while-revalidate strategy)
+      // Athletes change infrequently, so long cache with stale-while-revalidate
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=7200, stale-while-revalidate=86400');
+      res.setHeader('CDN-Cache-Control', 'max-age=7200');
+      res.setHeader('Vary', 'Accept-Encoding');
+      
       res.status(200).json(athletes);
     } else {
       res.status(405).json({ error: 'Method not allowed' });
