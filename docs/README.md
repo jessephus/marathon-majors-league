@@ -92,7 +92,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
 | **[PROCESS_ROUTING_PHASE1.md](PROCESS_ROUTING_PHASE1.md)** | Routing Phase 1 implementation summary | Understanding new page structure |
-| **[PROCESS_SSR_STRATEGY.md](PROCESS_SSR_STRATEGY.md)** | Server-side rendering strategy for Next.js migration | Understanding SSR implementation |
+| **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Comprehensive SSR strategy & standardized fetching/caching | Understanding SSR and API client patterns |
 
 ### 5️⃣ Setup & Authentication
 

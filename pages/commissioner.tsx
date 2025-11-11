@@ -42,11 +42,12 @@ const TeamsOverviewPanel = dynamic(
 
 interface CommissionerPageProps {
   isAuthenticated: boolean;
+  initialGameId?: string;
 }
 
 type ActivePanel = 'dashboard' | 'results' | 'athletes' | 'teams';
 
-function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerPageProps) {
+function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId = 'default' }: CommissionerPageProps) {
   const router = useRouter();
   const { commissionerState, setCommissionerState } = useCommissionerState();
   const { gameState, setGameState } = useGameState();
@@ -62,16 +63,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
   const [confirmedAthletesCount, setConfirmedAthletesCount] = useState(0);
   const [rosterLockTime, setRosterLockTime] = useState<string | null>(null);
   const [resultsStatus, setResultsStatus] = useState<'Pre-Race' | 'In Progress' | 'Finished' | 'Certified'>('Pre-Race');
-
-  // Initialize gameId from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedGameId = localStorage.getItem('current_game_id') || 'default';
-      if (gameState.gameId !== savedGameId) {
-        setGameState({ gameId: savedGameId });
-      }
-    }
-  }, []);
 
   // Sync SSR authentication state with React state
   // BUT skip this if user has explicitly logged out
@@ -111,32 +102,30 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
       if (!commissionerState.isCommissioner) return;
       
       try {
-        // Fetch team count
-        const teamsResponse = await fetch(`/api/salary-cap-draft?gameId=${gameState.gameId}`);
-        const teamsData = await teamsResponse.json();
+        // Fetch team count, confirmed athletes, game state, and results in parallel using API client
+        const [teamsData, athletesData, gameStateData, resultsData] = await Promise.all([
+          apiClient.salaryCapDraft.getTeam(gameState.gameId),
+          apiClient.athletes.list({ confirmedOnly: true }),
+          apiClient.gameState.load(gameState.gameId),
+          apiClient.results.fetch(gameState.gameId)
+        ]);
+        
+        // Calculate team count
         const teams = Object.keys(teamsData).filter(key => teamsData[key]?.hasSubmittedRoster);
         setTeamCount(teams.length);
         
-        // Fetch confirmed athletes count
-        const athletesResponse = await fetch('/api/athletes?confirmedOnly=true');
-        const athletesData = await athletesResponse.json();
+        // Calculate confirmed athletes count
         const totalConfirmed = (athletesData.men?.length || 0) + (athletesData.women?.length || 0);
         setConfirmedAthletesCount(totalConfirmed);
         
-        // Fetch game state for roster lock time
-        const gameStateResponse = await fetch(`/api/game-state?gameId=${gameState.gameId}`);
-        const gameStateData = await gameStateResponse.json();
-        setRosterLockTime(gameStateData.rosterLockTime || null);
-        
-        // Fetch results to determine status
-        const resultsResponse = await fetch(`/api/results?gameId=${gameState.gameId}`);
-        const resultsData = await resultsResponse.json();
+        // Set roster lock time
+        setRosterLockTime((gameStateData as any)?.rosterLockTime || null);
         
         // Determine results status
-        if (gameStateData.resultsFinalized) {
+        if ((gameStateData as any)?.resultsFinalized) {
           setResultsStatus('Certified');
         } else {
-          const resultsArray = Object.values(resultsData.results || {});
+          const resultsArray = Object.values((resultsData as any)?.results || {});
           const hasFinishTimes = resultsArray.some((r: any) => r?.finishTime);
           const hasSplits = resultsArray.some((r: any) => 
             r?.split5k || r?.split10k || r?.splitHalf || r?.split30k || r?.split35k || r?.split40k
@@ -480,7 +469,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
 
 export default function NewCommissionerPage(props: CommissionerPageProps) {
   return (
-    <AppStateProvider>
+    <AppStateProvider initialGameId={props.initialGameId}>
       <CommissionerPageContent {...props} />
     </AppStateProvider>
   );
@@ -490,6 +479,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Check commissioner authentication from cookies
   // Cookie name matches what's set in /api/auth/totp/verify.js
   const commissionerCookie = context.req.cookies.marathon_fantasy_commissioner || null;
+  
+  // Get gameId from cookie (set by game selector in app.js)
+  const gameIdCookie = context.req.cookies.current_game_id || 'default';
   
   let isAuthenticated = false;
   
@@ -507,6 +499,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     props: {
       isAuthenticated,
+      initialGameId: gameIdCookie,
     },
   };
 }

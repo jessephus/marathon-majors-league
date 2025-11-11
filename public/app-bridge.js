@@ -57,13 +57,13 @@ function switchGame(gameId) {
 function initializeGameSwitcher() {
     const gameSelect = document.getElementById('game-select');
     if (!gameSelect) {
-        console.log('[App Bridge] Game select element not found');
+        // console.log('[App Bridge] Game select element not found');
         return;
     }
 
     // Set current game in dropdown
     gameSelect.value = GAME_ID;
-    console.log('[App Bridge] Set game select to:', GAME_ID);
+    // console.log('[App Bridge] Set game select to:', GAME_ID);
 
     // Remove existing listener if any
     const newGameSelect = gameSelect.cloneNode(true);
@@ -83,7 +83,7 @@ function initializeGameSwitcher() {
         }
     });
 
-    console.log('[App Bridge] Game switcher initialized');
+    // console.log('[App Bridge] Game switcher initialized');
 }
 
 // ============================================================================
@@ -363,7 +363,7 @@ function initializeSessions() {
     if (teamSessionData) {
         try {
             anonymousSession = JSON.parse(teamSessionData);
-            console.log('[App Bridge] Loaded anonymous session:', anonymousSession);
+            // console.log('[App Bridge] Loaded anonymous session:', anonymousSession);
         } catch (error) {
             console.error('[App Bridge] Failed to parse team session:', error);
         }
@@ -374,7 +374,7 @@ function initializeSessions() {
     if (commissionerSessionData) {
         try {
             commissionerSession = JSON.parse(commissionerSessionData);
-            console.log('[App Bridge] Loaded commissioner session:', commissionerSession);
+            // console.log('[App Bridge] Loaded commissioner session:', commissionerSession);
         } catch (error) {
             console.error('[App Bridge] Failed to parse commissioner session:', error);
         }
@@ -390,7 +390,7 @@ function initializeSessions() {
             detail: { anonymousSession, commissionerSession }
         }));
         
-        console.log('[App Bridge] Dispatched sessionsUpdated event');
+        // console.log('[App Bridge] Dispatched sessionsUpdated event');
     }
 }
 
@@ -572,9 +572,9 @@ async function handleCommissionerLogout() {
  * Shows logout and copy URL buttons when user has an active session
  */
 function updateFooterButtons() {
-    console.log('[App Bridge] Called updateFooterButtons()');
-    console.log('[App Bridge] anonymousSession:', anonymousSession);
-    console.log('[App Bridge] commissionerSession:', commissionerSession);
+    // console.log('[App Bridge] Called updateFooterButtons()');
+    // console.log('[App Bridge] anonymousSession:', anonymousSession);
+    // console.log('[App Bridge] commissionerSession:', commissionerSession);
 
     // Try to find footer by ID first, then by tag name
     const footer = document.getElementById('footer') || document.querySelector('footer');
@@ -582,7 +582,7 @@ function updateFooterButtons() {
         console.warn('[App Bridge] Footer element not found');
         return;
     }
-    console.log('[App Bridge] Found footer element');
+    // console.log('[App Bridge] Found footer element');
 
     // Get or create footer-actions container
     let footerActions = footer.querySelector('.footer-actions');
@@ -590,9 +590,9 @@ function updateFooterButtons() {
         footerActions = document.createElement('div');
         footerActions.className = 'footer-actions';
         footer.appendChild(footerActions);
-        console.log('[App Bridge] Created footer-actions container');
+        // console.log('[App Bridge] Created footer-actions container');
     } else {
-        console.log('[App Bridge] Found existing footer-actions');
+        // console.log('[App Bridge] Found existing footer-actions');
     }
 
     // Update game-switcher visibility based on commissioner status
@@ -602,10 +602,10 @@ function updateFooterButtons() {
     if (gameSwitcher) {
         if (hasCommissionerSession) {
             gameSwitcher.classList.add('visible');
-            console.log('[App Bridge] Game switcher shown (commissioner logged in)');
+            // console.log('[App Bridge] Game switcher shown (commissioner logged in)');
         } else {
             gameSwitcher.classList.remove('visible');
-            console.log('[App Bridge] Game switcher hidden (not a commissioner)');
+            // console.log('[App Bridge] Game switcher hidden (not a commissioner)');
         }
     }
 
@@ -623,7 +623,7 @@ function updateFooterButtons() {
     if (hasTeamSession) {
         // Team session active (with or without commissioner session)
         // Show logout button for team and copy URL button
-        console.log('[App Bridge] Team session active - showing team logout and copy URL');
+        // console.log('[App Bridge] Team session active - showing team logout and copy URL');
 
         // Logout button (logs out team)
         const logoutBtn = document.createElement('button');
@@ -639,11 +639,11 @@ function updateFooterButtons() {
         copyUrlBtn.onclick = handleCopyUrl;
         footerActions.appendChild(copyUrlBtn);
 
-        console.log('[App Bridge] Added team logout and copy URL buttons');
+        // console.log('[App Bridge] Added team logout and copy URL buttons');
 
     } else if (hasCommissionerSession) {
         // Only commissioner session active (no team session)
-        console.log('[App Bridge] Only commissioner session active - showing commissioner logout');
+        // console.log('[App Bridge] Only commissioner session active - showing commissioner logout');
 
         // Logout button (logs out commissioner)
         const logoutBtn = document.createElement('button');

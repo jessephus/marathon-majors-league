@@ -26,7 +26,9 @@
     "test:verify": "node scripts/verify-tests-catch-bugs.js",
     "test:state": "node tests/state-manager.test.js",
     "test:state:integration": "node tests/state-manager-integration.test.js",
-    "test:draft": "node src/features/draft/__tests__/validation.test.js"
+    "test:draft": "node src/features/draft/__tests__/validation.test.js",
+    "test:api-client": "node tests/api-client.test.js",
+    "test:ssr": "node tests/ssr-integration.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

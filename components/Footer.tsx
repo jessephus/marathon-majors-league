@@ -85,8 +85,12 @@ export default function Footer({
 
     if (newGameId !== currentGameId) {
       if (confirm(`Switch to ${gameNames[newGameId] || newGameId}? This will reload the page.`)) {
-        // Update state manager and localStorage, then reload
+        // Update localStorage, cookie, and state manager, then reload
         localStorage.setItem('current_game_id', newGameId);
+        
+        // Set cookie for SSR pages (prevents hydration mismatch on reload)
+        document.cookie = `current_game_id=${newGameId}; path=/; max-age=31536000; SameSite=Lax`;
+        
         setGameState({ gameId: newGameId });
         window.location.reload();
       } else {

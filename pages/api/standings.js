@@ -259,6 +259,13 @@ export default async function handler(req, res) {
         if (submittedTeams.length > 0) {
           const standingsData = await calculateStandings(gameId);
           
+          // Set cache headers for no-results state (use moderate caching since this is stable)
+          setCacheHeaders(res, {
+            maxAge: 60,
+            sMaxAge: 120,
+            staleWhileRevalidate: 300,
+          });
+          
           res.status(200).json({
             gameId,
             standings: standingsData.standings || [],
@@ -270,6 +277,13 @@ export default async function handler(req, res) {
         }
         
         // Otherwise return empty standings
+        // Set cache headers for empty state (use moderate caching)
+        setCacheHeaders(res, {
+          maxAge: 60,
+          sMaxAge: 120,
+          staleWhileRevalidate: 300,
+        });
+        
         res.status(200).json({
           gameId,
           standings: [],
@@ -399,6 +413,13 @@ export default async function handler(req, res) {
       if (!standingsData.isTemporary) {
         await updateStandingsCache(gameId, standingsData.standings);
       }
+      
+      // Set cache headers (no caching for POST - force revalidation)
+      setCacheHeaders(res, {
+        maxAge: 0,
+        sMaxAge: 0,
+        staleWhileRevalidate: 0,
+      });
       
       res.status(200).json({
         message: 'Standings recalculated successfully',

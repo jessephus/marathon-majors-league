@@ -3,7 +3,7 @@
 **Status:** ✅ Completed  
 **Date:** November 4, 2025  
 **Related Issue:** [#82 - Componentization](https://github.com/jessephus/marathon-majors-league/issues/82)  
-**Related Docs:** [PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md), [PROCESS_SSR_STRATEGY.md](PROCESS_SSR_STRATEGY.md)
+**Related Docs:** [PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md), [TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)
 
 ---
 
@@ -50,7 +50,7 @@ Phase 1 establishes Next.js page structure with feature flags, enabling parallel
 ### ✅ Acceptance Criteria Met
 
 1. **Bundle Separation:** Each page has its own bundle (verified via `npm run build:analyze`)
-2. **SSR Stub Data:** All pages render with stub data matching `PROCESS_SSR_STRATEGY.md`
+2. **SSR Stub Data:** All pages render with stub data matching `TECH_SSR_STRATEGY.md`
 3. **No Legacy Imports:** Zero imports from `/public/app.js` or `/public/salary-cap-draft.js`
 4. **Shared Infrastructure Only:** Pages import only state provider and API client
 
@@ -208,7 +208,7 @@ pages/
 │   ├── app.js                    # Legacy monolith (unchanged)
 │   └── salary-cap-draft.js       # Legacy draft UI (unchanged)
 ├── docs/
-│   ├── PROCESS_SSR_STRATEGY.md   # SSR implementation guide
+│   ├── TECH_SSR_STRATEGY.md      # SSR implementation guide
 │   └── PROCESS_ROUTING_PHASE1.md # This file
 ├── .env.example                  # Feature flag documentation
 └── tsconfig.json                 # TypeScript config with @/* aliases
@@ -259,7 +259,7 @@ Route                  Size       First Load JS
 
 ## Known Limitations (Phase 1)
 
-1. **No actual data fetching in SSR:** Pages use stub data per PROCESS_SSR_STRATEGY.md
+1. **No actual data fetching in SSR:** Pages use stub data per TECH_SSR_STRATEGY.md
 2. **Feature flags required:** New pages hidden by default
 3. **Limited functionality:** Pages are placeholders - full UX in Phase 2
 4. **No legacy replacement:** Old pages still serve traffic
@@ -330,7 +330,7 @@ npm run dev
 
 - **Issue:** [#82 - Componentization](https://github.com/jessephus/marathon-majors-league/issues/82)
 - **Audit:** [PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)
-- **SSR Strategy:** [PROCESS_SSR_STRATEGY.md](PROCESS_SSR_STRATEGY.md)
+- **SSR Strategy:** [TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)
 - **Architecture:** [CORE_ARCHITECTURE.md](CORE_ARCHITECTURE.md)
 - **Development:** [CORE_DEVELOPMENT.md](CORE_DEVELOPMENT.md)
 
