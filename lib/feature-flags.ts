@@ -171,7 +171,16 @@ class FeatureFlagManager {
     if (typeof window !== 'undefined') {
       let sessionId = sessionStorage.getItem('feature_flag_session_id');
       if (!sessionId) {
-        sessionId = Math.random().toString(36).substring(2, 15);
+        // Use crypto.getRandomValues for secure randomness
+        // Feature flags aren't a security boundary, but we should use proper randomness
+        const array = new Uint32Array(2);
+        if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+          crypto.getRandomValues(array);
+          sessionId = Array.from(array).map(n => n.toString(36)).join('');
+        } else {
+          // Fallback for environments without crypto (shouldn't happen in browsers)
+          sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+        }
         sessionStorage.setItem('feature_flag_session_id', sessionId);
       }
       return this.simpleHash(sessionId);
