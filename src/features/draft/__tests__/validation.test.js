@@ -4,6 +4,7 @@
  * Comprehensive pure unit tests for draft validation logic.
  * Tests the 3M+3W roster requirement and budget constraints.
  * No DOM coupling - pure function testing.
+ * 
  */
 
 import {
