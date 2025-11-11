@@ -92,14 +92,8 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <meta property="twitter:title" content="Fantasy NY Marathon - Daily Fantasy Marathon League" />
         <meta property="twitter:description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
         <meta property="twitter:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
-        
-        <link rel="stylesheet" href="/style.css" />
       </Head>
 
-      {/* External scripts */}
-      <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
-      <Script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" strategy="beforeInteractive" />
-      
       {/* Always load salary-cap-draft.js */}
       <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 

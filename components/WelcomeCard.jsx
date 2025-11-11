@@ -108,13 +108,13 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
         const hasTeam = anonymousSession && anonymousSession.token;
         const hasCommissioner = commissionerSession && commissionerSession.isCommissioner;
         
-        console.log('[WelcomeCard] Session check on mount:', { 
-          hasTeam, 
-          hasCommissioner, 
-          anonymousSession, 
-          commissionerSession,
-          sessionType 
-        });
+        // console.log('[WelcomeCard] Session check on mount:', { 
+        //   hasTeam, 
+        //   hasCommissioner, 
+        //   anonymousSession, 
+        //   commissionerSession,
+        //   sessionType 
+        // });
         
         setHasTeamSession(hasTeam);
         setHasCommissionerSession(hasCommissioner);
@@ -123,8 +123,6 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
         if (hasTeam && anonymousSession.displayName) {
           setTeamName(anonymousSession.displayName);
         }
-        
-        setRenderKey(prev => prev + 1);
       }
     };
 
@@ -132,20 +130,13 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
     
     // Listen for session updates from app-bridge.js
     const handleSessionsUpdated = (event) => {
-      console.log('[WelcomeCard] Received sessionsUpdated event:', event.detail);
+      // console.log('[WelcomeCard] Received sessionsUpdated event:', event.detail);
       checkSessions();
     };
     
     window.addEventListener('sessionsUpdated', handleSessionsUpdated);
     
-    // Also check periodically in case sessions are loaded after mount
-    const interval = setInterval(checkSessions, 500);
-    
-    // Clear interval after 5 seconds
-    setTimeout(() => clearInterval(interval), 5000);
-    
     return () => {
-      clearInterval(interval);
       window.removeEventListener('sessionsUpdated', handleSessionsUpdated);
     };
   }, []); // Empty dependency array - only run once on mount
@@ -159,11 +150,11 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
       const hasTeam = anonymousSession && anonymousSession.token;
       const hasCommissioner = commissionerSession && commissionerSession.isCommissioner;
       
-      console.log('[WelcomeCard] Session check on sessionType change:', { 
-        hasTeam, 
-        hasCommissioner,
-        sessionType 
-      });
+      // console.log('[WelcomeCard] Session check on sessionType change:', { 
+      //   hasTeam, 
+      //   hasCommissioner,
+      //   sessionType 
+      // });
       
       setHasTeamSession(hasTeam);
       setHasCommissionerSession(hasCommissioner);
@@ -179,17 +170,17 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
   
   // Session-aware content rendering
   const renderContent = () => {
-    console.log('[WelcomeCard] renderContent called with:', { 
-      hasTeamSession, 
-      hasCommissionerSession, 
-      sessionType,
-      teamName,
-      renderKey
-    });
+    // console.log('[WelcomeCard] renderContent called with:', { 
+    //   hasTeamSession, 
+    //   hasCommissionerSession, 
+    //   sessionType,
+    //   teamName,
+    //   renderKey
+    // });
     
     // Handle dual-session scenario: Show both cards when both sessions are active
     if (hasTeamSession && hasCommissionerSession) {
-      console.log('[WelcomeCard] Rendering BOTH cards');
+      // console.log('[WelcomeCard] Rendering BOTH cards');
       return (
         <>
           <h2 style={criticalStyles.heading}>Welcome Back!</h2>
