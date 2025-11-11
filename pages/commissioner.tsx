@@ -64,13 +64,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
   const [rosterLockTime, setRosterLockTime] = useState<string | null>(null);
   const [resultsStatus, setResultsStatus] = useState<'Pre-Race' | 'In Progress' | 'Finished' | 'Certified'>('Pre-Race');
 
-  // Initialize gameId from SSR props on mount (prevents hydration mismatch)
-  useEffect(() => {
-    if (gameState.gameId !== initialGameId) {
-      setGameState({ gameId: initialGameId });
-    }
-  }, [initialGameId]);
-
   // Sync SSR authentication state with React state
   // BUT skip this if user has explicitly logged out
   useEffect(() => {
@@ -476,7 +469,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
 
 export default function NewCommissionerPage(props: CommissionerPageProps) {
   return (
-    <AppStateProvider>
+    <AppStateProvider initialGameId={props.initialGameId}>
       <CommissionerPageContent {...props} />
     </AppStateProvider>
   );

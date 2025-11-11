@@ -130,10 +130,12 @@ const AppStateContext = createContext<AppContextValue | undefined>(undefined);
 // Provider component
 export function AppStateProvider({ 
   children, 
-  initialState = DEFAULT_STATE 
+  initialState = DEFAULT_STATE,
+  initialGameId 
 }: { 
   children: ReactNode; 
   initialState?: AppState;
+  initialGameId?: string;
 }) {
   const [state, setState] = useState<AppState>(() => {
     // Initialize state with localStorage data if available
@@ -197,11 +199,28 @@ export function AppStateProvider({
       if (loadedCommissionerState || loadedSessionState) {
         return {
           ...initialState,
+          gameState: {
+            ...initialState.gameState,
+            // Prioritize SSR initialGameId, then localStorage, then default
+            gameId: initialGameId || initialState.gameState.gameId,
+          },
           ...(loadedCommissionerState && { commissionerState: loadedCommissionerState }),
           ...(loadedSessionState && { sessionState: loadedSessionState }),
         };
       }
     }
+    
+    // If no localStorage data but we have initialGameId from SSR, use it
+    if (initialGameId) {
+      return {
+        ...initialState,
+        gameState: {
+          ...initialState.gameState,
+          gameId: initialGameId,
+        },
+      };
+    }
+    
     return initialState;
   });
 
