@@ -1,4 +1,26 @@
-import { getDraftTeams, saveDraftTeams, updateGameState, hasCommissionerAccess } from './db';
+/**
+ * Draft API - Snake draft execution and results
+ * 
+ * ⚠️ DEPRECATED: This endpoint is part of the legacy snake draft system.
+ * 
+ * After all players submit their preference rankings, the commissioner uses this
+ * endpoint to execute the automated snake draft. The draft algorithm assigns
+ * athletes to players based on draft order and preferences, storing results
+ * in the draft_teams table.
+ * 
+ * The modern salary cap draft mode eliminates this step - players directly
+ * select their team via /api/salary-cap-draft without automated assignment.
+ * 
+ * This endpoint is maintained only for backward compatibility with existing
+ * season league games that use the ranking + snake draft workflow.
+ * 
+ * Endpoints:
+ * - GET /api/draft?gameId={id} - Get draft results
+ * - POST /api/draft?gameId={id} - Execute/save draft
+ * 
+ * @deprecated Use /api/salary-cap-draft for new games
+ */
+import { getDraftTeams, saveDraftTeams, updateGameState, hasCommissionerAccess } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

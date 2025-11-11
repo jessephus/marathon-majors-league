@@ -522,7 +522,24 @@ export async function updateGameState(gameId, updates) {
 // ============================================================================
 // RANKINGS
 // ============================================================================
+// ⚠️ DEPRECATED: Player rankings functions are part of the legacy snake draft system.
+// These functions work with the player_rankings table which stores preference rankings
+// submitted by players before the automated snake draft is executed.
+//
+// The modern salary cap draft mode does not use rankings - players directly select
+// their team via salary_cap_teams table.
+//
+// These functions are maintained only for backward compatibility with existing
+// season league games that use the ranking + snake draft workflow.
+//
+// @deprecated Use salary cap draft functions for new games
 
+/**
+ * Get player rankings for a game
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * @deprecated Use salary cap draft functions for new games
+ */
 export async function getPlayerRankings(gameId, playerCode = null) {
   let rankings;
   
@@ -568,6 +585,13 @@ export async function getPlayerRankings(gameId, playerCode = null) {
   return playerCode && grouped[playerCode] ? grouped[playerCode] : grouped;
 }
 
+/**
+ * Save player rankings to database
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * Stores player preference rankings before snake draft execution.
+ * @deprecated Use salary cap draft functions for new games
+ */
 export async function savePlayerRankings(gameId, playerCode, men, women) {
   // Delete existing rankings for this player
   await sql`
@@ -592,6 +616,12 @@ export async function savePlayerRankings(gameId, playerCode, men, women) {
   }
 }
 
+/**
+ * Clear all rankings for a game
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * @deprecated Use salary cap draft functions for new games
+ */
 export async function clearAllRankings(gameId) {
   await sql`
     DELETE FROM player_rankings
@@ -602,7 +632,24 @@ export async function clearAllRankings(gameId) {
 // ============================================================================
 // DRAFT TEAMS
 // ============================================================================
+// ⚠️ DEPRECATED: Draft teams functions are part of the legacy snake draft system.
+// These functions work with the draft_teams table which stores team assignments
+// created by the automated snake draft algorithm.
+//
+// The modern salary cap draft mode stores teams in salary_cap_teams table instead.
+//
+// These functions are maintained only for backward compatibility with existing
+// season league games that use the ranking + snake draft workflow.
+//
+// @deprecated Use salary cap draft functions for new games
 
+/**
+ * Get draft team assignments for a game
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * Retrieves teams assigned by the automated snake draft algorithm.
+ * @deprecated Use getSalaryCapTeams() for new games
+ */
 export async function getDraftTeams(gameId) {
   const teams = await sql`
     SELECT DISTINCT ON (dt.player_code, a.id)
@@ -650,6 +697,13 @@ export async function getDraftTeams(gameId) {
   return grouped;
 }
 
+/**
+ * Save draft team assignments to database
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * Stores teams created by the automated snake draft algorithm.
+ * @deprecated Use salary cap draft functions for new games
+ */
 export async function saveDraftTeams(gameId, teams) {
   // Clear existing teams for this game
   await sql`

@@ -104,6 +104,17 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE INDEX idx_games_game_id ON games(game_id);
 
 -- Player rankings table (replacing rankings.json)
+-- ⚠️ DEPRECATED: This table is part of the legacy snake draft system.
+-- In snake draft mode, players submit preference rankings for athletes before
+-- the automated draft is executed. This table stores those preference rankings.
+--
+-- The modern salary cap draft mode does not use rankings - players directly
+-- select their team within a budget constraint, stored in salary_cap_teams table.
+--
+-- This table is maintained only for backward compatibility with existing
+-- season league games that use the ranking + snake draft workflow.
+--
+-- @deprecated Use salary_cap_teams table for new games
 CREATE TABLE IF NOT EXISTS player_rankings (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,
@@ -120,6 +131,17 @@ CREATE INDEX idx_rankings_game_player ON player_rankings(game_id, player_code);
 CREATE INDEX idx_rankings_game_id ON player_rankings(game_id);
 
 -- Draft teams table (replacing teams.json)
+-- ⚠️ DEPRECATED: This table is part of the legacy snake draft system.
+-- After players submit preference rankings, the commissioner executes an automated
+-- snake draft that assigns athletes to players. This table stores those assignments.
+--
+-- The modern salary cap draft mode eliminates this step - players directly select
+-- their team, stored in salary_cap_teams table without automated assignment.
+--
+-- This table is maintained only for backward compatibility with existing
+-- season league games that use the ranking + snake draft workflow.
+--
+-- @deprecated Use salary_cap_teams table for new games
 CREATE TABLE IF NOT EXISTS draft_teams (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,

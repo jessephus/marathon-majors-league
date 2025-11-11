@@ -58,8 +58,9 @@ Neon Postgres Database:
 ├── races             (marathon events and competitions)
 ├── athlete_races     (athlete-race confirmations)
 ├── games             (game configuration and state)
-├── player_rankings   (player athlete preferences)
-├── draft_teams       (post-draft team assignments)
+├── player_rankings   (player athlete preferences) ⚠️ DEPRECATED
+├── draft_teams       (post-draft team assignments) ⚠️ DEPRECATED
+├── salary_cap_teams  (salary cap draft teams) ✅ ACTIVE
 ├── race_results      (race results and live updates)
 ├── users             (future: user accounts)
 └── user_games        (future: user-game associations)
@@ -132,8 +133,10 @@ CREATE TABLE games (
 );
 ```
 
-#### Player Rankings Table
+#### Player Rankings Table (DEPRECATED)
 ```sql
+-- ⚠️ DEPRECATED: Part of legacy snake draft system
+-- Use salary_cap_teams table for new games
 CREATE TABLE player_rankings (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,
@@ -146,8 +149,10 @@ CREATE TABLE player_rankings (
 );
 ```
 
-#### Draft Teams Table
+#### Draft Teams Table (DEPRECATED)
 ```sql
+-- ⚠️ DEPRECATED: Part of legacy snake draft system
+-- Use salary_cap_teams table for new games
 CREATE TABLE draft_teams (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,

@@ -2,7 +2,9 @@
 
 ## Repository Overview
 
-**Marathon Majors Fantasy League** (fka Fantasy NY Marathon, or Fantasy Chicago Marathon) is a web-based fantasy sports application that enables people to compete online by drafting elite marathon runners for Major Marathon. The application features real-time result tracking, automated snake draft mechanics, and a mobile-first responsive design.
+**Marathon Majors Fantasy League** (fka Fantasy NY Marathon, or Fantasy Chicago Marathon) is a web-based fantasy sports application that enables people to compete online by drafting elite marathon runners for Major Marathon. The application features real-time result tracking, salary cap draft mechanics, and a mobile-first responsive design.
+
+**Note:** The legacy snake draft system is deprecated. The application now uses salary cap draft as the primary gameplay mode.
 
 ## Critical Instructions for Copilot
 
@@ -208,8 +210,9 @@ Database Tables:
 ├── races              (marathon events and competitions)
 ├── athlete_races      (athlete-race confirmations)
 ├── games              (game configuration and state)
-├── player_rankings    (player athlete preferences)
-├── draft_teams        (post-draft team assignments)
+├── player_rankings    (player athlete preferences) ⚠️ DEPRECATED
+├── draft_teams        (post-draft team assignments) ⚠️ DEPRECATED
+├── salary_cap_teams   (salary cap draft teams) ✅ ACTIVE
 └── race_results       (race results and live updates)
 ```
 
