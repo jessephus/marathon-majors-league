@@ -3,6 +3,7 @@
  * 
  * Comprehensive test suite with 100% coverage for all formatting functions.
  * Tests pure functions with no side effects.
+ * 
  */
 
 import {
