@@ -50,6 +50,17 @@ jobs:
         run: npm run test:draft
         continue-on-error: true
       
+      # API Client Tests (no server required)
+      - name: Run API client tests
+        id: test-api-client
+        run: npm run test:api-client
+        continue-on-error: true
+      
+      - name: Run SSR integration tests
+        id: test-ssr
+        run: npm run test:ssr
+        continue-on-error: true
+      
       - name: Build application
         run: npm run build
         env:
@@ -179,6 +190,8 @@ jobs:
               // Get individual test step results
               const testResults = {
                 'Draft Validation Tests': '${{ steps.test-draft.outcome }}',
+                'API Client Tests': '${{ steps.test-api-client.outcome }}',
+                'SSR Integration Tests': '${{ steps.test-ssr.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
@@ -286,6 +299,18 @@ jobs:
           # Check draft validation tests (run early, no server required)
           if [ "${{ steps.test-draft.outcome }}" != "success" ]; then
             echo "❌ Draft validation tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check API client tests (run early, no server required)
+          if [ "${{ steps.test-api-client.outcome }}" != "success" ]; then
+            echo "❌ API client tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check SSR integration tests (run early, no server required)
+          if [ "${{ steps.test-ssr.outcome }}" != "success" ]; then
+            echo "❌ SSR integration tests failed"
             TESTS_FAILED=true
           fi
           
