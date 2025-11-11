@@ -61,6 +61,12 @@ jobs:
         run: npm run test:ssr
         continue-on-error: true
       
+      # Formatting Utils Tests (no server required)
+      - name: Run formatting utilities tests
+        id: test-formatting
+        run: npm run test:formatting
+        continue-on-error: true
+      
       - name: Build application
         run: npm run build
         env:
@@ -192,6 +198,7 @@ jobs:
                 'Draft Validation Tests': '${{ steps.test-draft.outcome }}',
                 'API Client Tests': '${{ steps.test-api-client.outcome }}',
                 'SSR Integration Tests': '${{ steps.test-ssr.outcome }}',
+                'Formatting Utilities Tests': '${{ steps.test-formatting.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
@@ -311,6 +318,12 @@ jobs:
           # Check SSR integration tests (run early, no server required)
           if [ "${{ steps.test-ssr.outcome }}" != "success" ]; then
             echo "❌ SSR integration tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check formatting utilities tests (run early, no server required)
+          if [ "${{ steps.test-formatting.outcome }}" != "success" ]; then
+            echo "❌ Formatting utilities tests failed"
             TESTS_FAILED=true
           fi
           
