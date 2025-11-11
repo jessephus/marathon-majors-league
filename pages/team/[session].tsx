@@ -12,7 +12,7 @@ import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
-import { createTeamAvatarSVG, getRunnerSvg } from '@/lib/ui-helpers';
+import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
@@ -420,7 +420,7 @@ function TeamSessionPageContent({
                         <div className="slot-athlete-info-legacy">
                           <div className="slot-athlete-name-legacy">{athlete.name}</div>
                           <div className="slot-athlete-details-legacy">
-                            {athlete.country} • {athlete.pb} • #{athlete.marathonRank || 'N/A'}
+                            {getCountryFlag(athlete.country)} {athlete.country} • {athlete.pb} • #{athlete.marathonRank || 'N/A'}
                           </div>
                         </div>
                         <div className="slot-athlete-salary-legacy">

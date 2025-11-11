@@ -395,7 +395,11 @@ export default function NewLeaderboardPage(props: LeaderboardPageProps) {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const gameId = context.query.gameId || 'default';
+  // Get gameId from cookie (set by game switcher in Footer component)
+  // Falls back to query param, then 'default'
+  const gameIdCookie = context.req.cookies.current_game_id;
+  const gameIdQuery = context.query.gameId;
+  const gameId = gameIdCookie || gameIdQuery || 'default';
   
   // Note: In serverless environments (Vercel), SSR can't fetch from localhost
   // Client-side hydration will fetch the actual data on mount
