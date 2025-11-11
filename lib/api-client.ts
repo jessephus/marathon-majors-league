@@ -508,6 +508,27 @@ export const athleteRacesApi = {
   },
 };
 
+/**
+ * Standings API - Fantasy league standings
+ */
+export const standingsApi = {
+  /**
+   * Fetch fantasy league standings
+   */
+  async fetch(gameId: string = 'default') {
+    return apiRequest<{
+      standings: Array<{
+        rank: number;
+        teamName: string;
+        playerCode: string;
+        totalPoints: number;
+        athletes: any[];
+      }>;
+      lastUpdated: number;
+    }>(`/api/standings?gameId=${gameId}`);
+  },
+};
+
 // Export unified API client
 export const apiClient = {
   athletes: athleteApi,
@@ -516,6 +537,7 @@ export const apiClient = {
   rankings: rankingsApi,
   salaryCapDraft: salaryCapDraftApi,
   results: resultsApi,
+  standings: standingsApi,
   commissioner: commissionerApi,
   races: racesApi,
   athleteRaces: athleteRacesApi,

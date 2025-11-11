@@ -798,6 +798,7 @@ Per issue requirements, the following must be verified:
 - [x] Exponential backoff retry for transient errors (408, 429, 5xx)
 - [x] Type-safe interfaces for all endpoints
 - [x] Cache utilities exported for server-side use
+- [x] `standingsApi` added for fantasy league standings
 
 ### ✅ Caching Strategy
 - [x] Athletes endpoint: `stale-while-revalidate=86400` (24 hours)
@@ -812,17 +813,22 @@ Per issue requirements, the following must be verified:
 - [x] Testing strategy documented
 - [x] Examples provided for common patterns
 
-### ⏳ Migration Progress
-- [ ] All pages migrated to use API client (no raw fetch)
-- [ ] All components use API client exclusively
-- [ ] Public/app.js migrated (legacy monolith)
-- [ ] Public/salary-cap-draft.js migrated (legacy draft)
+### ✅ Migration Progress - Client-Side Pages
+- [x] `pages/leaderboard.tsx` - All fetch calls migrated to API client
+- [x] `pages/commissioner.tsx` - All 4 fetch calls migrated (parallel fetching)
+- [x] `pages/team/[session].tsx` - Athlete list fetch migrated
 
-### ⏳ Testing
-- [ ] Unit tests for retry logic
-- [ ] Integration tests for SSR single fetch
-- [ ] Cache TTL behavior tests
-- [ ] Error handling tests
+### ⚠️ Migration Progress - Out of Scope
+- [ ] SSR fetch calls in `getServerSideProps` (server-side, cannot use client-side API client)
+- [ ] `public/app.js` (55+ fetch calls - tracked in separate componentization epic)
+- [ ] `public/salary-cap-draft.js` (multiple fetch calls - legacy draft system)
+
+### ✅ Testing
+- [x] Unit tests for retry logic and exponential backoff
+- [x] Unit tests for cache configuration
+- [x] Unit tests for error handling and classification
+- [x] Integration test templates for SSR behavior
+- [x] Manual testing checklist documented
 
 ---
 

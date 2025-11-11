@@ -95,20 +95,12 @@ function LeaderboardPageContent({
       setError(null);
 
       // Fetch standings, results, and game state in parallel using API client
-      // Note: standings endpoint doesn't have an API client method yet, keep raw fetch
-      const [standingsResponse, resultsData, gameStateData] = await Promise.all([
-        fetch(`/api/standings?gameId=${gameId}`), // TODO: Add to API client
+      const [standingsData, resultsData, gameStateData] = await Promise.all([
+        apiClient.standings.fetch(gameId),
         apiClient.results.fetch(gameId),
         apiClient.gameState.load(gameId)
       ]);
 
-      // Handle standings response
-      if (!standingsResponse.ok) {
-        const errorText = await standingsResponse.text();
-        console.error('❌ Standings API error:', standingsResponse.status, errorText);
-        throw new Error(`Failed to fetch standings: ${standingsResponse.status}`);
-      }
-      const standingsData = await standingsResponse.json();
       console.log('📊 Standings data received:', standingsData);
       console.log('📊 Has standings array?', !!standingsData.standings);
       console.log('📊 Standings length:', standingsData.standings?.length || 0);
