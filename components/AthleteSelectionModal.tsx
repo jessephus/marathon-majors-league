@@ -9,7 +9,19 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { canAffordAthlete, isAthleteInRoster } from '@/lib/budget-utils';
 import { getRunnerSvg } from '@/lib/ui-helpers';
-import AthleteModal from './AthleteModal';
+import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
+import { FeatureFlag } from '@/lib/feature-flags';
+
+// Dynamic import AthleteModal with performance tracking
+const AthleteModal = dynamicImport(
+  () => import('./AthleteModal'),
+  {
+    chunkName: CHUNK_NAMES.ATHLETE_MODAL,
+    featureFlag: FeatureFlag.DYNAMIC_ATHLETE_MODAL,
+    loading: () => null, // No loading state needed here as modal opens when clicked
+    ssr: false,
+  }
+);
 
 interface Athlete {
   id: number;

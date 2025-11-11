@@ -9,32 +9,39 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
-import dynamic from 'next/dynamic';
 import { AppStateProvider, useCommissionerState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
 import Footer from '@/components/Footer';
+import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
+import { FeatureFlag } from '@/lib/feature-flags';
 
-// Dynamic imports for panels with skeleton loaders
-const ResultsManagementPanel = dynamic(
+// Dynamic imports for commissioner panels with performance tracking and feature flags
+const ResultsManagementPanel = dynamicImport(
   () => import('@/components/commissioner/ResultsManagementPanel'),
   {
+    chunkName: CHUNK_NAMES.COMMISSIONER_RESULTS,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
     loading: () => <SkeletonLoader lines={5} />,
     ssr: false,
   }
 );
 
-const AthleteManagementPanel = dynamic(
+const AthleteManagementPanel = dynamicImport(
   () => import('@/components/commissioner/AthleteManagementPanel'),
   {
+    chunkName: CHUNK_NAMES.COMMISSIONER_ATHLETES,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
     loading: () => <SkeletonLoader lines={5} />,
     ssr: false,
   }
 );
 
-const TeamsOverviewPanel = dynamic(
+const TeamsOverviewPanel = dynamicImport(
   () => import('@/components/commissioner/TeamsOverviewPanel'),
   {
+    chunkName: CHUNK_NAMES.COMMISSIONER_TEAMS,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
     loading: () => <SkeletonLoader lines={5} />,
     ssr: false,
   }
