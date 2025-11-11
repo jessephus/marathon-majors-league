@@ -109,11 +109,11 @@ function LeaderboardPageContent({
       // Results and game state already fetched via API client
       setResults(resultsData);
 
-      const isFinalized = gameStateData.resultsFinalized || false;
+      const isFinalized = (gameStateData as any)?.resultsFinalized || false;
 
       setLastUpdate(Date.now());
       setGameState({ 
-        results: resultsData.results || {},
+        results: (resultsData as any)?.results || {},
         resultsFinalized: isFinalized
       });
 

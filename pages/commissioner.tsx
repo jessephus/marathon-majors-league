@@ -128,13 +128,13 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
         setConfirmedAthletesCount(totalConfirmed);
         
         // Set roster lock time
-        setRosterLockTime(gameStateData.rosterLockTime || null);
+        setRosterLockTime((gameStateData as any)?.rosterLockTime || null);
         
         // Determine results status
-        if (gameStateData.resultsFinalized) {
+        if ((gameStateData as any)?.resultsFinalized) {
           setResultsStatus('Certified');
         } else {
-          const resultsArray = Object.values(resultsData.results || {});
+          const resultsArray = Object.values((resultsData as any)?.results || {});
           const hasFinishTimes = resultsArray.some((r: any) => r?.finishTime);
           const hasSplits = resultsArray.some((r: any) => 
             r?.split5k || r?.split10k || r?.splitHalf || r?.split30k || r?.split35k || r?.split40k
