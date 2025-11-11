@@ -92,6 +92,11 @@ function devLog(...args) {
 // Game ID - can be switched between default and demo
 let GAME_ID = localStorage.getItem('current_game_id') || 'default';
 
+// Ensure cookie is set for SSR pages (prevents hydration mismatch)
+if (typeof document !== 'undefined') {
+    document.cookie = `current_game_id=${GAME_ID}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 // Function to get current game ID
 function getCurrentGameId() {
     return GAME_ID;
@@ -101,6 +106,9 @@ function getCurrentGameId() {
 function switchGame(gameId) {
     GAME_ID = gameId;
     localStorage.setItem('current_game_id', gameId);
+    
+    // Set cookie for SSR pages (prevents hydration mismatch)
+    document.cookie = `current_game_id=${gameId}; path=/; max-age=31536000; SameSite=Lax`;
     
     // Invalidate all caches when switching games
     invalidateResultsCache();

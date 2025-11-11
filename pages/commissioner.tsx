@@ -42,11 +42,12 @@ const TeamsOverviewPanel = dynamic(
 
 interface CommissionerPageProps {
   isAuthenticated: boolean;
+  initialGameId?: string;
 }
 
 type ActivePanel = 'dashboard' | 'results' | 'athletes' | 'teams';
 
-function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerPageProps) {
+function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId = 'default' }: CommissionerPageProps) {
   const router = useRouter();
   const { commissionerState, setCommissionerState } = useCommissionerState();
   const { gameState, setGameState } = useGameState();
@@ -63,15 +64,12 @@ function CommissionerPageContent({ isAuthenticated: initialAuth }: CommissionerP
   const [rosterLockTime, setRosterLockTime] = useState<string | null>(null);
   const [resultsStatus, setResultsStatus] = useState<'Pre-Race' | 'In Progress' | 'Finished' | 'Certified'>('Pre-Race');
 
-  // Initialize gameId from localStorage on mount
+  // Initialize gameId from SSR props on mount (prevents hydration mismatch)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedGameId = localStorage.getItem('current_game_id') || 'default';
-      if (gameState.gameId !== savedGameId) {
-        setGameState({ gameId: savedGameId });
-      }
+    if (gameState.gameId !== initialGameId) {
+      setGameState({ gameId: initialGameId });
     }
-  }, []);
+  }, [initialGameId]);
 
   // Sync SSR authentication state with React state
   // BUT skip this if user has explicitly logged out
@@ -489,6 +487,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Cookie name matches what's set in /api/auth/totp/verify.js
   const commissionerCookie = context.req.cookies.marathon_fantasy_commissioner || null;
   
+  // Get gameId from cookie (set by game selector in app.js)
+  const gameIdCookie = context.req.cookies.current_game_id || 'default';
+  
   let isAuthenticated = false;
   
   if (commissionerCookie) {
@@ -505,6 +506,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   return {
     props: {
       isAuthenticated,
+      initialGameId: gameIdCookie,
     },
   };
 }
