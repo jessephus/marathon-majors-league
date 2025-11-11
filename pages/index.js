@@ -392,6 +392,10 @@ function getLegacyPagesHTML() {
             </div>
 
             <!-- Ranking Page -->
+            <!-- ⚠️ DEPRECATED: This page is part of the legacy snake draft system. -->
+            <!-- In snake draft mode, players submit preference rankings before the automated draft. -->
+            <!-- The modern salary cap draft mode allows direct team selection without rankings. -->
+            <!-- This page is maintained for backward compatibility with season league games only. -->
             <div id="ranking-page" class="page">
                 <div class="player-info">
                     <h2>Welcome, <span id="player-name"></span>!</h2>
@@ -427,6 +431,7 @@ function getLegacyPagesHTML() {
                     </div>
                 </div>
 
+                <!-- ⚠️ DEPRECATED: Submit rankings button for legacy snake draft system -->
                 <button id="submit-rankings" class="btn btn-primary">Submit Rankings</button>
             </div>
 
@@ -814,6 +819,8 @@ function getLegacyPagesHTML() {
                     </div>
 
                     <div class="action-card">
+                        <!-- ⚠️ DEPRECATED: Snake draft control for legacy season league mode -->
+                        <!-- The modern salary cap draft eliminates this step - players directly select their team -->
                         <h3>Draft Control</h3>
                         <button id="run-draft" class="btn btn-primary">Run Snake Draft</button>
                         <div id="draft-status"></div>

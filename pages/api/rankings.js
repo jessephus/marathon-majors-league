@@ -1,3 +1,24 @@
+/**
+ * Rankings API - Player preference rankings for snake draft mode
+ * 
+ * ⚠️ DEPRECATED: This endpoint is part of the legacy snake draft system.
+ * 
+ * In snake draft mode, players submit preference rankings for athletes before
+ * the commissioner executes an automated draft. This endpoint stores and retrieves
+ * those preference rankings from the player_rankings table.
+ * 
+ * The modern salary cap draft mode does not use rankings - players directly
+ * select their team within a budget constraint via /api/salary-cap-draft.
+ * 
+ * This endpoint is maintained only for backward compatibility with existing
+ * season league games that use the ranking + snake draft workflow.
+ * 
+ * Endpoints:
+ * - GET /api/rankings?gameId={id}&playerCode={code} - Get player's rankings
+ * - POST /api/rankings?gameId={id} - Save player rankings
+ * 
+ * @deprecated Use /api/salary-cap-draft for new games
+ */
 import { getPlayerRankings, savePlayerRankings, clearAllRankings, verifyAnonymousSession, hasPlayerAccess, hasCommissionerAccess } from './db';
 
 export default async function handler(req, res) {

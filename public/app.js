@@ -1305,7 +1305,18 @@ function handleCommissionerMode() {
     }
 }
 
-// Setup ranking page
+/**
+ * Setup ranking page
+ * 
+ * ⚠️ DEPRECATED: This function is part of the legacy snake draft system.
+ * The application now uses salary cap draft mode as the primary gameplay mode.
+ * This function is maintained only for backward compatibility with existing
+ * season league games that use the ranking + snake draft workflow.
+ * 
+ * For new games, use the salary cap draft system instead.
+ * @see public/salary-cap-draft.js for the modern draft interface
+ * @deprecated Use salary cap draft mode for new games
+ */
 async function setupRankingPage() {
     // Ensure athletes are loaded before displaying
     if (!gameState.athletes.men || gameState.athletes.men.length === 0) {
@@ -1314,7 +1325,13 @@ async function setupRankingPage() {
     switchTab('men');
 }
 
-// Switch tab
+/**
+ * Switch tab between men and women in ranking page
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft ranking interface.
+ * Maintained for backward compatibility only.
+ * @deprecated Use salary cap draft mode for new games
+ */
 function switchTab(gender) {
     rankingViewState.currentGender = gender;
     document.querySelectorAll('.tab').forEach(tab => {
@@ -1326,7 +1343,14 @@ function switchTab(gender) {
 }
 
 
-// Display athlete table view
+/**
+ * Display athlete table view for ranking
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft ranking interface.
+ * This function displays the draggable athlete ranking list for the snake draft mode.
+ * Maintained for backward compatibility only.
+ * @deprecated Use salary cap draft mode for new games
+ */
 function displayAthleteTable(gender) {
     const tbody = document.getElementById('athlete-table-body');
     tbody.innerHTML = '';
@@ -1718,6 +1742,19 @@ function handleDragEnd(e) {}
 function getDragAfterElement(container, y) { return null; }
 
 // Handle submit rankings
+/**
+ * Handle submit rankings action
+ * 
+ * ⚠️ DEPRECATED: This function is part of the legacy snake draft system.
+ * In snake draft mode, players submit preference rankings for athletes before
+ * the automated draft is executed. The modern salary cap draft allows players
+ * to directly select their team without rankings.
+ * 
+ * This function is maintained only for backward compatibility with existing
+ * season league games.
+ * 
+ * @deprecated Use salary cap draft mode (/api/salary-cap-draft) for new games
+ */
 async function handleSubmitRankings() {
     const allMenRankings = gameState.rankings[gameState.currentPlayer]?.men || [];
     const allWomenRankings = gameState.rankings[gameState.currentPlayer]?.women || [];
@@ -1751,7 +1788,15 @@ async function handleSubmitRankings() {
     }
 }
 
-// Commissioner functions
+/**
+ * Check if player has submitted rankings
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * Used to track which players have submitted their preference rankings
+ * before the automated draft can be executed.
+ * 
+ * @deprecated Use salary cap draft mode for new games
+ */
 function hasPlayerSubmittedRankings(playerCode) {
     const ranking = gameState.rankings[playerCode];
     return ranking && 
@@ -2421,6 +2466,23 @@ async function handleAddResult(e) {
 }
 
 // Snake draft algorithm
+/**
+ * Execute the automated snake draft
+ * 
+ * ⚠️ DEPRECATED: This function implements the legacy snake draft algorithm.
+ * In this mode, after all players submit preference rankings, the commissioner
+ * runs the draft which automatically assigns athletes based on draft order
+ * and player preferences. The draft order reverses each round (snake pattern).
+ * 
+ * The modern salary cap draft eliminates this step - players directly select
+ * their team within a budget constraint without automated assignment.
+ * 
+ * This function is maintained only for backward compatibility with existing
+ * season league games.
+ * 
+ * @deprecated Use salary cap draft mode for new games
+ * @see public/salary-cap-draft.js for modern draft interface
+ */
 async function handleRunDraft() {
     // Check if all players have submitted rankings
     const allSubmitted = gameState.players.every(player => gameState.rankings[player]);
@@ -2465,6 +2527,19 @@ async function handleRunDraft() {
     }
 }
 
+/**
+ * Snake draft algorithm implementation
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * Executes the snake draft pattern where draft order reverses each round.
+ * For each player in order, selects their highest-ranked available athlete.
+ * 
+ * @param {Array} draftOrder - Randomized player order
+ * @param {string} gender - 'men' or 'women'
+ * @param {number} perPlayer - Number of athletes to draft per player
+ * 
+ * @deprecated Use salary cap draft mode for new games
+ */
 function snakeDraft(draftOrder, gender, perPlayer) {
     const numRounds = perPlayer;
     let reverse = false;
@@ -2493,6 +2568,14 @@ function snakeDraft(draftOrder, gender, perPlayer) {
     }
 }
 
+/**
+ * Display draft results after snake draft completion
+ * 
+ * ⚠️ DEPRECATED: Part of legacy snake draft system.
+ * Shows the team assignments created by the automated snake draft.
+ * 
+ * @deprecated Use salary cap draft mode for new games
+ */
 function displayDraftResults() {
     const container = document.getElementById('draft-results');
     container.innerHTML = '';

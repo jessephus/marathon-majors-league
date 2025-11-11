@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Deprecated
+- **Snake Draft and Player Rankings System** (November 11, 2025)
+  - Season League mode with ranking + snake draft is now deprecated
+  - Added deprecation notices to all snake draft and player rankings code
+  - Marked `player_rankings` and `draft_teams` database tables as deprecated
+  - Updated documentation to reflect that Salary Cap Draft is now the primary mode
+  - Legacy snake draft functionality maintained only for backward compatibility
+  - All new games should use Single Race mode with Salary Cap Draft
+  - Files affected:
+    - `public/app.js` - Snake draft functions marked deprecated
+    - `pages/api/rankings.js` - Rankings API marked deprecated
+    - `pages/api/draft.js` - Draft API marked deprecated
+    - `pages/api/db.js` - Database helper functions marked deprecated
+    - `schema.sql` - Database tables marked deprecated
+    - `pages/index.js` - UI elements marked deprecated
+    - `docs/FEATURE_GAME_MODES.md` - Season League mode marked deprecated
+    - `docs/CORE_ARCHITECTURE.md` - Database tables marked deprecated
+
 ### Added
 - **Commissioner Dashboard Modularization**: Separated admin panel into dynamic, loadable components
   - Created three panel components: `ResultsManagementPanel`, `AthleteManagementPanel`, `TeamsOverviewPanel`
