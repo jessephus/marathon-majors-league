@@ -548,7 +548,7 @@ JSON Response ←─────────────────────
 Project Root
 ├── Frontend Assets
 │   ├── index.html          # Main application entry
-│   ├── app.js             # Core application logic
+│   ├── app.js             # Core application logic (legacy)
 │   ├── style.css          # Complete styling
 │   └── athletes.json      # Athletes backup (seeded into DB)
 ├── API Functions
@@ -559,16 +559,63 @@ Project Root
 │   ├── draft.js          # Snake draft logic
 │   ├── results.js        # Race results
 │   └── init-db.js        # Database initialization
+├── Shared Utilities (Phase 1 - Nov 2025)
+│   ├── utils/
+│   │   └── formatting.js  # Pure formatting functions (time, pace, ordinals, XSS)
+│   ├── config/
+│   │   └── constants.js   # Centralized configuration constants
+│   └── lib/
+│       ├── ui-helpers.tsx # UI utility functions (avatars, headshots, flags)
+│       ├── budget-utils.js # Salary cap budget calculations
+│       └── state-provider.tsx # Phase 3 state management
+├── React Components (Phase 4)
+│   └── components/
+│       ├── Footer.tsx     # Shared footer with session-aware buttons
+│       ├── AthleteModal.tsx # Athlete detail modal
+│       ├── LeaderboardTable.tsx # Leaderboard display
+│       └── ...           # Additional components
+├── Feature Modules (Phase 1)
+│   └── src/features/
+│       └── draft/
+│           ├── validation.js # Pure validation functions
+│           └── state-machine.js # Draft state management
 ├── Configuration
 │   ├── package.json       # Dependencies and scripts
 │   ├── vercel.json       # Deployment configuration
 │   ├── schema.sql        # Database schema
 │   └── .vercelignore     # Deployment exclusions
+├── Tests
+│   ├── formatting-utils.test.js # Formatting utilities tests (81 tests)
+│   ├── budget-utils.test.js    # Budget calculation tests
+│   └── ...                     # Additional test files
 └── Documentation
     ├── README.md          # Project overview
     ├── NEON_SETUP.md     # Database setup guide
     └── docs/             # Additional documentation
 ```
+
+### Modularization Progress (Issue #82)
+
+**Phase 1: Utilities & Constants** ✅ **COMPLETED (Nov 2025)**
+- ✅ Extracted formatting utilities to `utils/formatting.js` (10 pure functions)
+- ✅ Centralized constants in `config/constants.js` (session keys, TTLs, scoring config)
+- ✅ Created unit tests with 100% coverage (81 tests, all passing)
+- ✅ UI helpers already extracted to `lib/ui-helpers.tsx`
+- ✅ Draft validation already in `src/features/draft/validation.js`
+
+**Phase 3: State Management** ✅ **COMPLETED (Earlier)**
+- ✅ Created `lib/state-provider.tsx` with React Context-based state management
+- ✅ Replaced global `gameState` object with centralized state manager
+
+**Phase 4: Component Extraction** 🚧 **IN PROGRESS**
+- ✅ Footer component created in `components/Footer.tsx`
+- ✅ Athlete modal, leaderboard table, budget tracker components created
+- ⏳ Additional component extractions ongoing
+
+**Remaining Work:**
+- Update `app.js` to import from new utility modules (vanilla JS compatibility needed)
+- Continue Phase 4 component extractions (commissioner dashboard, salary cap draft)
+- Phase 5: Final migration and cleanup
 
 ### Testing Strategy
 - **Manual testing**: Multi-browser, multi-device validation

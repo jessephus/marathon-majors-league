@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { SLOT_CONFIG } from '@/lib/budget-utils';
+import { getCountryFlag } from '@/lib/ui-helpers';
 
 interface Athlete {
   id: number;
@@ -53,30 +54,6 @@ export default function RosterSlots({
   // Format currency
   const formatCurrency = (amount: number) => {
     return `$${amount.toLocaleString()}`;
-  };
-
-  // Get country flag
-  const getCountryFlag = (countryCode: string) => {
-    // Simple flag emoji mapping - can be enhanced
-    const flagMap: Record<string, string> = {
-      'USA': '🇺🇸',
-      'KEN': '🇰🇪',
-      'ETH': '🇪🇹',
-      'GBR': '🇬🇧',
-      'JPN': '🇯🇵',
-      'ITA': '🇮🇹',
-      'GER': '🇩🇪',
-      'FRA': '🇫🇷',
-      'ESP': '🇪🇸',
-      'NED': '🇳🇱',
-      'BEL': '🇧🇪',
-      'NOR': '🇳🇴',
-      'SWE': '🇸🇪',
-      'UGA': '🇺🇬',
-      'ERI': '🇪🇷',
-      'MEX': '🇲🇽',
-    };
-    return flagMap[countryCode] || countryCode;
   };
 
   // Render a single slot
