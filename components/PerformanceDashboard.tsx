@@ -1,12 +1,18 @@
 /**
  * Performance Dashboard Component
  * 
- * Displays chunk load performance metrics and feature flag status.
+ * Displays comprehensive performance metrics:
+ * - Web Vitals (CLS, LCP, FID, INP)
+ * - Dynamic chunk load times
+ * - Leaderboard refresh latency
+ * - Cache hit ratios
+ * - Feature flag status
+ * 
  * Accessible via window.__performanceDashboard.show() in development.
  */
 
 import React, { useState, useEffect } from 'react';
-import { performanceMonitor } from '@/lib/performance-monitor';
+import { performanceMonitor, PERFORMANCE_BUDGETS } from '@/lib/performance-monitor';
 import { featureFlags, FeatureFlag } from '@/lib/feature-flags';
 
 interface PerformanceDashboardProps {
@@ -14,13 +20,13 @@ interface PerformanceDashboardProps {
 }
 
 export default function PerformanceDashboard({ onClose }: PerformanceDashboardProps) {
-  const [summary, setSummary] = useState(performanceMonitor.getSummary());
+  const [report, setReport] = useState(performanceMonitor.getPerformanceReport());
   const [flags, setFlags] = useState(featureFlags.getAll());
 
   useEffect(() => {
     // Refresh every 2 seconds
     const interval = setInterval(() => {
-      setSummary(performanceMonitor.getSummary());
+      setReport(performanceMonitor.getPerformanceReport());
       setFlags(featureFlags.getAll());
     }, 2000);
 
@@ -48,7 +54,7 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
         style={{
           background: 'white',
           borderRadius: '8px',
-          maxWidth: '900px',
+          maxWidth: '1200px',
           maxHeight: '90vh',
           width: '100%',
           overflow: 'auto',
@@ -58,7 +64,14 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Performance Dashboard</h2>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Performance Dashboard</h2>
+            {report.thresholdViolations > 0 && (
+              <p style={{ margin: '0.5rem 0 0', color: '#ef4444', fontSize: '0.9rem' }}>
+                ⚠️ {report.thresholdViolations} threshold violation{report.thresholdViolations > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
           <button
             onClick={onClose}
             style={{
@@ -73,53 +86,174 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
           </button>
         </div>
 
+        {/* Web Vitals Section */}
+        <section style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Core Web Vitals</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {[
+              { name: 'LCP', label: 'Largest Contentful Paint', metric: report.webVitals.lcp, unit: 'ms', threshold: PERFORMANCE_BUDGETS.LCP_THRESHOLD },
+              { name: 'INP', label: 'Interaction to Next Paint', metric: report.webVitals.inp, unit: 'ms', threshold: PERFORMANCE_BUDGETS.INP_THRESHOLD },
+              { name: 'CLS', label: 'Cumulative Layout Shift', metric: report.webVitals.cls, unit: '', threshold: PERFORMANCE_BUDGETS.CLS_THRESHOLD },
+              { name: 'TTFB', label: 'Time to First Byte', metric: report.webVitals.ttfb, unit: 'ms', threshold: 800 },
+            ].map(({ name, label, metric, unit, threshold }) => (
+              <div
+                key={name}
+                style={{
+                  background: '#f9fafb',
+                  padding: '1rem',
+                  borderRadius: '6px',
+                  border: `2px solid ${
+                    !metric ? '#e5e7eb' :
+                    metric.rating === 'good' ? '#22c55e' :
+                    metric.rating === 'needs-improvement' ? '#f59e0b' : '#ef4444'
+                  }`,
+                }}
+              >
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>{label}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  {metric ? `${metric.value.toFixed(name === 'CLS' ? 3 : 0)}${unit}` : 'N/A'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Threshold: {threshold}{unit}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Cache Performance Section */}
+        <section style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Cache Performance</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+            {[
+              { label: 'Overall', ratio: report.cache.overall },
+              { label: 'Results', ratio: report.cache.results },
+              { label: 'Game State', ratio: report.cache.gameState },
+              { label: 'Athletes', ratio: report.cache.athletes },
+            ].map(({ label, ratio }) => {
+              const percentage = ratio * 100;
+              const meetsThreshold = ratio >= PERFORMANCE_BUDGETS.CACHE_HIT_RATIO_MIN;
+              return (
+                <div
+                  key={label}
+                  style={{
+                    background: '#f9fafb',
+                    padding: '1rem',
+                    borderRadius: '6px',
+                    border: `2px solid ${meetsThreshold ? '#22c55e' : '#f59e0b'}`,
+                  }}
+                >
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>{label}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                    {percentage.toFixed(1)}%
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                    Target: {PERFORMANCE_BUDGETS.CACHE_HIT_RATIO_MIN * 100}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: '#6b7280' }}>
+            Total cache accesses: {report.cache.totalAccesses}
+          </div>
+        </section>
+
+        {/* Leaderboard Performance Section */}
+        {report.leaderboard.totalRefreshes > 0 && (
+          <section style={{ marginBottom: '2rem' }}>
+            <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Leaderboard Performance</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div
+                style={{
+                  background: '#f9fafb',
+                  padding: '1rem',
+                  borderRadius: '6px',
+                  border: `2px solid ${
+                    report.leaderboard.avgLatency < PERFORMANCE_BUDGETS.LEADERBOARD_REFRESH_MAX ? '#22c55e' : '#f59e0b'
+                  }`,
+                }}
+              >
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Avg Refresh Latency</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  {report.leaderboard.avgLatency.toFixed(0)}ms
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Threshold: {PERFORMANCE_BUDGETS.LEADERBOARD_REFRESH_MAX}ms
+                </div>
+              </div>
+              <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '6px', border: '2px solid #e5e7eb' }}>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Total Refreshes</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  {report.leaderboard.totalRefreshes}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                  Cache hit: {(report.leaderboard.cacheHitRatio * 100).toFixed(1)}%
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Chunk Performance Section */}
         <section style={{ marginBottom: '2rem' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Dynamic Chunk Performance</h3>
                     
-          {summary.length === 0 ? (
+          {report.chunks.summary.length === 0 ? (
             <p style={{ color: '#666' }}>No chunks loaded yet. Interact with the app to see metrics.</p>
           ) : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: '#f5f5f5', textAlign: 'left' }}>
-                  <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Chunk Name</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Loads</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Avg Time</th>
-                  <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Success Rate</th>
-                </tr>
-              </thead>
-              <tbody>
-                {summary.map((metric, index) => (
-                  <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                      {metric.chunkName}
-                    </td>
-                    <td style={{ padding: '0.75rem' }}>{metric.loadCount}</td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span
-                        style={{
-                          color: metric.avgLoadTime < 100 ? '#22c55e' : metric.avgLoadTime < 300 ? '#f59e0b' : '#ef4444',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {metric.avgLoadTime.toFixed(0)}ms
-                      </span>
-                    </td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span
-                        style={{
-                          color: metric.successRate === 100 ? '#22c55e' : metric.successRate > 90 ? '#f59e0b' : '#ef4444',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {metric.successRate.toFixed(1)}%
-                      </span>
-                    </td>
+            <>
+              <div style={{ marginBottom: '1rem', padding: '0.75rem', background: '#f0f9ff', borderRadius: '6px' }}>
+                <strong>Median Load Time:</strong> {report.chunks.medianLoadTime.toFixed(0)}ms
+                {' '}
+                <span style={{ 
+                  color: report.chunks.medianLoadTime < PERFORMANCE_BUDGETS.CHUNK_LOAD_MEDIAN ? '#22c55e' : '#ef4444',
+                  fontWeight: 'bold',
+                }}>
+                  ({report.chunks.medianLoadTime < PERFORMANCE_BUDGETS.CHUNK_LOAD_MEDIAN ? '✓' : '✗'} Target: {PERFORMANCE_BUDGETS.CHUNK_LOAD_MEDIAN}ms)
+                </span>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f5f5f5', textAlign: 'left' }}>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Chunk Name</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Loads</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Avg Time</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Success Rate</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {report.chunks.summary.map((metric, index) => (
+                    <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                        {metric.chunkName}
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>{metric.loadCount}</td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span
+                          style={{
+                            color: metric.avgLoadTime < 100 ? '#22c55e' : metric.avgLoadTime < 300 ? '#f59e0b' : '#ef4444',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {metric.avgLoadTime.toFixed(0)}ms
+                        </span>
+                      </td>
+                      <td style={{ padding: '0.75rem' }}>
+                        <span
+                          style={{
+                            color: metric.successRate === 100 ? '#22c55e' : metric.successRate > 90 ? '#f59e0b' : '#ef4444',
+                            fontWeight: 'bold',
+                          }}
+                        >
+                          {metric.successRate.toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
           )}
         </section>
 
@@ -205,28 +339,29 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
             fontSize: '0.9rem',
             color: '#0c4a6e'
           }}>
-            <strong>What you're seeing:</strong> Dynamic chunks are JavaScript modules loaded on-demand (not in the initial bundle). 
-            Each row shows:
+            <strong>Performance Thresholds (from Issue #82):</strong>
             <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-              <li><strong>Loads:</strong> How many times this chunk has been requested</li>
-              <li><strong>Avg Time:</strong> Average load time in milliseconds (🟢 &lt;100ms, 🟡 100-300ms, 🔴 &gt;300ms)</li>
-              <li><strong>Success Rate:</strong> Percentage of successful loads (🟢 100%, 🟡 90-99%, 🔴 &lt;90%)</li>
+              <li><strong>LCP:</strong> &lt;2.5s for leaderboard (Largest Contentful Paint)</li>
+              <li><strong>Dynamic chunks:</strong> &lt;800ms median load time</li>
+              <li><strong>Cache hit ratio:</strong> &gt;70% during race</li>
+              <li><strong>Leaderboard refresh:</strong> &lt;1000ms latency</li>
             </ul>
             <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #bae6fd' }}>
               <strong>Console Commands - Performance:</strong>
               <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getChunkPerformance()</code> - View summary table</div>
-                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getChunkPerformance('chunk-name')</code> - View specific chunk</div>
-                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.getMetrics()</code> - Get all raw metrics</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getPerformanceReport()</code> - Full performance report</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getWebVitals()</code> - View Web Vitals metrics</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getCacheStats()</code> - View cache hit ratios</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getChunkPerformance()</code> - View chunk summary</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getPerformanceEvents()</code> - View threshold violations</div>
                 <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.clear()</code> - Clear all metrics</div>
-                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.exportMetrics()</code> - Export as JSON string</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.exportMetrics()</code> - Export as JSON</div>
               </div>
               <strong style={{ display: 'block', marginTop: '0.75rem' }}>Console Commands - Feature Flags:</strong>
               <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', marginTop: '0.5rem' }}>
                 <div style={{ marginBottom: '0.25rem' }}>• <code>window.getFeatureFlags()</code> - View all flags and status</div>
                 <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.isEnabled('flag_name')</code> - Check if enabled</div>
                 <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.override('flag_name', true)</code> - Enable flag</div>
-                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.override('flag_name', false)</code> - Disable flag</div>
                 <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.clearOverrides()</code> - Reset all overrides</div>
               </div>
             </div>

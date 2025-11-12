@@ -42,7 +42,8 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "speakeasy": "^2.0.0",
-    "swr": "^2.3.6"
+    "swr": "^2.3.6",
+    "web-vitals": "^5.1.0"
   },
   "keywords": [
     "fantasy",
