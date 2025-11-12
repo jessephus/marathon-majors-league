@@ -334,6 +334,13 @@ class PerformanceMonitor {
   }
 
   /**
+   * Alias for getChunkMetrics() for backward compatibility
+   */
+  getMetrics(): ChunkLoadMetric[] {
+    return this.getChunkMetrics();
+  }
+
+  /**
    * Get metrics for a specific chunk
    */
   getChunkMetricsByName(chunkName: string): ChunkLoadMetric[] {
