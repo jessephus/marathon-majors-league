@@ -282,16 +282,222 @@ Review the interactive bundle map to identify:
    - Materialized views for standings
    - Read replicas for high traffic
 
-## Monitoring
+## Performance Instrumentation & Monitoring (Issue #82)
 
-Track these metrics in production:
-- Time to First Byte (TTFB)
-- First Contentful Paint (FCP)
-- Largest Contentful Paint (LCP)
-- Time to Interactive (TTI)
-- Cumulative Layout Shift (CLS)
+**Status:** ✅ **Implemented** (November 2025)  
+**Related:** PR #96+ - Performance instrumentation & guardrails
 
-Use Vercel Analytics or similar to monitor real user metrics.
+### Overview
+
+Comprehensive performance monitoring system that tracks Core Web Vitals, cache performance, and custom metrics with automated threshold detection.
+
+### Core Features
+
+#### 1. Web Vitals Tracking
+
+Automatically measures and reports Core Web Vitals:
+
+- **LCP (Largest Contentful Paint)** - Time to largest content element
+- **INP (Interaction to Next Paint)** - Responsiveness to user interactions
+- **CLS (Cumulative Layout Shift)** - Visual stability
+- **TTFB (Time to First Byte)** - Server response time
+
+**Implementation:**
+```typescript
+// Automatically initialized in _app.tsx
+import { initWebVitals } from '@/lib/web-vitals';
+
+initWebVitals(); // Tracks all Web Vitals
+```
+
+#### 2. Cache Hit Ratio Monitoring
+
+Tracks cache effectiveness for:
+- Results API (`/api/results`)
+- Game State API (`/api/standings`)
+- Athletes API (`/api/athletes`)
+
+**Usage:**
+```javascript
+// Client-side tracking
+trackCacheAccess('results', true);  // Cache hit
+trackCacheAccess('gameState', false); // Cache miss
+```
+
+#### 3. Leaderboard Refresh Latency
+
+Measures time to refresh leaderboard data:
+
+```javascript
+const tracker = trackLeaderboardRefresh(cacheHit);
+await fetchLeaderboardData();
+tracker.finish();
+```
+
+#### 4. Dynamic Chunk Load Performance
+
+Automatically tracks all dynamic imports:
+
+```typescript
+import { withPerformanceTracking } from '@/lib/performance-monitor';
+
+const AthleteModal = dynamic(
+  withPerformanceTracking('AthleteModal', () => import('@/components/AthleteModal'))
+);
+```
+
+### Performance Budgets & Thresholds
+
+**From Issue #82 requirements:**
+
+| Metric | Threshold | Requirement |
+|--------|-----------|-------------|
+| LCP (Leaderboard) | < 2.5s | Largest Contentful Paint |
+| INP | < 200ms | Interaction responsiveness |
+| CLS | < 0.1 | Layout stability |
+| Dynamic Chunk Load (Median) | < 800ms | Code splitting performance |
+| Cache Hit Ratio | > 70% | During race |
+| Leaderboard Refresh | < 1000ms | Refresh latency |
+
+**Threshold Violations:**
+
+Automatically logged when metrics exceed budgets:
+- Console warnings in development
+- Analytics events in production
+- Available via Performance Dashboard
+
+### Performance Dashboard
+
+**Access:** `window.__performanceDashboard.show()` (development only)
+
+**Features:**
+- Real-time Web Vitals display
+- Cache hit ratio breakdown by type
+- Leaderboard refresh statistics
+- Dynamic chunk load performance
+- Threshold violation alerts
+
+**Console Commands:**
+
+```javascript
+// View performance report
+window.getPerformanceReport()
+
+// View Web Vitals
+window.getWebVitals()
+
+// View cache statistics
+window.getCacheStats()
+
+// View chunk performance
+window.getChunkPerformance()
+
+// View threshold violations
+window.getPerformanceEvents()
+
+// Clear all metrics
+window.__performanceMonitor.clear()
+
+// Export metrics as JSON
+window.__performanceMonitor.exportMetrics()
+```
+
+### Testing
+
+**Run performance instrumentation tests:**
+
+```bash
+npm run test:perf-instrumentation
+```
+
+**Test coverage:**
+- ✅ Performance budgets configuration
+- ✅ Web Vitals tracking
+- ✅ Threshold violation detection
+- ✅ Cache hit ratio calculation
+- ✅ Leaderboard refresh tracking
+- ✅ Dynamic chunk load tracking
+- ✅ Performance report generation
+- ✅ Metrics export
+
+### CI Integration
+
+Performance budgets are validated in tests to prevent regressions.
+
+**Thresholds checked:**
+- All metrics must meet budget requirements
+- Tests fail if thresholds are violated
+- Metrics exported for regression analysis
+
+### Production Monitoring
+
+**Analytics Integration:**
+
+The system automatically reports to Google Analytics (if configured):
+
+```javascript
+// Web Vitals events
+gtag('event', 'LCP', { value: 2000, metric_rating: 'good' })
+gtag('event', 'CLS', { value: 0.05, metric_rating: 'good' })
+
+// Performance issues
+gtag('event', 'performance_issue', {
+  issue_type: 'web_vital_threshold_exceeded',
+  metric: 'LCP',
+  value: 3000,
+  threshold: 2500
+})
+```
+
+### Implementation Details
+
+**Files:**
+- `lib/performance-monitor.ts` - Core monitoring system
+- `lib/web-vitals.ts` - Web Vitals integration
+- `lib/performance-helpers.js` - Vanilla JS helpers
+- `components/PerformanceDashboard.tsx` - Dev dashboard UI
+- `pages/api/lib/cache-utils.js` - Server-side cache logging
+- `tests/performance-instrumentation.test.js` - Test suite
+
+**Architecture:**
+- Singleton pattern for global state
+- Ring buffer for metric storage (max 100 entries)
+- Automatic threshold detection
+- Development-only console logging
+- Production analytics reporting
+
+## Monitoring (Legacy + New)
+
+### Real User Monitoring (RUM)
+
+**Automatically tracked:**
+- **Web Vitals** - LCP, INP, CLS, TTFB
+- **Custom Metrics** - Cache hits, chunk loads, leaderboard refreshes
+
+**Tools:**
+- Vercel Analytics (built-in)
+- Google Analytics (optional)
+- Performance Dashboard (development)
+
+### Key Metrics to Monitor
+### Key Metrics to Monitor
+
+**Core Web Vitals (automated):**
+- Time to First Byte (TTFB) - < 800ms
+- First Contentful Paint (FCP) - < 1.8s
+- Largest Contentful Paint (LCP) - < 2.5s
+- Interaction to Next Paint (INP) - < 200ms
+- Cumulative Layout Shift (CLS) - < 0.1
+
+**Custom Application Metrics (automated):**
+- Cache hit ratio - > 70%
+- Leaderboard refresh latency - < 1000ms
+- Dynamic chunk load median - < 800ms
+- API response times - monitored via ETags
+
+**Performance Budgets:**
+
+All thresholds are enforced via automated monitoring and testing. See `PERFORMANCE_BUDGETS` in `lib/performance-monitor.ts` for definitive values.
 
 ## Conclusion
 

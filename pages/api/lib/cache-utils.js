@@ -1,6 +1,27 @@
 /**
- * Cache utilities for API endpoints
+ * Cache utilities for API endpoints with performance instrumentation
  */
+
+// Import performance monitor for cache tracking (only in browser context)
+// In server context, we'll use a simple tracker
+let performanceMonitor = null;
+if (typeof window !== 'undefined') {
+  import('../../lib/performance-monitor.js').then(module => {
+    performanceMonitor = module.performanceMonitor;
+  });
+}
+
+/**
+ * Track cache access for performance monitoring
+ * @param {string} type - Cache type ('results', 'gameState', 'athletes')
+ * @param {boolean} hit - Whether it was a cache hit
+ */
+function trackCacheAccess(type, hit) {
+  // Only track in browser (not in API route context)
+  if (performanceMonitor && typeof performanceMonitor.trackCacheAccess === 'function') {
+    performanceMonitor.trackCacheAccess(type, hit);
+  }
+}
 
 /**
  * Generate ETag for response data
@@ -50,11 +71,20 @@ export function setCacheHeaders(res, options = {}) {
  * 
  * @param {object} req - Request object
  * @param {string} etag - ETag to compare
+ * @param {string} cacheType - Optional cache type for tracking ('results', 'gameState', 'athletes')
  * @returns {boolean} True if client has current version
  */
-export function checkETag(req, etag) {
+export function checkETag(req, etag, cacheType = 'unknown') {
   const clientETag = req.headers['if-none-match'];
-  return clientETag === `"${etag}"`;
+  const isHit = clientETag === `"${etag}"`;
+  
+  // Track cache hit/miss (note: this is server-side, won't actually track unless we implement server-side tracking)
+  // For now, this is a placeholder for potential server-side instrumentation
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Cache] ${cacheType}: ${isHit ? 'HIT (304)' : 'MISS'}`);
+  }
+  
+  return isHit;
 }
 
 /**

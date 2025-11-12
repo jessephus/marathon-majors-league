@@ -300,7 +300,7 @@ export default async function handler(req, res) {
       });
       
       // Check if client has current version
-      if (checkETag(req, etag)) {
+      if (checkETag(req, etag, 'results')) {
         return send304(res);
       }
       
