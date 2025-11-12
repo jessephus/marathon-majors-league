@@ -9,6 +9,7 @@
  * - Performance budgets and thresholds
  * 
  * Run with: npm run test:perf-instrumentation
+ * 
  */
 
 import { describe, it } from 'node:test';
