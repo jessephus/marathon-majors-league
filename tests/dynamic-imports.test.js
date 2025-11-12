@@ -1,7 +1,9 @@
 /**
+ * 
  * Dynamic Import Integration Tests
  * 
  * Tests for dynamic import functionality, feature flags, and performance monitoring.
+ * 
  */
 
 // Mock performance.now() for consistent testing

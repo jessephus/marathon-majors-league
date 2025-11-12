@@ -29,7 +29,8 @@
     "test:draft": "node src/features/draft/__tests__/validation.test.js",
     "test:api-client": "node tests/api-client.test.js",
     "test:ssr": "node tests/ssr-integration.test.js",
-    "test:formatting": "node tests/formatting-utils.test.js"
+    "test:formatting": "node tests/formatting-utils.test.js",
+    "test:dynamic": "node tests/dynamic-imports.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
