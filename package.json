@@ -28,7 +28,7 @@
     "test:ssr": "node tests/ssr-integration.test.js",
     "test:team-ssr": "node tests/team-session-ssr.test.js"
     "test:formatting": "node tests/formatting-utils.test.js",
-    "test:dynamic": "node tests/dynamic-imports.test.js"
+    "test:dynamic": "tsx tests/dynamic-imports.test.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -55,6 +55,7 @@
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
     "sharp": "^0.34.4",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
 }
