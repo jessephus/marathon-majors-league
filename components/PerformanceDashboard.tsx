@@ -76,6 +76,7 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
         {/* Chunk Performance Section */}
         <section style={{ marginBottom: '2rem' }}>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Dynamic Chunk Performance</h3>
+                    
           {summary.length === 0 ? (
             <p style={{ color: '#666' }}>No chunks loaded yet. Interact with the app to see metrics.</p>
           ) : (
@@ -193,6 +194,43 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
             Export Metrics (JSON)
           </button>
         </div>
+<br></br>
+        {/* Help text explaining what's shown */}
+        <div style={{ 
+            background: '#f0f9ff', 
+            border: '1px solid #bae6fd', 
+            borderRadius: '6px', 
+            padding: '1rem', 
+            marginBottom: '1rem',
+            fontSize: '0.9rem',
+            color: '#0c4a6e'
+          }}>
+            <strong>What you're seeing:</strong> Dynamic chunks are JavaScript modules loaded on-demand (not in the initial bundle). 
+            Each row shows:
+            <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+              <li><strong>Loads:</strong> How many times this chunk has been requested</li>
+              <li><strong>Avg Time:</strong> Average load time in milliseconds (🟢 &lt;100ms, 🟡 100-300ms, 🔴 &gt;300ms)</li>
+              <li><strong>Success Rate:</strong> Percentage of successful loads (🟢 100%, 🟡 90-99%, 🔴 &lt;90%)</li>
+            </ul>
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #bae6fd' }}>
+              <strong>Console Commands - Performance:</strong>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getChunkPerformance()</code> - View summary table</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getChunkPerformance('chunk-name')</code> - View specific chunk</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.getMetrics()</code> - Get all raw metrics</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.clear()</code> - Clear all metrics</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__performanceMonitor.exportMetrics()</code> - Export as JSON string</div>
+              </div>
+              <strong style={{ display: 'block', marginTop: '0.75rem' }}>Console Commands - Feature Flags:</strong>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.getFeatureFlags()</code> - View all flags and status</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.isEnabled('flag_name')</code> - Check if enabled</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.override('flag_name', true)</code> - Enable flag</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.override('flag_name', false)</code> - Disable flag</div>
+                <div style={{ marginBottom: '0.25rem' }}>• <code>window.__featureFlags.clearOverrides()</code> - Reset all overrides</div>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
   );

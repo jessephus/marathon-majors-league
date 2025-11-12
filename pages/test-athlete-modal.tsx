@@ -14,7 +14,7 @@ import { FeatureFlag } from '@/lib/feature-flags';
 
 // Dynamic import AthleteModal with performance tracking
 const AthleteModal = dynamicImport(
-  () => import('@/components/AthleteModal'),
+  () => import(/* webpackChunkName: "chunk-athlete-modal" */ '@/components/AthleteModal'),
   {
     chunkName: CHUNK_NAMES.ATHLETE_MODAL,
     featureFlag: FeatureFlag.DYNAMIC_ATHLETE_MODAL,
