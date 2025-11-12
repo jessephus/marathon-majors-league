@@ -16,8 +16,32 @@ import { useStateManagerEvent } from '@/lib/use-state-manager';
 import { apiClient } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
-import AthleteModal from '@/components/AthleteModal';
 import Footer from '@/components/Footer';
+import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
+import { FeatureFlag } from '@/lib/feature-flags';
+
+// Dynamic import AthleteModal with performance tracking
+const AthleteModal = dynamicImport(
+  () => import(/* webpackChunkName: "chunk-athlete-modal" */ '@/components/AthleteModal'),
+  {
+    chunkName: CHUNK_NAMES.ATHLETE_MODAL,
+    featureFlag: FeatureFlag.DYNAMIC_ATHLETE_MODAL,
+    loading: () => (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div style={{ 
+          display: 'inline-block', 
+          width: '40px', 
+          height: '40px', 
+          border: '4px solid rgba(255, 105, 0, 0.2)', 
+          borderTopColor: '#ff6900', 
+          borderRadius: '50%', 
+          animation: 'spin 1s linear infinite' 
+        }} />
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 interface LeaderboardPageProps {
   gameId: string;

@@ -81,6 +81,12 @@ jobs:
         run: npm run test:formatting
         continue-on-error: true
       
+      # Dynamic Imports Tests (no server required)
+      - name: Run dynamic imports tests
+        id: test-dynamic
+        run: npm run test:dynamic
+        continue-on-error: true
+      
       - name: Build application
         run: npm run build
         env:
@@ -215,6 +221,7 @@ jobs:
                 'API Client Tests': '${{ steps.test-api-client.outcome }}',
                 'SSR Integration Tests': '${{ steps.test-ssr.outcome }}',
                 'Formatting Utilities Tests': '${{ steps.test-formatting.outcome }}',
+                'Dynamic Imports Tests': '${{ steps.test-dynamic.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
@@ -351,6 +358,12 @@ jobs:
           # Check formatting utilities tests (run early, no server required)
           if [ "${{ steps.test-formatting.outcome }}" != "success" ]; then
             echo "❌ Formatting utilities tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check dynamic imports tests (run early, no server required)
+          if [ "${{ steps.test-dynamic.outcome }}" != "success" ]; then
+            echo "❌ Dynamic imports tests failed"
             TESTS_FAILED=true
           fi
           

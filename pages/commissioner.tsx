@@ -9,32 +9,40 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
-import dynamic from 'next/dynamic';
 import { AppStateProvider, useCommissionerState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
 import Footer from '@/components/Footer';
+import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
+import { FeatureFlag } from '@/lib/feature-flags';
 
-// Dynamic imports for panels with skeleton loaders
-const ResultsManagementPanel = dynamic(
-  () => import('@/components/commissioner/ResultsManagementPanel'),
+// Dynamic imports for commissioner panels with performance tracking and feature flags
+// Using webpack magic comments to force separate chunks
+const ResultsManagementPanel = dynamicImport(
+  () => import(/* webpackChunkName: "chunk-commissioner-results" */ '@/components/commissioner/ResultsManagementPanel'),
   {
+    chunkName: CHUNK_NAMES.COMMISSIONER_RESULTS,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
     loading: () => <SkeletonLoader lines={5} />,
     ssr: false,
   }
 );
 
-const AthleteManagementPanel = dynamic(
-  () => import('@/components/commissioner/AthleteManagementPanel'),
+const AthleteManagementPanel = dynamicImport(
+  () => import(/* webpackChunkName: "chunk-commissioner-athletes" */ '@/components/commissioner/AthleteManagementPanel'),
   {
+    chunkName: CHUNK_NAMES.COMMISSIONER_ATHLETES,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
     loading: () => <SkeletonLoader lines={5} />,
     ssr: false,
   }
 );
 
-const TeamsOverviewPanel = dynamic(
-  () => import('@/components/commissioner/TeamsOverviewPanel'),
+const TeamsOverviewPanel = dynamicImport(
+  () => import(/* webpackChunkName: "chunk-commissioner-teams" */ '@/components/commissioner/TeamsOverviewPanel'),
   {
+    chunkName: CHUNK_NAMES.COMMISSIONER_TEAMS,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
     loading: () => <SkeletonLoader lines={5} />,
     ssr: false,
   }
@@ -256,6 +264,15 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
     }
   }
 
+  function handleShowPerformanceDashboard() {
+    // Use the existing PerformanceDashboard component
+    if (typeof window !== 'undefined' && (window as any).__performanceDashboard) {
+      (window as any).__performanceDashboard.show();
+    } else {
+      alert('Performance dashboard not available.\n\nThis feature is only available in development mode.');
+    }
+  }
+
   if (!commissionerState.isCommissioner && showTOTPModal) {
     return (
       <>
@@ -434,6 +451,13 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
               <div className="dashboard-section">
                 <h3>Administrative Actions</h3>
                 <div className="button-group">
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={handleShowPerformanceDashboard}
+                    title="View dynamic import performance metrics"
+                  >
+                    📊 Performance Dashboard
+                  </button>
                   <button 
                     className="btn btn-warning"
                     onClick={handleResetGame}

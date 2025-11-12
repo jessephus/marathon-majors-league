@@ -8,8 +8,24 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { AppStateProvider, useGameState, Athlete } from '@/lib/state-provider';
-import AthleteModal from '@/components/AthleteModal';
 import { apiClient } from '@/lib/api-client';
+import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
+import { FeatureFlag } from '@/lib/feature-flags';
+
+// Dynamic import AthleteModal with performance tracking
+const AthleteModal = dynamicImport(
+  () => import(/* webpackChunkName: "chunk-athlete-modal" */ '@/components/AthleteModal'),
+  {
+    chunkName: CHUNK_NAMES.ATHLETE_MODAL,
+    featureFlag: FeatureFlag.DYNAMIC_ATHLETE_MODAL,
+    loading: () => (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <div>Loading athlete details...</div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 function AthleteModalTestContent() {
   const { gameState, setGameState } = useGameState();
