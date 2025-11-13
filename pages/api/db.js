@@ -522,218 +522,25 @@ export async function updateGameState(gameId, updates) {
 // ============================================================================
 // RANKINGS
 // ============================================================================
-// ⚠️ DEPRECATED: Player rankings functions are part of the legacy snake draft system.
-// These functions work with the player_rankings table which stores preference rankings
-// submitted by players before the automated snake draft is executed.
-//
-// The modern salary cap draft mode does not use rankings - players directly select
-// their team via salary_cap_teams table.
-//
-// These functions are maintained only for backward compatibility with existing
-// season league games that use the ranking + snake draft workflow.
-//
-// @deprecated Use salary cap draft functions for new games
-
-/**
- * Get player rankings for a game
- * 
- * ⚠️ DEPRECATED: Part of legacy snake draft system.
- * @deprecated Use salary cap draft functions for new games
- */
-export async function getPlayerRankings(gameId, playerCode = null) {
-  let rankings;
-  
-  if (playerCode) {
-    rankings = await sql`
-      SELECT pr.player_code, pr.gender, pr.rank_order,
-             a.id, a.name, a.country, a.personal_best as pb, a.headshot_url as "headshotUrl"
-      FROM player_rankings pr
-      JOIN athletes a ON pr.athlete_id = a.id
-      WHERE pr.game_id = ${gameId} AND pr.player_code = ${playerCode}
-      ORDER BY pr.gender, pr.rank_order
-    `;
-  } else {
-    rankings = await sql`
-      SELECT pr.player_code, pr.gender, pr.rank_order,
-             a.id, a.name, a.country, a.personal_best as pb, a.headshot_url as "headshotUrl"
-      FROM player_rankings pr
-      JOIN athletes a ON pr.athlete_id = a.id
-      WHERE pr.game_id = ${gameId}
-      ORDER BY pr.player_code, pr.gender, pr.rank_order
-    `;
-  }
-  
-  // Transform to match blob storage format
-  const grouped = {};
-  
-  rankings.forEach(row => {
-    if (!grouped[row.player_code]) {
-      grouped[row.player_code] = { men: [], women: [] };
-    }
-    
-    const athlete = {
-      id: row.id,
-      name: row.name,
-      country: row.country,
-      pb: row.pb,
-      headshotUrl: row.headshotUrl
-    };
-    
-    grouped[row.player_code][row.gender].push(athlete);
-  });
-  
-  return playerCode && grouped[playerCode] ? grouped[playerCode] : grouped;
-}
-
-/**
- * Save player rankings to database
- * 
- * ⚠️ DEPRECATED: Part of legacy snake draft system.
- * Stores player preference rankings before snake draft execution.
- * @deprecated Use salary cap draft functions for new games
- */
-export async function savePlayerRankings(gameId, playerCode, men, women) {
-  // Delete existing rankings for this player
-  await sql`
-    DELETE FROM player_rankings
-    WHERE game_id = ${gameId} AND player_code = ${playerCode}
-  `;
-  
-  // Insert men rankings
-  for (let i = 0; i < men.length; i++) {
-    await sql`
-      INSERT INTO player_rankings (game_id, player_code, gender, athlete_id, rank_order)
-      VALUES (${gameId}, ${playerCode}, 'men', ${men[i].id}, ${i + 1})
-    `;
-  }
-  
-  // Insert women rankings
-  for (let i = 0; i < women.length; i++) {
-    await sql`
-      INSERT INTO player_rankings (game_id, player_code, gender, athlete_id, rank_order)
-      VALUES (${gameId}, ${playerCode}, 'women', ${women[i].id}, ${i + 1})
-    `;
-  }
-}
-
-/**
- * Clear all rankings for a game
- * 
- * ⚠️ DEPRECATED: Part of legacy snake draft system.
- * @deprecated Use salary cap draft functions for new games
- */
-export async function clearAllRankings(gameId) {
-  await sql`
-    DELETE FROM player_rankings
-    WHERE game_id = ${gameId}
-  `;
-}
-
 // ============================================================================
-// DRAFT TEAMS
+// DEPRECATED SNAKE DRAFT FUNCTIONS - REMOVED
 // ============================================================================
-// ⚠️ DEPRECATED: Draft teams functions are part of the legacy snake draft system.
-// These functions work with the draft_teams table which stores team assignments
-// created by the automated snake draft algorithm.
+// The following functions were removed as part of the monolith cleanup:
+// - getPlayerRankings() - Part of legacy snake draft system
+// - savePlayerRankings() - Part of legacy snake draft system
+// - clearAllRankings() - Part of legacy snake draft system
+// - getDraftTeams() - Part of legacy snake draft system
+// - saveDraftTeams() - Part of legacy snake draft system
 //
-// The modern salary cap draft mode stores teams in salary_cap_teams table instead.
+// These functions worked with player_rankings and draft_teams tables which
+// are deprecated in favor of the modern salary cap draft (salary_cap_teams table).
 //
-// These functions are maintained only for backward compatibility with existing
-// season league games that use the ranking + snake draft workflow.
+// The /api/rankings and /api/draft endpoints that used these functions have
+// also been removed.
 //
-// @deprecated Use salary cap draft functions for new games
-
-/**
- * Get draft team assignments for a game
- * 
- * ⚠️ DEPRECATED: Part of legacy snake draft system.
- * Retrieves teams assigned by the automated snake draft algorithm.
- * @deprecated Use getSalaryCapTeams() for new games
- */
-export async function getDraftTeams(gameId) {
-  const teams = await sql`
-    SELECT DISTINCT ON (dt.player_code, a.id)
-           dt.player_code,
-           ans.display_name,
-           a.id, a.name, a.country, a.gender, a.personal_best as pb, a.headshot_url as "headshotUrl"
-    FROM draft_teams dt
-    JOIN athletes a ON dt.athlete_id = a.id
-    LEFT JOIN LATERAL (
-      SELECT display_name 
-      FROM anonymous_sessions 
-      WHERE game_id = dt.game_id 
-        AND player_code = dt.player_code
-        AND is_active = true
-      ORDER BY created_at DESC
-      LIMIT 1
-    ) ans ON true
-    WHERE dt.game_id = ${gameId}
-    ORDER BY dt.player_code, a.id, a.gender, a.personal_best
-  `;
-  
-  // Transform to match blob storage format
-  const grouped = {};
-  
-  teams.forEach(row => {
-    if (!grouped[row.player_code]) {
-      grouped[row.player_code] = { 
-        men: [], 
-        women: [],
-        displayName: row.display_name || null  // Include display name if available
-      };
-    }
-    
-    const athlete = {
-      id: row.id,
-      name: row.name,
-      country: row.country,
-      pb: row.pb,
-      headshotUrl: row.headshotUrl
-    };
-    
-    grouped[row.player_code][row.gender].push(athlete);
-  });
-  
-  return grouped;
-}
-
-/**
- * Save draft team assignments to database
- * 
- * ⚠️ DEPRECATED: Part of legacy snake draft system.
- * Stores teams created by the automated snake draft algorithm.
- * @deprecated Use salary cap draft functions for new games
- */
-export async function saveDraftTeams(gameId, teams) {
-  // Clear existing teams for this game
-  await sql`
-    DELETE FROM draft_teams
-    WHERE game_id = ${gameId}
-  `;
-  
-  // Insert new teams
-  for (const [playerCode, team] of Object.entries(teams)) {
-    // Insert men
-    if (team.men) {
-      for (const athlete of team.men) {
-        await sql`
-          INSERT INTO draft_teams (game_id, player_code, athlete_id)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id})
-        `;
-      }
-    }
-    
-    // Insert women
-    if (team.women) {
-      for (const athlete of team.women) {
-        await sql`
-          INSERT INTO draft_teams (game_id, player_code, athlete_id)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id})
-        `;
-      }
-    }
-  }
-}
+// For team data, use:
+// - getSalaryCapTeams() - Get salary cap draft teams
+// - saveSalaryCapTeam() - Save salary cap draft team
 
 // ============================================================================
 // RACE RESULTS

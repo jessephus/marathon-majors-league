@@ -140,7 +140,16 @@ export default async function handler(req, res) {
 
     } else if (req.method === 'POST') {
       // Submit salary cap team
-      const { team, totalSpent, teamName } = req.body;
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(req.body);
+        } catch (error) {
+          console.error('Salary cap draft body parse error:', error);
+          return res.status(400).json({ error: 'Invalid JSON payload' });
+        }
+      }
+      const { team, totalSpent, teamName } = body;
 
       if (!team || !team.men || !team.women) {
         return res.status(400).json({ error: 'Invalid team data' });

@@ -222,11 +222,11 @@ export function createHeadshotElement(
 }
 
 /**
- * Enrich athlete data with current information from global state
- * @param athlete - Athlete object with id
- * @param gender - 'men' or 'women'
- * @param athletesData - Current athlete database
- * @returns Merged athlete object
+ * Enrich athlete data by merging saved data with current athlete database
+ * @param athlete - Saved athlete data (may have outdated headshot)
+ * @param gender - Athlete gender ('men' or 'women')
+ * @param athletesData - Current athletes database from API
+ * @returns Enriched athlete with current data
  */
 export function enrichAthleteData(
   athlete: any,
@@ -237,4 +237,18 @@ export function enrichAthleteData(
   const currentData = athletesData[gender]?.find((a: any) => a.id === athlete.id);
   // Merge the saved athlete data with current data, prioritizing current data
   return currentData ? { ...athlete, ...currentData } : athlete;
+}
+
+/**
+ * Remove the app loading overlay
+ * Called after initial app setup or hydration is complete
+ */
+export function removeLoadingOverlay(): void {
+  if (typeof document === 'undefined') return; // SSR safety
+  
+  const overlay = document.getElementById('app-loading-overlay');
+  if (overlay) {
+    overlay.style.display = 'none';
+    console.log('[UI Helpers] Loading overlay removed');
+  }
 }

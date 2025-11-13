@@ -57,33 +57,49 @@ describe('Frontend Integration Tests', () => {
   });
   
   describe('HTML Structure', () => {
-    it('should have all required pages', async () => {
+    it('should have required elements for landing page', async () => {
       const { html } = await fetchHTML('/');
       
-      // Check for key page elements
+      // Check for key landing page elements
       assert.ok(html.includes('id="landing-page"'), 'Should have landing page');
-      assert.ok(html.includes('id="ranking-page"'), 'Should have ranking page');
-      assert.ok(html.includes('id="commissioner-page"'), 'Should have commissioner page');
-      assert.ok(html.includes('id="teams-page"'), 'Should have teams page');
       
-      console.log('✅ All required page elements present');
+      // React modals are not rendered in SSR HTML when isOpen=false
+      // They exist as React components but don't appear in initial HTML
+      // This is correct behavior - modals render on client-side when opened
+      
+      // Legacy pages removed - migrated to React routes
+      assert.ok(!html.includes('id="ranking-page"'), 'ranking-page removed (deprecated snake draft)');
+      assert.ok(!html.includes('id="salary-cap-draft-page"'), 'salary-cap-draft-page removed (migrated to /team/[session])');
+      assert.ok(!html.includes('id="commissioner-page"'), 'commissioner-page removed (migrated to /commissioner)');
+      
+      // Verify old HTML modal IDs are gone (now React components)
+      assert.ok(!html.includes('id="team-creation-modal"'), 'team-creation-modal is now a React component (not in initial HTML)');
+      assert.ok(!html.includes('id="commissioner-totp-modal"'), 'commissioner-totp-modal is now a React component (not in initial HTML)');
+      
+      console.log('✅ Landing page present, legacy pages/modals correctly removed');
     });
     
-    it('should have drag handle column in athlete table', async () => {
+    it('should not have legacy HTML structure', async () => {
       const { html } = await fetchHTML('/');
       
-      assert.ok(html.includes('drag-handle-header'), 'Should have drag handle header');
+      // Verify legacy elements are removed
+      assert.ok(!html.includes('drag-handle-header'), 'Should not have drag handle (snake draft removed)');
+      assert.ok(!html.includes('athlete-management-container'), 'Should not have athlete management container (migrated to React)');
+      assert.ok(!html.includes('dangerouslySetInnerHTML'), 'Should not inject HTML via dangerouslySetInnerHTML (migration complete)');
       
-      console.log('✅ Drag handle migration successful');
+      console.log('✅ Legacy HTML successfully removed');
     });
     
-    it('should have athlete management container', async () => {
+    it('should have WelcomeCard React component', async () => {
       const { html } = await fetchHTML('/');
       
-      assert.ok(html.includes('athlete-management-container'), 'Should have athlete management container');
-      assert.ok(!html.includes('id="athlete-table-container".*id="athlete-table-container"'), 'Should not have duplicate IDs');
+      // Verify React component is rendered (check for various team creation text variations)
+      assert.ok(
+        html.includes('Create a New Team') || html.includes('Create Your Team') || html.includes('Create Team'), 
+        'Should have team creation UI'
+      );
       
-      console.log('✅ Athlete management container fix verified');
+      console.log('✅ WelcomeCard React component rendered');
     });
   });
   
@@ -141,12 +157,14 @@ describe('Frontend Integration Tests', () => {
       const testGameId = 'integration-test-' + Date.now();
       
       // Test creating a game
+      // After PR #131: players array removed (was part of deprecated snake draft)
       const createResponse = await fetch(`${BASE_URL}/api/game-state?gameId=${testGameId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          players: ['TEST1', 'TEST2'],
-          draftComplete: false
+          draftComplete: false,
+          resultsFinalized: false,
+          rosterLockTime: null
         })
       });
       
@@ -157,7 +175,10 @@ describe('Frontend Integration Tests', () => {
       const gameData = await getResponse.json();
       
       assert.strictEqual(getResponse.status, 200, 'Should retrieve game');
-      assert.ok(gameData.players, 'Game should have players array');
+      // After PR #131: Check for modern game state fields instead of players array
+      assert.ok(typeof gameData.draftComplete === 'boolean', 'Game should have draftComplete boolean');
+      assert.ok(typeof gameData.resultsFinalized === 'boolean', 'Game should have resultsFinalized boolean');
+      assert.ok(gameData.hasOwnProperty('rosterLockTime'), 'Game should have rosterLockTime field');
       
       console.log('✅ Game state API integration works');
     });
