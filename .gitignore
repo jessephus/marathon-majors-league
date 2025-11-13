@@ -1,5 +1,9 @@
 # MacOS system files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 **/.DS_Store
 
 # Logs
@@ -144,9 +148,6 @@ vite.config.ts.timestamp-*
 
 # Vercel
 .vercel
-
-# Package lock
-package-lock.json
 
 # Test files
 test-*.html
