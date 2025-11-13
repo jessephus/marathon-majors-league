@@ -78,11 +78,16 @@ describe('Performance Benchmark Tests', () => {
       if (IS_LOCAL && existsSync(join(process.cwd(), '.next/static/chunks'))) {
         console.log('🔍 Verifying dynamic chunk generation...');
         
+        // Note: Next.js 15 generates chunk names differently than Webpack
+        // webpackChunkName comments are not fully respected
         const expectedChunks = [
-          'chunk-athlete-modal',
-          'chunk-commissioner-results',
-          'chunk-commissioner-athletes',
-          'chunk-commissioner-teams'
+          // AthleteModal: Can be chunk-athlete-modal.*.js OR _pages-dir-browser_components_AthleteModal_tsx.js
+          // depending on build environment (local vs CI)
+          { pattern: /(chunk-athlete-modal|AthleteModal)/, name: 'AthleteModal' },
+          // Commissioner panels: chunk-commissioner-*.js (custom naming works)
+          { pattern: /chunk-commissioner-results/, name: 'chunk-commissioner-results' },
+          { pattern: /chunk-commissioner-athletes/, name: 'chunk-commissioner-athletes' },
+          { pattern: /chunk-commissioner-teams/, name: 'chunk-commissioner-teams' }
         ];
         
         const chunksDir = join(process.cwd(), '.next/static/chunks');
@@ -90,19 +95,19 @@ describe('Performance Benchmark Tests', () => {
         const chunkFiles = readdirSync(chunksDir);
         
         let allFound = true;
-        for (const chunkName of expectedChunks) {
-          const found = chunkFiles.some(file => file.startsWith(chunkName));
+        for (const { pattern, name } of expectedChunks) {
+          const found = chunkFiles.some(file => pattern.test(file));
           if (found) {
-            const matchingFile = chunkFiles.find(file => file.startsWith(chunkName));
-            console.log(`   ✓ ${chunkName}: ${matchingFile}`);
+            const matchingFile = chunkFiles.find(file => pattern.test(file));
+            console.log(`   ✓ ${name}: ${matchingFile}`);
           } else {
-            console.log(`   ✗ ${chunkName}: NOT FOUND`);
+            console.log(`   ✗ ${name}: NOT FOUND`);
             allFound = false;
           }
         }
         
         assert.ok(allFound, 'All expected dynamic chunks should be generated');
-        console.log('✅ All 4 dynamic chunks generated successfully');
+        console.log('✅ All dynamic chunks generated successfully');
       } else {
         console.log('⚠️  Dynamic chunk verification only available after build');
         console.log('💡 Run `npm run build` first');
@@ -374,13 +379,12 @@ describe('Performance Benchmark Tests', () => {
     it('should handle mixed concurrent requests', async () => {
       const start = Date.now();
       
-      // Mix of different request types
+      // Mix of different request types (app.js removed in PR #130)
       const requests = [
         fetch(`${BASE_URL}/`),
         fetch(`${BASE_URL}/api/athletes`),
         fetch(`${BASE_URL}/api/races`),
         fetch(`${BASE_URL}/style.css`),
-        fetch(`${BASE_URL}/app.js`),
         fetch(`${BASE_URL}/api/game-state`),
         fetch(`${BASE_URL}/api/standings`),
         fetch(`${BASE_URL}/athletes.json`)

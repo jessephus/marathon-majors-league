@@ -31,7 +31,8 @@
     "test:ssr": "node tests/ssr-integration.test.js",
     "test:formatting": "node tests/formatting-utils.test.js",
     "test:dynamic": "tsx tests/dynamic-imports.test.js",
-    "test:perf-instrumentation": "tsx tests/performance-instrumentation.test.js"
+    "test:perf-instrumentation": "tsx tests/performance-instrumentation.test.js",
+    "validate:no-legacy": "node scripts/validate-no-legacy-imports.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

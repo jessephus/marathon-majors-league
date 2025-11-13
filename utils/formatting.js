@@ -2,7 +2,7 @@
  * Formatting Utilities Module
  * 
  * Pure formatting functions for time, pace, ordinals, and XSS prevention.
- * Extracted from public/app.js to eliminate duplication and enable testing.
+ * Originally extracted from public/app.js (now removed) to eliminate duplication and enable testing.
  * 
  * All functions are pure (no side effects) and can be safely used in:
  * - Frontend components (React or vanilla JS)

@@ -1,0 +1,42 @@
+name: Validate No Legacy Imports
+
+on:
+  push:
+    branches:
+      - main
+      - 'copilot/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Check for Legacy Monolith References
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Validate no legacy imports
+        run: npm run validate:no-legacy
+      
+      - name: Report status
+        if: always()
+        run: |
+          if [ $? -eq 0 ]; then
+            echo "✅ No legacy imports found"
+            echo "The legacy monolith files (app.js, salary-cap-draft.js) are fully removed"
+          else
+            echo "❌ Legacy imports detected"
+            echo "Please remove all references to deleted files"
+            exit 1
+          fi

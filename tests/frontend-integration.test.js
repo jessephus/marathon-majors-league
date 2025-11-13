@@ -31,16 +31,8 @@ describe('Frontend Integration Tests', () => {
       console.log('✅ index.html served correctly');
     });
     
-    it('should serve app.js', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
-      
-      assert.strictEqual(response.status, 200, 'Should return 200 OK');
-      assert.ok(js.includes('function') || js.includes('const'), 'Should contain JavaScript');
-      assert.ok(js.includes('API_BASE'), 'Should have API_BASE configuration');
-      
-      console.log('✅ app.js served correctly');
-    });
+    // Legacy app.js and salary-cap-draft.js were removed in monolith cleanup (PR #130)
+    // The application now uses React components loaded via Next.js
     
     it('should serve style.css', async () => {
       const response = await fetch(`${BASE_URL}/style.css`);
@@ -95,45 +87,21 @@ describe('Frontend Integration Tests', () => {
     });
   });
   
-  describe('JavaScript Configuration', () => {
-    it('should have correct API_BASE configuration', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
-      
-      // Check that API_BASE is defined
-      assert.ok(js.includes('API_BASE'), 'Should define API_BASE');
-      
-      // Check that it's not pointing to a hardcoded URL
-      const hasHardcodedURL = js.match(/API_BASE\s*=\s*['"]https?:\/\//);
-      if (hasHardcodedURL) {
-        console.log('⚠️  Warning: API_BASE might be hardcoded, should be relative for Next.js');
-      } else {
-        console.log('✅ API_BASE configuration looks good');
-      }
-    });
-  });
+  // Legacy JavaScript configuration and function tests removed (PR #130)
+  // app.js monolith was deleted and replaced with React components
+  // Relevant functionality is now tested in component-specific tests
   
-  describe('Critical Frontend Functions', () => {
-    it('should have drag and drop functions', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
+  describe('Next.js Page Rendering', () => {
+    it('should render root page with React', async () => {
+      const { html, status } = await fetchHTML('/');
       
-      assert.ok(js.includes('handleTableRowDragStart'), 'Should have drag start handler');
-      assert.ok(js.includes('handleTableRowTouchStart'), 'Should have touch start handler');
-      assert.ok(js.includes('drag-handle'), 'Should reference drag handle');
+      assert.strictEqual(status, 200, 'Should return 200 OK');
       
-      console.log('✅ Drag and drop functionality present');
-    });
-    
-    it('should have game state management', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
+      // Check for Next.js React rendering markers
+      assert.ok(html.includes('__NEXT_DATA__') || html.includes('id="__next"'), 
+        'Should have Next.js rendering markers');
       
-      assert.ok(js.includes('gameState'), 'Should have gameState');
-      assert.ok(js.includes('handleEnterGame'), 'Should have enter game handler');
-      assert.ok(js.includes('handleCommissionerMode'), 'Should have commissioner mode');
-      
-      console.log('✅ Game state management present');
+      console.log('✅ Next.js page rendering verified');
     });
   });
   

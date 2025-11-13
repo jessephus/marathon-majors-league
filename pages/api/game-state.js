@@ -2,7 +2,7 @@
  * Game State API - Manages game configuration and state
  * 
  * ⚠️ DEPRECATION NOTICE - /api/game-state endpoint:
- * This endpoint is primarily used by the legacy site (public/app.js).
+ * This endpoint was primarily used by the legacy site (public/app.js, now removed).
  * 
  * The `players` field in the response is DEPRECATED for salary cap draft.
  * It only contains snake draft players and stale salary cap team data.
@@ -14,7 +14,7 @@
  * 
  * This endpoint is maintained for backward compatibility with:
  *   - Legacy snake draft mode
- *   - Legacy commissioner view (public/app.js displayTeamsTable)
+ *   - Legacy commissioner view (public/app.js displayTeamsTable, now removed)
  */
 import { getGameState, updateGameState, getPlayerRankings, getDraftTeams, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
 

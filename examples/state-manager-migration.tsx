@@ -10,7 +10,7 @@
 // ============================================================================
 
 /*
-// public/app.js (legacy monolith)
+// public/app.js (legacy monolith, now removed)
 
 // Global state variables
 let gameState = {

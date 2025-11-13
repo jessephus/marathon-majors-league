@@ -2,7 +2,7 @@
  * Application Configuration Constants
  * 
  * Centralized configuration values for the entire application.
- * Extracted from public/app.js to eliminate duplication and enable easy configuration.
+ * Originally extracted from public/app.js (now removed) to eliminate duplication and enable easy configuration.
  * 
  * All constants can be safely used in:
  * - Frontend code (vanilla JS or React)

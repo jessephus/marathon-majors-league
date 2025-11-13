@@ -59,7 +59,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
   }, []);
   
   const handleCreateTeam = () => {
-    // Trigger the team creation modal (compatibility with existing app.js)
+    // Trigger the team creation modal
     const modal = document.getElementById('team-creation-modal');
     if (modal) {
       modal.style.display = 'flex';
@@ -105,9 +105,6 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <meta property="twitter:description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
         <meta property="twitter:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
       </Head>
-
-      {/* Always load salary-cap-draft.js */}
-      <Script src="/salary-cap-draft.js" strategy="afterInteractive" />
 
       {/* Load app-bridge.js for SSR mode - shared utilities without monolith */}
       <Script src="/app-bridge.js" type="module" strategy="afterInteractive" />
@@ -172,11 +169,10 @@ export default function Home({ serverSessionType, hasURLSession }) {
                       
                       console.log('[SSR] Session restored from URL:', data.session.displayName);
                       
-                      // Trigger app.js to reload the session from localStorage
-                      // This will update anonymousSession and footer buttons
+                      // Update session and footer buttons
                       if (typeof window.restoreSession === 'function') {
                         await window.restoreSession();
-                        console.log('[SSR] Called window.restoreSession() to update app.js state');
+                        console.log('[SSR] Called window.restoreSession() to update session state');
                       } else {
                         // Fallback: Use app-bridge.js to update session and footer buttons
                         // Initialize sessions from localStorage (which now has the restored session)
