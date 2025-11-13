@@ -81,8 +81,9 @@ describe('Performance Benchmark Tests', () => {
         // Note: Next.js 15 generates chunk names differently than Webpack
         // webpackChunkName comments are not fully respected
         const expectedChunks = [
-          // AthleteModal: _pages-dir-browser_components_AthleteModal_tsx.js
-          { pattern: /AthleteModal/, name: 'AthleteModal' },
+          // AthleteModal: Can be chunk-athlete-modal.*.js OR _pages-dir-browser_components_AthleteModal_tsx.js
+          // depending on build environment (local vs CI)
+          { pattern: /(chunk-athlete-modal|AthleteModal)/, name: 'AthleteModal' },
           // Commissioner panels: chunk-commissioner-*.js (custom naming works)
           { pattern: /chunk-commissioner-results/, name: 'chunk-commissioner-results' },
           { pattern: /chunk-commissioner-athletes/, name: 'chunk-commissioner-athletes' },
