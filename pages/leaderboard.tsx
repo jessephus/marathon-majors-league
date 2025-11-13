@@ -125,9 +125,6 @@ function LeaderboardPageContent({
         apiClient.gameState.load(gameId)
       ]);
 
-      console.log('📊 Standings data received:', standingsData);
-      console.log('📊 Has standings array?', !!standingsData.standings);
-      console.log('📊 Standings length:', standingsData.standings?.length || 0);
       setStandings(standingsData);
 
       // Results and game state already fetched via API client
@@ -152,13 +149,8 @@ function LeaderboardPageContent({
   // Fetch data on mount to populate client-side cache (even if we have SSR data)
   // This ensures cache metrics are tracked for standings/scoring endpoints
   useEffect(() => {
-    if (!initialStandings && !initialResults) {
-      console.log('🔄 Initial data fetch on mount (no SSR data)');
-      fetchData();
-    } else {
-      console.log('🔄 Refreshing SSR data via client-side API (for cache tracking)');
-      fetchData();
-    }
+    // Fetch data silently to track cache metrics
+    fetchData();
   }, []); // Empty deps - run once on mount
 
   // Set up auto-refresh only when page is visible and focused
@@ -171,11 +163,8 @@ function LeaderboardPageContent({
 
     // Only set up interval if page is visible and focused
     if (isVisible && isFocused) {
-      console.log('▶️ Auto-refresh started (60s interval)');
-      
       // Set up 60-second refresh interval
       intervalRef.current = setInterval(() => {
-        console.log('🔄 Auto-refreshing leaderboard...');
         fetchData();
       }, 60000);
     } else {
@@ -193,7 +182,6 @@ function LeaderboardPageContent({
   // Handle player click
   const handlePlayerClick = (playerCode: string) => {
     // Future: Open team details modal
-    console.log('Clicked player:', playerCode);
   };
 
   // Handle athlete click - show athlete modal with scoring

@@ -239,12 +239,7 @@ class PerformanceMonitor {
       this.cacheMetrics.shift();
     }
 
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[Cache] ${type}: ${hit ? 'HIT' : 'MISS'}`
-      );
-    }
+    // Cache tracking is silent - use window.getCacheStats() to view metrics
 
     // Check threshold
     const hitRatio = this.getCacheHitRatio(type);
@@ -275,10 +270,7 @@ class PerformanceMonitor {
       this.performanceEvents.shift();
     }
 
-    // Log to console in development only
-    if (process.env.NODE_ENV === 'development') {
-      console.warn(`[Performance] ${event}`, payload);
-    }
+    // Only log severe issues, not warnings - use window.getCacheStats() for metrics
 
     // Always send to analytics if available (production monitoring)
     if (typeof window !== 'undefined' && (window as any).gtag) {

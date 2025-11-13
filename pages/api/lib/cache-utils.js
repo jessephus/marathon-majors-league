@@ -99,19 +99,7 @@ export function checkETag(req, etag, cacheType = 'unknown', res = null) {
     res.setHeader('X-Cache-Type', cacheType);
   }
   
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Cache] ${cacheType}:`, {
-      rawClientETag,
-      clientETag,
-      serverETag,
-      isHit,
-    });
-  }
-
-  // Log cache status in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Cache] ${cacheType}: ${isHit ? 'HIT (304)' : 'MISS'}`);
-  }
+  // Cache validation is silent - headers are available for client tracking
   
   return isHit;
 }

@@ -102,7 +102,7 @@ async function calculateStandings(gameId) {
   // Build a lookup map: playerCode => [athleteId1, athleteId2, ...]
   const teamsByPlayer = new Map();
   
-  // Prefer salary_cap_teams
+  // Add all salary_cap_teams
   for (const row of allSalaryCapTeams) {
     if (!teamsByPlayer.has(row.player_code)) {
       teamsByPlayer.set(row.player_code, []);
@@ -110,8 +110,9 @@ async function calculateStandings(gameId) {
     teamsByPlayer.get(row.player_code).push(row.athlete_id);
   }
   
-  // Fallback to draft_teams if not found in salary_cap_teams
+  // Fallback: add draft_teams for players NOT in salary_cap_teams
   for (const row of allDraftTeams) {
+    // Only use draft_teams if player has no salary_cap_teams entry
     if (!teamsByPlayer.has(row.player_code)) {
       teamsByPlayer.set(row.player_code, []);
       teamsByPlayer.get(row.player_code).push(row.athlete_id);
@@ -388,7 +389,14 @@ export default async function handler(req, res) {
       const { standings, isTemporary: isTempScoring, hasFinishTimes, projectionInfo: projection } = standingsData;
       
       // Generate ETag for client-side caching
-      const etag = generateETag({ standings, isTemporary: isTempScoring, hasFinishTimes, projectionInfo: projection });
+      // Only include stable data in ETag (exclude projectionInfo which may vary)
+      const stableData = standings.map(s => ({
+        player_code: s.player_code,
+        total_points: s.total_points,
+        races_count: s.races_count,
+        rank: s.rank
+      }));
+      const etag = generateETag({ standings: stableData, isTemporary: isTempScoring });
       res.setHeader('ETag', `"${etag}"`);
       
       // Use shorter cache times for temporary scoring

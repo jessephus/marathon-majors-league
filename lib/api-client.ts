@@ -91,10 +91,7 @@ function ensureCacheLoaded(): void {
           responseCache.set(key, value);
         }
       });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`🗃️ [API Cache] Hydrated ${responseCache.size} entries from sessionStorage`);
-      }
+      // Cache hydrated silently
     }
   } catch (error) {
     console.warn('[API Cache] Failed to hydrate cache from sessionStorage:', error);
@@ -141,10 +138,7 @@ function createCacheKey(endpoint: string, method: string): string {
 function updateCache<T>(context: CacheContext<T>, payload: CachedResponse<T>): void {
   responseCache.set(context.key, payload);
   persistCache();
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`💾 [API Cache] Stored entry for ${context.key} (TTL ${Math.round((payload.expiry - Date.now()) / 1000)}s)`);
-  }
+  // Cache stored silently
 }
 
 /**
@@ -266,14 +260,10 @@ async function apiRequest<T>(
     if (cacheEntry && Date.now() < cacheEntry.expiry) {
       usedClientCache = true;
       trackCacheAccess(cacheType, true);
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ [API Cache] ${endpoint} served from client cache (age ${(Date.now() - cacheEntry.createdAt) / 1000}s)`);
-      }
+      // Served from client cache - no logging needed
       return cacheEntry.data;
     } else if (cacheEntry) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`⌛ [API Cache] ${endpoint} cache expired ${(Date.now() - cacheEntry.expiry) / 1000}s ago, revalidating`);
-      }
+      // Cache expired, will revalidate - no logging needed
     }
   }
   
@@ -301,11 +291,7 @@ async function apiRequest<T>(
       };
       updateCache(cacheContext, renewedEntry);
       trackCacheAccess(cacheContext.type, true);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`✅ [API Cache] ${endpoint} revalidated via 304 (client cache updated)`);
-      }
-
+      // 304 Not Modified - cache revalidated successfully
       return renewedEntry.data;
     }
 
@@ -313,23 +299,10 @@ async function apiRequest<T>(
     const cacheStatus = response.headers.get('X-Cache-Status');
     const cacheType = response.headers.get('X-Cache-Type');
     
-    // Debug: Log all API calls and cache status
-    if (process.env.NODE_ENV === 'development') {
-      const hasCache = cacheStatus && cacheType;
-      console.log(
-        hasCache 
-          ? `✅ [API] ${method} ${endpoint} → ${response.status} | Cache: ${cacheType} ${cacheStatus}`
-          : `⚠️ [API] ${method} ${endpoint} → ${response.status} | NO CACHE HEADERS`
-      );
-    }
-    
     if (cacheStatus && cacheType) {
       const isHit = cacheStatus === 'HIT';
       trackCacheAccess(cacheType, isHit);
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`   📊 Cache tracked: ${cacheType} ${isHit ? 'HIT ✓' : 'MISS ✗'}`);
-      }
+      // Cache tracking handled silently
     }
 
     if (!response.ok) {
