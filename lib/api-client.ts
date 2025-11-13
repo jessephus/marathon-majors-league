@@ -547,25 +547,9 @@ export const sessionApi = {
   },
 };
 
-// Rankings API
-export const rankingsApi = {
-  /**
-   * Submit player rankings
-   */
-  async submit(gameId: string, playerCode: string, rankings: any) {
-    return apiRequest('/api/rankings', {
-      method: 'POST',
-      body: JSON.stringify({ gameId, playerCode, rankings }),
-    });
-  },
-
-  /**
-   * Get player rankings
-   */
-  async get(gameId: string, playerCode: string) {
-    return apiRequest(`/api/rankings?gameId=${gameId}&playerCode=${playerCode}`);
-  },
-};
+// Rankings API - REMOVED (deprecated snake draft system)
+// This API was part of the legacy snake draft system and has been removed.
+// Use salaryCapDraftApi for modern salary cap draft functionality.
 
 // Salary Cap Draft API
 export const salaryCapDraftApi = {
@@ -930,7 +914,7 @@ export const apiClient = {
   athletes: athleteApi,
   gameState: gameStateApi,
   session: sessionApi,
-  rankings: rankingsApi,
+  // rankings: REMOVED - deprecated snake draft system (use salaryCapDraft instead)
   salaryCapDraft: salaryCapDraftApi,
   results: resultsApi,
   standings: standingsApi,
