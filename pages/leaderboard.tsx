@@ -149,10 +149,14 @@ function LeaderboardPageContent({
     }
   }, [gameId, setGameState, isVisible, isFocused]);
 
-  // Fetch data on mount if we don't have initial data
+  // Fetch data on mount to populate client-side cache (even if we have SSR data)
+  // This ensures cache metrics are tracked for standings/scoring endpoints
   useEffect(() => {
     if (!initialStandings && !initialResults) {
-      console.log('🔄 Initial data fetch on mount');
+      console.log('🔄 Initial data fetch on mount (no SSR data)');
+      fetchData();
+    } else {
+      console.log('🔄 Refreshing SSR data via client-side API (for cache tracking)');
       fetchData();
     }
   }, []); // Empty deps - run once on mount

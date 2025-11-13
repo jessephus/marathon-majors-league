@@ -391,7 +391,7 @@ export default async function handler(req, res) {
       }
       
       // Check if client has current version (also sets X-Cache-Status header)
-      if (checkETag(req, etag, 'gameState', res)) {
+      if (checkETag(req, etag, 'standings', res)) {
         return send304(res);
       }
       
