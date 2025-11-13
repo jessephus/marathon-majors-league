@@ -1,0 +1,38 @@
+{
+  "all": true,
+  "include": [
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "lib/**/*.js",
+    "components/**/*.tsx",
+    "components/**/*.jsx"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.js",
+    "**/*.spec.ts",
+    "**/*.spec.js",
+    "**/__tests__/**",
+    "**/node_modules/**",
+    "**/.next/**",
+    "**/coverage/**",
+    "**/*.d.ts"
+  ],
+  "reporter": [
+    "text",
+    "text-summary",
+    "html",
+    "json-summary",
+    "lcov"
+  ],
+  "lines": 90,
+  "functions": 90,
+  "branches": 85,
+  "statements": 90,
+  "check-coverage": true,
+  "per-file": true,
+  "skip-full": false,
+  "clean": true,
+  "temp-directory": "./.nyc_output",
+  "report-dir": "./coverage"
+}
