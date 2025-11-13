@@ -43,11 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      # State Manager Tests (no server required)
-      - name: Compile state manager for testing
-        run: |
-          npx tsc lib/state-manager.ts --outDir .test-build --module esnext --target es2017 --esModuleInterop --skipLibCheck --moduleResolution node
-      
+      # State Manager Tests (no server required - uses tsx for TypeScript execution)
       - name: Run state manager unit tests
         id: test-state-unit
         run: npm run test:state

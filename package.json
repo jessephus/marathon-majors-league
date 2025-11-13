@@ -24,7 +24,7 @@
     "test:legacy": "node tests/legacy-regression.test.js",
     "test:quality": "node scripts/validate-test-quality.js",
     "test:verify": "node scripts/verify-tests-catch-bugs.js",
-    "test:state": "node tests/state-manager.test.js",
+    "test:state": "tsx tests/state-manager.test.js",
     "test:state:integration": "tsx tests/state-manager-integration.test.js",
     "test:draft": "node src/features/draft/__tests__/validation.test.js",
     "test:api-client": "node tests/api-client.test.js",
