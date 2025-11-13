@@ -5,7 +5,7 @@
  * SSR: Fetches athlete pool, team roster, game state with roster lock.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
@@ -91,6 +91,9 @@ function TeamSessionPageContent({
   // Track if full athlete list has been loaded (for edit mode)
   const [fullAthletesLoaded, setFullAthletesLoaded] = useState(false);
   const [loadingFullAthletes, setLoadingFullAthletes] = useState(false);
+  
+  // Track initial mount to prevent auto-save on page load
+  const isInitialMount = useRef(true);
   
   // Roster state (convert from TeamRoster to RosterSlot[] format)
   const [roster, setRoster] = useState(() => {
@@ -244,9 +247,11 @@ function TeamSessionPageContent({
 
   // Auto-save when roster changes (debounced)
   useEffect(() => {
-    // Don't auto-save on initial mount
-    const isInitialMount = roster.every(slot => slot.athleteId === null);
-    if (isInitialMount) return;
+    // Skip auto-save on initial mount/load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
 
     // Debounce auto-save to avoid too many requests
     const timer = setTimeout(() => {
