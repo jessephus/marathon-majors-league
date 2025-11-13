@@ -8,33 +8,38 @@ The Fantasy NY Marathon application has been optimized following Next.js best pr
 
 ## Key Optimizations Implemented
 
-### 1. Aggressive Caching with SWR
+### 1. Client-Side API Cache with Session Storage
 
-**Implementation:** `/lib/api/client.ts` and `/lib/state/GameStateContext.tsx`
+**Implementation:** `/lib/api-client.ts`
 
-- **SWR (stale-while-revalidate)** library for data fetching
-- In-memory caching with configurable TTL (5 minutes for static data)
-- Automatic background revalidation
-- Optimistic UI updates
-- Deduplication of requests
+- Custom fetch wrapper caches GET responses in-memory and persists them to `sessionStorage`
+- Cache TTL derived from endpoint-specific `CACHE_CONFIGS`
+- Uses ETag-aware conditional requests (`If-None-Match`) to revalidate stale entries
+- Handles `304 Not Modified` responses client-side and refreshes cache expiry without re-downloading payloads
+- Integrates with performance monitor via `trackCacheAccess` so cache hit ratio reflects client-side reuse
 
 **Benefits:**
-- Reduced API calls by up to 80%
-- Near-instant navigation between pages with cached data
-- Background updates keep data fresh without blocking UI
+- Immediate cache hits for repeated navigations and soft refreshes (0 network cost while TTL valid)
+- 304 responses now counted as cache hits, ensuring performance dashboard reports accurate ratios
+- Persists data across route transitions and soft reloads thanks to session storage hydration
 
-**Configuration:**
+**Key Snippet:**
 ```typescript
-// Athletes data - rarely changes
-revalidateOnFocus: false
-dedupingInterval: 300000 // 5 minutes
+// lib/api-client.ts (simplified)
+if (cacheEntry && Date.now() < cacheEntry.expiry) {
+  trackCacheAccess(cacheType, true);
+  return cacheEntry.data; // served from sessionStorage-backed cache
+}
 
-// Game state - changes moderately
-revalidateOnFocus: true
-dedupingInterval: 5000 // 5 seconds
+const response = await fetch(url, { headers: { 'If-None-Match': cacheEntry?.etag } });
 
-// Results - frequent updates during race
-refreshInterval: 30000 // Poll every 30 seconds
+if (response.status === 304 && cacheEntry) {
+  trackCacheAccess(cacheType, true);
+  return cacheEntry.data; // revalidated without downloading payload
+}
+
+const data = await response.json();
+updateCache(cacheKey, { data, etag: response.headers.get('ETag'), expiry: ttl });
 ```
 
 ### 2. Server-Side Computation
