@@ -404,36 +404,36 @@ describe('Legacy Feature Regression Tests', () => {
   });
   
   describe('Legacy Frontend Integration', () => {
-    it('should serve legacy JavaScript files', async () => {
-      const legacyFiles = [
-        '/app.js',
-        '/salary-cap-draft.js',
+    it('should serve static assets for backward compatibility', async () => {
+      // Note: app.js and salary-cap-draft.js removed in PR #130 (React/Next.js migration)
+      // Testing remaining legacy static assets
+      const legacyAssets = [
         '/style.css',
         '/athletes.json'
       ];
       
-      for (const file of legacyFiles) {
+      for (const file of legacyAssets) {
         const response = await fetch(`${BASE_URL}${file}`);
         
         assert.strictEqual(response.status, 200, 
-          `Legacy file ${file} should be accessible`);
+          `Legacy asset ${file} should be accessible`);
       }
       
-      console.log('✅ All legacy frontend files accessible');
+      console.log('✅ Legacy static assets accessible');
     });
     
-    it('should maintain API_BASE configuration compatibility', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const content = await response.text();
+    it('should serve Next.js JavaScript bundles', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
       
-      // Should have API_BASE or similar configuration
-      const hasApiConfig = content.includes('API_BASE') || 
-                          content.includes('api/') ||
-                          content.includes('fetch');
+      // Next.js serves JavaScript via /_next/static/chunks/ instead of app.js
+      const hasNextJsScripts = html.includes('/_next/static/') || 
+                               html.includes('<script') ||
+                               html.includes('__NEXT_DATA__');
       
-      assert.ok(hasApiConfig, 'Should have API configuration');
+      assert.ok(hasNextJsScripts, 'Should serve JavaScript via Next.js bundles');
       
-      console.log('✅ Frontend API configuration maintained');
+      console.log('✅ Next.js JavaScript bundles served correctly');
     });
   });
   
