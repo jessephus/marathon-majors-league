@@ -86,28 +86,44 @@ async function calculateStandings(gameId) {
   
   console.log('📊 About to iterate. hasAnyResults:', hasAnyResults, 'playersToShow:', playersToShow);
   
-  for (const playerCode of playersToShow) {
-    // Get player's team - try both salary_cap_teams and draft_teams
-    let team = await sql`
-      SELECT athlete_id
-      FROM salary_cap_teams
-      WHERE game_id = ${gameId} AND player_code = ${playerCode}
-    `;
-    
-    // Fallback to legacy draft_teams if not found
-    if (team.length === 0) {
-      team = await sql`
-        SELECT athlete_id
-        FROM draft_teams
-        WHERE game_id = ${gameId} AND player_code = ${playerCode}
-      `;
+  // 🚀 PERFORMANCE OPTIMIZATION: Fetch all teams in ONE query instead of N queries
+  const allSalaryCapTeams = await sql`
+    SELECT player_code, athlete_id
+    FROM salary_cap_teams
+    WHERE game_id = ${gameId}
+  `;
+  
+  const allDraftTeams = await sql`
+    SELECT player_code, athlete_id
+    FROM draft_teams
+    WHERE game_id = ${gameId}
+  `;
+  
+  // Build a lookup map: playerCode => [athleteId1, athleteId2, ...]
+  const teamsByPlayer = new Map();
+  
+  // Prefer salary_cap_teams
+  for (const row of allSalaryCapTeams) {
+    if (!teamsByPlayer.has(row.player_code)) {
+      teamsByPlayer.set(row.player_code, []);
     }
+    teamsByPlayer.get(row.player_code).push(row.athlete_id);
+  }
+  
+  // Fallback to draft_teams if not found in salary_cap_teams
+  for (const row of allDraftTeams) {
+    if (!teamsByPlayer.has(row.player_code)) {
+      teamsByPlayer.set(row.player_code, []);
+      teamsByPlayer.get(row.player_code).push(row.athlete_id);
+    }
+  }
+  
+  for (const playerCode of playersToShow) {
+    const athleteIds = teamsByPlayer.get(playerCode);
     
-    if (team.length === 0) {
+    if (!athleteIds || athleteIds.length === 0) {
       continue;
     }
-    
-    const athleteIds = team.map(t => t.athlete_id);
     
     // Filter results for this player's athletes
     const playerResults = resultsWithScores.filter(r => athleteIds.includes(r.athlete_id));
