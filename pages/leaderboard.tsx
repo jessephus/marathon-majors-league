@@ -13,7 +13,7 @@ import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, createServerApiClient } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import Footer from '@/components/Footer';
@@ -232,7 +232,14 @@ function LeaderboardPageContent({
   };
 
   // Current player code - prefer playerCode, fallback to teamName for backwards compatibility
-  const currentPlayerCode = sessionState.playerCode || sessionState.teamName || null;
+  // Use null on server-side to avoid hydration mismatch, then update client-side
+  const [currentPlayerCode, setCurrentPlayerCode] = useState<string | null>(null);
+
+  // Set current player code client-side only (after hydration)
+  useEffect(() => {
+    const playerCode = sessionState.playerCode || sessionState.teamName || null;
+    setCurrentPlayerCode(playerCode);
+  }, [sessionState.playerCode, sessionState.teamName]);
 
   // Sort standings to put current player's team at top (if they have a session)
   const sortedStandings = React.useMemo(() => {
@@ -401,11 +408,30 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const gameIdCookie = context.req.cookies.current_game_id;
   const gameIdQuery = context.query.gameId;
   const gameId = gameIdCookie || gameIdQuery || 'default';
-  
-  // Note: In serverless environments (Vercel), SSR can't fetch from localhost
-  // Client-side hydration will fetch the actual data on mount
-  const initialStandings = null;
-  const initialResults = null;
+
+  // Construct base URL for server-side API requests
+  const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
+  const baseUrl = process.env.VERCEL_URL 
+    ? `${protocol}://${process.env.VERCEL_URL}` 
+    : 'http://localhost:3000';
+
+  // Create server-side API client
+  const serverApi = createServerApiClient(baseUrl);
+
+  // Fetch initial data server-side for faster page load
+  let initialStandings = null;
+  let initialResults = null;
+
+  try {
+    [initialStandings, initialResults] = await Promise.all([
+      serverApi.standings.get(gameId as string),
+      serverApi.results.get(gameId as string),
+    ]);
+  } catch (error) {
+    console.error('SSR data fetch error:', error);
+    // Continue with null data - client will fetch on mount
+  }
+
   const cacheTimestamp = Date.now();
 
   return {

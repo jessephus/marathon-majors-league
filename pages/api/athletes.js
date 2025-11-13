@@ -2,6 +2,7 @@ import { getAllAthletes, seedAthletes, getAthleteProfile } from './db';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
+import { generateETag, checkETag, send304 } from './lib/cache-utils.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -182,9 +183,16 @@ export default async function handler(req, res) {
       
       // Set cache headers for athlete data (stale-while-revalidate strategy)
       // Athletes change infrequently, so long cache with stale-while-revalidate
+      const etag = generateETag(athletes);
+      res.setHeader('ETag', `"${etag}"`);
       res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=7200, stale-while-revalidate=86400');
       res.setHeader('CDN-Cache-Control', 'max-age=7200');
       res.setHeader('Vary', 'Accept-Encoding');
+      
+      // Check if client has current version (also sets X-Cache-Status header)
+      if (checkETag(req, etag, 'athletes', res)) {
+        return send304(res);
+      }
       
       res.status(200).json(athletes);
     } else {

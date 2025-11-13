@@ -412,7 +412,7 @@ class PerformanceMonitor {
   /**
    * Get cache hit ratio
    */
-  getCacheHitRatio(type?: 'results' | 'gameState' | 'athletes'): number {
+  getCacheHitRatio(type?: 'athletes' | 'gameState' | 'results' | 'scoring' | 'standings' | 'default'): number {
     const metrics = type 
       ? this.cacheMetrics.filter(m => m.type === type)
       : this.cacheMetrics;
@@ -476,9 +476,12 @@ class PerformanceMonitor {
       },
       cache: {
         overall: this.getCacheHitRatio(),
-        results: this.getCacheHitRatio('results'),
-        gameState: this.getCacheHitRatio('gameState'),
         athletes: this.getCacheHitRatio('athletes'),
+        gameState: this.getCacheHitRatio('gameState'),
+        results: this.getCacheHitRatio('results'),
+        scoring: this.getCacheHitRatio('scoring'),
+        standings: this.getCacheHitRatio('standings'),
+        default: this.getCacheHitRatio('default'),
         totalAccesses: this.cacheMetrics.length,
       },
       budgets: PERFORMANCE_BUDGETS,
@@ -563,9 +566,12 @@ if (typeof window !== 'undefined') {
   (window as any).getCacheStats = () => {
     console.log('Cache Hit Ratios:', {
       overall: `${(performanceMonitor.getCacheHitRatio() * 100).toFixed(1)}%`,
-      results: `${(performanceMonitor.getCacheHitRatio('results') * 100).toFixed(1)}%`,
-      gameState: `${(performanceMonitor.getCacheHitRatio('gameState') * 100).toFixed(1)}%`,
       athletes: `${(performanceMonitor.getCacheHitRatio('athletes') * 100).toFixed(1)}%`,
+      gameState: `${(performanceMonitor.getCacheHitRatio('gameState') * 100).toFixed(1)}%`,
+      results: `${(performanceMonitor.getCacheHitRatio('results') * 100).toFixed(1)}%`,
+      scoring: `${(performanceMonitor.getCacheHitRatio('scoring') * 100).toFixed(1)}%`,
+      standings: `${(performanceMonitor.getCacheHitRatio('standings') * 100).toFixed(1)}%`,
+      default: `${(performanceMonitor.getCacheHitRatio('default') * 100).toFixed(1)}%`,
     });
     console.table(performanceMonitor.getCacheMetrics().slice(-20)); // Last 20
   };

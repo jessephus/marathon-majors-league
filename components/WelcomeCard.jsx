@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { SessionType } from '../lib/session-utils';
 
 // Critical CSS for above-the-fold content (inlined for faster first paint)
@@ -92,6 +93,7 @@ const criticalStyles = {
 };
 
 export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam }) {
+  const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [hasTeamSession, setHasTeamSession] = useState(false);
   const [hasCommissionerSession, setHasCommissionerSession] = useState(false);
@@ -200,7 +202,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               onClick={() => {
                 // Navigate to new React-based team session page
                 if (typeof window !== 'undefined' && window.anonymousSession?.token) {
-                  window.location.href = `/team/${window.anonymousSession.token}`;
+                  router.push(`/team/${window.anonymousSession.token}`);
                 }
               }}
               style={{
@@ -256,7 +258,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
                 onClick={() => {
                   // Navigate to new React-based team session page
                   if (typeof window !== 'undefined' && window.anonymousSession?.token) {
-                    window.location.href = `/team/${window.anonymousSession.token}`;
+                    router.push(`/team/${window.anonymousSession.token}`);
                   }
                 }}
                 style={{

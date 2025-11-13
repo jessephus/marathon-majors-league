@@ -299,8 +299,8 @@ export default async function handler(req, res) {
         staleWhileRevalidate: 60,
       });
       
-      // Check if client has current version
-      if (checkETag(req, etag, 'results')) {
+      // Check if client has current version (also sets X-Cache-Status header)
+      if (checkETag(req, etag, 'results', res)) {
         return send304(res);
       }
       

@@ -68,18 +68,47 @@ export function setCacheHeaders(res, options = {}) {
 /**
  * Check if client has current version via ETag
  * Returns true if client should use cached version (304)
+ * Also sets X-Cache-Status header for client-side performance tracking
  * 
  * @param {object} req - Request object
  * @param {string} etag - ETag to compare
- * @param {string} cacheType - Optional cache type for tracking ('results', 'gameState', 'athletes')
+ * @param {string} cacheType - Cache type for tracking ('results', 'gameState', 'athletes')
+ * @param {object} res - Response object (to set X-Cache-Status header)
  * @returns {boolean} True if client has current version
  */
-export function checkETag(req, etag, cacheType = 'unknown') {
-  const clientETag = req.headers['if-none-match'];
-  const isHit = clientETag === `"${etag}"`;
+function normalizeETag(value) {
+  if (!value) {
+    return null;
+  }
+
+  return value
+    .replace(/^W\//, '') // strip weak validator prefix
+    .replace(/"/g, '') // remove surrounding quotes
+    .trim();
+}
+
+export function checkETag(req, etag, cacheType = 'unknown', res = null) {
+  const rawClientETag = req.headers['if-none-match'];
+  const clientETag = normalizeETag(rawClientETag);
+  const serverETag = normalizeETag(etag);
+  const isHit = Boolean(clientETag && serverETag && clientETag === serverETag);
   
-  // Track cache hit/miss (note: this is server-side, won't actually track unless we implement server-side tracking)
-  // For now, this is a placeholder for potential server-side instrumentation
+  // Set X-Cache-Status header for client-side performance tracking
+  if (res) {
+    res.setHeader('X-Cache-Status', isHit ? 'HIT' : 'MISS');
+    res.setHeader('X-Cache-Type', cacheType);
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[Cache] ${cacheType}:`, {
+      rawClientETag,
+      clientETag,
+      serverETag,
+      isHit,
+    });
+  }
+
+  // Log cache status in development
   if (process.env.NODE_ENV === 'development') {
     console.log(`[Cache] ${cacheType}: ${isHit ? 'HIT (304)' : 'MISS'}`);
   }
