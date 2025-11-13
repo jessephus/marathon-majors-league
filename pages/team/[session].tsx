@@ -5,13 +5,13 @@
  * SSR: Fetches athlete pool, team roster, game state with roster lock.
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
-import { apiClient, createServerApiClient } from '@/lib/api-client';
+import { apiClient, createServerApiClient, salaryCapDraftApi } from '@/lib/api-client';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
@@ -64,6 +64,7 @@ interface TeamSessionPageProps {
     draftComplete: boolean;
   };
   existingRoster: TeamRoster | null;
+  isRosterComplete: boolean;  // Whether roster has been fully submitted
 }
 
 function TeamSessionPageContent({ 
@@ -71,7 +72,8 @@ function TeamSessionPageContent({
   sessionData, 
   athletesData, 
   gameStateData,
-  existingRoster 
+  existingRoster,
+  isRosterComplete
 }: TeamSessionPageProps) {
   const router = useRouter();
   const { sessionState, setSessionState } = useSessionState();
@@ -82,18 +84,16 @@ function TeamSessionPageContent({
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedGender, setSelectedGender] = useState<'men' | 'women'>('men');
   
-  // Track if roster has been submitted (and not in edit mode)
-  const [hasSubmittedRoster, setHasSubmittedRoster] = useState<boolean>(() => {
-    // If existing roster exists with all 6 athletes, it's been submitted
-    return !!(existingRoster && 
-      existingRoster.M1 && existingRoster.M2 && existingRoster.M3 &&
-      existingRoster.W1 && existingRoster.W2 && existingRoster.W3);
-  });
+  // Track if roster has been submitted (complete roster, not auto-saved partial)
+  const [hasSubmittedRoster, setHasSubmittedRoster] = useState<boolean>(isRosterComplete);
   const [isEditingRoster, setIsEditingRoster] = useState(false);
   
   // Track if full athlete list has been loaded (for edit mode)
   const [fullAthletesLoaded, setFullAthletesLoaded] = useState(false);
   const [loadingFullAthletes, setLoadingFullAthletes] = useState(false);
+  
+  // Track initial mount to prevent auto-save on page load
+  const isInitialMount = useRef(true);
   
   // Roster state (convert from TeamRoster to RosterSlot[] format)
   const [roster, setRoster] = useState(() => {
@@ -181,12 +181,18 @@ function TeamSessionPageContent({
   }, [fullAthletesLoaded, loadFullAthleteList]);
   
   // Handle slot click (open athlete selection modal)
-  const handleSlotClick = useCallback((slotId: string, currentAthleteId: number | null) => {
+  const handleSlotClick = useCallback(async (slotId: string, currentAthleteId: number | null) => {
+    // Load full athlete list if not already loaded (for partial rosters)
+    if (!fullAthletesLoaded && !loadingFullAthletes) {
+      console.log('[handleSlotClick] Loading full athlete list before opening modal...');
+      await loadFullAthleteList();
+    }
+    
     const gender = slotId.startsWith('M') ? 'men' : 'women';
     setSelectedSlot(slotId);
     setSelectedGender(gender);
     setIsModalOpen(true);
-  }, []);
+  }, [fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList]);
 
   // Handle athlete selection
   const handleAthleteSelect = useCallback((athlete: Athlete) => {
@@ -210,6 +216,61 @@ function TeamSessionPageContent({
         : slot
     ));
   }, []);
+
+  // Auto-save partial roster (only if team hasn't been submitted yet)
+  const autoSaveRoster = useCallback(async (currentRoster: typeof roster) => {
+    // Don't auto-save if:
+    // 1. Team has already been submitted (hasSubmittedRoster is true)
+    // 2. User is editing an already submitted roster (isEditingRoster is true)
+    // 3. Roster is locked
+    // 4. No session token
+    if (hasSubmittedRoster || isEditingRoster || locked || !sessionToken) {
+      return;
+    }
+
+    // Filter out empty slots and ensure salary is set (default to 0 if null)
+    const rosterWithSalaries = currentRoster.map(slot => ({
+      ...slot,
+      salary: slot.salary || 0
+    }));
+
+    // Only auto-save if at least one athlete is selected
+    const hasAthletes = rosterWithSalaries.some(slot => slot.athleteId !== null);
+    if (!hasAthletes) {
+      return;
+    }
+
+    console.log('[Auto-save] Sending roster:', JSON.stringify(rosterWithSalaries, null, 2));
+
+    try {
+      const result = await salaryCapDraftApi.partialSave(
+        sessionData.session?.gameId || 'default',
+        rosterWithSalaries,
+        sessionToken
+      );
+
+      console.log('Auto-save successful:', (result as any).message);
+    } catch (error) {
+      console.error('Auto-save error:', error);
+      // Silently fail - auto-save is a convenience feature
+    }
+  }, [hasSubmittedRoster, isEditingRoster, locked, sessionToken, sessionData]);
+
+  // Auto-save when roster changes (debounced)
+  useEffect(() => {
+    // Skip auto-save on initial mount/load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Debounce auto-save to avoid too many requests
+    const timer = setTimeout(() => {
+      autoSaveRoster(roster);
+    }, 1000); // Wait 1 second after last change before auto-saving
+
+    return () => clearTimeout(timer);
+  }, [roster, autoSaveRoster]);
 
   // Handle roster submission
   const handleSubmitRoster = useCallback(async () => {
@@ -520,6 +581,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           draftComplete: false,
         },
         existingRoster: null,
+        isRosterComplete: false,
       },
     };
   }
@@ -549,6 +611,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
             draftComplete: false,
           },
           existingRoster: null,
+          isRosterComplete: false,
         },
       };
     }
@@ -561,6 +624,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     // Fetch existing roster (if any)
     let existingRoster = null;
     let athleteIds: number[] = [];
+    let isRosterComplete = false;
     
     try {
       // Fetch roster using API client with Authorization header
@@ -569,28 +633,34 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       // Find the roster using displayName (which equals playerCode)
       const playerCode = sessionData.session.displayName; // displayName = playerCode
       
-      if (playerCode && rosterData[playerCode] && rosterData[playerCode].hasSubmittedRoster) {
+      if (playerCode && rosterData[playerCode]) {
         const teamData = rosterData[playerCode];
         
-        // Convert roster arrays to slot-based format
-        existingRoster = {
-          M1: teamData.men[0] || null,
-          M2: teamData.men[1] || null,
-          M3: teamData.men[2] || null,
-          W1: teamData.women[0] || null,
-          W2: teamData.women[1] || null,
-          W3: teamData.women[2] || null,
-        };
+        // Check if roster is complete (fully submitted, not just auto-saved partial)
+        isRosterComplete = teamData.isComplete || false;
         
-        // Extract athlete IDs for minimal fetch
-        athleteIds = [
-          teamData.men[0]?.id,
-          teamData.men[1]?.id,
-          teamData.men[2]?.id,
-          teamData.women[0]?.id,
-          teamData.women[1]?.id,
-          teamData.women[2]?.id,
-        ].filter((id): id is number => id != null);
+        // Load roster (both partial and complete rosters)
+        if (teamData.men.length > 0 || teamData.women.length > 0) {
+          // Convert roster arrays to slot-based format
+          existingRoster = {
+            M1: teamData.men[0] || null,
+            M2: teamData.men[1] || null,
+            M3: teamData.men[2] || null,
+            W1: teamData.women[0] || null,
+            W2: teamData.women[1] || null,
+            W3: teamData.women[2] || null,
+          };
+          
+          // Extract athlete IDs for minimal fetch
+          athleteIds = [
+            teamData.men[0]?.id,
+            teamData.men[1]?.id,
+            teamData.men[2]?.id,
+            teamData.women[0]?.id,
+            teamData.women[1]?.id,
+            teamData.women[2]?.id,
+          ].filter((id): id is number => id != null);
+        }
       }
     } catch (err) {
       console.error('Failed to fetch existing roster:', err);
@@ -627,6 +697,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           draftComplete: gameStateData.draftComplete || false,
         },
         existingRoster,
+        isRosterComplete,
       },
     };
   } catch (error) {
@@ -643,6 +714,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           draftComplete: false,
         },
         existingRoster: null,
+        isRosterComplete: false,
       },
     };
   }

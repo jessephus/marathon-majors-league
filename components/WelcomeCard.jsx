@@ -135,13 +135,14 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
           
           console.log('[WelcomeCard] Roster count:', roster.length);
           console.log('[WelcomeCard] Total salary:', totalSalary);
+          console.log('[WelcomeCard] isComplete:', myTeam.isComplete);
           
           setTeamData({
             teamName: data.session.displayName || data.session.teamName,
             gameId: data.session.gameId || 'default',
             rosterCount: roster.length,
             totalSalary: totalSalary,
-            isDraftComplete: roster.length === 6,
+            isDraftComplete: myTeam.isComplete || false, // Use database flag instead of roster.length === 6
           });
         }
       }

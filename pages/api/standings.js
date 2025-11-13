@@ -26,19 +26,20 @@ async function calculateStandings(gameId) {
   const players = game.players || [];
   const isFinalized = game.results_finalized || false;
   
-  // Get all teams with submitted rosters (from salary_cap_teams)
+  // Get all teams with complete/submitted rosters (using is_complete flag)
   const submittedTeams = await sql`
     SELECT DISTINCT 
       player_code,
-      COUNT(athlete_id) as roster_count
+      COUNT(athlete_id) as roster_count,
+      MAX(is_complete::int) as is_complete
     FROM salary_cap_teams
     WHERE game_id = ${gameId}
     GROUP BY player_code
-    HAVING COUNT(athlete_id) = 6
+    HAVING MAX(is_complete::int) = 1
   `;
   
   const teamsWithRosters = submittedTeams.map(t => t.player_code);
-  console.log('📊 Teams with rosters:', teamsWithRosters);
+  console.log('📊 Teams with complete rosters:', teamsWithRosters);
   console.log('📊 Submitted teams query result:', submittedTeams);
   
   // Get all race results for this game to determine if we need temporary scoring
@@ -261,15 +262,16 @@ export default async function handler(req, res) {
       
       // If no results, check if there are any submitted teams to show
       if (!hasResults) {
-        // Get teams with submitted rosters
+        // Get teams with complete/submitted rosters (using is_complete flag)
         const submittedTeams = await sql`
           SELECT DISTINCT 
             player_code,
-            COUNT(athlete_id) as roster_count
+            COUNT(athlete_id) as roster_count,
+            MAX(is_complete::int) as is_complete
           FROM salary_cap_teams
           WHERE game_id = ${gameId}
           GROUP BY player_code
-          HAVING COUNT(athlete_id) = 6
+          HAVING MAX(is_complete::int) = 1
         `;
         
         // If there are submitted teams, calculate standings (will show 0 points)
