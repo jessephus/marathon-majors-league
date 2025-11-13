@@ -57,33 +57,42 @@ describe('Frontend Integration Tests', () => {
   });
   
   describe('HTML Structure', () => {
-    it('should have all required pages', async () => {
+    it('should have required modals for landing page', async () => {
       const { html } = await fetchHTML('/');
       
-      // Check for key page elements
+      // Check for key modal elements (pages migrated to React)
       assert.ok(html.includes('id="landing-page"'), 'Should have landing page');
-      assert.ok(html.includes('id="ranking-page"'), 'Should have ranking page');
-      assert.ok(html.includes('id="commissioner-page"'), 'Should have commissioner page');
-      assert.ok(html.includes('id="teams-page"'), 'Should have teams page');
+      assert.ok(html.includes('id="team-creation-modal"'), 'Should have team creation modal');
+      assert.ok(html.includes('id="commissioner-totp-modal"'), 'Should have commissioner TOTP modal');
       
-      console.log('✅ All required page elements present');
+      // Legacy pages removed - migrated to React routes
+      assert.ok(!html.includes('id="ranking-page"'), 'ranking-page removed (deprecated snake draft)');
+      assert.ok(!html.includes('id="salary-cap-draft-page"'), 'salary-cap-draft-page removed (migrated to /team/[session])');
+      assert.ok(!html.includes('id="commissioner-page"'), 'commissioner-page removed (migrated to /commissioner)');
+      
+      console.log('✅ Modals present, legacy pages correctly removed');
     });
     
-    it('should have drag handle column in athlete table', async () => {
+    it('should not have legacy HTML structure', async () => {
       const { html } = await fetchHTML('/');
       
-      assert.ok(html.includes('drag-handle-header'), 'Should have drag handle header');
+      // Verify legacy elements are removed
+      assert.ok(!html.includes('drag-handle-header'), 'Should not have drag handle (snake draft removed)');
+      assert.ok(!html.includes('athlete-management-container'), 'Should not have athlete management container (migrated to React)');
       
-      console.log('✅ Drag handle migration successful');
+      console.log('✅ Legacy HTML successfully removed');
     });
     
-    it('should have athlete management container', async () => {
+    it('should have WelcomeCard React component', async () => {
       const { html } = await fetchHTML('/');
       
-      assert.ok(html.includes('athlete-management-container'), 'Should have athlete management container');
-      assert.ok(!html.includes('id="athlete-table-container".*id="athlete-table-container"'), 'Should not have duplicate IDs');
+      // Verify React component is rendered (check for various team creation text variations)
+      assert.ok(
+        html.includes('Create a New Team') || html.includes('Create Your Team') || html.includes('Create Team'), 
+        'Should have team creation UI'
+      );
       
-      console.log('✅ Athlete management container fix verified');
+      console.log('✅ WelcomeCard React component rendered');
     });
   });
   
