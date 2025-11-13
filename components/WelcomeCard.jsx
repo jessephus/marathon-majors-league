@@ -224,10 +224,8 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
             </p>
             <button 
               onClick={() => {
-                // Navigate using app-bridge handleCommissionerMode
-                if (typeof window !== 'undefined' && window.handleCommissionerMode) {
-                  window.handleCommissionerMode();
-                }
+                // Navigate to commissioner dashboard page
+                router.push('/commissioner');
               }}
               style={{
                 ...criticalStyles.button,
@@ -284,10 +282,8 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
             <div style={criticalStyles.section}>
               <button 
                 onClick={() => {
-                  // Navigate using legacy app.js system for compatibility
-                  if (typeof window !== 'undefined' && window.handleCommissionerMode) {
-                    window.handleCommissionerMode();
-                  }
+                  // Navigate to commissioner dashboard page
+                  router.push('/commissioner');
                 }}
                 style={{
                   ...criticalStyles.button,
@@ -296,8 +292,8 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
               >
-                Go to Dashboard
-              </button>
+              Go to Dashboard
+            </button>
             </div>
           </>
         );

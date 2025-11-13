@@ -57,20 +57,26 @@ describe('Frontend Integration Tests', () => {
   });
   
   describe('HTML Structure', () => {
-    it('should have required modals for landing page', async () => {
+    it('should have required elements for landing page', async () => {
       const { html } = await fetchHTML('/');
       
-      // Check for key modal elements (pages migrated to React)
+      // Check for key landing page elements
       assert.ok(html.includes('id="landing-page"'), 'Should have landing page');
-      assert.ok(html.includes('id="team-creation-modal"'), 'Should have team creation modal');
-      assert.ok(html.includes('id="commissioner-totp-modal"'), 'Should have commissioner TOTP modal');
+      
+      // React modals are not rendered in SSR HTML when isOpen=false
+      // They exist as React components but don't appear in initial HTML
+      // This is correct behavior - modals render on client-side when opened
       
       // Legacy pages removed - migrated to React routes
       assert.ok(!html.includes('id="ranking-page"'), 'ranking-page removed (deprecated snake draft)');
       assert.ok(!html.includes('id="salary-cap-draft-page"'), 'salary-cap-draft-page removed (migrated to /team/[session])');
       assert.ok(!html.includes('id="commissioner-page"'), 'commissioner-page removed (migrated to /commissioner)');
       
-      console.log('✅ Modals present, legacy pages correctly removed');
+      // Verify old HTML modal IDs are gone (now React components)
+      assert.ok(!html.includes('id="team-creation-modal"'), 'team-creation-modal is now a React component (not in initial HTML)');
+      assert.ok(!html.includes('id="commissioner-totp-modal"'), 'commissioner-totp-modal is now a React component (not in initial HTML)');
+      
+      console.log('✅ Landing page present, legacy pages/modals correctly removed');
     });
     
     it('should not have legacy HTML structure', async () => {
@@ -79,6 +85,7 @@ describe('Frontend Integration Tests', () => {
       // Verify legacy elements are removed
       assert.ok(!html.includes('drag-handle-header'), 'Should not have drag handle (snake draft removed)');
       assert.ok(!html.includes('athlete-management-container'), 'Should not have athlete management container (migrated to React)');
+      assert.ok(!html.includes('dangerouslySetInnerHTML'), 'Should not inject HTML via dangerouslySetInnerHTML (migration complete)');
       
       console.log('✅ Legacy HTML successfully removed');
     });

@@ -1,7 +1,11 @@
 import Head from 'next/head'
 import Script from 'next/script'
 import { useState, useEffect } from 'react'
+import { AppStateProvider } from '../lib/state-provider'
 import WelcomeCard from '../components/WelcomeCard'
+import TeamCreationModal from '../components/TeamCreationModal'
+import CommissionerTOTPModal from '../components/CommissionerTOTPModal'
+import Footer from '../components/Footer'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
 
 export async function getServerSideProps(context) {
@@ -26,6 +30,8 @@ export async function getServerSideProps(context) {
 
 export default function Home({ serverSessionType, hasURLSession }) {
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isCommissionerModalOpen, setIsCommissionerModalOpen] = useState(false);
   
   // Client-side session detection (after hydration)
   useEffect(() => {
@@ -59,15 +65,15 @@ export default function Home({ serverSessionType, hasURLSession }) {
   }, []);
   
   const handleCreateTeam = () => {
-    // Trigger the team creation modal
-    const modal = document.getElementById('team-creation-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-    }
+    setIsTeamModalOpen(true);
+  };
+  
+  const handleCommissionerMode = () => {
+    setIsCommissionerModalOpen(true);
   };
   
   return (
-    <>
+    <AppStateProvider>
       <Head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -106,23 +112,19 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <meta property="twitter:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
       </Head>
 
-      {/* Load app-bridge.js for SSR mode - shared utilities without monolith */}
-      <Script src="/app-bridge.js" type="module" strategy="afterInteractive" />
+      {/* Inline utilities - no external dependencies needed */}
       <Script id="init-ssr-handlers" type="module" strategy="afterInteractive">
         {`
-              import { 
-                showPage, 
-                closeModal,
-                openModal,
-                setupModalCloseHandlers,
-                removeLoadingOverlay,
-                handleTeamCreation
-              } from '/app-bridge.js';
+              // ============================================================================
+              // INLINE UTILITIES (no external dependencies)
+              // ============================================================================
               
-              // Initialize SSR landing page
+              // ============================================================================
+              // INITIALIZATION
+              // ============================================================================
+              
+              // Initialize SSR landing page - handles URL-based session restoration
               async function initSSRLandingPage() {
-                // Remove loading overlay after hydration
-                removeLoadingOverlay();
                 
                 // Restore session from URL if present (for ?session=TOKEN links)
                 const urlParams = new URLSearchParams(window.location.search);
@@ -169,31 +171,6 @@ export default function Home({ serverSessionType, hasURLSession }) {
                       
                       console.log('[SSR] Session restored from URL:', data.session.displayName);
                       
-                      // Update session and footer buttons
-                      if (typeof window.restoreSession === 'function') {
-                        await window.restoreSession();
-                        console.log('[SSR] Called window.restoreSession() to update session state');
-                      } else {
-                        // Fallback: Use app-bridge.js to update session and footer buttons
-                        // Initialize sessions from localStorage (which now has the restored session)
-                        if (typeof window.initializeSessions === 'function') {
-                          window.initializeSessions();
-                          console.log('[SSR] Called initializeSessions() after URL session restore');
-                        }
-                        
-                        // Update footer buttons
-                        if (typeof window.updateFooterButtons === 'function') {
-                          window.updateFooterButtons();
-                          console.log('[SSR] Called updateFooterButtons() after URL session restore');
-                        }
-                        
-                        // Initialize game switcher
-                        if (typeof window.initializeGameSwitcher === 'function') {
-                          window.initializeGameSwitcher();
-                          console.log('[SSR] Called initializeGameSwitcher() after URL session restore');
-                        }
-                      }
-                      
                       // Re-enable button and update text
                       if (ctaButton) {
                         ctaButton.disabled = false;
@@ -219,63 +196,9 @@ export default function Home({ serverSessionType, hasURLSession }) {
                   }
                 }
                 
-                // Setup modal close handlers
-                setupModalCloseHandlers('team-creation-modal', 'close-team-modal', 'cancel-team-creation');
-                setupModalCloseHandlers('commissioner-totp-modal', 'close-totp-modal', 'cancel-totp-login');
-                
-                // Setup team creation form handler
-                const teamForm = document.getElementById('team-creation-form');
-                if (teamForm) {
-                  teamForm.addEventListener('submit', handleTeamCreation);
-                }
-                
-                // Setup commissioner TOTP form handler
-                const totpForm = document.getElementById('commissioner-totp-form');
-                if (totpForm && typeof window.handleCommissionerTOTPLogin === 'function') {
-                  totpForm.addEventListener('submit', window.handleCommissionerTOTPLogin);
-                  console.log('[SSR] Attached commissioner TOTP form handler');
-                }
-                
-                // Setup commissioner mode button
-                const commissionerModeBtn = document.getElementById('commissioner-mode');
-                if (commissionerModeBtn && typeof window.handleCommissionerMode === 'function') {
-                  commissionerModeBtn.addEventListener('click', window.handleCommissionerMode);
-                  console.log('[SSR] Attached commissioner mode handler');
-                }
-                
-                // Setup home button - navigate to root
-                const homeButton = document.getElementById('home-button');
-                if (homeButton) {
-                  homeButton.addEventListener('click', () => {
-                    console.log('[SSR] Home button clicked, navigating to /');
-                    window.location.href = '/';
-                  });
-                }
-                
-                // Initialize sessions and update footer buttons (for existing sessions from localStorage)
-                // This handles the case where user already has a session but didn't come from URL
-                if (typeof window.initializeSessions === 'function') {
-                  window.initializeSessions();
-                  console.log('[SSR] Initialized sessions from localStorage');
-                }
-                if (typeof window.updateFooterButtons === 'function') {
-                  window.updateFooterButtons();
-                  console.log('[SSR] Updated footer buttons after initialization');
-                }
-                
-                // Initialize game switcher dropdown (for commissioners)
-                if (typeof window.initializeGameSwitcher === 'function') {
-                  window.initializeGameSwitcher();
-                  console.log('[SSR] Initialized game switcher');
-                }
-                
-                // Note: Loading overlay is hidden by React useEffect in the Home component
-                // This ensures it works for both initial page loads and client-side navigations
-                
-                // Expose functions globally for React components and other scripts
-                window.showPage = showPage;
-                window.closeModal = closeModal;
-                window.openModal = openModal;
+                // Note: Modal handlers and footer are now managed by React components
+                // Footer.tsx handles all button logic and session awareness
+                // Loading overlay is hidden by React useEffect in the Home component (lines 56-65)
               }
               
               // Run when DOM is ready
@@ -318,98 +241,21 @@ export default function Home({ serverSessionType, hasURLSession }) {
               onCreateTeam={handleCreateTeam}
             />
           </div>
-          
-          {/* Keep all other legacy pages/modals via dangerouslySetInnerHTML */}
-          <div dangerouslySetInnerHTML={{ __html: getLegacyPagesHTML() }} />
         </main>
         
-        <footer>
-          <div className="footer-actions">
-            <button id="home-button" className="btn btn-secondary">Home</button>
-            <button id="commissioner-mode" className="btn btn-secondary">Commissioner Mode</button>
-            <div className="game-switcher">
-              <label htmlFor="game-select">Game: </label>
-              <select id="game-select" className="game-select">
-                <option value="default">Default Game</option>
-                <option value="NY2025">NY 2025</option>
-                <option value="demo-game">Demo Game</option>
-              </select>
-            </div>
-          </div>
-          <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
-        </footer>
+        {/* React Modal Components */}
+        <TeamCreationModal 
+          isOpen={isTeamModalOpen}
+          onClose={() => setIsTeamModalOpen(false)}
+        />
+        <CommissionerTOTPModal 
+          isOpen={isCommissionerModalOpen}
+          onClose={() => setIsCommissionerModalOpen(false)}
+        />
+        
+        {/* React Footer Component - replaces static HTML footer */}
+        <Footer mode="home" />
       </div>
-    </>
+    </AppStateProvider>
   )
 }
-
-/**
- * Returns all legacy pages and modals (excluding landing page)
- * Note: This function returns ONLY the inner content (modals and pages)
- * It does NOT include <main>, <header>, or <footer> tags
- * Those are provided by the parent function (getMainHTML)
- */
-function getLegacyPagesHTML() {
-  return `
-            <!-- Team Creation Modal -->
-            <div id="team-creation-modal" class="modal" style="display: none;">
-                <div class="modal-overlay"></div>
-                <div class="modal-content">
-                    <button class="modal-close" id="close-team-modal">&times;</button>
-                    <h2>Create Your Team</h2>
-                    <p>Enter your team name to get started:</p>
-                    <form id="team-creation-form">
-                        <div class="form-group">
-                            <label for="team-name">Team Name</label>
-                            <input type="text" id="team-name" placeholder="e.g., The Fast Finishers" required maxlength="50">
-                        </div>
-                        <div class="form-group">
-                            <label for="team-owner">Your Name (optional)</label>
-                            <input type="text" id="team-owner" placeholder="e.g., John Smith" maxlength="50">
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" id="cancel-team-creation">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create Team & Start Drafting</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <!-- Commissioner TOTP Modal -->
-            <div id="commissioner-totp-modal" class="modal" style="display: none;">
-                <div class="modal-overlay"></div>
-                <div class="modal-content">
-                    <button class="modal-close" id="close-totp-modal">&times;</button>
-                    <h2>Commissioner Login</h2>
-                    <p>Enter the 6-digit code from your authenticator app:</p>
-                    <form id="commissioner-totp-form">
-                        <div class="form-group">
-                            <label for="totp-code">TOTP Code</label>
-                            <input type="text" id="totp-code" placeholder="000000" required pattern="[0-9]{6}" maxlength="6" inputmode="numeric" autocomplete="off">
-                            <small>Code changes every 30 seconds</small>
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-secondary" id="cancel-totp-login">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-  `;
-}
-// Now about those two little stray HTML modals left in index.js. This doesn't seem like a logical place for these modals to live. And I think their associated handlers are maybe in app-bridge.js? Wouldn't it be consistent with the overall migration we are wrapping up to have those modals exist as their own React components and finish cleaning up index.js and app-bridge.js?
-
-
-// Note: This function previously contained ~800 lines of legacy page HTML for the pre-React SPA
-// (salary-cap-draft-page, leaderboard-page, commissioner-page, etc.)
-// All of that functionality has been migrated to React pages:
-//   - /team/[session].tsx (replaces salary-cap-draft-page)
-//   - /leaderboard.tsx (replaces leaderboard-page)  
-//   - /commissioner.tsx (replaces commissioner-page)
-// The public/app.js and public/salary-cap-draft.js files that navigated to those pages
-// have been deleted. Only the modals above remain for landing page interaction.
-
-// Note: getMainHTML() function removed - was dead code never called
-// The actual render uses React JSX with getLegacyPagesHTML() injected via dangerouslySetInnerHTML
-// See lines 280-350 for the active render implementation

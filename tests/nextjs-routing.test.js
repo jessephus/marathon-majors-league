@@ -63,28 +63,24 @@ describe('Next.js Routing and SSR Tests', () => {
       console.log('✅ Main route (/) renders correctly');
     });
     
-    it('should have required modals in main route (legacy pages migrated to React)', async () => {
+    it('should have React components in main route (legacy pages migrated to React)', async () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Check for essential modals (pages migrated to React routes)
-      const requiredModals = [
-        'team-creation-modal',
-        'commissioner-totp-modal'
-      ];
-      
-      for (const modal of requiredModals) {
-        assert.ok(
-          html.includes(modal),
-          `Should contain ${modal}`
-        );
-      }
+      // React modals are not in initial SSR HTML when isOpen=false
+      // They render client-side when needed
+      // Verify old HTML modal IDs are gone
+      assert.ok(!html.includes('id="team-creation-modal"'), 
+        'team-creation-modal is now a React component (not in SSR HTML)');
+      assert.ok(!html.includes('id="commissioner-totp-modal"'), 
+        'commissioner-totp-modal is now a React component (not in SSR HTML)');
       
       // Verify legacy pages are removed
       assert.ok(!html.includes('commissioner-page'), 'commissioner-page migrated to /commissioner route');
       assert.ok(!html.includes('leaderboard-page'), 'leaderboard-page migrated to /leaderboard route');
+      assert.ok(!html.includes('salary-cap-draft-page'), 'salary-cap-draft-page migrated to /team/[session] route');
       
-      console.log('✅ Required modals present, legacy pages correctly removed');
+      console.log('✅ React components active, legacy HTML pages/modals removed');
     });
     
     it('should serve API routes without rendering HTML', async () => {

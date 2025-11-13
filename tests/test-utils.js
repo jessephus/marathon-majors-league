@@ -265,6 +265,18 @@ export async function globalTestCleanup() {
     await cleanupTestGames('test-%');
     await cleanupTestGames('e2e-%');
     await cleanupTestGames('integration-%');
+    
+    // Clean up literal test gameIds (edge cases from older tests)
+    console.log('🧹 Cleaning up literal test game IDs...');
+    const literalTestGames = ['test-game', 'test', 'test-1', 'test-2', 'test-3'];
+    for (const gameId of literalTestGames) {
+      const exists = await gameExists(gameId);
+      if (exists) {
+        console.log(`   Found literal test game: ${gameId}`);
+        await cleanupTestGame(gameId);
+      }
+    }
+    
     await cleanupTestSessions('Test Team%');
     await cleanupTestSessions('Test%');
     
