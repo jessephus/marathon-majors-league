@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { GameStateManager, StateEventType, StateEventListener } from './state-manager.js';
+import { GameStateManager, StateEventType, StateEventListener } from './state-manager';
 
 // Singleton instance
 let stateManagerInstance: GameStateManager | null = null;

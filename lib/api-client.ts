@@ -296,8 +296,8 @@ async function apiRequest<T>(
     }
 
     // Track cache performance based on X-Cache-Status header
-    const cacheStatus = response.headers.get('X-Cache-Status');
-    const cacheType = response.headers.get('X-Cache-Type');
+    const cacheStatus = response?.headers?.get('X-Cache-Status');
+    const cacheType = response?.headers?.get('X-Cache-Type');
     
     if (cacheStatus && cacheType) {
       const isHit = cacheStatus === 'HIT';
@@ -321,7 +321,7 @@ async function apiRequest<T>(
     const data: T = await response.json();
 
     if (cacheContext && !usedClientCache) {
-      const responseEtagRaw = response.headers.get('ETag');
+      const responseEtagRaw = response?.headers?.get('ETag');
       const normalizedEtag = normalizeETag(responseEtagRaw);
 
       const cacheEntry: CachedResponse<T> = {
