@@ -8,7 +8,7 @@
 import { 
   GameStateManager, 
   resetStateManager,
-} from '../.test-build/state-manager.js';
+} from '../lib/state-manager.ts';
 
 // Mock storage adapter
 class TestStorageAdapter {
@@ -61,15 +61,29 @@ global.fetch = async (url, options) => {
     results: {},
   };
   
+  // Mock headers object with get() method
+  const mockHeaders = new Map([
+    ['X-Cache-Status', 'MISS'],
+    ['X-Cache-Type', 'game-state'],
+    ['Content-Type', 'application/json'],
+  ]);
+  
   if (options?.method === 'POST') {
     return {
       ok: true,
+      headers: {
+        get: (name) => mockHeaders.get(name),
+      },
       json: async () => ({ success: true, ...JSON.parse(options.body || '{}') }),
     };
   }
   
   return {
     ok: true,
+    status: 200,
+    headers: {
+      get: (name) => mockHeaders.get(name),
+    },
     json: async () => mockData,
   };
 };

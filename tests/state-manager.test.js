@@ -9,7 +9,7 @@ import {
   GameStateManager, 
   LocalStorageAdapter,
   resetStateManager,
-} from '../.test-build/state-manager.js';
+} from '../lib/state-manager.ts';
 
 // Mock localStorage for Node.js environment
 class MockStorage {

@@ -330,10 +330,7 @@ function Leaderboard() {
 ### Unit Tests
 
 ```bash
-# Compile TypeScript
-npx tsc lib/state-manager.ts --outDir .test-build --module esnext
-
-# Run tests
+# Run unit tests (uses tsx for TypeScript execution)
 npm run test:state
 ```
 

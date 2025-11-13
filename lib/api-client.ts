@@ -6,14 +6,39 @@
  * - Exponential backoff retry for transient network errors
  * - Caching strategy with stale-while-revalidate
  * - Consistent cache-control headers
+ * - Server-side rendering (SSR) support
  * 
  * This replaces scattered fetch() calls throughout app.js and salary-cap-draft.js
  * during the migration.
+ * 
+ * USAGE:
+ * - Client-side: apiClient.athletes.list() - uses window.location.origin
+ * - Server-side (SSR): Provide baseUrl in context:
+ *   const client = createServerApiClient(baseUrl);
+ *   const data = await client.athletes.list();
  */
 
-const API_BASE = typeof window !== 'undefined' 
-  ? (window.location.origin === 'null' ? '' : window.location.origin)
-  : '';
+/**
+ * Get API base URL
+ * - Client-side: window.location.origin
+ * - Server-side: Provided via parameter (from VERCEL_URL or localhost)
+ */
+function getApiBase(serverBaseUrl?: string): string {
+  // Server-side: use provided baseUrl
+  if (serverBaseUrl) {
+    return serverBaseUrl;
+  }
+  
+  // Client-side: use window.location.origin
+  if (typeof window !== 'undefined') {
+    return window.location.origin === 'null' ? '' : window.location.origin;
+  }
+  
+  // Fallback (shouldn't happen if used correctly)
+  return '';
+}
+
+const DEFAULT_API_BASE = getApiBase();
 
 /**
  * Cache configuration per endpoint type
@@ -28,8 +53,93 @@ const CACHE_CONFIGS: Record<string, CacheConfig> = {
   athletes: { maxAge: 3600, sMaxAge: 7200, staleWhileRevalidate: 86400 }, // 1h/2h/24h - athletes change infrequently
   gameState: { maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 }, // 30s/60s/5m - game state changes moderately
   results: { maxAge: 15, sMaxAge: 30, staleWhileRevalidate: 120 }, // 15s/30s/2m - results update frequently during race
+  scoring: { maxAge: 15, sMaxAge: 30, staleWhileRevalidate: 120 }, // 15s/30s/2m - scoring updates with results
+  standings: { maxAge: 30, sMaxAge: 60, staleWhileRevalidate: 300 }, // 30s/60s/5m - standings update with results
   default: { maxAge: 60, sMaxAge: 120, staleWhileRevalidate: 300 }, // 1m/2m/5m - default for other endpoints
 };
+
+type CacheType = keyof typeof CACHE_CONFIGS;
+
+interface CachedResponse<T = any> {
+  data: T;
+  expiry: number;
+  etag?: string;
+  createdAt: number;
+}
+
+const CACHE_STORAGE_KEY = '__api_cache_v1__';
+const responseCache = new Map<string, CachedResponse<any>>();
+let cacheInitialized = false;
+
+function isBrowser(): boolean {
+  return typeof window !== 'undefined';
+}
+
+function ensureCacheLoaded(): void {
+  if (!isBrowser() || cacheInitialized) {
+    return;
+  }
+
+  cacheInitialized = true;
+
+  try {
+    const stored = window.sessionStorage.getItem(CACHE_STORAGE_KEY);
+    if (stored) {
+      const parsed: Record<string, CachedResponse<any>> = JSON.parse(stored);
+      Object.entries(parsed).forEach(([key, value]) => {
+        if (value && typeof value === 'object') {
+          responseCache.set(key, value);
+        }
+      });
+      // Cache hydrated silently
+    }
+  } catch (error) {
+    console.warn('[API Cache] Failed to hydrate cache from sessionStorage:', error);
+  }
+}
+
+function persistCache(): void {
+  if (!isBrowser()) {
+    return;
+  }
+
+  try {
+    const serializable: Record<string, CachedResponse<any>> = {};
+    responseCache.forEach((value, key) => {
+      serializable[key] = value;
+    });
+    window.sessionStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(serializable));
+  } catch (error) {
+    // Storage quota exceeded or sessionStorage unavailable shouldn't break requests
+    console.warn('[API Cache] Failed to persist cache to sessionStorage:', error);
+  }
+}
+
+function getCacheType(url: string): CacheType {
+  if (url.includes('/api/athletes')) return 'athletes';
+  if (url.includes('/api/results')) return 'results';
+  if (url.includes('/api/game-state')) return 'gameState';
+  if (url.includes('/api/scoring')) return 'scoring';
+  if (url.includes('/api/standings')) return 'standings';
+  return 'default';
+}
+
+interface CacheContext<T = any> {
+  type: CacheType;
+  config: CacheConfig;
+  key: string;
+  entry?: CachedResponse<T>;
+}
+
+function createCacheKey(endpoint: string, method: string): string {
+  return `${method}:${endpoint}`;
+}
+
+function updateCache<T>(context: CacheContext<T>, payload: CachedResponse<T>): void {
+  responseCache.set(context.key, payload);
+  persistCache();
+  // Cache stored silently
+}
 
 /**
  * Exponential backoff configuration
@@ -81,14 +191,81 @@ function getRetryDelay(attempt: number): number {
 }
 
 /**
- * Enhanced API request with retry logic and error handling
+ * Track cache access in performance monitor (browser-side only)
+ */
+function trackCacheAccess(cacheType: string, isHit: boolean): void {
+  if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
+    (window as any).__performanceMonitor.trackCacheAccess(cacheType, isHit);
+  }
+}
+
+function normalizeETag(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return value
+    .replace(/^W\//, '')
+    .replace(/^"+|"+$/g, '')
+    .trim();
+}
+
+function formatETagForStorage(rawHeader: string | null, normalized?: string): string | undefined {
+  if (rawHeader && rawHeader.trim()) {
+    return rawHeader.trim();
+  }
+
+  if (normalized && normalized.trim()) {
+    return `"${normalized.trim()}"`;
+  }
+
+  return undefined;
+}
+
+/**
+ * Enhanced API request with retry logic, error handling, and cache tracking
+ * @param endpoint - API endpoint path (e.g., '/api/athletes')
+ * @param options - Fetch options
+ * @param retryAttempt - Current retry attempt number (internal)
+ * @param baseUrl - Optional base URL for server-side requests
  */
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
-  retryAttempt = 0
+  retryAttempt = 0,
+  baseUrl?: string
 ): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
+  const apiBase = baseUrl || DEFAULT_API_BASE;
+  const url = `${apiBase}${endpoint}`;
+  
+  const method = (options.method || 'GET').toUpperCase();
+
+  let cacheContext: CacheContext<T> | null = null;
+  let usedClientCache = false;
+
+  if (isBrowser() && !baseUrl && method === 'GET') {
+    ensureCacheLoaded();
+    const cacheType = getCacheType(endpoint);
+    const cacheConfig = CACHE_CONFIGS[cacheType] || CACHE_CONFIGS.default;
+    const cacheKey = createCacheKey(endpoint, method);
+    const cacheEntry = responseCache.get(cacheKey) as CachedResponse<T> | undefined;
+
+    cacheContext = {
+      type: cacheType,
+      config: cacheConfig,
+      key: cacheKey,
+      entry: cacheEntry,
+    };
+
+    if (cacheEntry && Date.now() < cacheEntry.expiry) {
+      usedClientCache = true;
+      trackCacheAccess(cacheType, true);
+      // Served from client cache - no logging needed
+      return cacheEntry.data;
+    } else if (cacheEntry) {
+      // Cache expired, will revalidate - no logging needed
+    }
+  }
   
   const defaultOptions: RequestInit = {
     headers: {
@@ -97,8 +274,36 @@ async function apiRequest<T>(
     },
   };
 
+  if (cacheContext?.entry?.etag) {
+    defaultOptions.headers = {
+      ...defaultOptions.headers,
+      'If-None-Match': cacheContext.entry.etag,
+    };
+  }
+
   try {
     const response = await fetch(url, { ...defaultOptions, ...options });
+
+    if (cacheContext && response.status === 304 && cacheContext.entry) {
+      const renewedEntry: CachedResponse<T> = {
+        ...cacheContext.entry,
+        expiry: Date.now() + cacheContext.config.maxAge * 1000,
+      };
+      updateCache(cacheContext, renewedEntry);
+      trackCacheAccess(cacheContext.type, true);
+      // 304 Not Modified - cache revalidated successfully
+      return renewedEntry.data;
+    }
+
+    // Track cache performance based on X-Cache-Status header
+    const cacheStatus = response?.headers?.get('X-Cache-Status');
+    const cacheType = response?.headers?.get('X-Cache-Type');
+    
+    if (cacheStatus && cacheType) {
+      const isHit = cacheStatus === 'HIT';
+      trackCacheAccess(cacheType, isHit);
+      // Cache tracking handled silently
+    }
 
     if (!response.ok) {
       // Check if we should retry
@@ -106,21 +311,37 @@ async function apiRequest<T>(
         const delay = getRetryDelay(retryAttempt);
         console.warn(`API request failed (${response.status}), retrying in ${delay}ms (attempt ${retryAttempt + 1}/${RETRY_CONFIG.maxRetries})`);
         await sleep(delay);
-        return apiRequest<T>(endpoint, options, retryAttempt + 1);
+        return apiRequest<T>(endpoint, options, retryAttempt + 1, baseUrl);
       }
 
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
       throw new Error(errorData.error || `API error: ${response.statusText}`);
     }
 
-    return response.json();
+    const data: T = await response.json();
+
+    if (cacheContext && !usedClientCache) {
+      const responseEtagRaw = response?.headers?.get('ETag');
+      const normalizedEtag = normalizeETag(responseEtagRaw);
+
+      const cacheEntry: CachedResponse<T> = {
+        data,
+        createdAt: Date.now(),
+        expiry: Date.now() + cacheContext.config.maxAge * 1000,
+        etag: formatETagForStorage(responseEtagRaw, normalizedEtag),
+      };
+
+      updateCache(cacheContext, cacheEntry);
+    }
+
+    return data;
   } catch (error: any) {
     // Handle network errors with retry
     if (isTransientError(error) && retryAttempt < RETRY_CONFIG.maxRetries) {
       const delay = getRetryDelay(retryAttempt);
       console.warn(`Network error, retrying in ${delay}ms (attempt ${retryAttempt + 1}/${RETRY_CONFIG.maxRetries}):`, error.message);
       await sleep(delay);
-      return apiRequest<T>(endpoint, options, retryAttempt + 1);
+      return apiRequest<T>(endpoint, options, retryAttempt + 1, baseUrl);
     }
     
     // Final error - throw with context
@@ -168,6 +389,44 @@ export const athleteApi = {
   async list(params?: { confirmedOnly?: boolean }) {
     const confirmedOnly = params?.confirmedOnly ?? false;
     return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}`);
+  },
+
+  /**
+   * Fetch a single athlete profile with optional related data
+   */
+  async details(
+    athleteId: number,
+    options?: {
+      progression?: boolean;
+      results?: boolean;
+      include?: string[];
+      discipline?: string | null;
+      year?: number | null;
+    }
+  ) {
+    const params = new URLSearchParams({ id: String(athleteId) });
+
+    if (options?.include?.length) {
+      params.set('include', options.include.join(','));
+    }
+
+    if (options?.progression) {
+      params.set('progression', 'true');
+    }
+
+    if (options?.results) {
+      params.set('results', 'true');
+    }
+
+    if (options?.discipline) {
+      params.set('discipline', options.discipline);
+    }
+
+    if (typeof options?.year === 'number') {
+      params.set('year', String(options.year));
+    }
+
+    return apiRequest(`/api/athletes?${params.toString()}`);
   },
 
   /**
@@ -528,6 +787,143 @@ export const standingsApi = {
     }>(`/api/standings?gameId=${gameId}`);
   },
 };
+
+// Type definitions for server API responses
+interface SessionVerifyResponse {
+  valid: boolean;
+  session?: {
+    id: number;
+    type: string;
+    gameId: string;
+    playerCode: string;
+    displayName: string;
+    expiresAt: string;
+    daysUntilExpiry: number;
+  };
+  warning?: string | null;
+}
+
+interface AthletesResponse {
+  men: any[];
+  women: any[];
+}
+
+interface GameStateResponse {
+  rosterLockTime?: string | null;
+  resultsFinalized?: boolean;
+  draftComplete?: boolean;
+  [key: string]: any;
+}
+
+interface RosterResponse {
+  [playerCode: string]: {
+    hasSubmittedRoster: boolean;
+    men: any[];
+    women: any[];
+    [key: string]: any;
+  };
+}
+
+/**
+ * Create a server-side API client with explicit baseUrl
+ * Use this in getServerSideProps for SSR data fetching
+ * 
+ * @param baseUrl - Full base URL (e.g., 'https://marathonmajorsfantasy.com' or 'http://localhost:3000')
+ * @example
+ * ```typescript
+ * export async function getServerSideProps(context) {
+ *   const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
+ *   const baseUrl = process.env.VERCEL_URL 
+ *     ? `${protocol}://${process.env.VERCEL_URL}` 
+ *     : 'http://localhost:3000';
+ *   
+ *   const serverApi = createServerApiClient(baseUrl);
+ *   const athletes = await serverApi.athletes.list({ confirmedOnly: true });
+ *   const gameState = await serverApi.gameState.load('default');
+ *   
+ *   return { props: { athletes, gameState } };
+ * }
+ * ```
+ */
+export function createServerApiClient(baseUrl: string) {
+  // Helper to make requests with injected baseUrl
+  const makeRequest = <T>(endpoint: string, options?: RequestInit) => 
+    apiRequest<T>(endpoint, options, 0, baseUrl);
+  
+  return {
+    athletes: {
+      list: (params?: { confirmedOnly?: boolean }) => {
+        const confirmedOnly = params?.confirmedOnly ?? false;
+        return makeRequest<AthletesResponse>(`/api/athletes?confirmedOnly=${confirmedOnly}`);
+      },
+      add: (athleteData: any) =>
+        makeRequest('/api/add-athlete', {
+          method: 'POST',
+          body: JSON.stringify(athleteData),
+        }),
+      update: (athleteId: number, updates: any) =>
+        makeRequest('/api/update-athlete', {
+          method: 'POST',
+          body: JSON.stringify({ athleteId, ...updates }),
+        }),
+      toggleConfirmation: (athleteId: number, raceId?: number) =>
+        makeRequest('/api/toggle-athlete-confirmation', {
+          method: 'POST',
+          body: JSON.stringify({ athleteId, raceId }),
+        }),
+      sync: (athleteId: number) =>
+        makeRequest(`/api/athletes/${athleteId}/sync`, { method: 'POST' }),
+    },
+    gameState: {
+      load: (gameId: string = 'default') =>
+        makeRequest<GameStateResponse>(`/api/game-state?gameId=${gameId}`),
+      save: (gameId: string, data: any) =>
+        makeRequest('/api/game-state', {
+          method: 'POST',
+          body: JSON.stringify({ gameId, ...data }),
+        }),
+    },
+    session: {
+      verify: (token: string) =>
+        makeRequest<SessionVerifyResponse>(`/api/session/verify?token=${token}`),
+      delete: (sessionToken: string) =>
+        makeRequest('/api/session/delete', {
+          method: 'POST',
+          body: JSON.stringify({ sessionToken }),
+        }),
+      hardDelete: (sessionToken: string) =>
+        makeRequest('/api/session/hard-delete', {
+          method: 'POST',
+          body: JSON.stringify({ sessionToken }),
+        }),
+    },
+    salaryCapDraft: {
+      get: (gameId: string, sessionToken: string) =>
+        makeRequest<RosterResponse>(`/api/salary-cap-draft?gameId=${gameId}`, {
+          headers: { 'Authorization': `Bearer ${sessionToken}` },
+        }),
+      submit: (gameId: string, team: any, sessionToken: string) =>
+        makeRequest('/api/salary-cap-draft', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${sessionToken}` },
+          body: JSON.stringify({ gameId, team }),
+        }),
+    },
+    results: {
+      get: (gameId: string = 'default') =>
+        makeRequest(`/api/results?gameId=${gameId}`),
+      save: (gameId: string, results: any) =>
+        makeRequest('/api/results', {
+          method: 'POST',
+          body: JSON.stringify({ gameId, results }),
+        }),
+    },
+    standings: {
+      get: (gameId: string = 'default') =>
+        makeRequest(`/api/standings?gameId=${gameId}`),
+    },
+  };
+}
 
 // Export unified API client
 export const apiClient = {

@@ -1,6 +1,27 @@
 /**
- * Cache utilities for API endpoints
+ * Cache utilities for API endpoints with performance instrumentation
  */
+
+// Import performance monitor for cache tracking (only in browser context)
+// In server context, we'll use a simple tracker
+let performanceMonitor = null;
+if (typeof window !== 'undefined') {
+  import('../../lib/performance-monitor.js').then(module => {
+    performanceMonitor = module.performanceMonitor;
+  });
+}
+
+/**
+ * Track cache access for performance monitoring
+ * @param {string} type - Cache type ('results', 'gameState', 'athletes')
+ * @param {boolean} hit - Whether it was a cache hit
+ */
+function trackCacheAccess(type, hit) {
+  // Only track in browser (not in API route context)
+  if (performanceMonitor && typeof performanceMonitor.trackCacheAccess === 'function') {
+    performanceMonitor.trackCacheAccess(type, hit);
+  }
+}
 
 /**
  * Generate ETag for response data
@@ -47,14 +68,40 @@ export function setCacheHeaders(res, options = {}) {
 /**
  * Check if client has current version via ETag
  * Returns true if client should use cached version (304)
+ * Also sets X-Cache-Status header for client-side performance tracking
  * 
  * @param {object} req - Request object
  * @param {string} etag - ETag to compare
+ * @param {string} cacheType - Cache type for tracking ('results', 'gameState', 'athletes')
+ * @param {object} res - Response object (to set X-Cache-Status header)
  * @returns {boolean} True if client has current version
  */
-export function checkETag(req, etag) {
-  const clientETag = req.headers['if-none-match'];
-  return clientETag === `"${etag}"`;
+function normalizeETag(value) {
+  if (!value) {
+    return null;
+  }
+
+  return value
+    .replace(/^W\//, '') // strip weak validator prefix
+    .replace(/"/g, '') // remove surrounding quotes
+    .trim();
+}
+
+export function checkETag(req, etag, cacheType = 'unknown', res = null) {
+  const rawClientETag = req.headers['if-none-match'];
+  const clientETag = normalizeETag(rawClientETag);
+  const serverETag = normalizeETag(etag);
+  const isHit = Boolean(clientETag && serverETag && clientETag === serverETag);
+  
+  // Set X-Cache-Status header for client-side performance tracking
+  if (res) {
+    res.setHeader('X-Cache-Status', isHit ? 'HIT' : 'MISS');
+    res.setHeader('X-Cache-Type', cacheType);
+  }
+  
+  // Cache validation is silent - headers are available for client tracking
+  
+  return isHit;
 }
 
 /**

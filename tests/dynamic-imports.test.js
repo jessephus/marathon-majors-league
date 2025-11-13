@@ -88,7 +88,7 @@ test('should track chunk load times', () => {
     const tracker = performanceMonitor.trackChunkLoad('test-chunk');
     tracker.finish(true);
 
-    const metrics = performanceMonitor.getMetrics();
+    const metrics = performanceMonitor.getChunkMetrics();
     assertEquals(metrics.length, 1, 'Should have 1 metric');
     assertEquals(metrics[0].chunkName, 'test-chunk', 'Chunk name should match');
     assertEquals(metrics[0].success, true, 'Success should be true');
@@ -113,7 +113,7 @@ test('should track load failures', () => {
     const tracker = performanceMonitor.trackChunkLoad('failing-chunk');
     tracker.finish(false, 'Network error');
 
-    const metrics = performanceMonitor.getMetrics();
+    const metrics = performanceMonitor.getChunkMetrics();
     assertEquals(metrics[0].success, false, 'Success should be false');
     assertEquals(metrics[0].error, 'Network error', 'Error message should match');
 });
@@ -204,7 +204,7 @@ await testAsync('should track dynamic imports through the system', async () => {
     tracker.finish(true);
     
     // Verify metrics were recorded
-    const metrics = performanceMonitor.getMetrics();
+    const metrics = performanceMonitor.getChunkMetrics();
     assertTrue(metrics.length > 0, 'Should have at least one metric');
     assertEquals(
         metrics[metrics.length - 1].chunkName,

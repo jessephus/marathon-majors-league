@@ -11,7 +11,7 @@ import Script from 'next/script';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, createServerApiClient } from '@/lib/api-client';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
@@ -528,16 +528,17 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   }
 
   try {
-    // Verify session token
-    const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'https';
+    // Construct base URL for server-side API requests
+    const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
     const baseUrl = process.env.VERCEL_URL 
       ? `${protocol}://${process.env.VERCEL_URL}` 
       : 'http://localhost:3000';
     
-    const sessionResponse = await fetch(
-      `${baseUrl}/api/session/verify?token=${encodeURIComponent(sessionToken)}`
-    );
-    const sessionData = await sessionResponse.json();
+    // Create server-side API client with explicit baseUrl
+    const serverApi = createServerApiClient(baseUrl);
+    
+    // Verify session token using API client (benefits from retry logic)
+    const sessionData = await serverApi.session.verify(sessionToken);
 
     if (!sessionData.valid || !sessionData.session) {
       return {
@@ -555,26 +556,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       };
     }
 
-    // Fetch game state first
     const gameId = sessionData.session.gameId || 'default';
-    const gameStateResponse = await fetch(`${baseUrl}/api/game-state?gameId=${gameId}`);
-    const gameStateData = await gameStateResponse.json();
+
+    // Fetch game state using API client (benefits from caching headers and retry logic)
+    const gameStateData = await serverApi.gameState.load(gameId);
 
     // Fetch existing roster (if any)
     let existingRoster = null;
     let athleteIds: number[] = [];
     
     try {
-      // Fetch all rosters for this game
-      const rosterResponse = await fetch(
-        `${baseUrl}/api/salary-cap-draft?gameId=${gameId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${sessionToken}`
-          }
-        }
-      );
-      const rosterData = await rosterResponse.json();
+      // Fetch roster using API client with Authorization header
+      const rosterData = await serverApi.salaryCapDraft.get(gameId, sessionToken);
       
       // Find the roster using displayName (which equals playerCode)
       const playerCode = sessionData.session.displayName; // displayName = playerCode
@@ -612,16 +605,17 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     let athletesData = { men: [], women: [] };
     
     if (existingRoster && athleteIds.length > 0) {
-      // Fetch only the specific athletes in the roster
-      const athletesResponse = await fetch(
-        `${baseUrl}/api/athletes?ids=${athleteIds.join(',')}`
-      );
-      const athletes = await athletesResponse.json();
+      // Fetch only the specific athletes in the roster using API client
+      const athletes = await serverApi.athletes.list({ confirmedOnly: false });
       
-      // Organize by gender (API should return flat array when using ?ids)
+      // Filter to only the athletes in the roster
+      const rosterAthletes = [...athletes.men, ...athletes.women]
+        .filter((a: any) => athleteIds.includes(a.id));
+      
+      // Organize by gender
       athletesData = {
-        men: athletes.filter((a: any) => a.gender === 'men'),
-        women: athletes.filter((a: any) => a.gender === 'women')
+        men: rosterAthletes.filter((a: any) => a.gender === 'men'),
+        women: rosterAthletes.filter((a: any) => a.gender === 'women')
       };
     }
 

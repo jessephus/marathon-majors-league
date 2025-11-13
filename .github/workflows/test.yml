@@ -43,11 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      # State Manager Tests (no server required)
-      - name: Compile state manager for testing
-        run: |
-          npx tsc lib/state-manager.ts --outDir .test-build --module esnext --target es2017 --esModuleInterop --skipLibCheck --moduleResolution node
-      
+      # State Manager Tests (no server required - uses tsx for TypeScript execution)
       - name: Run state manager unit tests
         id: test-state-unit
         run: npm run test:state
@@ -85,6 +81,12 @@ jobs:
       - name: Run dynamic imports tests
         id: test-dynamic
         run: npm run test:dynamic
+        continue-on-error: true
+      
+      # Performance Instrumentation Tests (no server required)
+      - name: Run performance instrumentation tests
+        id: test-perf-instrumentation
+        run: npm run test:perf-instrumentation
         continue-on-error: true
       
       - name: Build application
@@ -222,6 +224,7 @@ jobs:
                 'SSR Integration Tests': '${{ steps.test-ssr.outcome }}',
                 'Formatting Utilities Tests': '${{ steps.test-formatting.outcome }}',
                 'Dynamic Imports Tests': '${{ steps.test-dynamic.outcome }}',
+                'Performance Instrumentation Tests': '${{ steps.test-perf-instrumentation.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
@@ -364,6 +367,12 @@ jobs:
           # Check dynamic imports tests (run early, no server required)
           if [ "${{ steps.test-dynamic.outcome }}" != "success" ]; then
             echo "❌ Dynamic imports tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check performance instrumentation tests (run early, no server required)
+          if [ "${{ steps.test-perf-instrumentation.outcome }}" != "success" ]; then
+            echo "❌ Performance instrumentation tests failed"
             TESTS_FAILED=true
           fi
           

@@ -9,6 +9,8 @@
  * - docs/PROCESS_MONOLITH_AUDIT.md (126+ global mutations)
  */
 
+import { gameStateApi, resultsApi } from './api-client';
+
 // Types
 export interface Athlete {
   id: number;
@@ -162,12 +164,7 @@ export class GameStateManager {
     // Fetch fresh data
     this.devLog('🌐 Fetching fresh game state from API');
     try {
-      const response = await fetch(`/api/game-state?gameId=${gameId}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load game state: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await gameStateApi.load(gameId) as any;
       
       // Update state
       this.gameState = {
@@ -217,17 +214,7 @@ export class GameStateManager {
    */
   async updateResults(gameId: string, payload: any): Promise<void> {
     try {
-      const response = await fetch(`/api/results?gameId=${gameId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update results: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
+      const data = await resultsApi.update(gameId, payload) as any;
       
       // Update local state
       this.gameState.results = data.results || {};

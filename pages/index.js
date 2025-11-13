@@ -45,6 +45,18 @@ export default function Home({ serverSessionType, hasURLSession }) {
       }
     }
   }, []);
+
+  // Hide loading overlay on component mount (handles both initial load and client-side navigation)
+  useEffect(() => {
+    const loadingOverlay = document.getElementById('app-loading-overlay');
+    if (loadingOverlay) {
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        loadingOverlay.style.display = 'none';
+        console.log('[React] Loading overlay hidden on mount');
+      }, 100);
+    }
+  }, []);
   
   const handleCreateTeam = () => {
     // Trigger the team creation modal (compatibility with existing app.js)
@@ -260,6 +272,9 @@ export default function Home({ serverSessionType, hasURLSession }) {
                   window.initializeGameSwitcher();
                   console.log('[SSR] Initialized game switcher');
                 }
+                
+                // Note: Loading overlay is hidden by React useEffect in the Home component
+                // This ensures it works for both initial page loads and client-side navigations
                 
                 // Expose functions globally for React components and other scripts
                 window.showPage = showPage;

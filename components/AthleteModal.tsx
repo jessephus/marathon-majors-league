@@ -8,6 +8,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { athleteApi } from '@/lib/api-client';
 import { Athlete } from '@/lib/state-provider';
 
 interface AthleteModalProps {
@@ -84,13 +85,10 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
       setLoading(true);
       try {
         // Fetch athlete profile with progression and race results (all disciplines)
-        const response = await fetch(`/api/athletes?id=${athlete.id}&progression=true&results=true`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch athlete data');
-        }
-        
-        const data = await response.json();
+        const data = await athleteApi.details(athlete.id, {
+          progression: true,
+          results: true,
+        }) as AthleteDetailedData;
         
         setDetailedData({
           ...athlete,
