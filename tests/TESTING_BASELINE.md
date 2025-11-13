@@ -1,8 +1,38 @@
 # Testing Baseline Documentation
 
+**Last Updated:** November 13, 2025  
+**Issue References:** [#69](https://github.com/jessephus/marathon-majors-league/issues/69), [#82](https://github.com/jessephus/marathon-majors-league/issues/82)
+
 ## Overview
 
-This document describes the comprehensive testing baseline established for the Fantasy NY Marathon application as specified in **Issue #69**. This baseline provides a safety net for code restructuring, optimization, and refactoring efforts.
+This document describes the comprehensive testing baseline established for the Fantasy NY Marathon application. This baseline provides a safety net for code restructuring, optimization, and refactoring efforts, with enhanced coverage reporting and performance assertions added in November 2025.
+
+## Recent Enhancements (Issue #82)
+
+**November 13, 2025:** Extended baseline for migrated components & state manager
+
+✅ **Added Coverage Reporting**
+- c8 coverage tool configured with 90% thresholds
+- CI workflow publishes coverage to PR comments
+- HTML reports uploaded as artifacts
+- See [COVERAGE.md](COVERAGE.md) for details
+
+✅ **Enhanced SSR Integration Tests**
+- Added real performance assertions (TTFB < 5000ms)
+- Added initial HTML content verification
+- Added duplicate fetch detection
+- See `tests/ssr-integration.test.js`
+
+✅ **Added E2E Dynamic Import Tests**
+- Commissioner panels lazy loading verification
+- Athlete modal chunk loading tests
+- Chunk size analysis
+- Error handling verification
+- See `tests/dynamic-import-e2e.test.js`
+
+✅ **Test Cleanup**
+- Removed obsolete scoring-tests.js
+- Comprehensive audit documented in [AUDIT_RESULTS.md](AUDIT_RESULTS.md)
 
 ## Purpose
 
@@ -14,7 +44,24 @@ Before any codebase restructuring or optimization, we need:
 
 ## Test Suite Structure
 
-### 8 Comprehensive Test Suites
+### Enhanced Test Suites (Issue #82 - November 2025)
+
+| Suite | Purpose | Test Cases | Coverage |
+|-------|---------|------------|----------|
+| **state-manager.test.js** ✨ | State manager unit tests | 34 | 100% |
+| **state-manager-integration.test.js** ✨ | TTL, pub/sub, events | 31 | 100% |
+| **dynamic-imports.test.js** ✨ | Dynamic import utilities | 10 | 100% |
+| **dynamic-import-e2e.test.js** 🆕 | E2E chunk loading | 12 | N/A |
+| **ssr-integration.test.js** 🆕 | SSR performance assertions | 8+ | N/A |
+| **leaderboard-components.test.js** ✨ | Component migration | 16 | 85% |
+| **coverage** 🆕 | Code coverage reporting | - | 90%+ |
+
+**Total (Enhanced):** 125+ individual test cases
+
+✨ = Enhanced with additional coverage  
+🆕 = Newly added for Issue #82
+
+### 8 Comprehensive Test Suites (Original Baseline)
 
 | Suite | Purpose | Test Cases | Coverage |
 |-------|---------|------------|----------|
@@ -49,6 +96,17 @@ npm run test:nextjs
 npm run test:salarycap
 npm run test:performance
 npm run test:legacy
+
+# Enhanced suites (Issue #82)
+npm run test:state          # State manager unit tests
+npm run test:state:integration  # TTL & pub/sub tests
+npm run test:dynamic        # Dynamic import tests
+npm run test:dynamic:e2e    # E2E chunk loading
+npm run test:ssr            # SSR performance tests
+
+# Coverage reporting
+npm run test:coverage       # Full coverage report
+npm run test:coverage:new   # New modules (90% threshold)
 ```
 
 ### Test Against Production
@@ -467,6 +525,74 @@ With this test baseline in place, you can now safely:
    - Build on solid foundation
    - Protected by regression tests
    - Performance monitored
+
+---
+
+## Code Coverage Reporting (Issue #82)
+
+**Added:** November 13, 2025
+
+### Coverage Tool: c8
+
+We use c8 for JavaScript/TypeScript code coverage with the following thresholds:
+
+| Metric | Threshold | Scope |
+|--------|-----------|-------|
+| Lines | 90% | New modules in lib/ and components/ |
+| Functions | 90% | New modules in lib/ and components/ |
+| Branches | 85% | New modules in lib/ and components/ |
+| Statements | 90% | New modules in lib/ and components/ |
+
+### Running Coverage
+
+```bash
+# Full coverage report
+npm run test:coverage
+
+# New modules only (enforces 90% threshold)
+npm run test:coverage:new
+
+# View HTML report
+open coverage/index.html
+```
+
+### CI Integration
+
+Coverage is automatically checked on every pull request:
+
+1. **Runs tests with coverage** on all new modules
+2. **Posts PR comment** with coverage metrics
+3. **Uploads HTML report** as artifact
+4. **Fails if thresholds not met** (90% lines/functions, 85% branches)
+
+### Example PR Comment
+
+```markdown
+## 📊 Test Coverage Report
+
+| Metric | Coverage | Status | Target |
+|--------|----------|--------|--------|
+| Lines | 92.5% | ✅ | 90% |
+| Statements | 93.1% | ✅ | 90% |
+| Functions | 91.2% | ✅ | 90% |
+| Branches | 87.3% | ✅ | 85% |
+
+🎉 All coverage targets met!
+```
+
+### Monitored Modules
+
+- `lib/state-manager.ts` - Centralized state management
+- `lib/state-provider.tsx` - React Context provider
+- `lib/dynamic-import.ts` - Dynamic import utilities
+- `lib/performance-monitor.ts` - Performance tracking
+- `components/LeaderboardTable.tsx` - Leaderboard display
+- `components/ResultsTable.tsx` - Race results display
+- `components/Footer.tsx` - Shared footer component
+
+**For complete coverage documentation, see [COVERAGE.md](COVERAGE.md)**
+
+---
 
 ## Summary
 
