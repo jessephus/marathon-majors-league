@@ -141,12 +141,14 @@ describe('Frontend Integration Tests', () => {
       const testGameId = 'integration-test-' + Date.now();
       
       // Test creating a game
+      // After PR #131: players array removed (was part of deprecated snake draft)
       const createResponse = await fetch(`${BASE_URL}/api/game-state?gameId=${testGameId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          players: ['TEST1', 'TEST2'],
-          draftComplete: false
+          draftComplete: false,
+          resultsFinalized: false,
+          rosterLockTime: null
         })
       });
       
@@ -157,7 +159,10 @@ describe('Frontend Integration Tests', () => {
       const gameData = await getResponse.json();
       
       assert.strictEqual(getResponse.status, 200, 'Should retrieve game');
-      assert.ok(gameData.players, 'Game should have players array');
+      // After PR #131: Check for modern game state fields instead of players array
+      assert.ok(typeof gameData.draftComplete === 'boolean', 'Game should have draftComplete boolean');
+      assert.ok(typeof gameData.resultsFinalized === 'boolean', 'Game should have resultsFinalized boolean');
+      assert.ok(gameData.hasOwnProperty('rosterLockTime'), 'Game should have rosterLockTime field');
       
       console.log('✅ Game state API integration works');
     });
