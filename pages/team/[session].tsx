@@ -11,7 +11,7 @@ import Script from 'next/script';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
-import { apiClient, createServerApiClient } from '@/lib/api-client';
+import { apiClient, createServerApiClient, salaryCapDraftApi } from '@/lib/api-client';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
@@ -181,12 +181,18 @@ function TeamSessionPageContent({
   }, [fullAthletesLoaded, loadFullAthleteList]);
   
   // Handle slot click (open athlete selection modal)
-  const handleSlotClick = useCallback((slotId: string, currentAthleteId: number | null) => {
+  const handleSlotClick = useCallback(async (slotId: string, currentAthleteId: number | null) => {
+    // Load full athlete list if not already loaded (for partial rosters)
+    if (!fullAthletesLoaded && !loadingFullAthletes) {
+      console.log('[handleSlotClick] Loading full athlete list before opening modal...');
+      await loadFullAthleteList();
+    }
+    
     const gender = slotId.startsWith('M') ? 'men' : 'women';
     setSelectedSlot(slotId);
     setSelectedGender(gender);
     setIsModalOpen(true);
-  }, []);
+  }, [fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList]);
 
   // Handle athlete selection
   const handleAthleteSelect = useCallback((athlete: Athlete) => {
@@ -222,23 +228,28 @@ function TeamSessionPageContent({
       return;
     }
 
-    try {
-      const response = await fetch(`/api/teams/partial-save?gameId=${sessionData.session?.gameId || 'default'}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionToken}`
-        },
-        body: JSON.stringify({ roster: currentRoster })
-      });
+    // Filter out empty slots and ensure salary is set (default to 0 if null)
+    const rosterWithSalaries = currentRoster.map(slot => ({
+      ...slot,
+      salary: slot.salary || 0
+    }));
 
-      const result = await response.json();
-      
-      if (!response.ok) {
-        console.error('Auto-save failed:', result.error);
-      } else {
-        console.log('Auto-save successful:', result.message);
-      }
+    // Only auto-save if at least one athlete is selected
+    const hasAthletes = rosterWithSalaries.some(slot => slot.athleteId !== null);
+    if (!hasAthletes) {
+      return;
+    }
+
+    console.log('[Auto-save] Sending roster:', JSON.stringify(rosterWithSalaries, null, 2));
+
+    try {
+      const result = await salaryCapDraftApi.partialSave(
+        sessionData.session?.gameId || 'default',
+        rosterWithSalaries,
+        sessionToken
+      );
+
+      console.log('Auto-save successful:', (result as any).message);
     } catch (error) {
       console.error('Auto-save error:', error);
       // Silently fail - auto-save is a convenience feature

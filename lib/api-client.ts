@@ -554,12 +554,26 @@ export const sessionApi = {
 // Salary Cap Draft API
 export const salaryCapDraftApi = {
   /**
-   * Submit salary cap team roster
+   * Submit salary cap team roster (marks as complete)
    */
   async submitTeam(gameId: string, playerCode: string, team: any) {
     return apiRequest('/api/salary-cap-draft', {
       method: 'POST',
       body: JSON.stringify({ gameId, playerCode, team }),
+    });
+  },
+
+  /**
+   * Auto-save partial roster (marks as incomplete)
+   */
+  async partialSave(gameId: string, roster: any, sessionToken: string) {
+    return apiRequest(`/api/teams/partial-save?gameId=${gameId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify({ roster }),
     });
   },
 

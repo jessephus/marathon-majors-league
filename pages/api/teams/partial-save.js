@@ -50,9 +50,12 @@ export default async function handler(req, res) {
   const sql = neon(DATABASE_URL);
 
   try {
+    console.log('[Partial-save] Request body:', JSON.stringify(req.body, null, 2));
+    
     const { roster } = req.body;
 
     if (!roster || !Array.isArray(roster)) {
+      console.error('[Partial-save] Invalid roster:', { roster, isArray: Array.isArray(roster) });
       return res.status(400).json({ error: 'Invalid roster data' });
     }
 
