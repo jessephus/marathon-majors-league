@@ -2,7 +2,7 @@
  * Legacy Team Delete Endpoint
  * 
  * ⚠️ LEGACY ENDPOINT - For Snake Draft Mode Only
- * This endpoint is used by the legacy site (public/app.js) for snake draft games.
+ * This endpoint was used by the legacy site (public/app.js, now removed) for snake draft games.
  * 
  * It performs HARD DELETE and updates games.players[] array.
  * 
