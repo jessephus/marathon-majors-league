@@ -8,7 +8,7 @@
  */
 
 import { onCLS, onLCP, onINP, onTTFB, type Metric } from 'web-vitals';
-import { performanceMonitor } from './performance-monitor';
+import { performanceMonitor } from './performance-monitor.js';
 
 /**
  * Initialize Web Vitals monitoring

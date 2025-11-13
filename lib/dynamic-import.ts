@@ -7,8 +7,8 @@
 
 import dynamic, { DynamicOptions } from 'next/dynamic';
 import { ComponentType } from 'react';
-import { performanceMonitor } from './performance-monitor';
-import { FeatureFlag, featureFlags } from './feature-flags';
+import { performanceMonitor } from './performance-monitor.js';
+import { FeatureFlag, featureFlags } from './feature-flags.js';
 
 // Define our own loader type that's always a function
 type LoaderFn<P = any> = () => Promise<ComponentType<P> | { default: ComponentType<P> }>;

@@ -9,7 +9,7 @@
  * - docs/PROCESS_MONOLITH_AUDIT.md (126+ global mutations)
  */
 
-import { gameStateApi, resultsApi } from './api-client';
+import { gameStateApi, resultsApi } from './api-client.js';
 
 // Types
 export interface Athlete {
