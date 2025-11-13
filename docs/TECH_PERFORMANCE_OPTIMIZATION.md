@@ -1,5 +1,10 @@
 # Performance Optimization Documentation
 
+**Last Updated:** November 13, 2025  
+**Related:** [Issue #82 - Componentization](https://github.com/jessephus/marathon-majors-league/issues/82), [Issue #84 - Code Splitting Phase 4](https://github.com/jessephus/marathon-majors-league/issues/84)
+
+> 📊 **See [PERFORMANCE_REPORT.md](PERFORMANCE_REPORT.md) for Phase 4 bundle size metrics and code splitting results.**
+
 This document describes the performance optimizations implemented to speed up site responsiveness.
 
 ## Overview

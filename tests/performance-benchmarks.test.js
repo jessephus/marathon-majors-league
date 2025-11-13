@@ -74,6 +74,41 @@ describe('Performance Benchmark Tests', () => {
       }
     });
     
+    it('should generate expected dynamic chunk names (Phase 4)', async () => {
+      if (IS_LOCAL && existsSync(join(process.cwd(), '.next/static/chunks'))) {
+        console.log('🔍 Verifying dynamic chunk generation...');
+        
+        const expectedChunks = [
+          'chunk-athlete-modal',
+          'chunk-commissioner-results',
+          'chunk-commissioner-athletes',
+          'chunk-commissioner-teams'
+        ];
+        
+        const chunksDir = join(process.cwd(), '.next/static/chunks');
+        const { readdirSync } = await import('fs');
+        const chunkFiles = readdirSync(chunksDir);
+        
+        let allFound = true;
+        for (const chunkName of expectedChunks) {
+          const found = chunkFiles.some(file => file.startsWith(chunkName));
+          if (found) {
+            const matchingFile = chunkFiles.find(file => file.startsWith(chunkName));
+            console.log(`   ✓ ${chunkName}: ${matchingFile}`);
+          } else {
+            console.log(`   ✗ ${chunkName}: NOT FOUND`);
+            allFound = false;
+          }
+        }
+        
+        assert.ok(allFound, 'All expected dynamic chunks should be generated');
+        console.log('✅ All 4 dynamic chunks generated successfully');
+      } else {
+        console.log('⚠️  Dynamic chunk verification only available after build');
+        console.log('💡 Run `npm run build` first');
+      }
+    });
+    
     it('should track JavaScript file sizes', async () => {
       // Measure actual served file sizes
       const files = [
