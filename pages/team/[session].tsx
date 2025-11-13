@@ -343,12 +343,9 @@ function TeamSessionPageContent({
         <main className="page active" id="salary-cap-draft-page">
           {/* Team Header - Legacy Style */}
           <div className="team-header-orange">
-            <div 
-              className="team-avatar-wrapper"
-              dangerouslySetInnerHTML={{ 
-                __html: createTeamAvatarSVG(sessionData.session?.displayName || sessionState.teamName || 'My Team', 48) 
-              }}
-            />
+            <div className="team-avatar-wrapper">
+              {createTeamAvatarSVG(sessionData.session?.displayName || sessionState.teamName || 'My Team', 48)}
+            </div>
             <div className="team-header-info">
               <div className="team-label">TEAM</div>
               <h2 className="team-name-heading">{sessionData.session?.displayName || sessionState.teamName || 'My Team'}</h2>

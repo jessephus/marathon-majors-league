@@ -63,25 +63,24 @@ describe('Next.js Routing and SSR Tests', () => {
       console.log('✅ Main route (/) renders correctly');
     });
     
-    it('should have all required page sections in main route', async () => {
+    it('should have React components in main route (legacy pages migrated to React)', async () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Check for essential page sections
-      const requiredSections = [
-        'landing-page',
-        'commissioner-page',
-        'leaderboard'
-      ];
+      // React modals are not in initial SSR HTML when isOpen=false
+      // They render client-side when needed
+      // Verify old HTML modal IDs are gone
+      assert.ok(!html.includes('id="team-creation-modal"'), 
+        'team-creation-modal is now a React component (not in SSR HTML)');
+      assert.ok(!html.includes('id="commissioner-totp-modal"'), 
+        'commissioner-totp-modal is now a React component (not in SSR HTML)');
       
-      for (const section of requiredSections) {
-        assert.ok(
-          html.includes(section),
-          `Should contain ${section} section`
-        );
-      }
+      // Verify legacy pages are removed
+      assert.ok(!html.includes('commissioner-page'), 'commissioner-page migrated to /commissioner route');
+      assert.ok(!html.includes('leaderboard-page'), 'leaderboard-page migrated to /leaderboard route');
+      assert.ok(!html.includes('salary-cap-draft-page'), 'salary-cap-draft-page migrated to /team/[session] route');
       
-      console.log('✅ All required page sections present');
+      console.log('✅ React components active, legacy HTML pages/modals removed');
     });
     
     it('should serve API routes without rendering HTML', async () => {
@@ -175,25 +174,22 @@ describe('Next.js Routing and SSR Tests', () => {
       console.log('✅ Next.js JavaScript chunks configured');
     });
     
-    it('should have page containers for SPA navigation', async () => {
+    it('should have React routing (legacy SPA navigation removed)', async () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Check for page containers used in client-side navigation
-      const pageContainers = [
-        'landing-page',
-        'commissioner-page',
-        'leaderboard-page'
-      ];
+      // Check that landing page is present
+      assert.ok(html.includes('landing-page'), 'Should have landing-page');
       
-      for (const container of pageContainers) {
-        assert.ok(
-          html.includes(container),
-          `Should have ${container} container for navigation`
-        );
-      }
+      // Verify legacy page containers are removed (migrated to React routes)
+      assert.ok(!html.includes('commissioner-page'), 'commissioner-page removed (now /commissioner route)');
+      assert.ok(!html.includes('leaderboard-page'), 'leaderboard-page removed (now /leaderboard route)');
+      assert.ok(!html.includes('salary-cap-draft-page'), 'salary-cap-draft-page removed (now /team/[session] route)');
       
-      console.log('✅ SPA page containers present');
+      // Verify Next.js routing is active
+      assert.ok(html.includes('__NEXT_DATA__'), 'Should use Next.js client-side routing');
+      
+      console.log('✅ React routing active, legacy SPA containers removed');
     });
   });
   

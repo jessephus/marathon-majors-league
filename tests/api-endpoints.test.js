@@ -134,10 +134,12 @@ describe('API Endpoints - Post Migration Tests', () => {
   
   describe('POST /api/game-state', () => {
     it('should create a new game state', async () => {
+      // After PR #131: players array removed (was part of deprecated snake draft)
+      // Modern game state uses: draftComplete, resultsFinalized, rosterLockTime
       const gameData = {
-        players: ['PLAYER1', 'PLAYER2', 'PLAYER3'],
         draftComplete: false,
-        resultsFinalized: false
+        resultsFinalized: false,
+        rosterLockTime: null
       };
       
       const { response, data, status } = await apiRequest('/api/game-state?gameId=' + GAME_ID, {
@@ -157,59 +159,45 @@ describe('API Endpoints - Post Migration Tests', () => {
       const { response, data, status } = await apiRequest('/api/game-state?gameId=' + GAME_ID);
       
       assert.strictEqual(status, 200, 'Should return 200 OK');
-      assert.ok(Array.isArray(data.players), 'Should have players array');
-      assert.strictEqual(data.players.length, 3, 'Should have 3 players');
-      assert.strictEqual(data.draftComplete, false, 'Draft should not be complete');
+      // After PR #131: players array removed (was part of deprecated snake draft)
+      // Modern game state has: draftComplete, resultsFinalized, rosterLockTime, results
+      assert.ok(typeof data.draftComplete === 'boolean', 'Should have draftComplete boolean');
+      assert.ok(typeof data.resultsFinalized === 'boolean', 'Should have resultsFinalized boolean');
+      assert.ok(data.hasOwnProperty('rosterLockTime'), 'Should have rosterLockTime field');
       
       console.log('✅ Game state retrieval working');
     });
   });
   
-  describe('POST /api/rankings', () => {
-    it('should save player rankings', async () => {
-      const rankings = {
-        men: [{ id: 1, name: 'Test Athlete', country: 'USA', pb: '2:05:00' }],
-        women: [{ id: 2, name: 'Test Athlete 2', country: 'KEN', pb: '2:18:00' }]
+  // NOTE: /api/rankings and /api/draft endpoints removed in PR #131
+  // These were part of the deprecated snake draft system
+  // Modern salary cap draft uses /api/salary-cap-draft instead
+  
+  describe('POST /api/salary-cap-draft', () => {
+    it('should handle salary cap draft team creation', async () => {
+      const teamData = {
+        gameId: GAME_ID,
+        playerCode: 'TEST_PLAYER',
+        teamName: 'Test Team',
+        athletes: {
+          men: [1, 2, 3],
+          women: [4, 5, 6]
+        },
+        totalSalary: 25000
       };
       
-      const { response, data, status } = await apiRequest(
-        `/api/rankings?gameId=${GAME_ID}&playerCode=PLAYER1`,
-        {
-          method: 'POST',
-          body: JSON.stringify(rankings),
-        }
-      );
+      const { response, data, status } = await apiRequest('/api/salary-cap-draft', {
+        method: 'POST',
+        body: JSON.stringify(teamData),
+      });
       
-      assert.ok(status === 200 || status === 201, 'Should return success status');
+      // Should succeed or fail validation gracefully
+      assert.ok(status === 200 || status === 201 || status === 400, 'Should return valid status');
       
-      console.log('✅ Rankings save working');
-    });
-  });
-  
-  describe('GET /api/rankings', () => {
-    it('should retrieve player rankings', async () => {
-      const { response, data, status } = await apiRequest(
-        `/api/rankings?gameId=${GAME_ID}&playerCode=PLAYER1`
-      );
-      
-      assert.strictEqual(status, 200, 'Should return 200 OK');
-      assert.ok(data.men || data.women || data.rankings, 'Should have rankings data');
-      
-      console.log('✅ Rankings retrieval working');
-    });
-  });
-  
-  describe('GET /api/draft', () => {
-    it('should handle draft requests', async () => {
-      const { response, data, status } = await apiRequest(`/api/draft?gameId=${GAME_ID}`);
-      
-      // Should either return draft results or an error if prerequisites aren't met
-      assert.ok(status === 200 || status === 400, 'Should return valid status');
-      
-      if (status === 200) {
-        console.log('✅ Draft endpoint accessible');
+      if (status === 200 || status === 201) {
+        console.log('✅ Salary cap draft endpoint working');
       } else {
-        console.log('✅ Draft endpoint properly validates prerequisites');
+        console.log('✅ Salary cap draft endpoint validates input');
       }
     });
   });

@@ -1,8 +1,10 @@
 # Monolith Cleanup Summary
 
-**Date:** November 13, 2025  
+**Date:** November 13, 2025 (Updated: Post-Monolith Cleanup)  
 **Issue:** [#82 - Final Cleanup] Remove monolith JS after component parity achieved  
-**PR:** copilot/remove-monolith-js-files
+**PRs:** 
+- copilot/remove-monolith-js-files (Monolith removal)
+- copilot/cleanup-duplicate-obsolete-logic (Final cleanup)
 
 ---
 
@@ -250,3 +252,90 @@ While the monolith cleanup is complete, there are optional improvements for the 
 ---
 
 **Conclusion:** The legacy monolith JavaScript files have been successfully removed after achieving complete component parity. All functionality has been migrated to modern React/TypeScript components with improved maintainability, performance, and developer experience.
+
+---
+
+## Post-Monolith Final Cleanup (November 13, 2025)
+
+After removing the monolith files (app.js, salary-cap-draft.js), additional cleanup was performed to remove deprecated API endpoints and database functions that were only used by the legacy snake draft system.
+
+### Additional Files Removed
+
+#### Deprecated API Endpoints
+- **`pages/api/draft.js`** (84 lines) - Snake draft execution endpoint
+- **`pages/api/rankings.js`** (115 lines) - Player rankings submission endpoint
+- **`pages/api/teams/delete.js`** (119 lines) - Snake draft team deletion endpoint
+
+**Total API files removed:** 318 lines
+
+### Files Modified
+
+#### Database Layer Cleanup
+- **`pages/api/db.js`**
+  - Removed `getPlayerRankings()` function (61 lines)
+  - Removed `savePlayerRankings()` function (17 lines)
+  - Removed `clearAllRankings()` function (5 lines)
+  - Removed `getDraftTeams()` function (45 lines)
+  - Removed `saveDraftTeams()` function (28 lines)
+  - **Total removed:** 212 lines of deprecated snake draft database functions
+  - Added documentation comment explaining removal
+
+#### API State Cleanup
+- **`pages/api/game-state.js`**
+  - Removed calls to `getPlayerRankings()` and `getDraftTeams()`
+  - Removed `rankings` and `teams` from API response
+  - Removed deprecated `players` array from response
+  - Simplified to only return core game state (roster_lock_time, results_finalized, draft_complete)
+
+#### API Client Cleanup
+- **`lib/api-client.ts`**
+  - Removed `rankingsApi` object (18 lines)
+  - Removed `rankingsApi` from exported `apiClient` object
+  - Added deprecation comment explaining removal
+
+### Cumulative Impact
+
+**Total Cleanup:**
+- **Monolith removal:** 8,452 lines (347 KB)
+- **Final cleanup:** 530 lines (API endpoints + DB functions)
+- **Grand total:** 8,982 lines removed
+
+**Deprecated Features No Longer Supported:**
+1. ❌ Snake draft mode (automated draft algorithm)
+2. ❌ Player preference rankings (drag-and-drop ranking)
+3. ❌ Legacy games.players[] array tracking
+4. ✅ Salary cap draft mode (modern, active system)
+
+### Remaining Legacy Code
+
+#### Orphaned HTML in pages/index.js
+The following page sections exist in `pages/index.js` but are **never displayed** (app.js removed):
+- `#ranking-page` (lines 400-441) - Snake draft ranking UI
+- `#salary-cap-draft-page` (lines 444-726) - Old salary cap draft UI
+- `#draft-page` (lines 728-734) - Snake draft results
+- `#teams-page` (lines 736-751) - Old team roster view
+- `#leaderboard-page` (lines 754-794) - Old leaderboard view
+- `#commissioner-page` (lines 800-870+) - Old commissioner dashboard
+
+**Status:** These sections are harmless orphaned HTML. They consume ~400 lines but:
+- ✅ Never loaded (no JavaScript to show them)
+- ✅ Don't affect bundle size (server-rendered HTML)
+- ✅ Don't break functionality
+- ⚠️ Could be removed in future cleanup for code clarity
+
+**Decision:** Leave in place to minimize risk. Removal would require careful testing of the complex HTML structure.
+
+### Database Table Status
+
+The following database tables are now **unused** but retained for data preservation:
+
+| Table | Status | Purpose | Action |
+|-------|--------|---------|--------|
+| `player_rankings` | ❌ Unused | Snake draft preference rankings | Keep for historical data |
+| `draft_teams` | ❌ Unused | Snake draft team assignments | Keep for historical data |
+| `salary_cap_teams` | ✅ Active | Modern salary cap draft teams | In use |
+| `anonymous_sessions` | ✅ Active | Team sessions | In use |
+
+**Migration Path:** Historical games using `player_rankings` and `draft_teams` tables remain accessible via direct SQL queries if needed. New games exclusively use `salary_cap_teams`.
+
+---

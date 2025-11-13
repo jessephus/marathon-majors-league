@@ -103,8 +103,12 @@ CREATE TABLE games (
 );
 ```
 
-#### Player Rankings Table
-Stores player athlete preferences:
+#### Player Rankings Table (⚠️ DEPRECATED)
+**Status:** No longer used. Retained for historical data only.  
+**Deprecated:** November 13, 2025  
+**Replaced by:** Direct team selection via `salary_cap_teams` table
+
+Stores player athlete preferences for legacy snake draft system:
 
 ```sql
 CREATE TABLE player_rankings (
@@ -122,10 +126,14 @@ CREATE TABLE player_rankings (
 CREATE INDEX idx_player_rankings_session_id ON player_rankings(session_id);
 ```
 
-**Note**: Teams are identified by `sessionToken` (unique) rather than `playerCode` (user-chosen). The `session_id` foreign key ensures referential integrity and automatic cleanup via CASCADE delete.
+**Note**: This table was part of the legacy snake draft system where players submitted preference rankings before an automated draft was executed. The modern salary cap draft system eliminates this step - players directly select their team.
 
-#### Draft Teams Table
-Post-draft team assignments:
+#### Draft Teams Table (⚠️ DEPRECATED)
+**Status:** No longer used. Retained for historical data only.  
+**Deprecated:** November 13, 2025  
+**Replaced by:** `salary_cap_teams` table for modern draft system
+
+Post-draft team assignments for legacy snake draft:
 
 ```sql
 CREATE TABLE draft_teams (
@@ -140,6 +148,8 @@ CREATE TABLE draft_teams (
 
 CREATE INDEX idx_draft_teams_session_id ON draft_teams(session_id);
 ```
+
+**Note**: This table stored teams created by the automated snake draft algorithm. The modern salary cap draft stores teams in the `salary_cap_teams` table instead.
 
 #### Race Results Table
 Live and final race results with split times:
