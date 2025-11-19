@@ -125,7 +125,7 @@ Learn how to join games, rank athletes, and follow live results.
 | Game Modes | [FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md) | CORE_USER_GUIDE.md, FEATURE_SALARY_CAP_DRAFT.md |
 | Salary Cap Draft | [FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md) | FEATURE_GAME_MODES.md, FEATURE_POINTS_SCORING_SYSTEM.md |
 | Points Scoring | [FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md) | CORE_DEPLOYMENT.md, CORE_CHANGELOG.md |
-| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, PROCESS_EDITABLE_WA_ID_FEATURE.md |
+| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, TECH_DATABASE.md |
 | Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_AUTH_PHASE_2_SUMMARY.md |
 | Anonymous Teams | [FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md) | CORE_USER_GUIDE.md, CORE_ARCHITECTURE.md |
 
@@ -153,7 +153,7 @@ Our documentation follows these categories:
    - Naming: `FEATURE_*.md` prefix
 
 4. **Process** - Project history and maintenance records
-   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CLEANUP_SUMMARY.md
+   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CONSOLIDATION_RECOVERY.md
    - Format: Chronological with decision rationale
    - Naming: `PROCESS_*.md` prefix (or `CORE_`/`TECH_` if ongoing)
 
