@@ -283,5 +283,59 @@ describe('Landing Page SSR Tests', () => {
       
       console.log('✅ External scripts included via Next.js Script component');
     });
+    
+    // ⭐ ENHANCEMENT: Performance assertions for initial HTML content
+    it('should have TTFB < 3000ms for landing page', async () => {
+      const startTime = performance.now();
+      const response = await fetch(`${BASE_URL}/`);
+      const ttfb = performance.now() - startTime;
+      
+      assert.ok(ttfb < 3000, `TTFB should be < 3000ms, got ${Math.round(ttfb)}ms`);
+      console.log(`✅ TTFB: ${Math.round(ttfb)}ms (target: < 3000ms)`);
+    });
+    
+    it('should contain actual content in initial HTML (no empty/loading state)', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Critical assertion: Initial HTML must contain rendered content
+      // This prevents flash of empty content while waiting for JavaScript
+      const hasWelcomeContent = html.includes('Welcome to the Fantasy NY Marathon') ||
+                               html.includes('Join the Competition') ||
+                               html.includes('Create a New Team');
+      
+      assert.ok(hasWelcomeContent, 'Initial HTML must contain welcome content (not loading state)');
+      
+      // Should NOT show loading placeholders in SSR HTML
+      const hasLoadingPlaceholder = html.includes('Loading...') && 
+                                   !html.includes('app-loading-overlay');
+      
+      assert.ok(!hasLoadingPlaceholder, 'Should not have loading placeholders in SSR HTML');
+      
+      console.log('✅ Initial HTML contains rendered content (no flash)');
+    });
+    
+    it('should embed __NEXT_DATA__ for client hydration', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Next.js embeds data in script tag for hydration
+      const hasNextData = html.includes('__NEXT_DATA__');
+      assert.ok(hasNextData, 'Should embed __NEXT_DATA__ for hydration');
+      
+      console.log('✅ Next.js data embedded for client hydration');
+    });
+    
+    it('should have responsive meta tags for mobile optimization', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Critical for mobile performance
+      const hasViewportMeta = html.includes('name="viewport"') && 
+                             html.includes('width=device-width');
+      
+      assert.ok(hasViewportMeta, 'Should have viewport meta tag for mobile');
+      console.log('✅ Viewport meta tag present for mobile optimization');
+    });
   });
 });

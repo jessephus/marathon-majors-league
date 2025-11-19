@@ -35,26 +35,64 @@ Areas needing enhancement: SSR performance, coverage reporting, cleanup
 
 ### ⚠️ Test Suites Needing Enhancement
 
-| File | Lines | Issue | Recommendation |
-|------|-------|-------|----------------|
-| `ssr-integration.test.js` | 147 | Placeholder tests only | **Add real SSR assertions** |
-| `landing-page-ssr.test.js` | 287 | Missing performance assertions | **Add initial HTML content checks** |
-| `team-session-ssr.test.js` | 247 | Missing duplicate fetch detection | **Add fetch monitoring** |
+| File | Lines | Issue | Recommendation | Status |
+|------|-------|-------|----------------|--------|
+| `ssr-integration.test.js` | 147 | Placeholder tests only | **Add real SSR assertions** | ✅ **COMPLETED** |
+| `landing-page-ssr.test.js` | 287 | Missing performance assertions | **Add initial HTML content checks** | ✅ **COMPLETED** |
+| `team-session-ssr.test.js` | 247 | Missing duplicate fetch detection | **Add fetch monitoring** | ✅ **COMPLETED** |
 
 **Subtotal: 3 files, ~681 lines**
 
+**Enhancements Completed (November 19, 2025):**
+
+1. **ssr-integration.test.js** ✅
+   - Added real TTFB < 5000ms performance checks
+   - Added initial HTML content verification
+   - Added cache header validation
+   - Added error handling tests
+
+2. **landing-page-ssr.test.js** ✅
+   - Added TTFB < 3000ms performance assertion
+   - Added initial HTML content verification (no empty/loading state)
+   - Added __NEXT_DATA__ hydration check
+   - Added viewport meta tag check for mobile
+   - Total: 5 new performance assertions
+
+3. **team-session-ssr.test.js** ✅
+   - Added duplicate fetch prevention verification
+   - Added SSR data completeness checks
+   - Added documentation of no-fetch guarantees
+   - Total: 3 new fetch monitoring tests
+
+**All enhancement recommendations from audit have been completed.**
+
 ### 🔴 Obsolete/Redundant Tests (Remove or Consolidate)
 
-| File | Lines | Reason | Action |
-|------|-------|--------|--------|
-| `scoring-tests.js` | 269 | One-off test, not integrated | **Remove** - Scoring logic should be in backend API tests |
-| `test-utils.js` | ~200 | Utility module, not tests | **Keep** - Used by other tests |
-| `auto-save-roster.test.js` | 165 | Feature not yet implemented | **Remove or mark as TODO** |
-| `budget-utils.test.js` | 273 | Covered by salary-cap-draft tests | **Consider consolidation** |
-| `formatting-utils.test.js` | 446 | Good standalone tests | **Keep** - Pure utility testing |
-| `api-client.test.js` | 171 | Minimal coverage | **Enhance or consolidate** |
+| File | Lines | Reason | Action | Status |
+|------|-------|--------|--------|--------|
+| `scoring-tests.js` | 269 | One-off test, not integrated | **Remove** - Scoring logic should be in backend API tests | ✅ **Marked .obsolete** |
+| `test-utils.js` | ~200 | Utility module, not tests | **Keep** - Used by other tests | ✅ **Keeping** |
+| `auto-save-roster.test.js` | 165 | Feature not yet implemented | **Remove or mark as TODO** | ⏳ **Marked for deletion** |
+| `budget-utils.test.js` | 273 | Covered by salary-cap-draft tests | **Consider consolidation** | ⏳ **Marked for deletion** |
+| `formatting-utils.test.js` | 446 | Good standalone tests | **Keep** - Pure utility testing | ✅ **Keeping** |
+| `api-client.test.js` | 171 | Minimal coverage | **Enhance or consolidate** | ⏳ **Marked for deletion** |
 
 **Subtotal: 6 files, ~1,524 lines**
+
+**Obsolete Test Cleanup (November 19, 2025):**
+
+Files marked for deletion with `.DELETE_ME` companion files:
+1. `auto-save-roster.test.js.DELETE_ME` - Feature not implemented
+2. `budget-utils.test.js.DELETE_ME` - Consider consolidation (redundant with integration tests)
+3. `api-client.test.js.DELETE_ME` - Minimal coverage, enhance or consolidate
+
+Each `.DELETE_ME` file contains:
+- Reason for marking
+- Audit reference
+- Options for owner to consider
+- Final decision left to @jessephus
+
+**Decision pending:** Owner will review and decide whether to delete these files.
 
 ## Gap Analysis
 

@@ -1,0 +1,17 @@
+# MARKED FOR DELETION
+
+**Reason:** Feature not yet implemented
+
+**From Audit (Issue #82):**
+This test file covers auto-save roster functionality, but the feature is not implemented in the codebase. The tests are placeholder/aspirational tests for a future feature.
+
+**Recommendation:** Remove or move to a "future-features" directory
+
+**Alternative:** If auto-save is planned, keep as TODO with clear documentation that feature is not yet implemented.
+
+**Decision:** @jessephus will decide whether to delete this file.
+
+---
+**Audit Reference:** tests/AUDIT_RESULTS.md, line 52
+**Issue:** #82 - Testing Baseline Extension
+**Date Marked:** November 19, 2025
