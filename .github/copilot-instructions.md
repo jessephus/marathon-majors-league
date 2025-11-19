@@ -46,42 +46,32 @@
 
 #### Documentation Organization Rules
 
-**The /docs folder has 7 categories** (see `docs/README.md`):
+**The /docs folder has 5 categories** (see `docs/README.md`):
 
 1. **Core Guides (5 docs)** - CORE_USER_GUIDE, CORE_ARCHITECTURE, CORE_DEVELOPMENT, CORE_DEPLOYMENT, CORE_CHANGELOG
    - These are permanent and should grow with the project
    - Never delete these without team discussion
    - Naming: `CORE_*.md` prefix
 
-2. **Technical Reference (6 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION, TECH_STATE_MANAGEMENT
+2. **Technical Reference (10 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION, TECH_STATE_MANAGEMENT, TECH_SSR_STRATEGY, TECH_CACHE_TRACKING_IMPLEMENTATION, TECH_UI_HELPER_DUPLICATION, TECH_GAMES_PLAYERS_ARRAY_DEPRECATION
    - Keep these current with code changes
    - Add sections, don't create new docs for minor updates
    - Naming: `TECH_*.md` prefix
 
-3. **Features (6 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, FEATURE_ROSTER_LOCK_TIME, FEATURE_ACCOUNT_FREE_TEAMS, FEATURE_SYNC_TOP_100
+3. **Features (9 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, FEATURE_ROSTER_LOCK_TIME, FEATURE_ACCOUNT_FREE_TEAMS, FEATURE_SYNC_TOP_100, FEATURE_COMMISSIONER_PANELS, FEATURE_AUTO_SAVE_ROSTER, FEATURE_DYNAMIC_IMPORTS
    - Create new docs for major features only
    - Merge into Core Guides after 6+ months if appropriate
    - Naming: `FEATURE_*.md` prefix
 
-4. **Process & Maintenance (9 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_AUTH_PHASE_2_SUMMARY, PROCESS_DOCS_HEALTH_CHECK, etc.
+4. **Process & Maintenance (8 docs)** - PROCESS_AUTH_PHASE_1_SUMMARY, PROCESS_AUTH_PHASE_2_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_DOCS_HEALTH_CHECK, PROCESS_MONOLITH_AUDIT, PROCESS_PHASE4_PERFORMANCE_REPORT, PROCESS_ROUTING_PHASE1, PROCESS_TECH_DEBT
    - These document project history and decisions
-   - Don't delete if they involve ongoing projects or migrations
+   - Remove temporary summaries after completion; keep ongoing references
    - Naming: `PROCESS_*.md` prefix
 
 5. **Setup & Authentication (1 doc)** - SETUP_AUTHENTICATION
    - Configuration and setup guides
    - Update when external services change
    - Naming: `SETUP_*.md` prefix
-
-6. **Migrations (1 doc)** - MIGRATION_LANDING_PAGE_SSR
-   - Major technical migrations and transitions
-   - Document before/after, rationale, implementation steps
-   - Naming: `MIGRATION_*.md` prefix
-
-7. **Bug Fixes (1 doc)** - BUGFIX_INFINITE_REFRESH_LOOP
-   - Significant bug documentation
-   - Document symptom, root cause, solution, prevention
-   - Naming: `BUGFIX_*.md` prefix
 
 #### Before Creating New Documentation
 
