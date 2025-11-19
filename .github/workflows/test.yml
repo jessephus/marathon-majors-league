@@ -71,6 +71,16 @@ jobs:
         run: npm run test:ssr
         continue-on-error: true
       
+      - name: Run landing page SSR tests
+        id: test-ssr-landing
+        run: npm run test:ssr:landing
+        continue-on-error: true
+      
+      - name: Run team session SSR tests
+        id: test-ssr-team
+        run: npm run test:ssr:team
+        continue-on-error: true
+      
       # Formatting Utils Tests (no server required)
       - name: Run formatting utilities tests
         id: test-formatting
@@ -81,6 +91,11 @@ jobs:
       - name: Run dynamic imports tests
         id: test-dynamic
         run: npm run test:dynamic
+        continue-on-error: true
+      
+      - name: Run dynamic imports E2E tests  
+        id: test-dynamic-e2e
+        run: npm run test:dynamic:e2e
         continue-on-error: true
       
       # Performance Instrumentation Tests (no server required)
@@ -222,8 +237,11 @@ jobs:
                 'Draft Validation Tests': '${{ steps.test-draft.outcome }}',
                 'API Client Tests': '${{ steps.test-api-client.outcome }}',
                 'SSR Integration Tests': '${{ steps.test-ssr.outcome }}',
+                'Landing Page SSR Tests': '${{ steps.test-ssr-landing.outcome }}',
+                'Team Session SSR Tests': '${{ steps.test-ssr-team.outcome }}',
                 'Formatting Utilities Tests': '${{ steps.test-formatting.outcome }}',
                 'Dynamic Imports Tests': '${{ steps.test-dynamic.outcome }}',
+                'Dynamic Imports E2E Tests': '${{ steps.test-dynamic-e2e.outcome }}',
                 'Performance Instrumentation Tests': '${{ steps.test-perf-instrumentation.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
@@ -358,6 +376,18 @@ jobs:
             TESTS_FAILED=true
           fi
           
+          # Check landing page SSR tests (run early, no server required)
+          if [ "${{ steps.test-ssr-landing.outcome }}" != "success" ]; then
+            echo "❌ Landing page SSR tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check team session SSR tests (run early, no server required)
+          if [ "${{ steps.test-ssr-team.outcome }}" != "success" ]; then
+            echo "❌ Team session SSR tests failed"
+            TESTS_FAILED=true
+          fi
+          
           # Check formatting utilities tests (run early, no server required)
           if [ "${{ steps.test-formatting.outcome }}" != "success" ]; then
             echo "❌ Formatting utilities tests failed"
@@ -367,6 +397,12 @@ jobs:
           # Check dynamic imports tests (run early, no server required)
           if [ "${{ steps.test-dynamic.outcome }}" != "success" ]; then
             echo "❌ Dynamic imports tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check dynamic imports E2E tests (run early, no server required)
+          if [ "${{ steps.test-dynamic-e2e.outcome }}" != "success" ]; then
+            echo "❌ Dynamic imports E2E tests failed"
             TESTS_FAILED=true
           fi
           

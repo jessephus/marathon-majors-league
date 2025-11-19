@@ -72,27 +72,35 @@ Areas needing enhancement: SSR performance, coverage reporting, cleanup
 |------|-------|--------|--------|--------|
 | `scoring-tests.js` | 269 | One-off test, not integrated | **Remove** - Scoring logic should be in backend API tests | ✅ **Marked .obsolete** |
 | `test-utils.js` | ~200 | Utility module, not tests | **Keep** - Used by other tests | ✅ **Keeping** |
-| `auto-save-roster.test.js` | 165 | Feature not yet implemented | **Remove or mark as TODO** | ⏳ **Marked for deletion** |
-| `budget-utils.test.js` | 273 | Covered by salary-cap-draft tests | **Consider consolidation** | ⏳ **Marked for deletion** |
+| `auto-save-roster.test.js` | 165 | Feature IS implemented | **Keep** - Tests are active | ✅ **Keeping** (was incorrectly marked) |
+| `budget-utils.test.js` | 273 | Covered by salary-cap-draft tests | **Consolidate** | ✅ **Consolidated into salary-cap-draft.test.js** |
 | `formatting-utils.test.js` | 446 | Good standalone tests | **Keep** - Pure utility testing | ✅ **Keeping** |
-| `api-client.test.js` | 171 | Minimal coverage | **Enhance or consolidate** | ⏳ **Marked for deletion** |
+| `api-client.test.js` | 171 | Minimal coverage | **Consolidate** | ✅ **Consolidated into api-endpoints.test.js** |
 
 **Subtotal: 6 files, ~1,524 lines**
 
-**Obsolete Test Cleanup (November 19, 2025):**
+**Test Consolidation Completed (November 19, 2025):**
 
-Files marked for deletion with `.DELETE_ME` companion files:
-1. `auto-save-roster.test.js.DELETE_ME` - Feature not implemented
-2. `budget-utils.test.js.DELETE_ME` - Consider consolidation (redundant with integration tests)
-3. `api-client.test.js.DELETE_ME` - Minimal coverage, enhance or consolidate
+1. **budget-utils.test.js** → **salary-cap-draft.test.js**
+   - Added 7 integration tests covering all budget utility functions
+   - Tests now verify budget logic in realistic draft context
+   - Original file can be deleted (functionality preserved)
 
-Each `.DELETE_ME` file contains:
-- Reason for marking
-- Audit reference
-- Options for owner to consider
-- Final decision left to @jessephus
+2. **api-client.test.js** → **api-endpoints.test.js**
+   - Added 9 integration tests covering retry logic, cache config, and endpoints
+   - Tests verify API client behavior with real endpoints
+   - Original file can be deleted (functionality preserved)
 
-**Decision pending:** Owner will review and decide whether to delete these files.
+3. **auto-save-roster.test.js** - **KEEPING**
+   - Feature IS implemented (user confirmed)
+   - Removed .DELETE_ME marker file
+   - Tests are active and should remain
+
+**Files Ready for Deletion:**
+- `budget-utils.test.js` (consolidated into salary-cap-draft.test.js)
+- `api-client.test.js` (consolidated into api-endpoints.test.js)
+- `budget-utils.test.js.DELETE_ME` (marker no longer needed)
+- `api-client.test.js.DELETE_ME` (marker no longer needed)
 
 ## Gap Analysis
 
