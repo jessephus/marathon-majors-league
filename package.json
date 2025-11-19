@@ -29,9 +29,14 @@
     "test:draft": "node src/features/draft/__tests__/validation.test.js",
     "test:api-client": "node tests/api-client.test.js",
     "test:ssr": "node tests/ssr-integration.test.js",
+    "test:ssr:landing": "node tests/landing-page-ssr.test.js",
+    "test:ssr:team": "node tests/team-session-ssr.test.js",
     "test:formatting": "node tests/formatting-utils.test.js",
     "test:dynamic": "tsx tests/dynamic-imports.test.js",
+    "test:dynamic:e2e": "node tests/dynamic-import-e2e.test.js",
     "test:perf-instrumentation": "tsx tests/performance-instrumentation.test.js",
+    "test:coverage": "c8 --reporter=text --reporter=html --reporter=json-summary npm test",
+    "test:coverage:new": "c8 --reporter=text --include='lib/**/*.ts' --include='lib/**/*.tsx' --include='components/**/*.tsx' --lines 90 --functions 90 --branches 85 npm run test:state && npm run test:dynamic && npm run test:ssr",
     "validate:no-legacy": "node scripts/validate-no-legacy-imports.js"
   },
   "dependencies": {
@@ -59,6 +64,7 @@
     "@next/bundle-analyzer": "^16.0.1",
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",
+    "c8": "^10.1.3",
     "sharp": "^0.34.4",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
