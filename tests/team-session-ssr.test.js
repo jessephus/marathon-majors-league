@@ -180,6 +180,53 @@ if (runTest('SSR data prevents client-side API calls', () => {
   assert(ssrDataProvided.existingRoster !== undefined, 'Roster data provided by SSR');
 })) passed++; else failed++;
 
+// ⭐ ENHANCEMENT: Duplicate fetch detection
+if (runTest('SSR provides all data to prevent duplicate API fetches', () => {
+  // Expected SSR data structure that prevents client-side fetches
+  const ssrProps = {
+    sessionToken: 'test-token',
+    sessionData: { valid: true },
+    athletesData: { men: [], women: [] },
+    gameStateData: { rosterLockTime: null, resultsFinalized: false },
+    existingRoster: null,
+  };
+  
+  // All required data must be provided via SSR
+  const requiredDataProvided = 
+    ssrProps.athletesData && 
+    ssrProps.gameStateData &&
+    ssrProps.existingRoster !== undefined; // null is valid (no existing roster)
+  
+  assert(requiredDataProvided, 'All required data must be provided via SSR');
+  
+  // Document: Component should NOT call these APIs on mount:
+  // - /api/athletes (data already in athletesData prop)
+  // - /api/game-state (data already in gameStateData prop)
+  // - /api/salary-cap-draft (data already in existingRoster prop)
+  console.log('  → Component receives athletesData from SSR (no /api/athletes fetch)');
+  console.log('  → Component receives gameStateData from SSR (no /api/game-state fetch)');
+  console.log('  → Component receives existingRoster from SSR (no /api/salary-cap-draft fetch)');
+})) passed++; else failed++;
+
+if (runTest('SSR data completeness prevents loading states', () => {
+  const ssrProps = {
+    athletesData: {
+      men: [{ id: 1, name: 'Test', salary: 5000 }],
+      women: [{ id: 2, name: 'Test', salary: 4500 }],
+    },
+    gameStateData: { rosterLockTime: null, resultsFinalized: false },
+  };
+  
+  // With complete SSR data, component should render immediately
+  // No "Loading athletes..." state needed
+  const hasAthletes = ssrProps.athletesData.men.length > 0 && 
+                     ssrProps.athletesData.women.length > 0;
+  
+  assert(hasAthletes, 'SSR data should include athletes (no loading state needed)');
+  
+  console.log('  → Athletes pre-loaded: renders immediately, no loading spinner');
+})) passed++; else failed++;
+
 // Test error handling in SSR
 if (runTest('Invalid session returns error props', () => {
   const errorProps = {

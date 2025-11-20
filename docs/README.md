@@ -4,13 +4,13 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **26 total documents**.
+Our documentation is organized into **5 main categories** with **24 documentation files** (plus this README = 25 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
-- `TECH_*.md` - Technical reference (5 docs)
-- `FEATURE_*.md` - Game features (6 docs)
-- `PROCESS_*.md` - Project history (9 docs)
+- `TECH_*.md` - Technical reference (7 docs)
+- `FEATURE_*.md` - Game features (7 docs)
+- `PROCESS_*.md` - Project history (4 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 
 ---
@@ -54,7 +54,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 
-### 2️⃣ Technical Reference (Architecture & Data)
+### 2️⃣ Technical Reference (7 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -62,32 +62,30 @@ Learn how to join games, rank athletes, and follow live results.
 | **[TECH_NEON_SETUP.md](TECH_NEON_SETUP.md)** | Neon Postgres initial setup | First-time database setup |
 | **[TECH_MIGRATION.md](TECH_MIGRATION.md)** | Database migration history | Understanding schema evolution |
 | **[TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
-| **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
+| **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization (includes cache tracking & Phase 4 results) | Improving app performance |
+| **[TECH_STATE_MANAGEMENT.md](TECH_STATE_MANAGEMENT.md)** | Centralized state manager (GameStateManager) | Working with application state |
+| **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Server-side rendering strategy & caching (includes Routing Phase 1) | Understanding SSR patterns |
 
-### 3️⃣ Features (Game Mechanics & Functionality)
+### 3️⃣ Features (Game Mechanics & Functionality - 7 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
 | **[FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md)** | Season League vs Single Race modes | Understanding game structure |
-| **[FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building | Working on draft features |
+| **[FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building (includes auto-save & roster lock features) | Working on draft features |
 | **[FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md)** | Complete scoring documentation | Understanding/modifying scoring |
-| **[FEATURE_ROSTER_LOCK_TIME.md](FEATURE_ROSTER_LOCK_TIME.md)** | Automatic roster locking feature | Working on roster lock logic |
 | **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
 | **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
+| **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
+| **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |
 
-### 4️⃣ Process & Maintenance (Project History)
+### 4️⃣ Process & Maintenance (Project History - 4 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
-| **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
-| **[PROCESS_LANDING_PAGE_SSR_MIGRATION.md](PROCESS_LANDING_PAGE_SSR_MIGRATION.md)** | Landing page SSR migration guide | Implementing/understanding SSR |
-| **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
-| **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
-| **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
-| **[PROCESS_CLEANUP_SUMMARY.md](PROCESS_CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
-| **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
-| **[PROCESS_AUTH_PHASE_2_SUMMARY.md](PROCESS_AUTH_PHASE_2_SUMMARY.md)** | Auth system implementation summary | Understanding auth architecture |
+| **[PROCESS_AUTH_SUMMARY.md](PROCESS_AUTH_SUMMARY.md)** | Authentication system implementation summary | Understanding auth architecture |
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
+| **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
+| **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking (includes UI helper duplication & games.players[] deprecation) | Current cleanup initiatives |
 
 ### 5️⃣ Setup & Authentication
 
@@ -118,8 +116,8 @@ Learn how to join games, rank athletes, and follow live results.
 | Game Modes | [FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md) | CORE_USER_GUIDE.md, FEATURE_SALARY_CAP_DRAFT.md |
 | Salary Cap Draft | [FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md) | FEATURE_GAME_MODES.md, FEATURE_POINTS_SCORING_SYSTEM.md |
 | Points Scoring | [FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md) | CORE_DEPLOYMENT.md, CORE_CHANGELOG.md |
-| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, PROCESS_EDITABLE_WA_ID_FEATURE.md |
-| Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_AUTH_PHASE_2_SUMMARY.md |
+| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, TECH_DATABASE.md |
+| Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_AUTH_SUMMARY.md |
 | Anonymous Teams | [FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md) | CORE_USER_GUIDE.md, CORE_ARCHITECTURE.md |
 
 ---
@@ -146,7 +144,7 @@ Our documentation follows these categories:
    - Naming: `FEATURE_*.md` prefix
 
 4. **Process** - Project history and maintenance records
-   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CLEANUP_SUMMARY.md
+   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CONSOLIDATION_RECOVERY.md
    - Format: Chronological with decision rationale
    - Naming: `PROCESS_*.md` prefix (or `CORE_`/`TECH_` if ongoing)
 
@@ -216,13 +214,14 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 26 files | Well-organized with category prefixes |
+| Total Documents | 24 docs + 1 index (25 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
-| Outdated Docs | 0 | Recently consolidated and renamed |
+| Outdated Docs | 0 | Recently updated for merge cleanup |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
+**Last Audit:** November 20, 2025 (Documentation consolidation: 27 → 24 files)  
 **Next Review:** February 2026
 
 ---
@@ -242,6 +241,6 @@ Our documentation follows these categories:
 
 ---
 
-**Last Updated:** November 4, 2025  
+**Last Updated:** November 10, 2025  
 **Documentation Maintainer:** Project Contributors  
-**Version:** 2.0 (Post-Consolidation)
+**Version:** 2.2 (Post-Merge Audit)

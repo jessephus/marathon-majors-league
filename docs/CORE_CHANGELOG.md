@@ -7,8 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation Organization** (November 19, 2025)
+  - Cleaned up docs folder by removing 6 temporary PROCESS documents (1,717 lines)
+  - Removed completed summaries: PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_PLAN, PROCESS_DRAFT_FEATURE_EXTRACTION, PROCESS_EDITABLE_WA_ID_FEATURE, PROCESS_MONOLITH_CLEANUP_SUMMARY, PROCESS_UTILITY_EXTRACTION
+  - Retained 8 important PROCESS docs: AUTH_PHASE_1_SUMMARY, AUTH_PHASE_2_SUMMARY, CONSOLIDATION_RECOVERY, DOCS_HEALTH_CHECK, MONOLITH_AUDIT, PHASE4_PERFORMANCE_REPORT, ROUTING_PHASE1, TECH_DEBT
+  - Moved migrations/PHASE_1_SUMMARY.md to docs/PROCESS_AUTH_PHASE_1_SUMMARY.md
+  - Updated docs/README.md with accurate category counts (34 total docs)
+  - Updated .github/copilot-instructions.md with current documentation structure
+  - Fixed all broken references to removed documents
+  - Documentation now organized into 5 categories: CORE (5), TECH (10), FEATURE (9), PROCESS (8), SETUP (1)
+
+### Deprecated
+- **Snake Draft and Player Rankings System** (November 11, 2025)
+  - Season League mode with ranking + snake draft is now deprecated
+  - Added deprecation notices to all snake draft and player rankings code
+  - Marked `player_rankings` and `draft_teams` database tables as deprecated
+  - Updated documentation to reflect that Salary Cap Draft is now the primary mode
+  - Legacy snake draft functionality maintained only for backward compatibility
+  - All new games should use Single Race mode with Salary Cap Draft
+  - Files affected:
+    - `public/app.js` - Snake draft functions marked deprecated
+    - `pages/api/rankings.js` - Rankings API marked deprecated
+    - `pages/api/draft.js` - Draft API marked deprecated
+    - `pages/api/db.js` - Database helper functions marked deprecated
+    - `schema.sql` - Database tables marked deprecated
+    - `pages/index.js` - UI elements marked deprecated
+    - `docs/FEATURE_GAME_MODES.md` - Season League mode marked deprecated
+    - `docs/CORE_ARCHITECTURE.md` - Database tables marked deprecated
+
 ### Added
-- **Roster Lock Timer**: Automatic roster locking at race time
+- **Commissioner Dashboard Modularization**: Separated admin panel into dynamic, loadable components
+  - Created three panel components: `ResultsManagementPanel`, `AthleteManagementPanel`, `TeamsOverviewPanel`
+  - Implemented dynamic imports with `next/dynamic` for on-demand loading
+  - Added skeleton loaders for loading states
+  - Integrated state events system: `resultsUpdated`, `athleteUpdated`
+  - Automatic cache invalidation when results are updated
+  - All panels use centralized API client (no raw fetch calls)
+  - Comprehensive test suite for admin flows and cache invalidation
+  - Documentation: `docs/FEATURE_COMMISSIONER_PANELS.md`
   - Added `roster_lock_time` field to games table
   - Frontend checks lock time and prevents edits after deadline
   - UI displays lock time with countdown before deadline
@@ -42,6 +79,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fallback to legacy time-based display for compatibility
 - Comprehensive documentation for points scoring system
 - Migration script with utility functions and seeded records
+- **Roster Lock Timer**: Automatic roster locking at race time
+  - Added `roster_lock_time` field to games table
+  - Frontend checks lock time and prevents edits after deadline
+  - UI displays lock time with countdown before deadline
+  - Lock time set to 8:35 AM EST on November 2, 2025 for default game
+  - Migration script `005_roster_lock_time.sql` to add field
+  - Migration runner `run-roster-lock-migration.js` to apply changes
+  - Documentation in `docs/ROSTER_LOCK_TIME.md`
 
 ### Changed
 - Game state API now includes `rosterLockTime` field
@@ -49,6 +94,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Results API now auto-triggers scoring calculation
 - Team cards enhanced with points display alongside legacy time display
 - Leaderboard prioritizes points-based standings with fallback
+
+### Removed
+- **Deprecated `/landing` route** (November 9, 2025)
+  - Removed experimental `pages/landing.tsx` stub page
+  - Primary landing page is now `/` (pages/index.js) with full SSR support
+  - Updated documentation in PROCESS_ROUTING_PHASE1.md to reflect current routes
 
 ### Technical
 - Database helper functions updated for roster lock time
@@ -77,6 +128,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supports formats: `2:05:30` (backward compatible), `2:05:30.1`, `2:05:30.12`, `2:05:30.123`
 
 **Files affected:** `migrations/007_add_subsecond_precision.sql`, `public/app.js` (lines ~1975, 2160, 3390, 3415, 3798, 3810), `schema.sql`
+
+#### Session-Based Team Identification (Migration 010)
+**Problem:** Teams were identified by `playerCode` (user-chosen string) which is not globally unique. The `unique_active_game_player` constraint only ensures uniqueness among ACTIVE teams per game. Multiple suspended teams could share the same `playerCode`, causing ambiguity in delete/suspend operations.
+
+**Solution:**
+- Added `session_id INTEGER` foreign key column to three team tables: `salary_cap_teams`, `draft_teams`, `player_rankings`
+- All foreign keys reference `anonymous_sessions(id)` with `ON DELETE CASCADE`
+- Created indexes `idx_*_session_id` on all three tables for performance
+- Backfilled 192 existing rows by matching `(game_id, player_code)` composite
+- Cleaned up 6 orphaned rows from deleted test game sessions
+
+**API Changes:**
+- `/api/session/delete` and `/api/session/hard-delete` now accept `sessionToken` (preferred) or `(gameId + playerCode)` (legacy backward compatibility)
+- Both endpoints query by `sessionToken` when provided, fall back to `playerCode` composite
+- Hard-delete simplified: only deletes from `anonymous_sessions`, CASCADE handles child table cleanup
+
+**Frontend Changes:**
+- `TeamsOverviewPanel.tsx` handlers updated to pass `sessionToken` instead of `playerCode`
+- All team operations now use unique session identifier for reliable targeting
+
+**Benefits:**
+- Referential integrity: Deleting session automatically removes all related team data
+- Unique identification: Each team has globally unique `session_id` and `session_token`
+- Data cleanup: CASCADE prevents orphaned roster data
+- Backward compatible: Legacy `playerCode` method still works during transition
+
+**Files affected:** `migrations/010_add_session_id_foreign_keys.sql`, `pages/api/session/delete.js`, `pages/api/session/hard-delete.js`, `components/commissioner/TeamsOverviewPanel.tsx`
 
 #### World Athletics Scraping Limitations (Playwright)
 **Findings from automation attempts:**

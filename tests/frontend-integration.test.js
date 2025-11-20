@@ -31,16 +31,8 @@ describe('Frontend Integration Tests', () => {
       console.log('✅ index.html served correctly');
     });
     
-    it('should serve app.js', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
-      
-      assert.strictEqual(response.status, 200, 'Should return 200 OK');
-      assert.ok(js.includes('function') || js.includes('const'), 'Should contain JavaScript');
-      assert.ok(js.includes('API_BASE'), 'Should have API_BASE configuration');
-      
-      console.log('✅ app.js served correctly');
-    });
+    // Legacy app.js and salary-cap-draft.js were removed in monolith cleanup (PR #130)
+    // The application now uses React components loaded via Next.js
     
     it('should serve style.css', async () => {
       const response = await fetch(`${BASE_URL}/style.css`);
@@ -65,75 +57,67 @@ describe('Frontend Integration Tests', () => {
   });
   
   describe('HTML Structure', () => {
-    it('should have all required pages', async () => {
+    it('should have required elements for landing page', async () => {
       const { html } = await fetchHTML('/');
       
-      // Check for key page elements
+      // Check for key landing page elements
       assert.ok(html.includes('id="landing-page"'), 'Should have landing page');
-      assert.ok(html.includes('id="ranking-page"'), 'Should have ranking page');
-      assert.ok(html.includes('id="commissioner-page"'), 'Should have commissioner page');
-      assert.ok(html.includes('id="teams-page"'), 'Should have teams page');
       
-      console.log('✅ All required page elements present');
+      // React modals are not rendered in SSR HTML when isOpen=false
+      // They exist as React components but don't appear in initial HTML
+      // This is correct behavior - modals render on client-side when opened
+      
+      // Legacy pages removed - migrated to React routes
+      assert.ok(!html.includes('id="ranking-page"'), 'ranking-page removed (deprecated snake draft)');
+      assert.ok(!html.includes('id="salary-cap-draft-page"'), 'salary-cap-draft-page removed (migrated to /team/[session])');
+      assert.ok(!html.includes('id="commissioner-page"'), 'commissioner-page removed (migrated to /commissioner)');
+      
+      // Verify old HTML modal IDs are gone (now React components)
+      assert.ok(!html.includes('id="team-creation-modal"'), 'team-creation-modal is now a React component (not in initial HTML)');
+      assert.ok(!html.includes('id="commissioner-totp-modal"'), 'commissioner-totp-modal is now a React component (not in initial HTML)');
+      
+      console.log('✅ Landing page present, legacy pages/modals correctly removed');
     });
     
-    it('should have drag handle column in athlete table', async () => {
+    it('should not have legacy HTML structure', async () => {
       const { html } = await fetchHTML('/');
       
-      assert.ok(html.includes('drag-handle-header'), 'Should have drag handle header');
+      // Verify legacy elements are removed
+      assert.ok(!html.includes('drag-handle-header'), 'Should not have drag handle (snake draft removed)');
+      assert.ok(!html.includes('athlete-management-container'), 'Should not have athlete management container (migrated to React)');
+      assert.ok(!html.includes('dangerouslySetInnerHTML'), 'Should not inject HTML via dangerouslySetInnerHTML (migration complete)');
       
-      console.log('✅ Drag handle migration successful');
+      console.log('✅ Legacy HTML successfully removed');
     });
     
-    it('should have athlete management container', async () => {
+    it('should have WelcomeCard React component', async () => {
       const { html } = await fetchHTML('/');
       
-      assert.ok(html.includes('athlete-management-container'), 'Should have athlete management container');
-      assert.ok(!html.includes('id="athlete-table-container".*id="athlete-table-container"'), 'Should not have duplicate IDs');
+      // Verify React component is rendered (check for various team creation text variations)
+      assert.ok(
+        html.includes('Create a New Team') || html.includes('Create Your Team') || html.includes('Create Team'), 
+        'Should have team creation UI'
+      );
       
-      console.log('✅ Athlete management container fix verified');
+      console.log('✅ WelcomeCard React component rendered');
     });
   });
   
-  describe('JavaScript Configuration', () => {
-    it('should have correct API_BASE configuration', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
-      
-      // Check that API_BASE is defined
-      assert.ok(js.includes('API_BASE'), 'Should define API_BASE');
-      
-      // Check that it's not pointing to a hardcoded URL
-      const hasHardcodedURL = js.match(/API_BASE\s*=\s*['"]https?:\/\//);
-      if (hasHardcodedURL) {
-        console.log('⚠️  Warning: API_BASE might be hardcoded, should be relative for Next.js');
-      } else {
-        console.log('✅ API_BASE configuration looks good');
-      }
-    });
-  });
+  // Legacy JavaScript configuration and function tests removed (PR #130)
+  // app.js monolith was deleted and replaced with React components
+  // Relevant functionality is now tested in component-specific tests
   
-  describe('Critical Frontend Functions', () => {
-    it('should have drag and drop functions', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
+  describe('Next.js Page Rendering', () => {
+    it('should render root page with React', async () => {
+      const { html, status } = await fetchHTML('/');
       
-      assert.ok(js.includes('handleTableRowDragStart'), 'Should have drag start handler');
-      assert.ok(js.includes('handleTableRowTouchStart'), 'Should have touch start handler');
-      assert.ok(js.includes('drag-handle'), 'Should reference drag handle');
+      assert.strictEqual(status, 200, 'Should return 200 OK');
       
-      console.log('✅ Drag and drop functionality present');
-    });
-    
-    it('should have game state management', async () => {
-      const response = await fetch(`${BASE_URL}/app.js`);
-      const js = await response.text();
+      // Check for Next.js React rendering markers
+      assert.ok(html.includes('__NEXT_DATA__') || html.includes('id="__next"'), 
+        'Should have Next.js rendering markers');
       
-      assert.ok(js.includes('gameState'), 'Should have gameState');
-      assert.ok(js.includes('handleEnterGame'), 'Should have enter game handler');
-      assert.ok(js.includes('handleCommissionerMode'), 'Should have commissioner mode');
-      
-      console.log('✅ Game state management present');
+      console.log('✅ Next.js page rendering verified');
     });
   });
   
@@ -173,12 +157,14 @@ describe('Frontend Integration Tests', () => {
       const testGameId = 'integration-test-' + Date.now();
       
       // Test creating a game
+      // After PR #131: players array removed (was part of deprecated snake draft)
       const createResponse = await fetch(`${BASE_URL}/api/game-state?gameId=${testGameId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          players: ['TEST1', 'TEST2'],
-          draftComplete: false
+          draftComplete: false,
+          resultsFinalized: false,
+          rosterLockTime: null
         })
       });
       
@@ -189,7 +175,10 @@ describe('Frontend Integration Tests', () => {
       const gameData = await getResponse.json();
       
       assert.strictEqual(getResponse.status, 200, 'Should retrieve game');
-      assert.ok(gameData.players, 'Game should have players array');
+      // After PR #131: Check for modern game state fields instead of players array
+      assert.ok(typeof gameData.draftComplete === 'boolean', 'Game should have draftComplete boolean');
+      assert.ok(typeof gameData.resultsFinalized === 'boolean', 'Game should have resultsFinalized boolean');
+      assert.ok(gameData.hasOwnProperty('rosterLockTime'), 'Game should have rosterLockTime field');
       
       console.log('✅ Game state API integration works');
     });

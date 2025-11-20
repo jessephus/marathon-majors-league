@@ -2,7 +2,6 @@ name: Test Suite
 
 on:
   pull_request:
-    branches: [ main ]
     paths:
       - '**.js'
       - '**.ts'
@@ -44,6 +43,17 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      # State Manager Tests (no server required - uses tsx for TypeScript execution)
+      - name: Run state manager unit tests
+        id: test-state-unit
+        run: npm run test:state
+        continue-on-error: true
+      
+      - name: Run state manager integration tests
+        id: test-state-integration
+        run: npm run test:state:integration
+        continue-on-error: true
+      
       # Draft Feature Tests (no server required)
       - name: Run draft validation tests
         id: test-draft
@@ -61,6 +71,16 @@ jobs:
         run: npm run test:ssr
         continue-on-error: true
       
+      - name: Run landing page SSR tests
+        id: test-ssr-landing
+        run: npm run test:ssr:landing
+        continue-on-error: true
+      
+      - name: Run team session SSR tests
+        id: test-ssr-team
+        run: npm run test:ssr:team
+        continue-on-error: true
+      
       # Formatting Utils Tests (no server required)
       - name: Run formatting utilities tests
         id: test-formatting
@@ -71,6 +91,11 @@ jobs:
       - name: Run dynamic imports tests
         id: test-dynamic
         run: npm run test:dynamic
+        continue-on-error: true
+      
+      - name: Run dynamic imports E2E tests  
+        id: test-dynamic-e2e
+        run: npm run test:dynamic:e2e
         continue-on-error: true
       
       # Performance Instrumentation Tests (no server required)
@@ -207,11 +232,16 @@ jobs:
               
               // Get individual test step results
               const testResults = {
+                'State Manager Unit Tests': '${{ steps.test-state-unit.outcome }}',
+                'State Manager Integration Tests': '${{ steps.test-state-integration.outcome }}',
                 'Draft Validation Tests': '${{ steps.test-draft.outcome }}',
                 'API Client Tests': '${{ steps.test-api-client.outcome }}',
                 'SSR Integration Tests': '${{ steps.test-ssr.outcome }}',
+                'Landing Page SSR Tests': '${{ steps.test-ssr-landing.outcome }}',
+                'Team Session SSR Tests': '${{ steps.test-ssr-team.outcome }}',
                 'Formatting Utilities Tests': '${{ steps.test-formatting.outcome }}',
                 'Dynamic Imports Tests': '${{ steps.test-dynamic.outcome }}',
+                'Dynamic Imports E2E Tests': '${{ steps.test-dynamic-e2e.outcome }}',
                 'Performance Instrumentation Tests': '${{ steps.test-perf-instrumentation.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
@@ -248,31 +278,33 @@ jobs:
               const runNumber = '${{ github.run_number }}';
               const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
               const commitSha = '${{ github.sha }}';
-              const emoji = failedCount > 0 ? '❌' : '✅';
+              const emoji = failedCount > 0 ? '❌' : '🧪';
               
               const summary = failedCount > 0
                 ? `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`
                 : `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`;
               
-              const body = [
-                `## ${emoji} Test Suite Results`,
+              const testSectionContent = [
+                `### ${emoji} Test Suite Results`,
                 '',
                 `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
                 `**Run:** [#${runNumber}](${runUrl})`,
                 `**Commit:** ${commitSha}`,
                 '',
-                `### Test Results (${passedCount}/${totalTests} passed)`,
+                `**Results:** ${passedCount}/${totalTests} test suites passed`,
+                '',
+                '<details>',
+                '<summary>View detailed test results</summary>',
                 '',
                 testResultsList,
-                summary,
+                '</details>',
                 '',
-                '---',
-                '_Tests will fail the workflow if any suite fails, preventing merge of broken code._'
+                summary
               ].join('\n');
               
-              console.log('Comment body generated, length:', body.length);
+              console.log('Test section generated, length:', testSectionContent.length);
               
-              // Find existing comment
+              // Find existing master comment
               console.log('Fetching existing comments...');
               const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
@@ -282,29 +314,66 @@ jobs:
               
               console.log(`Found ${comments.length} existing comments`);
               
-              const botComment = comments.find(comment => 
+              const masterComment = comments.find(comment => 
                 comment.user.type === 'Bot' && 
-                comment.body.includes('Test Suite Results')
+                comment.body.includes('<!-- AUTOMATED_TESTS_MASTER_COMMENT -->')
               );
               
-              if (botComment) {
-                console.log(`Updating existing comment ID: ${botComment.id}`);
+              const testSectionMarker = '<!-- TEST_SUITE_SECTION -->';
+              const testSectionEnd = '<!-- TEST_SUITE_SECTION_END -->';
+              
+              if (masterComment) {
+                console.log(`Updating existing master comment ID: ${masterComment.id}`);
+                let updatedBody = masterComment.body;
+                
+                // Replace test section if it exists, otherwise append
+                const testSectionRegex = new RegExp(
+                  `${testSectionMarker}[\\s\\S]*?${testSectionEnd}`,
+                  'g'
+                );
+                
+                if (updatedBody.includes(testSectionMarker)) {
+                  updatedBody = updatedBody.replace(
+                    testSectionRegex,
+                    `${testSectionMarker}\n${testSectionContent}\n${testSectionEnd}`
+                  );
+                } else {
+                  // Add test section before the footer
+                  updatedBody = updatedBody.replace(
+                    /---\n\n_Updated by automated workflows/,
+                    `${testSectionMarker}\n${testSectionContent}\n${testSectionEnd}\n\n---\n\n_Updated by automated workflows`
+                  );
+                }
+                
                 await github.rest.issues.updateComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  comment_id: botComment.id,
-                  body: body
+                  comment_id: masterComment.id,
+                  body: updatedBody
                 });
-                console.log('Comment updated successfully');
+                console.log('Master comment updated with test results');
               } else {
-                console.log('Creating new comment...');
+                console.log('Creating new master comment...');
+                const newBody = [
+                  '<!-- AUTOMATED_TESTS_MASTER_COMMENT -->',
+                  '## 🤖 Automated Tests',
+                  '',
+                  `${testSectionMarker}`,
+                  testSectionContent,
+                  `${testSectionEnd}`,
+                  '',
+                  '---',
+                  '',
+                  '_Updated by automated workflows • Do not edit manually_'
+                ].join('\n');
+                
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: context.issue.number,
-                  body: body
+                  body: newBody
                 });
-                console.log('Comment created successfully');
+                console.log('Master comment created successfully');
               }
             } catch (error) {
               console.error('Error posting comment:', error);
@@ -316,6 +385,17 @@ jobs:
         if: always()
         run: |
           echo "Checking test results..."
+          
+          # Check state manager tests (run early, no server required)
+          if [ "${{ steps.test-state-unit.outcome }}" != "success" ]; then
+            echo "❌ State manager unit tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-state-integration.outcome }}" != "success" ]; then
+            echo "❌ State manager integration tests failed"
+            TESTS_FAILED=true
+          fi
           
           # Check draft validation tests (run early, no server required)
           if [ "${{ steps.test-draft.outcome }}" != "success" ]; then
@@ -335,6 +415,18 @@ jobs:
             TESTS_FAILED=true
           fi
           
+          # Check landing page SSR tests (run early, no server required)
+          if [ "${{ steps.test-ssr-landing.outcome }}" != "success" ]; then
+            echo "❌ Landing page SSR tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check team session SSR tests (run early, no server required)
+          if [ "${{ steps.test-ssr-team.outcome }}" != "success" ]; then
+            echo "❌ Team session SSR tests failed"
+            TESTS_FAILED=true
+          fi
+          
           # Check formatting utilities tests (run early, no server required)
           if [ "${{ steps.test-formatting.outcome }}" != "success" ]; then
             echo "❌ Formatting utilities tests failed"
@@ -344,6 +436,12 @@ jobs:
           # Check dynamic imports tests (run early, no server required)
           if [ "${{ steps.test-dynamic.outcome }}" != "success" ]; then
             echo "❌ Dynamic imports tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check dynamic imports E2E tests (run early, no server required)
+          if [ "${{ steps.test-dynamic-e2e.outcome }}" != "success" ]; then
+            echo "❌ Dynamic imports E2E tests failed"
             TESTS_FAILED=true
           fi
           

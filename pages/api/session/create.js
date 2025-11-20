@@ -58,24 +58,50 @@ export default async function handler(req, res) {
       || null;
     const userAgent = req.headers['user-agent'] || null;
     
-    // Create anonymous session using database function
-    const result = await sql`
-      SELECT * FROM create_anonymous_session(
-        ${sessionType},
-        ${displayName || null},
-        ${gameId || null},
-        ${playerCode || null},
-        ${ipAddress}::inet,
-        ${userAgent},
-        ${expiryDays}
-      )
-    `;
+    // Check for existing active session with same game_id + player_code
+    // This prevents duplicate sessions when users refresh the page
+    let session;
     
-    if (!result || result.length === 0) {
-      throw new Error('Failed to create anonymous session');
+    if (gameId && playerCode) {
+      const existingSessions = await sql`
+        SELECT session_token, expires_at, session_type, display_name, game_id, player_code
+        FROM anonymous_sessions
+        WHERE game_id = ${gameId}
+          AND player_code = ${playerCode}
+          AND is_active = true
+          AND expires_at > CURRENT_TIMESTAMP
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+      
+      if (existingSessions.length > 0) {
+        // Return existing session instead of creating duplicate
+        session = existingSessions[0];
+        console.log('[Session Create] Returning existing session:', session.session_token);
+      }
     }
     
-    const session = result[0];
+    // Create new session only if none exists
+    if (!session) {
+      const result = await sql`
+        SELECT * FROM create_anonymous_session(
+          ${sessionType},
+          ${displayName || null},
+          ${gameId || null},
+          ${playerCode || null},
+          ${ipAddress}::inet,
+          ${userAgent},
+          ${expiryDays}
+        )
+      `;
+      
+      if (!result || result.length === 0) {
+        throw new Error('Failed to create anonymous session');
+      }
+      
+      session = result[0];
+      console.log('[Session Create] Created new session:', session.session_token);
+    }
     
     // For player sessions, add the playerCode to the game's players array
     if (sessionType === 'player' && gameId && playerCode) {

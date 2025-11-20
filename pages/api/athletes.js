@@ -2,6 +2,7 @@ import { getAllAthletes, seedAthletes, getAthleteProfile } from './db';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
+import { generateETag, checkETag, send304 } from './lib/cache-utils.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -95,6 +96,42 @@ export default async function handler(req, res) {
       // Check if requesting a specific athlete by ID
       const athleteId = req.query.id ? parseInt(req.query.id, 10) : null;
       
+      // Check if requesting multiple athletes by IDs (comma-separated)
+      const athleteIds = req.query.ids ? req.query.ids.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id)) : null;
+      
+      // If requesting multiple specific athletes, fetch them
+      if (athleteIds && athleteIds.length > 0) {
+        try {
+          const athletes = await sql`
+            SELECT 
+              id, 
+              name, 
+              country, 
+              gender, 
+              personal_best as pb, 
+              headshot_url as "headshotUrl",
+              world_athletics_id as "worldAthleticsId",
+              world_athletics_profile_url as "worldAthleticsProfileUrl",
+              marathon_rank as "marathonRank",
+              road_running_rank as "roadRunningRank",
+              overall_rank as "overallRank",
+              age,
+              date_of_birth as "dateOfBirth",
+              sponsor,
+              salary,
+              season_best as "seasonBest"
+            FROM athletes 
+            WHERE id = ANY(${athleteIds}::int[])
+            ORDER BY gender DESC, marathon_rank ASC NULLS LAST, personal_best ASC NULLS LAST
+          `;
+          
+          return res.status(200).json(athletes);
+        } catch (error) {
+          console.error('Error fetching athletes by IDs:', error);
+          return res.status(500).json({ error: 'Failed to fetch athletes', details: error.message });
+        }
+      }
+      
       // If requesting specific athlete, return profile with optional progression/results
       if (athleteId) {
         const includeProgression = req.query.include?.includes('progression') || req.query.progression === 'true';
@@ -142,6 +179,19 @@ export default async function handler(req, res) {
             details: seedError.message 
           });
         }
+      }
+      
+      // Set cache headers for athlete data (stale-while-revalidate strategy)
+      // Athletes change infrequently, so long cache with stale-while-revalidate
+      const etag = generateETag(athletes);
+      res.setHeader('ETag', `"${etag}"`);
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=7200, stale-while-revalidate=86400');
+      res.setHeader('CDN-Cache-Control', 'max-age=7200');
+      res.setHeader('Vary', 'Accept-Encoding');
+      
+      // Check if client has current version (also sets X-Cache-Status header)
+      if (checkETag(req, etag, 'athletes', res)) {
+        return send304(res);
       }
       
       res.status(200).json(athletes);

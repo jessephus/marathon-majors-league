@@ -182,6 +182,8 @@ jobs:
               echo "💡 **Recommendation**: Review the [Documentation Standards](https://github.com/${{ github.repository }}/blob/main/docs/README.md#-documentation-standards) for guidance."
               echo ""
               echo "<sub>This check runs automatically when documentation changes. See [docs-health-check.yml](https://github.com/${{ github.repository }}/blob/main/.github/workflows/docs-health-check.yml) for details.</sub>"
+              echo ""
+              echo "---"
             } > /tmp/doc-health-report.md
             
             echo "summary=⚠️ Documentation health: NEEDS ATTENTION ($ERROR_COUNT issues)" >> $GITHUB_OUTPUT
@@ -189,13 +191,34 @@ jobs:
           fi
       
       - name: Comment on PR (if applicable)
-        if: github.event_name == 'pull_request' && steps.health-check.outputs.has_warnings == 'true'
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const report = fs.readFileSync('/tmp/doc-health-report.md', 'utf8');
+            
+            // Read report if it exists (warnings case), otherwise create success report
+            let report;
+            if (fs.existsSync('/tmp/doc-health-report.md')) {
+              report = fs.readFileSync('/tmp/doc-health-report.md', 'utf8');
+            } else {
+              // No warnings - create success report
+              const totalDocs = '${{ steps.health-check.outputs.total_docs }}';
+              const distribution = '${{ steps.health-check.outputs.distribution }}';
+              report = [
+                '## 📚 Documentation Health Check Report',
+                '',
+                `**Total documentation files**: ${totalDocs}`,
+                `**Category distribution**: ${distribution}`,
+                '',
+                '✅ **All checks passed!**',
+                '',
+                '_No issues detected. Documentation is healthy!_',
+                '',
+                '---'
+              ].join('\n');
+            }
             
             // Check if we already commented
             const { data: comments } = await github.rest.issues.listComments({
@@ -204,26 +227,65 @@ jobs:
               issue_number: context.issue.number,
             });
             
-            const botComment = comments.find(comment => 
+            const masterComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
-              comment.body.includes('📚 Documentation Health Check Report')
+              comment.body.includes('<!-- AUTOMATED_TESTS_MASTER_COMMENT -->')
             );
             
-            if (botComment) {
-              // Update existing comment
+            const docsSectionMarker = '<!-- DOCS_HEALTH_SECTION -->';
+            const docsSectionEnd = '<!-- DOCS_HEALTH_SECTION_END -->';
+            
+            const docsSectionContent = report.replace(/^## 📚 Documentation Health Check Report$/m, '### 📚 Documentation Health Check');
+            
+            if (masterComment) {
+              // Update existing master comment
+              let updatedBody = masterComment.body;
+              
+              // Replace docs section if it exists, otherwise append
+              const docsSectionRegex = new RegExp(
+                `${docsSectionMarker}[\\s\\S]*?${docsSectionEnd}`,
+                'g'
+              );
+              
+              if (updatedBody.includes(docsSectionMarker)) {
+                updatedBody = updatedBody.replace(
+                  docsSectionRegex,
+                  `${docsSectionMarker}\n${docsSectionContent}\n${docsSectionEnd}`
+                );
+              } else {
+                // Add docs section before the footer
+                updatedBody = updatedBody.replace(
+                  /---\n\n_Updated by automated workflows/,
+                  `${docsSectionMarker}\n${docsSectionContent}\n${docsSectionEnd}\n\n---\n\n_Updated by automated workflows`
+                );
+              }
+              
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: report
+                comment_id: masterComment.id,
+                body: updatedBody
               });
             } else {
-              // Create new comment
+              // Create new master comment
+              const newBody = [
+                '<!-- AUTOMATED_TESTS_MASTER_COMMENT -->',
+                '## 🤖 Automated Tests',
+                '',
+                `${docsSectionMarker}`,
+                docsSectionContent,
+                `${docsSectionEnd}`,
+                '',
+                '---',
+                '',
+                '_Updated by automated workflows • Do not edit manually_'
+              ].join('\n');
+              
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: report
+                body: newBody
               });
             }
       

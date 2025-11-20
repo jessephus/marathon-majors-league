@@ -126,6 +126,17 @@ updateRankingDisplay('men')
 displayTeams()
 ```
 
+#### Fetching Data in React Components
+- Always use the centralized API client in `lib/api-client.ts` instead of `fetch()` calls
+- The client handles retries, performance instrumentation, and shared caching (sessionStorage-backed)
+- Example:
+    ```typescript
+    import { athleteApi } from '@/lib/api-client';
+
+    const data = await athleteApi.details(athleteId, { results: true });
+    ```
+- This ensures cache hit ratios, logging, and ETag revalidation stay accurate across the app
+
 ## Code Standards
 
 ### JavaScript Conventions

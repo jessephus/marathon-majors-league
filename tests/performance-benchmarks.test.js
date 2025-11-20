@@ -74,39 +74,78 @@ describe('Performance Benchmark Tests', () => {
       }
     });
     
-    it('should track JavaScript file sizes', async () => {
-      // Measure actual served file sizes
-      const files = [
-        '/app.js',
-        '/salary-cap-draft.js',
-        '/optimizations.js'
-      ];
-      
-      const fileSizes = {};
-      
-      for (const file of files) {
-        try {
-          const response = await fetch(`${BASE_URL}${file}`);
-          if (response.ok) {
-            const content = await response.text();
-            const sizeKB = (content.length / 1024).toFixed(2);
-            fileSizes[file] = `${sizeKB} KB`;
-            console.log(`   ${file}: ${sizeKB} KB`);
+    it('should generate expected dynamic chunk names (Phase 4)', async () => {
+      if (IS_LOCAL && existsSync(join(process.cwd(), '.next/static/chunks'))) {
+        console.log('🔍 Verifying dynamic chunk generation...');
+        
+        // Note: Next.js 15 generates chunk names differently than Webpack
+        // webpackChunkName comments are not fully respected
+        const expectedChunks = [
+          // Commissioner panels: chunk-commissioner-*.js (custom naming works)
+          { pattern: /chunk-commissioner-results/, name: 'chunk-commissioner-results' },
+          { pattern: /chunk-commissioner-athletes/, name: 'chunk-commissioner-athletes' },
+          { pattern: /chunk-commissioner-teams/, name: 'chunk-commissioner-teams' }
+        ];
+        
+        const chunksDir = join(process.cwd(), '.next/static/chunks');
+        const { readdirSync } = await import('fs');
+        const chunkFiles = readdirSync(chunksDir);
+        
+        let allFound = true;
+        for (const { pattern, name } of expectedChunks) {
+          const found = chunkFiles.some(file => pattern.test(file));
+          if (found) {
+            const matchingFile = chunkFiles.find(file => pattern.test(file));
+            console.log(`   ✓ ${name}: ${matchingFile}`);
           } else {
-            console.log(`   ${file}: Not found (${response.status})`);
+            console.log(`   ✗ ${name}: NOT FOUND`);
+            allFound = false;
           }
-        } catch (error) {
-          console.log(`   ${file}: Unable to fetch - ${error.message}`);
         }
+        
+        assert.ok(allFound, 'All expected dynamic chunks should be generated');
+        console.log('✅ All dynamic chunks generated successfully');
+      } else {
+        console.log('⚠️  Dynamic chunk verification only available after build');
+        console.log('💡 Run `npm run build` first');
       }
+    });
+    
+    it('should track JavaScript file sizes', async () => {
+      // Legacy monolith files (app.js, salary-cap-draft.js, optimizations.js) have been 
+      // removed in favor of Next.js component architecture. This test now verifies
+      // that the Next.js build generates appropriately-sized chunks.
       
-      // At least one file should be measurable for the test to be meaningful
-      assert.ok(
-        Object.keys(fileSizes).length > 0, 
-        'Should measure at least one JavaScript file'
-      );
-      console.log('✅ JavaScript file sizes recorded');
-      console.log('📊 Baseline established for future comparison');
+      if (IS_LOCAL && existsSync(join(process.cwd(), '.next/static/chunks'))) {
+        const chunksDir = join(process.cwd(), '.next/static/chunks');
+        const { readdirSync, statSync } = await import('fs');
+        const chunkFiles = readdirSync(chunksDir);
+        
+        console.log('📦 Next.js chunk sizes:');
+        let totalSize = 0;
+        
+        // Measure key chunks
+        const keyChunks = chunkFiles.filter(f => 
+          f.includes('commissioner') || f.includes('pages') || f.includes('main')
+        );
+        
+        for (const file of keyChunks.slice(0, 10)) { // Limit to first 10 to avoid spam
+          const stats = statSync(join(chunksDir, file));
+          const sizeKB = (stats.size / 1024).toFixed(2);
+          totalSize += stats.size;
+          console.log(`   ${file}: ${sizeKB} KB`);
+        }
+        
+        const totalKB = (totalSize / 1024).toFixed(2);
+        console.log(`   Total measured: ${totalKB} KB`);
+        
+        assert.ok(keyChunks.length > 0, 'Should generate Next.js chunks');
+        console.log('✅ Next.js chunk sizes recorded');
+        console.log('📊 Baseline established for future comparison');
+      } else {
+        console.log('⚠️  Chunk analysis requires local build');
+        console.log('💡 Run `npm run build` first');
+      }
     });
     
     it('should track CSS file size', async () => {
@@ -339,13 +378,12 @@ describe('Performance Benchmark Tests', () => {
     it('should handle mixed concurrent requests', async () => {
       const start = Date.now();
       
-      // Mix of different request types
+      // Mix of different request types (app.js removed in PR #130)
       const requests = [
         fetch(`${BASE_URL}/`),
         fetch(`${BASE_URL}/api/athletes`),
         fetch(`${BASE_URL}/api/races`),
         fetch(`${BASE_URL}/style.css`),
-        fetch(`${BASE_URL}/app.js`),
         fetch(`${BASE_URL}/api/game-state`),
         fetch(`${BASE_URL}/api/standings`),
         fetch(`${BASE_URL}/athletes.json`)

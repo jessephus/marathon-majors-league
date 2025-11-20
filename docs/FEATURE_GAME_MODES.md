@@ -4,10 +4,19 @@
 
 The Fantasy Marathon application supports two distinct game modes, each with different team-building mechanics and workflows. This document clarifies the structure, boundaries, and components for each mode.
 
+## ⚠️ Deprecation Notice
+
+**Season League Mode (Ranking + Snake Draft) is DEPRECATED.**
+
+The application now primarily uses **Single Race Mode (Salary Cap Draft)** as the standard gameplay experience. Season League Mode with snake draft is maintained only for backward compatibility with existing season league games.
+
+**For all new games, use Single Race Mode with Salary Cap Draft.**
+
 ## Game Mode Comparison
 
 | Feature | Season League Mode | Single Race Mode |
 |---------|-------------------|------------------|
+| **Status** | ⚠️ **DEPRECATED** | ✅ **Active** |
 | **Team Building** | Ranking + Snake Draft | Salary Cap Draft |
 | **Selection Method** | Players rank athletes, auto-draft assigns | Direct selection within budget |
 | **Constraints** | Draft order (randomized) | $30,000 salary cap |
@@ -17,6 +26,9 @@ The Fantasy Marathon application supports two distinct game modes, each with dif
 | **Commissioner Role** | Executes draft after rankings collected | Minimal (just result entry) |
 
 ## Mode 1: Season League (Ranking + Snake Draft)
+
+### ⚠️ DEPRECATED
+**This mode is deprecated and maintained only for backward compatibility with existing season league games. For all new games, use Mode 2 (Single Race with Salary Cap Draft).**
 
 ### Description
 Players submit preference rankings for athletes. Once all players have submitted their rankings, the commissioner executes a **snake draft** that automatically assigns athletes based on randomized draft order and player preferences.
@@ -30,21 +42,21 @@ Players submit preference rankings for athletes. Once all players have submitted
 
 ### Components
 
-**API Endpoints:**
+**API Endpoints:** *(deprecated)*
 - `/api/game-state` - Game configuration and player list
-- `/api/rankings` - Player preference rankings storage/retrieval
-- `/api/draft` - Snake draft execution and team assignments
+- `/api/rankings` - Player preference rankings storage/retrieval ⚠️ DEPRECATED
+- `/api/draft` - Snake draft execution and team assignments ⚠️ DEPRECATED
 - `/api/results` - Race results entry
 - `/api/standings` - Points-based standings calculation
 
-**Database Tables:**
+**Database Tables:** *(deprecated)*
 - `games` - Game configuration
-- `player_rankings` - Each player's preference rankings
-- `draft_teams` - Final team assignments after draft
+- `player_rankings` - Each player's preference rankings ⚠️ DEPRECATED
+- `draft_teams` - Final team assignments after draft ⚠️ DEPRECATED
 
-**Frontend Code:**
-- `public/app.js` - Contains ranking UI and draft results display
-- Snake draft algorithm in `/api/draft.js`
+**Frontend Code:** *(deprecated)*
+- `public/app.js` - Contains ranking UI and draft results display ⚠️ DEPRECATED
+- Snake draft algorithm in `/api/draft.js` ⚠️ DEPRECATED
 
 ### Key Concepts
 - **Ranking**: Players order athletes by preference (1st choice, 2nd choice, etc.)
@@ -52,6 +64,8 @@ Players submit preference rankings for athletes. Once all players have submitted
 - **Auto-Assignment**: System picks highest-ranked available athlete for each player
 
 ## Mode 2: Single Race (Salary Cap Draft)
+
+### ✅ ACTIVE - Recommended for all new games
 
 ### Description  
 Players directly select their team of athletes within a fixed $30,000 budget. Elite athletes cost more, requiring strategic budget allocation. No rankings or automated draft - players have full control.

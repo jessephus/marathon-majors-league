@@ -2,7 +2,9 @@
 
 ## Repository Overview
 
-**Marathon Majors Fantasy League** (fka Fantasy NY Marathon, or Fantasy Chicago Marathon) is a web-based fantasy sports application that enables people to compete online by drafting elite marathon runners for Major Marathon. The application features real-time result tracking, automated snake draft mechanics, and a mobile-first responsive design.
+**Marathon Majors Fantasy League** (fka Fantasy NY Marathon, or Fantasy Chicago Marathon) is a web-based fantasy sports application that enables people to compete online by drafting elite marathon runners for Major Marathon. The application features real-time result tracking, salary cap draft mechanics, and a mobile-first responsive design.
+
+**Note:** The legacy snake draft system is deprecated. The application now uses salary cap draft as the primary gameplay mode.
 
 ## Critical Instructions for Copilot
 
@@ -51,19 +53,19 @@
    - Never delete these without team discussion
    - Naming: `CORE_*.md` prefix
 
-2. **Technical Reference (5 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION
+2. **Technical Reference (10 docs)** - TECH_DATABASE, TECH_NEON_SETUP, TECH_MIGRATION, TECH_AUTHENTICATION_API, TECH_PERFORMANCE_OPTIMIZATION, TECH_STATE_MANAGEMENT, TECH_SSR_STRATEGY, TECH_CACHE_TRACKING_IMPLEMENTATION, TECH_UI_HELPER_DUPLICATION, TECH_GAMES_PLAYERS_ARRAY_DEPRECATION
    - Keep these current with code changes
    - Add sections, don't create new docs for minor updates
    - Naming: `TECH_*.md` prefix
 
-3. **Features (6 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, etc.
+3. **Features (9 docs)** - FEATURE_GAME_MODES, FEATURE_SALARY_CAP_DRAFT, FEATURE_POINTS_SCORING_SYSTEM, FEATURE_ROSTER_LOCK_TIME, FEATURE_ACCOUNT_FREE_TEAMS, FEATURE_SYNC_TOP_100, FEATURE_COMMISSIONER_PANELS, FEATURE_AUTO_SAVE_ROSTER, FEATURE_DYNAMIC_IMPORTS
    - Create new docs for major features only
    - Merge into Core Guides after 6+ months if appropriate
    - Naming: `FEATURE_*.md` prefix
 
-4. **Process & Maintenance (9 docs)** - PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_AUTH_PHASE_2_SUMMARY, PROCESS_DOCS_HEALTH_CHECK, etc.
+4. **Process & Maintenance (8 docs)** - PROCESS_AUTH_PHASE_1_SUMMARY, PROCESS_AUTH_PHASE_2_SUMMARY, PROCESS_CONSOLIDATION_RECOVERY, PROCESS_DOCS_HEALTH_CHECK, PROCESS_MONOLITH_AUDIT, PROCESS_PHASE4_PERFORMANCE_REPORT, PROCESS_ROUTING_PHASE1, PROCESS_TECH_DEBT
    - These document project history and decisions
-   - Don't delete if they involve ongoing projects or migrations
+   - Remove temporary summaries after completion; keep ongoing references
    - Naming: `PROCESS_*.md` prefix
 
 5. **Setup & Authentication (1 doc)** - SETUP_AUTHENTICATION
@@ -109,7 +111,7 @@ Run this checklist every 3 months (or before major releases):
 #### Documentation Health Metrics
 
 Target state (check monthly):
-- **Total docs:** 20-30 files (current: 26 ✅)
+- **Total docs:** 30-40 files (current: 34 ✅)
 - **Orphaned docs:** 0 (not linked from docs/README.md)
 - **Outdated examples:** 0 (code examples match current API)
 - **Broken links:** 0 (all cross-references work)
@@ -198,8 +200,9 @@ Database Tables:
 ├── races              (marathon events and competitions)
 ├── athlete_races      (athlete-race confirmations)
 ├── games              (game configuration and state)
-├── player_rankings    (player athlete preferences)
-├── draft_teams        (post-draft team assignments)
+├── player_rankings    (player athlete preferences) ⚠️ DEPRECATED
+├── draft_teams        (post-draft team assignments) ⚠️ DEPRECATED
+├── salary_cap_teams   (salary cap draft teams) ✅ ACTIVE
 └── race_results       (race results and live updates)
 ```
 

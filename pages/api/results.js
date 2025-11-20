@@ -77,6 +77,46 @@ export default async function handler(req, res) {
       
       // Get all race results with scoring data - no authentication required for viewing
       async function fetchResults() {
+        // Check if caller wants to skip DNS athletes for performance
+        const skipDNS = req.query.skipDNS === 'true';
+        
+        // Simple query - just get results with athlete data
+        if (skipDNS) {
+          return sql`
+            SELECT 
+              rr.athlete_id,
+              rr.finish_time,
+              rr.finish_time_ms,
+              rr.split_5k,
+              rr.split_10k,
+              rr.split_half,
+              rr.split_30k,
+              rr.split_35k,
+              rr.split_40k,
+              rr.placement,
+              rr.placement_points,
+              rr.time_gap_seconds,
+              rr.time_gap_points,
+              rr.performance_bonus_points,
+              rr.record_bonus_points,
+              rr.total_points,
+              rr.points_version,
+              rr.breakdown,
+              rr.record_type,
+              rr.record_status,
+              rr.updated_at,
+              a.name AS athlete_name,
+              a.country,
+              a.gender,
+              a.personal_best AS personal_best,
+              a.headshot_url AS headshot_url
+            FROM race_results rr
+            LEFT JOIN athletes a ON rr.athlete_id = a.id
+            WHERE rr.game_id = ${gameId}
+            ORDER BY a.gender NULLS LAST, rr.placement NULLS LAST, rr.finish_time ASC
+          `;
+        }
+        
         // Get the active race ID
         const [activeRace] = await sql`
           SELECT id FROM races WHERE is_active = true LIMIT 1
@@ -210,10 +250,12 @@ export default async function handler(req, res) {
 
       let results = await fetchResults();
 
-      const rescored = await ensureResultsScored(gameId);
-      if (rescored) {
-        results = await fetchResults();
-      }
+      // Skip auto-scoring on GET for performance - scoring happens on POST
+      // If results are missing scores, they'll be scored on next result save
+      // const rescored = await ensureResultsScored(gameId);
+      // if (rescored) {
+      //   results = await fetchResults();
+      // }
       
       // Check if we should apply temporary scoring
       // Get game state to check if finalized
@@ -257,8 +299,8 @@ export default async function handler(req, res) {
         staleWhileRevalidate: 60,
       });
       
-      // Check if client has current version
-      if (checkETag(req, etag)) {
+      // Check if client has current version (also sets X-Cache-Status header)
+      if (checkETag(req, etag, 'results', res)) {
         return send304(res);
       }
       

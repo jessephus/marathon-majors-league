@@ -213,9 +213,13 @@ def fetch_ranking_list(gender: str, limit: int = TOP_N) -> List[Dict]:
         result = []
         for r in rankings:
             competitor = r.get('competitor', {})
+            # Normalize WA ID by stripping leading zeros to prevent duplicates
+            raw_id = str(competitor.get('id') or competitor.get('iaafId'))
+            normalized_id = raw_id.lstrip('0') if raw_id else None
+            
             result.append({
-                'id': competitor.get('id') or competitor.get('iaafId'),
-                'world_athletics_id': str(competitor.get('id') or competitor.get('iaafId')),
+                'id': normalized_id,
+                'world_athletics_id': normalized_id,
                 'name': competitor.get('name', ''),
                 'country': competitor.get('country', ''),
                 'rank': r.get('rank'),
@@ -343,7 +347,10 @@ def upsert_athlete(
     Returns:
         True if upserted, False if skipped
     """
-    wa_id = str(athlete_data.get('id') or athlete_data.get('worldAthleticsId'))
+    # Normalize WA ID by stripping leading zeros
+    raw_wa_id = str(athlete_data.get('id') or athlete_data.get('worldAthleticsId'))
+    wa_id = raw_wa_id.lstrip('0') if raw_wa_id else None
+    
     name = athlete_data.get('name')
     country = athlete_data.get('country', {})
     country_code = country.get('code') if isinstance(country, dict) else country

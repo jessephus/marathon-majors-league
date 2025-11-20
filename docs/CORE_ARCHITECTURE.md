@@ -58,8 +58,9 @@ Neon Postgres Database:
 ├── races             (marathon events and competitions)
 ├── athlete_races     (athlete-race confirmations)
 ├── games             (game configuration and state)
-├── player_rankings   (player athlete preferences)
-├── draft_teams       (post-draft team assignments)
+├── player_rankings   (player athlete preferences) ⚠️ DEPRECATED
+├── draft_teams       (post-draft team assignments) ⚠️ DEPRECATED
+├── salary_cap_teams  (salary cap draft teams) ✅ ACTIVE
 ├── race_results      (race results and live updates)
 ├── users             (future: user accounts)
 └── user_games        (future: user-game associations)
@@ -132,8 +133,10 @@ CREATE TABLE games (
 );
 ```
 
-#### Player Rankings Table
+#### Player Rankings Table (DEPRECATED)
 ```sql
+-- ⚠️ DEPRECATED: Part of legacy snake draft system
+-- Use salary_cap_teams table for new games
 CREATE TABLE player_rankings (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,
@@ -146,8 +149,10 @@ CREATE TABLE player_rankings (
 );
 ```
 
-#### Draft Teams Table
+#### Draft Teams Table (DEPRECATED)
 ```sql
+-- ⚠️ DEPRECATED: Part of legacy snake draft system
+-- Use salary_cap_teams table for new games
 CREATE TABLE draft_teams (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,
@@ -191,6 +196,8 @@ All API endpoints follow RESTful conventions with game isolation via query param
 | `/api/draft` | GET, POST | Snake draft execution | `gameId` |
 | `/api/results` | GET, POST | Race results management | `gameId` |
 | `/api/init-db` | GET, POST | Database initialization & seeding | None |
+| `/api/session/delete` | POST | Suspend/reactivate team session | `sessionToken` (preferred) or `gameId` + `playerCode` (legacy) |
+| `/api/session/hard-delete` | POST | Permanently delete team session | `sessionToken` (preferred) or `gameId` + `playerCode` (legacy) |
 
 ### Request/Response Patterns
 
@@ -218,6 +225,75 @@ res.setHeader('Access-Control-Allow-Origin', '*');
 res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
 res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 ```
+
+### Session Management Endpoints
+
+#### `/api/session/delete` - Suspend/Reactivate Team
+Toggles a team's active status. Suspended teams remain in database but are hidden from UI.
+
+**Request Parameters (choose one):**
+- `sessionToken` (string, preferred) - Unique session token
+- `gameId` + `playerCode` (strings, legacy) - Backward compatibility
+
+**Request Example (sessionToken):**
+```json
+{
+  "sessionToken": "5f8a9b2c-3d4e-5f6g-7h8i-9j0k1l2m3n4o"
+}
+```
+
+**Request Example (legacy):**
+```json
+{
+  "gameId": "default",
+  "playerCode": "RUNNER"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Team suspended successfully",
+  "sessionId": 42,
+  "sessionToken": "5f8a9b2c-3d4e-5f6g-7h8i-9j0k1l2m3n4o",
+  "playerCode": "RUNNER",
+  "teamName": "Swift Runners",
+  "isActive": false
+}
+```
+
+#### `/api/session/hard-delete` - Permanently Delete Team
+Permanently removes a team and all related data (CASCADE delete).
+
+**Request Parameters (choose one):**
+- `sessionToken` (string, preferred) - Unique session token
+- `gameId` + `playerCode` (strings, legacy) - Backward compatibility
+
+**Request Example:**
+```json
+{
+  "sessionToken": "5f8a9b2c-3d4e-5f6g-7h8i-9j0k1l2m3n4o"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Team permanently deleted",
+  "sessionId": 42,
+  "playerCode": "RUNNER",
+  "teamName": "Swift Runners",
+  "deletedSessions": 1
+}
+```
+
+**CASCADE Behavior:**
+Deleting a session automatically removes related data from:
+- `salary_cap_teams` (roster assignments)
+- `draft_teams` (draft picks)
+- `player_rankings` (preference rankings)
+
+**Note:** Always prefer `sessionToken` over `playerCode` for team identification. The `sessionToken` is globally unique, while `playerCode` is user-chosen and only unique among active teams per game.
 
 ## Frontend Architecture
 
@@ -472,7 +548,7 @@ JSON Response ←─────────────────────
 Project Root
 ├── Frontend Assets
 │   ├── index.html          # Main application entry
-│   ├── app.js             # Core application logic
+│   ├── app.js             # Core application logic (legacy)
 │   ├── style.css          # Complete styling
 │   └── athletes.json      # Athletes backup (seeded into DB)
 ├── API Functions
@@ -483,16 +559,63 @@ Project Root
 │   ├── draft.js          # Snake draft logic
 │   ├── results.js        # Race results
 │   └── init-db.js        # Database initialization
+├── Shared Utilities (Phase 1 - Nov 2025)
+│   ├── utils/
+│   │   └── formatting.js  # Pure formatting functions (time, pace, ordinals, XSS)
+│   ├── config/
+│   │   └── constants.js   # Centralized configuration constants
+│   └── lib/
+│       ├── ui-helpers.tsx # UI utility functions (avatars, headshots, flags)
+│       ├── budget-utils.js # Salary cap budget calculations
+│       └── state-provider.tsx # Phase 3 state management
+├── React Components (Phase 4)
+│   └── components/
+│       ├── Footer.tsx     # Shared footer with session-aware buttons
+│       ├── AthleteModal.tsx # Athlete detail modal
+│       ├── LeaderboardTable.tsx # Leaderboard display
+│       └── ...           # Additional components
+├── Feature Modules (Phase 1)
+│   └── src/features/
+│       └── draft/
+│           ├── validation.js # Pure validation functions
+│           └── state-machine.js # Draft state management
 ├── Configuration
 │   ├── package.json       # Dependencies and scripts
 │   ├── vercel.json       # Deployment configuration
 │   ├── schema.sql        # Database schema
 │   └── .vercelignore     # Deployment exclusions
+├── Tests
+│   ├── formatting-utils.test.js # Formatting utilities tests (81 tests)
+│   ├── budget-utils.test.js    # Budget calculation tests
+│   └── ...                     # Additional test files
 └── Documentation
     ├── README.md          # Project overview
     ├── NEON_SETUP.md     # Database setup guide
     └── docs/             # Additional documentation
 ```
+
+### Modularization Progress (Issue #82)
+
+**Phase 1: Utilities & Constants** ✅ **COMPLETED (Nov 2025)**
+- ✅ Extracted formatting utilities to `utils/formatting.js` (10 pure functions)
+- ✅ Centralized constants in `config/constants.js` (session keys, TTLs, scoring config)
+- ✅ Created unit tests with 100% coverage (81 tests, all passing)
+- ✅ UI helpers already extracted to `lib/ui-helpers.tsx`
+- ✅ Draft validation already in `src/features/draft/validation.js`
+
+**Phase 3: State Management** ✅ **COMPLETED (Earlier)**
+- ✅ Created `lib/state-provider.tsx` with React Context-based state management
+- ✅ Replaced global `gameState` object with centralized state manager
+
+**Phase 4: Component Extraction** 🚧 **IN PROGRESS**
+- ✅ Footer component created in `components/Footer.tsx`
+- ✅ Athlete modal, leaderboard table, budget tracker components created
+- ⏳ Additional component extractions ongoing
+
+**Remaining Work:**
+- Update `app.js` to import from new utility modules (vanilla JS compatibility needed)
+- Continue Phase 4 component extractions (commissioner dashboard, salary cap draft)
+- Phase 5: Final migration and cleanup
 
 ### Testing Strategy
 - **Manual testing**: Multi-browser, multi-device validation

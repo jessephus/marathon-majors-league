@@ -1,0 +1,299 @@
+name: Test Coverage
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'components/**'
+      - 'tests/**'
+      - 'pages/**'
+      - '.c8rc.json'
+      - 'package.json'
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests with coverage
+        run: npm run test:coverage:new
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NODE_ENV: test
+      
+      - name: Generate coverage summary
+        id: coverage
+        run: |
+          # Generate coverage summary from json-summary
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(node -e "
+              const fs = require('fs');
+              const data = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+              const total = data.total;
+              console.log(JSON.stringify({
+                lines: total.lines.pct.toFixed(2),
+                statements: total.statements.pct.toFixed(2),
+                functions: total.functions.pct.toFixed(2),
+                branches: total.branches.pct.toFixed(2)
+              }));
+            ")
+            
+            LINES=$(echo $COVERAGE | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).lines)")
+            STATEMENTS=$(echo $COVERAGE | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).statements)")
+            FUNCTIONS=$(echo $COVERAGE | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).functions)")
+            BRANCHES=$(echo $COVERAGE | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf-8')).branches)")
+            
+            echo "lines=$LINES" >> $GITHUB_OUTPUT
+            echo "statements=$STATEMENTS" >> $GITHUB_OUTPUT
+            echo "functions=$FUNCTIONS" >> $GITHUB_OUTPUT
+            echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          else
+            echo "lines=0" >> $GITHUB_OUTPUT
+            echo "statements=0" >> $GITHUB_OUTPUT
+            echo "functions=0" >> $GITHUB_OUTPUT
+            echo "branches=0" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lines = '${{ steps.coverage.outputs.lines }}';
+            const statements = '${{ steps.coverage.outputs.statements }}';
+            const functions = '${{ steps.coverage.outputs.functions }}';
+            const branches = '${{ steps.coverage.outputs.branches }}';
+            
+            const linesEmoji = lines >= 70 ? '✅' : lines >= 60 ? '⚠️' : '❌';
+            const statementsEmoji = statements >= 70 ? '✅' : statements >= 60 ? '⚠️' : '❌';
+            const functionsEmoji = functions >= 60 ? '✅' : functions >= 50 ? '⚠️' : '❌';
+            const branchesEmoji = branches >= 70 ? '✅' : branches >= 60 ? '⚠️' : '❌';
+            
+            const allTargetsMet = lines >= 70 && statements >= 70 && functions >= 60 && branches >= 70;
+            const statusMessage = allTargetsMet 
+              ? '🎉 **All coverage targets met!**' 
+              : '⚠️ **Coverage below industry standard targets** - incremental improvement needed';
+            
+            const comment = [
+              '## 📊 Test Coverage Report',
+              '',
+              '| Metric | Coverage | Status | Target |',
+              '|--------|----------|--------|--------|',
+              '| Lines | ' + lines + '% | ' + linesEmoji + ' | 70% |',
+              '| Statements | ' + statements + '% | ' + statementsEmoji + ' | 70% |',
+              '| Functions | ' + functions + '% | ' + functionsEmoji + ' | 60% |',
+              '| Branches | ' + branches + '% | ' + branchesEmoji + ' | 70% |',
+              '',
+              '**Scope:** New modules in lib/ and components/ directories',
+              '',
+              '### Coverage Requirements',
+              '',
+              '**Industry Standard Targets:**',
+              '- 🎯 **70% lines** - "good" coverage per Google guidelines',
+              '- 🎯 **60% functions** - solid function coverage',
+              '- 🎯 **70% branches** - comprehensive edge case coverage',
+              '',
+              '**Current Status:** ' + lines + '% lines, ' + functions + '% functions, ' + branches + '% branches',
+              '',
+              statusMessage,
+              '',
+              '<details>',
+              '<summary>📋 Tested Modules</summary>',
+              '',
+              '- lib/state-manager.ts',
+              '- lib/state-provider.tsx',
+              '- lib/dynamic-import.ts',
+              '- lib/performance-monitor.ts',
+              '- lib/feature-flags.ts',
+              '- components/LeaderboardTable.tsx',
+              '- components/ResultsTable.tsx',
+              '- components/Footer.tsx',
+              '',
+              '</details>',
+              '',
+              '---',
+              '*Generated by test coverage workflow • [View full report](../actions)*'
+            ].join('\n');
+            
+            // Find existing master comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const masterComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('<!-- AUTOMATED_TESTS_MASTER_COMMENT -->')
+            );
+            
+            const coverageSectionMarker = '<!-- COVERAGE_SECTION -->';
+            const coverageSectionEnd = '<!-- COVERAGE_SECTION_END -->';
+            
+            const coverageSectionContent = [
+              '### 📊 Test Coverage Report',
+              '',
+              '| Metric | Coverage | Status | Target |',
+              '|--------|----------|--------|--------|',
+              '| Lines | ' + lines + '% | ' + linesEmoji + ' | 70% |',
+              '| Statements | ' + statements + '% | ' + statementsEmoji + ' | 70% |',
+              '| Functions | ' + functions + '% | ' + functionsEmoji + ' | 60% |',
+              '| Branches | ' + branches + '% | ' + branchesEmoji + ' | 70% |',
+              '',
+              '**Scope:** New modules in lib/ and components/ directories',
+              '',
+              '<details>',
+              '<summary>📋 Coverage Details</summary>',
+              '',
+              '**Industry Standard Targets:**',
+              '- 🎯 **70% lines** - "good" coverage per Google guidelines',
+              '- 🎯 **60% functions** - solid function coverage',
+              '- 🎯 **70% branches** - comprehensive edge case coverage',
+              '',
+              '**Tested Modules:**',
+              '- lib/state-manager.ts',
+              '- lib/state-provider.tsx',
+              '- lib/dynamic-import.ts',
+              '- lib/performance-monitor.ts',
+              '- lib/feature-flags.ts',
+              '- components/LeaderboardTable.tsx',
+              '- components/ResultsTable.tsx',
+              '- components/Footer.tsx',
+              '',
+              '</details>',
+              '',
+              statusMessage,
+              '',
+              '---'
+            ].join('\n');
+            
+            if (masterComment) {
+              // Update existing master comment
+              let updatedBody = masterComment.body;
+              
+              // Replace coverage section if it exists, otherwise append
+              const coverageSectionRegex = new RegExp(
+                `${coverageSectionMarker}[\\s\\S]*?${coverageSectionEnd}`,
+                'g'
+              );
+              
+              if (updatedBody.includes(coverageSectionMarker)) {
+                updatedBody = updatedBody.replace(
+                  coverageSectionRegex,
+                  `${coverageSectionMarker}\n${coverageSectionContent}\n${coverageSectionEnd}`
+                );
+              } else {
+                // Add coverage section before the footer
+                updatedBody = updatedBody.replace(
+                  /---\n\n_Updated by automated workflows/,
+                  `${coverageSectionMarker}\n${coverageSectionContent}\n${coverageSectionEnd}\n\n---\n\n_Updated by automated workflows`
+                );
+              }
+              
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: masterComment.id,
+                body: updatedBody
+              });
+            } else {
+              // Create new master comment
+              const newBody = [
+                '<!-- AUTOMATED_TESTS_MASTER_COMMENT -->',
+                '## 🤖 Automated Tests',
+                '',
+                `${coverageSectionMarker}`,
+                coverageSectionContent,
+                `${coverageSectionEnd}`,
+                '',
+                '---',
+                '',
+                '_Updated by automated workflows • Do not edit manually_'
+              ].join('\n');
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: newBody
+              });
+            }
+      
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+      
+      - name: Check coverage thresholds
+        run: |
+          LINES="${{ steps.coverage.outputs.lines }}"
+          STATEMENTS="${{ steps.coverage.outputs.statements }}"
+          FUNCTIONS="${{ steps.coverage.outputs.functions }}"
+          BRANCHES="${{ steps.coverage.outputs.branches }}"
+          
+          echo "📊 Coverage Results:"
+          echo "  Lines: $LINES%"
+          echo "  Statements: $STATEMENTS%"
+          echo "  Functions: $FUNCTIONS%"
+          echo "  Branches: $BRANCHES%"
+          
+          # Check thresholds (allowing for floating point comparison)
+          EXIT_CODE=0
+          
+          if (( $(echo "$LINES < 70" | bc -l) )); then
+            echo "⚠️  Lines coverage ($LINES%) below 70% target"
+            EXIT_CODE=1
+          fi
+          
+          if (( $(echo "$STATEMENTS < 70" | bc -l) )); then
+            echo "⚠️  Statements coverage ($STATEMENTS%) below 70% target"
+            EXIT_CODE=1
+          fi
+          
+          if (( $(echo "$FUNCTIONS < 60" | bc -l) )); then
+            echo "⚠️  Functions coverage ($FUNCTIONS%) below 60% target"
+            EXIT_CODE=1
+          fi
+          
+          if (( $(echo "$BRANCHES < 70" | bc -l) )); then
+            echo "⚠️  Branches coverage ($BRANCHES%) below 70% target"
+            EXIT_CODE=1
+          fi
+          
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo ""
+            echo "✅ All coverage targets met!"
+          else
+            echo ""
+            echo "📋 Reminder: Coverage below industry standard targets."
+            echo "   This is tracked for incremental improvement."
+            echo "   See COVERAGE_ANALYSIS.md for improvement plan."
+          fi
+          
+          exit $EXIT_CODE

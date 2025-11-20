@@ -42,6 +42,205 @@ This migration implements a comprehensive user account system to replace the sim
 - Issue #13: Requirements for account-based user system
 - Issue #43: Epic for phased conversion to user accounts
 
+### Migration 010: Session-Based Team Identification
+**Date**: November 2025  
+**Direction**: PlayerCode Composite Keys → Session ID Foreign Keys  
+**Reason**: Referential integrity, unique team identification, and automatic data cleanup
+
+#### Problem Statement
+Teams were identified by `(game_id, player_code)` composite key where `player_code` is a user-chosen string. The database constraint `unique_active_game_player` only ensures uniqueness among ACTIVE teams:
+
+```sql
+UNIQUE (game_id, player_code) WHERE is_active = true
+```
+
+This allowed multiple suspended teams to share the same `player_code`, creating ambiguity in delete/suspend operations. Additionally, there was no referential integrity between team tables and the `anonymous_sessions` table, leading to orphaned data when sessions were deleted.
+
+#### Solution
+Added `session_id` foreign key column to all three team-related tables:
+- `salary_cap_teams`
+- `draft_teams`
+- `player_rankings`
+
+All foreign keys reference `anonymous_sessions(id)` with `ON DELETE CASCADE` to ensure automatic cleanup of related data when a session is deleted.
+
+#### Schema Changes
+
+**salary_cap_teams:**
+```sql
+ALTER TABLE salary_cap_teams 
+ADD COLUMN session_id INTEGER;
+
+ALTER TABLE salary_cap_teams 
+ADD CONSTRAINT fk_salary_cap_teams_session 
+FOREIGN KEY (session_id) 
+REFERENCES anonymous_sessions(id) 
+ON DELETE CASCADE;
+
+CREATE INDEX idx_salary_cap_teams_session_id 
+ON salary_cap_teams(session_id);
+```
+
+**draft_teams:**
+```sql
+ALTER TABLE draft_teams 
+ADD COLUMN session_id INTEGER;
+
+ALTER TABLE draft_teams 
+ADD CONSTRAINT fk_draft_teams_session 
+FOREIGN KEY (session_id) 
+REFERENCES anonymous_sessions(id) 
+ON DELETE CASCADE;
+
+CREATE INDEX idx_draft_teams_session_id 
+ON draft_teams(session_id);
+```
+
+**player_rankings:**
+```sql
+ALTER TABLE player_rankings 
+ADD COLUMN session_id INTEGER;
+
+ALTER TABLE player_rankings 
+ADD CONSTRAINT fk_player_rankings_session 
+FOREIGN KEY (session_id) 
+REFERENCES anonymous_sessions(id) 
+ON DELETE CASCADE;
+
+CREATE INDEX idx_player_rankings_session_id 
+ON player_rankings(session_id);
+```
+
+#### Data Migration Process
+
+**Backfill Process:**
+1. Matched existing team records to sessions by `(game_id, player_code)` composite
+2. Updated 192 rows in `salary_cap_teams` with correct `session_id`
+3. Identified 6 orphaned rows with no matching session (from deleted test game)
+4. Cleaned up orphaned rows: `DELETE FROM salary_cap_teams WHERE session_id IS NULL`
+
+**Verification Queries:**
+```sql
+-- Check backfill results
+SELECT 
+  COUNT(*) as total,
+  COUNT(session_id) as with_session_id,
+  COUNT(*) - COUNT(session_id) as missing_session_id
+FROM salary_cap_teams;
+-- Result: 198 total, 192 with session_id, 6 missing
+
+-- Identify orphaned data
+SELECT game_id, player_code, team_name 
+FROM salary_cap_teams 
+WHERE session_id IS NULL;
+-- Result: 6 rows from deleted "test-game" session
+```
+
+#### API Endpoint Changes
+
+**Both `/api/session/delete` and `/api/session/hard-delete` now accept:**
+- `sessionToken` (preferred) - Unique token from `anonymous_sessions.session_token`
+- `gameId + playerCode` (legacy) - Backward compatibility for transition period
+
+**Query Pattern:**
+```javascript
+// Preferred: Query by sessionToken
+const session = await sql`
+  SELECT * FROM anonymous_sessions 
+  WHERE session_token = ${sessionToken}
+`;
+
+// Legacy fallback: Query by composite
+const session = await sql`
+  SELECT * FROM anonymous_sessions 
+  WHERE game_id = ${gameId} 
+  AND player_code = ${playerCode}
+`;
+
+// Update/delete by session.id (most reliable)
+await sql`
+  UPDATE anonymous_sessions 
+  SET is_active = false 
+  WHERE id = ${session.id}
+`;
+```
+
+**Hard-Delete Simplification:**
+Before Migration 010, hard-delete required manual deletion from multiple tables:
+```javascript
+// OLD: Manual deletion from each table
+await sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId} AND player_code = ${playerCode}`;
+await sql`DELETE FROM draft_teams WHERE game_id = ${gameId} AND player_code = ${playerCode}`;
+await sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId} AND player_code = ${playerCode}`;
+```
+
+After Migration 010, CASCADE handles child table cleanup automatically:
+```javascript
+// NEW: Single delete, CASCADE does the rest
+await sql`DELETE FROM anonymous_sessions WHERE id = ${sessionId}`;
+// Automatically deletes related rows from salary_cap_teams, draft_teams, player_rankings
+```
+
+#### Frontend Changes
+
+**TeamsOverviewPanel.tsx:**
+- `handleSuspendTeam` signature changed: `(playerCode, teamName, isActive)` → `(sessionToken, teamName, isActive)`
+- `handleHardDeleteTeam` signature changed: `(playerCode, teamName)` → `(sessionToken, teamName)`
+- All button `onClick` handlers now pass `team.sessionToken` instead of `team.playerCode`
+- Added validation: both handlers check `if (!sessionToken)` and show error if missing
+
+**Request Body Changes:**
+```javascript
+// OLD: Pass gameId and playerCode
+const response = await fetch('/api/session/delete', {
+  method: 'POST',
+  body: JSON.stringify({ gameId, playerCode })
+});
+
+// NEW: Pass only sessionToken
+const response = await fetch('/api/session/delete', {
+  method: 'POST',
+  body: JSON.stringify({ sessionToken })
+});
+```
+
+#### Benefits
+
+1. **Referential Integrity**: Foreign key constraints ensure data consistency
+2. **Unique Identification**: Each team has globally unique `session_id` and `session_token`
+3. **Automatic Cleanup**: CASCADE deletes prevent orphaned roster data
+4. **Simplified Operations**: Delete/suspend operations more reliable and less error-prone
+5. **Backward Compatible**: Legacy `playerCode` method still works during transition period
+6. **Data Quality**: Identified and cleaned up 6 orphaned rows during migration
+
+#### Rollback Instructions
+
+If rollback is needed:
+```sql
+-- Drop foreign key constraints
+ALTER TABLE salary_cap_teams DROP CONSTRAINT IF EXISTS fk_salary_cap_teams_session;
+ALTER TABLE draft_teams DROP CONSTRAINT IF EXISTS fk_draft_teams_session;
+ALTER TABLE player_rankings DROP CONSTRAINT IF EXISTS fk_player_rankings_session;
+
+-- Drop indexes
+DROP INDEX IF EXISTS idx_salary_cap_teams_session_id;
+DROP INDEX IF EXISTS idx_draft_teams_session_id;
+DROP INDEX IF EXISTS idx_player_rankings_session_id;
+
+-- Drop columns (optional - data loss)
+ALTER TABLE salary_cap_teams DROP COLUMN IF EXISTS session_id;
+ALTER TABLE draft_teams DROP COLUMN IF EXISTS session_id;
+ALTER TABLE player_rankings DROP COLUMN IF EXISTS session_id;
+```
+
+**Migration Files:**
+- `migrations/010_add_session_id_foreign_keys.sql` - Forward migration with backfill
+
+**Affected Files:**
+- Database: 3 tables (`salary_cap_teams`, `draft_teams`, `player_rankings`)
+- API: 2 endpoints (`/api/session/delete.js`, `/api/session/hard-delete.js`)
+- Frontend: 1 component (`components/commissioner/TeamsOverviewPanel.tsx`)
+
 ---
 
 ## Current State: User Account System with Neon Postgres

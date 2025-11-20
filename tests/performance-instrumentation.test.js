@@ -322,6 +322,282 @@ describe('Performance Instrumentation Tests', () => {
       assert.strictEqual(report.leaderboard.totalRefreshes, 0);
     });
   });
+  
+  describe('Additional Coverage Tests', () => {
+    it('should get chunk metrics by name', () => {
+      performanceMonitor.clear();
+      
+      performanceMonitor.trackChunkLoad('test-chunk-1').finish(true);
+      performanceMonitor.trackChunkLoad('test-chunk-2').finish(true);
+      performanceMonitor.trackChunkLoad('test-chunk-1').finish(true);
+      
+      const chunk1Metrics = performanceMonitor.getChunkMetricsByName('test-chunk-1');
+      assert.strictEqual(chunk1Metrics.length, 2, 'Should have 2 metrics for test-chunk-1');
+      
+      const chunk2Metrics = performanceMonitor.getChunkMetricsByName('test-chunk-2');
+      assert.strictEqual(chunk2Metrics.length, 1, 'Should have 1 metric for test-chunk-2');
+    });
+    
+    it('should calculate average load time for a specific chunk', () => {
+      performanceMonitor.clear();
+      
+      performanceMonitor.trackChunkLoad('avg-test').finish(true);
+      performanceMonitor.trackChunkLoad('avg-test').finish(true);
+      
+      const avgTime = performanceMonitor.getAverageLoadTime('avg-test');
+      assert.ok(avgTime >= 0, 'Average time should be >= 0');
+    });
+    
+    it('should return 0 for empty chunk metrics', () => {
+      performanceMonitor.clear();
+      
+      const avgTime = performanceMonitor.getAverageLoadTime('nonexistent-chunk');
+      assert.strictEqual(avgTime, 0, 'Should return 0 for nonexistent chunk');
+      
+      const median = performanceMonitor.getChunkLoadMedian();
+      assert.strictEqual(median, 0, 'Should return 0 for empty metrics');
+    });
+    
+    it('should get latest web vital by name', () => {
+      performanceMonitor.clear();
+      
+      const metric1 = {
+        name: 'LCP',
+        value: 2000,
+        id: 'lcp-1',
+        delta: 2000,
+        rating: 'good',
+      };
+      
+      const metric2 = {
+        name: 'LCP',
+        value: 2500,
+        id: 'lcp-2',
+        delta: 500,
+        rating: 'good',
+      };
+      
+      performanceMonitor.trackWebVital(metric1);
+      performanceMonitor.trackWebVital(metric2);
+      
+      const latest = performanceMonitor.getLatestWebVital('LCP');
+      assert.ok(latest, 'Should get latest LCP metric');
+      assert.strictEqual(latest.value, 2500, 'Latest LCP should be 2500');
+    });
+    
+    it('should return undefined for non-existent web vital', () => {
+      performanceMonitor.clear();
+      
+      const latest = performanceMonitor.getLatestWebVital('NONEXISTENT');
+      assert.strictEqual(latest, undefined, 'Should return undefined for non-existent metric');
+    });
+    
+    it('should get web vitals metrics', () => {
+      performanceMonitor.clear();
+      
+      const metric = {
+        name: 'CLS',
+        value: 0.05,
+        id: 'cls-test',
+        delta: 0.05,
+        rating: 'good',
+      };
+      
+      performanceMonitor.trackWebVital(metric);
+      
+      const metrics = performanceMonitor.getWebVitalsMetrics();
+      assert.ok(Array.isArray(metrics), 'Should return array');
+      assert.ok(metrics.length > 0, 'Should have metrics');
+    });
+    
+    it('should calculate cache hit ratio for all types', () => {
+      performanceMonitor.clear();
+      
+      // Add metrics for different types
+      performanceMonitor.trackCacheAccess('athletes', true);
+      performanceMonitor.trackCacheAccess('athletes', true);
+      performanceMonitor.trackCacheAccess('gameState', false);
+      performanceMonitor.trackCacheAccess('results', true);
+      
+      const athletesRatio = performanceMonitor.getCacheHitRatio('athletes');
+      assert.strictEqual(athletesRatio, 1.0, 'Athletes cache hit ratio should be 100%');
+      
+      const gameStateRatio = performanceMonitor.getCacheHitRatio('gameState');
+      assert.strictEqual(gameStateRatio, 0.0, 'GameState cache hit ratio should be 0%');
+      
+      const resultsRatio = performanceMonitor.getCacheHitRatio('results');
+      assert.strictEqual(resultsRatio, 1.0, 'Results cache hit ratio should be 100%');
+      
+      const overallRatio = performanceMonitor.getCacheHitRatio();
+      assert.strictEqual(overallRatio, 0.75, 'Overall cache hit ratio should be 75%');
+    });
+    
+    it('should return 0 for cache hit ratio with no metrics', () => {
+      performanceMonitor.clear();
+      
+      const ratio = performanceMonitor.getCacheHitRatio('athletes');
+      assert.strictEqual(ratio, 0, 'Should return 0 for no metrics');
+    });
+    
+    it('should calculate leaderboard cache hit ratio', () => {
+      performanceMonitor.clear();
+      
+      performanceMonitor.trackLeaderboardRefresh(true).finish();
+      performanceMonitor.trackLeaderboardRefresh(true).finish();
+      performanceMonitor.trackLeaderboardRefresh(false).finish();
+      
+      const report = performanceMonitor.getPerformanceReport();
+      const cacheHitRatio = report.leaderboard.cacheHitRatio;
+      
+      assert.ok(cacheHitRatio > 0.6, 'Leaderboard cache hit ratio should be > 60%');
+    });
+    
+    it('should track performance events with limit', () => {
+      performanceMonitor.clear();
+      
+      // Add more than 50 events to test the limit
+      for (let i = 0; i < 60; i++) {
+        performanceMonitor.performanceLogger('test_event', { index: i });
+      }
+      
+      const events = performanceMonitor.getPerformanceEvents();
+      assert.strictEqual(events.length, 50, 'Should keep only last 50 events');
+      assert.strictEqual(events[0].payload.index, 10, 'Should have removed first 10 events');
+    });
+    
+    it('should count threshold violations in report', () => {
+      performanceMonitor.clear();
+      
+      // Create a threshold violation
+      const poorLCP = {
+        name: 'LCP',
+        value: 3000,
+        id: 'lcp-poor',
+        delta: 3000,
+        rating: 'poor',
+      };
+      
+      performanceMonitor.trackWebVital(poorLCP);
+      
+      const report = performanceMonitor.getPerformanceReport();
+      assert.ok(report.thresholdViolations > 0, 'Should count threshold violations');
+    });
+    
+    it('should handle odd number of chunks for median calculation', () => {
+      performanceMonitor.clear();
+      
+      // Add 3 chunks (odd number)
+      performanceMonitor.trackChunkLoad('chunk1').finish(true);
+      performanceMonitor.trackChunkLoad('chunk2').finish(true);
+      performanceMonitor.trackChunkLoad('chunk3').finish(true);
+      
+      const median = performanceMonitor.getChunkLoadMedian();
+      assert.ok(median >= 0, 'Should calculate median for odd number of chunks');
+    });
+    
+    it('should handle even number of chunks for median calculation', () => {
+      performanceMonitor.clear();
+      
+      // Add 4 chunks (even number)
+      performanceMonitor.trackChunkLoad('chunk1').finish(true);
+      performanceMonitor.trackChunkLoad('chunk2').finish(true);
+      performanceMonitor.trackChunkLoad('chunk3').finish(true);
+      performanceMonitor.trackChunkLoad('chunk4').finish(true);
+      
+      const median = performanceMonitor.getChunkLoadMedian();
+      assert.ok(median >= 0, 'Should calculate median for even number of chunks');
+    });
+    
+    it('should include all cache types in report', () => {
+      performanceMonitor.clear();
+      
+      performanceMonitor.trackCacheAccess('athletes', true);
+      performanceMonitor.trackCacheAccess('gameState', true);
+      performanceMonitor.trackCacheAccess('results', false);
+      
+      const report = performanceMonitor.getPerformanceReport();
+      
+      assert.ok(report.cache.athletes >= 0, 'Should report athletes cache');
+      assert.ok(report.cache.gameState >= 0, 'Should report gameState cache');
+      assert.ok(report.cache.results >= 0, 'Should report results cache');
+      assert.ok(report.cache.scoring >= 0, 'Should report scoring cache');
+      assert.ok(report.cache.standings >= 0, 'Should report standings cache');
+      assert.ok(report.cache.default >= 0, 'Should report default cache');
+      assert.ok(report.cache.overall >= 0, 'Should report overall cache');
+    });
+    
+    it('should track TTFB web vital', () => {
+      performanceMonitor.clear();
+      
+      const ttfbMetric = {
+        name: 'TTFB',
+        value: 500,
+        id: 'ttfb-test',
+        delta: 500,
+        rating: 'good',
+      };
+      
+      performanceMonitor.trackWebVital(ttfbMetric);
+      
+      const report = performanceMonitor.getPerformanceReport();
+      assert.ok(report.webVitals.ttfb, 'Should track TTFB metric');
+      assert.strictEqual(report.webVitals.ttfb.value, 500, 'TTFB value should be 500');
+    });
+    
+    it('should limit metrics to maxMetrics', () => {
+      performanceMonitor.clear();
+      
+      // Add more than 100 chunks
+      for (let i = 0; i < 110; i++) {
+        performanceMonitor.trackChunkLoad(`chunk-${i}`).finish(true);
+      }
+      
+      const metrics = performanceMonitor.getChunkMetrics();
+      assert.ok(metrics.length <= 100, 'Should limit to maxMetrics (100)');
+    });
+    
+    it('should limit web vitals metrics to maxMetrics', () => {
+      performanceMonitor.clear();
+      
+      // Add more than 100 web vitals
+      for (let i = 0; i < 110; i++) {
+        performanceMonitor.trackWebVital({
+          name: 'CLS',
+          value: 0.01 * i,
+          id: `cls-${i}`,
+          delta: 0.01,
+          rating: 'good',
+        });
+      }
+      
+      const metrics = performanceMonitor.getWebVitalsMetrics();
+      assert.ok(metrics.length <= 100, 'Should limit web vitals to maxMetrics (100)');
+    });
+    
+    it('should limit leaderboard metrics to maxMetrics', () => {
+      performanceMonitor.clear();
+      
+      // Add more than 100 leaderboard refreshes
+      for (let i = 0; i < 110; i++) {
+        performanceMonitor.trackLeaderboardRefresh(true).finish();
+      }
+      
+      const metrics = performanceMonitor.getLeaderboardMetrics();
+      assert.ok(metrics.length <= 100, 'Should limit leaderboard metrics to maxMetrics (100)');
+    });
+    
+    it('should limit cache metrics to maxMetrics', () => {
+      performanceMonitor.clear();
+      
+      // Add more than 100 cache accesses
+      for (let i = 0; i < 110; i++) {
+        performanceMonitor.trackCacheAccess('results', true);
+      }
+      
+      const metrics = performanceMonitor.getCacheMetrics();
+      assert.ok(metrics.length <= 100, 'Should limit cache metrics to maxMetrics (100)');
+    });
+  });
 });
 
 console.log('\n✅ All performance instrumentation tests passed');

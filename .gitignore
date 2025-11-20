@@ -1,5 +1,9 @@
 # MacOS system files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 **/.DS_Store
 
 # Logs
@@ -24,6 +28,7 @@ lib-cov
 
 # Coverage directory used by tools like istanbul
 coverage
+coverage-raw
 *.lcov
 
 # nyc test coverage
@@ -145,9 +150,6 @@ vite.config.ts.timestamp-*
 # Vercel
 .vercel
 
-# Package lock
-package-lock.json
-
 # Test files
 test-*.html
 
@@ -155,3 +157,4 @@ test-*.html
 .env
 .env.local
 .env*.local
+.test-build/

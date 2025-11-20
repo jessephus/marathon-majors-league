@@ -63,25 +63,24 @@ describe('Next.js Routing and SSR Tests', () => {
       console.log('✅ Main route (/) renders correctly');
     });
     
-    it('should have all required page sections in main route', async () => {
+    it('should have React components in main route (legacy pages migrated to React)', async () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Check for essential page sections
-      const requiredSections = [
-        'landing-page',
-        'commissioner-page',
-        'leaderboard'
-      ];
+      // React modals are not in initial SSR HTML when isOpen=false
+      // They render client-side when needed
+      // Verify old HTML modal IDs are gone
+      assert.ok(!html.includes('id="team-creation-modal"'), 
+        'team-creation-modal is now a React component (not in SSR HTML)');
+      assert.ok(!html.includes('id="commissioner-totp-modal"'), 
+        'commissioner-totp-modal is now a React component (not in SSR HTML)');
       
-      for (const section of requiredSections) {
-        assert.ok(
-          html.includes(section),
-          `Should contain ${section} section`
-        );
-      }
+      // Verify legacy pages are removed
+      assert.ok(!html.includes('commissioner-page'), 'commissioner-page migrated to /commissioner route');
+      assert.ok(!html.includes('leaderboard-page'), 'leaderboard-page migrated to /leaderboard route');
+      assert.ok(!html.includes('salary-cap-draft-page'), 'salary-cap-draft-page migrated to /team/[session] route');
       
-      console.log('✅ All required page sections present');
+      console.log('✅ React components active, legacy HTML pages/modals removed');
     });
     
     it('should serve API routes without rendering HTML', async () => {
@@ -136,9 +135,13 @@ describe('Next.js Routing and SSR Tests', () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Check for stylesheet
-      assert.ok(html.includes('stylesheet') || html.includes('style.css'), 
-        'Should include stylesheet');
+      // Next.js automatically handles resource loading - check for Next.js CSS or inline styles
+      const hasCss = html.includes('stylesheet') || 
+                     html.includes('style.css') || 
+                     html.includes('<style') ||
+                     html.includes('/_next/static/css/');
+      
+      assert.ok(hasCss, 'Should include CSS resources');
       
       console.log('✅ Critical resources configured');
     });
@@ -149,51 +152,44 @@ describe('Next.js Routing and SSR Tests', () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Next.js bundles JavaScript differently - check for Next.js chunks or static files
+      // Next.js bundles JavaScript - check for Next.js chunks and script tags
       const hasNextJsScripts = html.includes('/_next/static/chunks/') || 
                                html.includes('<script');
       
-      // Also verify that the original app.js is still served as a static file
-      const appJsResponse = await fetch(`${BASE_URL}/app.js`);
-      const salaryDraftResponse = await fetch(`${BASE_URL}/salary-cap-draft.js`);
+      assert.ok(hasNextJsScripts, 'Should include JavaScript via Next.js bundles');
       
-      assert.ok(hasNextJsScripts, 'Should include JavaScript (Next.js bundles or static)');
-      assert.strictEqual(appJsResponse.status, 200, 'app.js should be accessible as static file');
-      assert.strictEqual(salaryDraftResponse.status, 200, 'salary-cap-draft.js should be accessible as static file');
-      
-      console.log('✅ Navigation JavaScript included (Next.js bundles + static files)');
+      console.log('✅ Navigation JavaScript included (Next.js bundles)');
     });
     
-    it('should serve static JavaScript files', async () => {
-      const appJsResponse = await fetch(`${BASE_URL}/app.js`);
-      assert.strictEqual(appJsResponse.status, 200, 'app.js should be accessible');
-      
-      const salaryDraftResponse = await fetch(`${BASE_URL}/salary-cap-draft.js`);
-      assert.strictEqual(salaryDraftResponse.status, 200, 
-        'salary-cap-draft.js should be accessible');
-      
-      console.log('✅ Static JavaScript files accessible');
-    });
-    
-    it('should have page containers for SPA navigation', async () => {
+    it('should serve Next.js JavaScript chunks', async () => {
       const response = await fetch(`${BASE_URL}/`);
       const html = await response.text();
       
-      // Check for page containers used in client-side navigation
-      const pageContainers = [
-        'landing-page',
-        'commissioner-page',
-        'leaderboard-page'
-      ];
+      // Verify Next.js script tags are present
+      const hasScriptTags = html.includes('<script') && 
+                           (html.includes('/_next/') || html.includes('__NEXT_DATA__'));
       
-      for (const container of pageContainers) {
-        assert.ok(
-          html.includes(container),
-          `Should have ${container} container for navigation`
-        );
-      }
+      assert.ok(hasScriptTags, 'Should include Next.js script tags');
       
-      console.log('✅ SPA page containers present');
+      console.log('✅ Next.js JavaScript chunks configured');
+    });
+    
+    it('should have React routing (legacy SPA navigation removed)', async () => {
+      const response = await fetch(`${BASE_URL}/`);
+      const html = await response.text();
+      
+      // Check that landing page is present
+      assert.ok(html.includes('landing-page'), 'Should have landing-page');
+      
+      // Verify legacy page containers are removed (migrated to React routes)
+      assert.ok(!html.includes('commissioner-page'), 'commissioner-page removed (now /commissioner route)');
+      assert.ok(!html.includes('leaderboard-page'), 'leaderboard-page removed (now /leaderboard route)');
+      assert.ok(!html.includes('salary-cap-draft-page'), 'salary-cap-draft-page removed (now /team/[session] route)');
+      
+      // Verify Next.js routing is active
+      assert.ok(html.includes('__NEXT_DATA__'), 'Should use Next.js client-side routing');
+      
+      console.log('✅ React routing active, legacy SPA containers removed');
     });
   });
   

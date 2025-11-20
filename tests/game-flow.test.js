@@ -5,11 +5,12 @@
  * Run with: node tests/game-flow.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert';
+import { generateTestId, cleanupTestGame } from './test-utils.js';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
-const GAME_ID = 'e2e-test-' + Date.now();
+const GAME_ID = generateTestId('e2e-test');
 
 console.log('🧪 Testing complete game flow at:', BASE_URL);
 console.log('🎮 Game ID:', GAME_ID);
@@ -38,7 +39,18 @@ async function apiRequest(endpoint, options = {}) {
 
 describe('Complete Game Flow Test', () => {
   let athletes = null;
-  let playerCodes = ['ALPHA', 'BRAVO', 'CHARLIE'];
+  let teamNames = ['Team Alpha', 'Team Bravo', 'Team Charlie'];
+  
+  // Cleanup after all tests complete
+  after(async () => {
+    console.log('\n🧹 Cleaning up test data...');
+    try {
+      await cleanupTestGame(GAME_ID);
+      console.log('✅ Test data cleaned up successfully\n');
+    } catch (error) {
+      console.error('⚠️  Cleanup warning:', error.message, '\n');
+    }
+  });
   
   describe('1. Game Setup', () => {
     it('should load athletes', async () => {
@@ -52,11 +64,12 @@ describe('Complete Game Flow Test', () => {
       console.log('✅ Loaded', data.men.length, 'men and', data.women.length, 'women');
     });
     
-    it('should create game with players', async () => {
+    it('should create game state', async () => {
+      // Modern game state (no players array - teams managed via salary cap draft)
       const gameData = {
-        players: playerCodes,
         draftComplete: false,
-        resultsFinalized: false
+        resultsFinalized: false,
+        rosterLockTime: null
       };
       
       const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`, {
@@ -65,73 +78,68 @@ describe('Complete Game Flow Test', () => {
       });
       
       assert.ok(status === 200 || status === 201, 'Should create game');
-      console.log('✅ Game created with', playerCodes.length, 'players');
+      console.log('✅ Game state created');
     });
   });
   
-  describe('2. Player Rankings', () => {
-    it('should save rankings for each player', async () => {
-      for (const playerCode of playerCodes) {
-        const rankings = {
-          men: athletes.men.slice(0, 10),
-          women: athletes.women.slice(0, 10)
+  describe('2. Team Creation (Salary Cap Draft)', () => {
+    it('should create teams via salary cap draft', async () => {
+      // Create 3 teams using salary cap draft
+      const sortedMen = [...athletes.men].sort((a, b) => (a.salary || 0) - (b.salary || 0));
+      const sortedWomen = [...athletes.women].sort((a, b) => (a.salary || 0) - (b.salary || 0));
+
+      for (let i = 0; i < teamNames.length; i++) {
+        const teamName = teamNames[i];
+        
+        // First create a session
+        const sessionResponse = await apiRequest('/api/session/create', {
+          method: 'POST',
+          body: JSON.stringify({
+            sessionType: 'player',
+            displayName: teamName,
+            gameId: GAME_ID
+          })
+        });
+        
+        assert.strictEqual(sessionResponse.status, 201, `Should create session for ${teamName}`);
+  const sessionToken = sessionResponse.data.session.token;
+        
+    // Then submit a salary cap draft team
+    const menAthletes = sortedMen.slice(i * 3, i * 3 + 3);
+    const womenAthletes = sortedWomen.slice(i * 3, i * 3 + 3);
+        
+        // Convert to API format (just IDs in objects)
+        const team = {
+          men: menAthletes.map(a => ({ id: a.id })),
+          women: womenAthletes.map(a => ({ id: a.id }))
         };
         
-        const { data, status } = await apiRequest(
-          `/api/rankings?gameId=${GAME_ID}&playerCode=${playerCode}`,
-          {
-            method: 'POST',
-            body: JSON.stringify(rankings),
-          }
-        );
+        // Calculate total spent
+        const totalSpent = [...menAthletes, ...womenAthletes].reduce((sum, a) => sum + (a.salary || 0), 0);
         
-        assert.ok(status === 200 || status === 201, `Should save rankings for ${playerCode}`);
+        const requestBody = {
+          team,
+          totalSpent,
+          teamName
+        };
+        
+        const draftResponse = await apiRequest(`/api/salary-cap-draft?gameId=${GAME_ID}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sessionToken}`
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        assert.ok(draftResponse.status === 200 || draftResponse.status === 201, 
+          `Should submit team for ${teamName}`);
       }
       
-      console.log('✅ Saved rankings for all', playerCodes.length, 'players');
-    });
-    
-    it('should retrieve saved rankings', async () => {
-      for (const playerCode of playerCodes) {
-        const { data, status } = await apiRequest(
-          `/api/rankings?gameId=${GAME_ID}&playerCode=${playerCode}`
-        );
-        
-        assert.strictEqual(status, 200, `Should retrieve rankings for ${playerCode}`);
-        assert.ok(data, 'Should have rankings data');
-      }
-      
-      console.log('✅ Retrieved rankings for all players');
+      console.log('✅ Created', teamNames.length, 'teams via salary cap draft');
     });
   });
   
-  describe('3. Snake Draft', () => {
-    it('should execute draft', async () => {
-      const { data, status } = await apiRequest(`/api/draft?gameId=${GAME_ID}`, {
-        method: 'POST',
-      });
-      
-      // Draft might fail if prerequisites aren't met, that's okay
-      if (status === 200) {
-        assert.ok(data, 'Should return draft results');
-        console.log('✅ Draft executed successfully');
-      } else {
-        console.log('⚠️  Draft not executed (prerequisites may not be met)');
-      }
-    });
-    
-    it('should retrieve draft results', async () => {
-      const { data, status } = await apiRequest(`/api/draft?gameId=${GAME_ID}`);
-      
-      if (status === 200 && data) {
-        // Check that teams were created
-        const hasTeams = Object.keys(data).length > 0;
-        if (hasTeams) {
-          console.log('✅ Draft results available for', Object.keys(data).length, 'players');
-        }
-      }
-    });
-    
+  describe('3. Draft Complete', () => {
     it('should mark draft as complete in game state', async () => {
       const updateData = {
         draftComplete: true
@@ -195,9 +203,10 @@ describe('Complete Game Flow Test', () => {
       assert.strictEqual(data.draftComplete, true, 'Should have draft complete');
       
       console.log('✅ Final game state verified');
-      console.log('   Players:', data.players.length);
+      // Note: data.players removed in PR #131 (deprecated snake draft)
       console.log('   Draft complete:', data.draftComplete);
       console.log('   Results finalized:', data.resultsFinalized);
+      console.log('   Roster lock time:', data.rosterLockTime || 'not set');
     });
   });
   
@@ -209,7 +218,10 @@ describe('Complete Game Flow Test', () => {
       const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`);
       
       assert.strictEqual(status, 200, 'Should retrieve persisted data');
-      assert.strictEqual(data.players.length, 3, 'Should have correct player count');
+      // Note: data.players removed in PR #131 (deprecated snake draft)
+      // Modern game state has: draftComplete, resultsFinalized, rosterLockTime, results
+      assert.ok(typeof data.draftComplete === 'boolean', 'Should have draftComplete field');
+      assert.ok(typeof data.resultsFinalized === 'boolean', 'Should have resultsFinalized field');
       
       console.log('✅ Game data persists correctly');
     });

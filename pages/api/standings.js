@@ -11,6 +11,7 @@ const sql = neon(process.env.DATABASE_URL);
 /**
  * Calculate and update standings for a game
  * Now supports temporary scoring based on splits when final results aren't available
+ * Also shows teams with submitted rosters even when no race results exist yet
  */
 async function calculateStandings(gameId) {
   // Get all players in the game
@@ -18,12 +19,28 @@ async function calculateStandings(gameId) {
     SELECT players, results_finalized FROM games WHERE game_id = ${gameId}
   `;
   
-  if (!game || !game.players) {
-    return { standings: [], isTemporary: false, projectionInfo: null };
+  if (!game) {
+    return { standings: [], isTemporary: false, projectionInfo: null, hasResults: false };
   }
   
-  const players = game.players;
+  const players = game.players || [];
   const isFinalized = game.results_finalized || false;
+  
+  // Get all teams with complete/submitted rosters (using is_complete flag)
+  const submittedTeams = await sql`
+    SELECT DISTINCT 
+      player_code,
+      COUNT(athlete_id) as roster_count,
+      MAX(is_complete::int) as is_complete
+    FROM salary_cap_teams
+    WHERE game_id = ${gameId}
+    GROUP BY player_code
+    HAVING MAX(is_complete::int) = 1
+  `;
+  
+  const teamsWithRosters = submittedTeams.map(t => t.player_code);
+  console.log('📊 Teams with complete rosters:', teamsWithRosters);
+  console.log('📊 Submitted teams query result:', submittedTeams);
   
   // Get all race results for this game to determine if we need temporary scoring
   const allResults = await sql`
@@ -64,29 +81,51 @@ async function calculateStandings(gameId) {
   
   const standings = [];
   
-  // Calculate stats for each player
-  for (const playerCode of players) {
-    // Get player's team - try both salary_cap_teams and draft_teams
-    let team = await sql`
-      SELECT athlete_id
-      FROM salary_cap_teams
-      WHERE game_id = ${gameId} AND player_code = ${playerCode}
-    `;
-    
-    // Fallback to legacy draft_teams if not found
-    if (team.length === 0) {
-      team = await sql`
-        SELECT athlete_id
-        FROM draft_teams
-        WHERE game_id = ${gameId} AND player_code = ${playerCode}
-      `;
+  // Calculate stats for each player who has a submitted roster
+  // If no results exist yet, show all teams with 0 points
+  const playersToShow = hasAnyResults ? players : teamsWithRosters;
+  
+  console.log('📊 About to iterate. hasAnyResults:', hasAnyResults, 'playersToShow:', playersToShow);
+  
+  // 🚀 PERFORMANCE OPTIMIZATION: Fetch all teams in ONE query instead of N queries
+  const allSalaryCapTeams = await sql`
+    SELECT player_code, athlete_id
+    FROM salary_cap_teams
+    WHERE game_id = ${gameId}
+  `;
+  
+  const allDraftTeams = await sql`
+    SELECT player_code, athlete_id
+    FROM draft_teams
+    WHERE game_id = ${gameId}
+  `;
+  
+  // Build a lookup map: playerCode => [athleteId1, athleteId2, ...]
+  const teamsByPlayer = new Map();
+  
+  // Add all salary_cap_teams
+  for (const row of allSalaryCapTeams) {
+    if (!teamsByPlayer.has(row.player_code)) {
+      teamsByPlayer.set(row.player_code, []);
     }
+    teamsByPlayer.get(row.player_code).push(row.athlete_id);
+  }
+  
+  // Fallback: add draft_teams for players NOT in salary_cap_teams
+  for (const row of allDraftTeams) {
+    // Only use draft_teams if player has no salary_cap_teams entry
+    if (!teamsByPlayer.has(row.player_code)) {
+      teamsByPlayer.set(row.player_code, []);
+      teamsByPlayer.get(row.player_code).push(row.athlete_id);
+    }
+  }
+  
+  for (const playerCode of playersToShow) {
+    const athleteIds = teamsByPlayer.get(playerCode);
     
-    if (team.length === 0) {
+    if (!athleteIds || athleteIds.length === 0) {
       continue;
     }
-    
-    const athleteIds = team.map(t => t.athlete_id);
     
     // Filter results for this player's athletes
     const playerResults = resultsWithScores.filter(r => athleteIds.includes(r.athlete_id));
@@ -163,6 +202,7 @@ async function calculateStandings(gameId) {
     standings,
     isTemporary: useTemporaryScoring,
     hasFinishTimes: hasAnyFinishTimes,
+    hasResults: hasAnyResults,
     projectionInfo: useTemporaryScoring ? projectionInfo : null
   };
 }
@@ -220,8 +260,49 @@ export default async function handler(req, res) {
       `;
       const hasResults = resultsCount.length > 0 && resultsCount[0].count > 0;
       
-      // If no results, return early
+      // If no results, check if there are any submitted teams to show
       if (!hasResults) {
+        // Get teams with complete/submitted rosters (using is_complete flag)
+        const submittedTeams = await sql`
+          SELECT DISTINCT 
+            player_code,
+            COUNT(athlete_id) as roster_count,
+            MAX(is_complete::int) as is_complete
+          FROM salary_cap_teams
+          WHERE game_id = ${gameId}
+          GROUP BY player_code
+          HAVING MAX(is_complete::int) = 1
+        `;
+        
+        // If there are submitted teams, calculate standings (will show 0 points)
+        if (submittedTeams.length > 0) {
+          const standingsData = await calculateStandings(gameId);
+          
+          // Set cache headers for no-results state (use moderate caching since this is stable)
+          setCacheHeaders(res, {
+            maxAge: 60,
+            sMaxAge: 120,
+            staleWhileRevalidate: 300,
+          });
+          
+          res.status(200).json({
+            gameId,
+            standings: standingsData.standings || [],
+            hasResults: false,
+            isTemporary: false,
+            cached: false
+          });
+          return;
+        }
+        
+        // Otherwise return empty standings
+        // Set cache headers for empty state (use moderate caching)
+        setCacheHeaders(res, {
+          maxAge: 60,
+          sMaxAge: 120,
+          staleWhileRevalidate: 300,
+        });
+        
         res.status(200).json({
           gameId,
           standings: [],
@@ -310,7 +391,14 @@ export default async function handler(req, res) {
       const { standings, isTemporary: isTempScoring, hasFinishTimes, projectionInfo: projection } = standingsData;
       
       // Generate ETag for client-side caching
-      const etag = generateETag({ standings, isTemporary: isTempScoring, hasFinishTimes, projectionInfo: projection });
+      // Only include stable data in ETag (exclude projectionInfo which may vary)
+      const stableData = standings.map(s => ({
+        player_code: s.player_code,
+        total_points: s.total_points,
+        races_count: s.races_count,
+        rank: s.rank
+      }));
+      const etag = generateETag({ standings: stableData, isTemporary: isTempScoring });
       res.setHeader('ETag', `"${etag}"`);
       
       // Use shorter cache times for temporary scoring
@@ -328,8 +416,8 @@ export default async function handler(req, res) {
         });
       }
       
-      // Check if client has current version
-      if (checkETag(req, etag)) {
+      // Check if client has current version (also sets X-Cache-Status header)
+      if (checkETag(req, etag, 'standings', res)) {
         return send304(res);
       }
       
@@ -351,6 +439,13 @@ export default async function handler(req, res) {
       if (!standingsData.isTemporary) {
         await updateStandingsCache(gameId, standingsData.standings);
       }
+      
+      // Set cache headers (no caching for POST - force revalidation)
+      setCacheHeaders(res, {
+        maxAge: 0,
+        sMaxAge: 0,
+        staleWhileRevalidate: 0,
+      });
       
       res.status(200).json({
         message: 'Standings recalculated successfully',

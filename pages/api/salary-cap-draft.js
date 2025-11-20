@@ -48,58 +48,108 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get all player sessions for this game, including those without teams yet
-      const sessions = await sql`
-        SELECT 
-          player_code,
-          display_name,
-          created_at
-        FROM anonymous_sessions
-        WHERE game_id = ${gameId}
-          AND session_type = 'player'
-          AND is_active = true
-        ORDER BY created_at
+      // OPTIMIZED: Get all teams with their athletes in a single query
+      // Using DISTINCT ON to avoid duplicates from salary_cap_teams rows
+      // Only return complete rosters for display (not auto-saved partial rosters)
+      const allTeamsData = await sql`
+        SELECT DISTINCT
+          asess.player_code,
+          asess.display_name,
+          asess.session_token,
+          asess.is_active,
+          asess.created_at,
+          sct.athlete_id,
+          a.name as athlete_name,
+          a.country,
+          a.gender,
+          a.personal_best as pb,
+          a.salary,
+          a.marathon_rank,
+          a.headshot_url,
+          sct.gender as team_gender,
+          sct.total_spent,
+          sct.submitted_at,
+          sct.is_complete
+        FROM anonymous_sessions asess
+        LEFT JOIN salary_cap_teams sct 
+          ON sct.game_id = asess.game_id 
+          AND sct.player_code = asess.player_code
+        LEFT JOIN athletes a 
+          ON a.id = sct.athlete_id
+        WHERE asess.game_id = ${gameId}
+          AND asess.session_type = 'player'
+        ORDER BY asess.player_code, sct.athlete_id
       `;
 
-      // Get team details for each session
+      // Transform flat result set into nested team structure
       const teamDetails = {};
-      for (const session of sessions) {
-        const athletes = await sql`
-          SELECT 
-            a.id, a.name, a.country, a.gender, a.personal_best as pb,
-            a.salary, a.marathon_rank, a.headshot_url,
-            sct.gender as team_gender
-          FROM salary_cap_teams sct
-          JOIN athletes a ON a.id = sct.athlete_id
-          WHERE sct.game_id = ${gameId} 
-            AND sct.player_code = ${session.player_code}
-          ORDER BY sct.id
-        `;
-
-        // Get total spent for this team (if submitted)
-        const teamSummary = await sql`
-          SELECT total_spent, submitted_at
-          FROM salary_cap_teams
-          WHERE game_id = ${gameId} 
-            AND player_code = ${session.player_code}
-          LIMIT 1
-        `;
-
-        teamDetails[session.player_code] = {
-          men: athletes.filter(a => a.team_gender === 'men'),
-          women: athletes.filter(a => a.team_gender === 'women'),
-          totalSpent: teamSummary[0]?.total_spent || 0,
-          submittedAt: teamSummary[0]?.submitted_at || null,
-          displayName: session.display_name || null,
-          hasSubmittedRoster: athletes.length > 0
-        };
+      
+      for (const row of allTeamsData) {
+        const playerCode = row.player_code;
+        
+        // Initialize team entry if not exists
+        if (!teamDetails[playerCode]) {
+          teamDetails[playerCode] = {
+            men: [],
+            women: [],
+            totalSpent: row.total_spent || 0,
+            submittedAt: row.submitted_at || null,
+            displayName: row.display_name || null,
+            sessionToken: row.session_token || null,
+            hasSubmittedRoster: false,
+            isActive: row.is_active !== false,  // Include active status
+            isComplete: row.is_complete || false  // Track if roster is complete
+          };
+        }
+        
+        // Add athlete to team if they have one (deduplicate by athlete_id)
+        if (row.athlete_id) {
+          const athlete = {
+            id: row.athlete_id,
+            name: row.athlete_name,
+            country: row.country,
+            gender: row.gender,
+            pb: row.pb,
+            salary: row.salary,
+            marathon_rank: row.marathon_rank,
+            headshotUrl: row.headshot_url
+          };
+          
+          if (row.team_gender === 'men') {
+            // Check if athlete already exists in array (deduplicate)
+            if (!teamDetails[playerCode].men.find(a => a.id === athlete.id)) {
+              teamDetails[playerCode].men.push(athlete);
+            }
+          } else if (row.team_gender === 'women') {
+            // Check if athlete already exists in array (deduplicate)
+            if (!teamDetails[playerCode].women.find(a => a.id === athlete.id)) {
+              teamDetails[playerCode].women.push(athlete);
+            }
+          }
+          
+          teamDetails[playerCode].hasSubmittedRoster = row.is_complete || false;
+          
+          // Update isComplete flag if we see any complete entry
+          if (row.is_complete) {
+            teamDetails[playerCode].isComplete = true;
+          }
+        }
       }
 
       res.status(200).json(teamDetails);
 
     } else if (req.method === 'POST') {
       // Submit salary cap team
-      const { team, totalSpent, teamName } = req.body;
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(req.body);
+        } catch (error) {
+          console.error('Salary cap draft body parse error:', error);
+          return res.status(400).json({ error: 'Invalid JSON payload' });
+        }
+      }
+      const { team, totalSpent, teamName } = body;
 
       if (!team || !team.men || !team.women) {
         return res.status(400).json({ error: 'Invalid team data' });
@@ -169,28 +219,29 @@ export default async function handler(req, res) {
           athlete_id INTEGER NOT NULL REFERENCES athletes(id),
           gender VARCHAR(10) NOT NULL,
           total_spent INTEGER NOT NULL,
+          is_complete BOOLEAN DEFAULT FALSE,
           submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `;
 
-      // Delete existing team for this player
+      // Delete ALL existing team entries for this player (both partial and complete)
       await sql`
         DELETE FROM salary_cap_teams 
         WHERE game_id = ${gameId} AND player_code = ${playerCode}
       `;
 
-      // Insert new team
+      // Insert new team with is_complete=TRUE
       for (const athlete of team.men) {
         await sql`
-          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'men', ${calculatedTotal})
+          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete)
+          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'men', ${calculatedTotal}, TRUE)
         `;
       }
 
       for (const athlete of team.women) {
         await sql`
-          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'women', ${calculatedTotal})
+          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete)
+          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'women', ${calculatedTotal}, TRUE)
         `;
       }
 

@@ -67,15 +67,36 @@ CREATE TABLE IF NOT EXISTS athlete_races (
 CREATE INDEX idx_athlete_races_athlete ON athlete_races(athlete_id);
 CREATE INDEX idx_athlete_races_race ON athlete_races(race_id);
 
--- Games table (replacing game-state.json)
+-- Fantasy NY Marathon Database Schema
+-- Neon Postgres (Serverless PostgreSQL)
+
+-- ============================================================================
+-- GAMES TABLE - Game configuration and state
+-- ============================================================================
+--
+-- ⚠️ DEPRECATION NOTICE - players column:
+-- The `players` TEXT[] column is DEPRECATED for salary cap draft games.
+-- It's only used for legacy snake draft mode compatibility.
+--
+-- For salary cap draft teams:
+--   - Teams are tracked in anonymous_sessions table
+--   - Query: SELECT * FROM anonymous_sessions WHERE game_id = ? AND is_active = true
+--   - Do NOT add/remove from players[] array
+--
+-- The players[] array was a cache from before proper database tables existed.
+-- Modern code should query anonymous_sessions directly.
+--
+-- See: components/commissioner/TeamsOverviewPanel.tsx for reference
+-- See: /api/salary-cap-draft for team queries
+--
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) UNIQUE NOT NULL,
-    players TEXT[] NOT NULL DEFAULT '{}',
+    players TEXT[] NOT NULL DEFAULT '{}',  -- ⚠️ DEPRECATED - Use anonymous_sessions table
     draft_complete BOOLEAN DEFAULT FALSE,
     results_finalized BOOLEAN DEFAULT FALSE,
-    commissioner_password VARCHAR(255) DEFAULT 'kipchoge',
     roster_lock_time TIMESTAMP WITH TIME ZONE,
+    commissioner_password VARCHAR(255) DEFAULT 'kipchoge',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -83,6 +104,17 @@ CREATE TABLE IF NOT EXISTS games (
 CREATE INDEX idx_games_game_id ON games(game_id);
 
 -- Player rankings table (replacing rankings.json)
+-- ⚠️ DEPRECATED: This table is part of the legacy snake draft system.
+-- In snake draft mode, players submit preference rankings for athletes before
+-- the automated draft is executed. This table stores those preference rankings.
+--
+-- The modern salary cap draft mode does not use rankings - players directly
+-- select their team within a budget constraint, stored in salary_cap_teams table.
+--
+-- This table is maintained only for backward compatibility with existing
+-- season league games that use the ranking + snake draft workflow.
+--
+-- @deprecated Use salary_cap_teams table for new games
 CREATE TABLE IF NOT EXISTS player_rankings (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,
@@ -99,6 +131,17 @@ CREATE INDEX idx_rankings_game_player ON player_rankings(game_id, player_code);
 CREATE INDEX idx_rankings_game_id ON player_rankings(game_id);
 
 -- Draft teams table (replacing teams.json)
+-- ⚠️ DEPRECATED: This table is part of the legacy snake draft system.
+-- After players submit preference rankings, the commissioner executes an automated
+-- snake draft that assigns athletes to players. This table stores those assignments.
+--
+-- The modern salary cap draft mode eliminates this step - players directly select
+-- their team, stored in salary_cap_teams table without automated assignment.
+--
+-- This table is maintained only for backward compatibility with existing
+-- season league games that use the ranking + snake draft workflow.
+--
+-- @deprecated Use salary_cap_teams table for new games
 CREATE TABLE IF NOT EXISTS draft_teams (
     id SERIAL PRIMARY KEY,
     game_id VARCHAR(255) NOT NULL,

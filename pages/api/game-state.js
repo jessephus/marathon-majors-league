@@ -1,4 +1,21 @@
-import { getGameState, updateGameState, getPlayerRankings, getDraftTeams, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
+/**
+ * Game State API - Manages game configuration and state
+ * 
+ * ⚠️ SIMPLIFIED API - Snake draft features removed:
+ * This endpoint was primarily used by the legacy site (public/app.js, now removed).
+ * 
+ * The snake draft features (rankings, draft_teams) have been removed.
+ * For salary cap draft teams:
+ *   - Use /api/salary-cap-draft endpoint instead
+ *   - Query anonymous_sessions table directly
+ *   - See TeamsOverviewPanel.tsx for reference implementation
+ * 
+ * This endpoint now only manages core game state:
+ *   - roster_lock_time
+ *   - results_finalized
+ *   - draft_complete (legacy field, kept for compatibility)
+ */
+import { getGameState, updateGameState, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,8 +37,6 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       // Get game state from Postgres
       const gameState = await getGameState(gameId);
-      const rankings = await getPlayerRankings(gameId);
-      const teams = await getDraftTeams(gameId);
       const results = await getRaceResults(gameId);
       
       // Verify session if provided
@@ -30,13 +45,16 @@ export default async function handler(req, res) {
         sessionInfo = await verifyAnonymousSession(sessionToken);
       }
 
+      // Set cache headers for game state (moderate caching with stale-while-revalidate)
+      // Game state changes moderately during roster lock/draft/finalization
+      res.setHeader('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300');
+      res.setHeader('CDN-Cache-Control', 'max-age=60');
+      res.setHeader('Vary', 'Accept-Encoding');
+
       res.status(200).json({
-        players: gameState?.players || [],
         draftComplete: gameState?.draft_complete || false,
         resultsFinalized: gameState?.results_finalized || false,
         rosterLockTime: gameState?.roster_lock_time || null,
-        rankings,
-        teams,
         results,
         // Include session info if valid
         session: sessionInfo ? {

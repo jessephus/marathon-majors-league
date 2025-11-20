@@ -103,8 +103,12 @@ CREATE TABLE games (
 );
 ```
 
-#### Player Rankings Table
-Stores player athlete preferences:
+#### Player Rankings Table (⚠️ DEPRECATED)
+**Status:** No longer used. Retained for historical data only.  
+**Deprecated:** November 13, 2025  
+**Replaced by:** Direct team selection via `salary_cap_teams` table
+
+Stores player athlete preferences for legacy snake draft system:
 
 ```sql
 CREATE TABLE player_rankings (
@@ -114,13 +118,22 @@ CREATE TABLE player_rankings (
     gender VARCHAR(10) NOT NULL,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),
     rank_order INTEGER NOT NULL,
+    session_id INTEGER REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(game_id, player_code, gender, rank_order)
 );
+
+CREATE INDEX idx_player_rankings_session_id ON player_rankings(session_id);
 ```
 
-#### Draft Teams Table
-Post-draft team assignments:
+**Note**: This table was part of the legacy snake draft system where players submitted preference rankings before an automated draft was executed. The modern salary cap draft system eliminates this step - players directly select their team.
+
+#### Draft Teams Table (⚠️ DEPRECATED)
+**Status:** No longer used. Retained for historical data only.  
+**Deprecated:** November 13, 2025  
+**Replaced by:** `salary_cap_teams` table for modern draft system
+
+Post-draft team assignments for legacy snake draft:
 
 ```sql
 CREATE TABLE draft_teams (
@@ -128,10 +141,15 @@ CREATE TABLE draft_teams (
     game_id VARCHAR(255) NOT NULL,
     player_code VARCHAR(255) NOT NULL,
     athlete_id INTEGER NOT NULL REFERENCES athletes(id),
+    session_id INTEGER REFERENCES anonymous_sessions(id) ON DELETE CASCADE,
     drafted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(game_id, athlete_id)
 );
+
+CREATE INDEX idx_draft_teams_session_id ON draft_teams(session_id);
 ```
+
+**Note**: This table stored teams created by the automated snake draft algorithm. The modern salary cap draft stores teams in the `salary_cap_teams` table instead.
 
 #### Race Results Table
 Live and final race results with split times:
@@ -472,7 +490,24 @@ const teams = await sql`
   JOIN athletes a ON dt.athlete_id = a.id
   WHERE dt.game_id = ${gameId}
 `;
+
+// Get team by sessionToken (preferred over playerCode)
+const session = await sql`
+  SELECT * FROM anonymous_sessions 
+  WHERE session_token = ${sessionToken}
+`;
+
+// Get team roster using session_id
+const roster = await sql`
+  SELECT dt.*, a.name, a.country
+  FROM draft_teams dt
+  JOIN athletes a ON dt.athlete_id = a.id
+  WHERE dt.session_id = ${session[0].id}
+`;
 ```
+
+**Note on Team Identification:**  
+Teams should be queried by `sessionToken` (unique identifier) rather than `playerCode` (user-chosen display name). The `session_id` foreign key ensures each team has a unique, reliable identifier.
 
 ### SQL Injection Prevention
 
