@@ -4,13 +4,22 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
+<<<<<<< Updated upstream
 Our documentation is organized into **7 main categories** with **34 total documents**.
+=======
+Our documentation is organized into **5 main categories** with **25 documentation files** (plus this README = 26 total).
+>>>>>>> Stashed changes
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
 - `TECH_*.md` - Technical reference (8 docs)
+<<<<<<< Updated upstream
 - `FEATURE_*.md` - Game features (8 docs)
 - `PROCESS_*.md` - Project history (8 docs)
+=======
+- `FEATURE_*.md` - Game features (7 docs)
+- `PROCESS_*.md` - Project history (5 docs)
+>>>>>>> Stashed changes
 - `SETUP_*.md` - Configuration guides (1 doc)
 
 ---
@@ -54,7 +63,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 
-#### Technical Reference (10 docs)
+#### Technical Reference (8 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -62,25 +71,21 @@ Learn how to join games, rank athletes, and follow live results.
 | **[TECH_NEON_SETUP.md](TECH_NEON_SETUP.md)** | Neon Postgres initial setup | First-time database setup |
 | **[TECH_MIGRATION.md](TECH_MIGRATION.md)** | Database migration history | Understanding schema evolution |
 | **[TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
-| **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
+| **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization (includes cache tracking & Phase 4 results) | Improving app performance |
 | **[TECH_STATE_MANAGEMENT.md](TECH_STATE_MANAGEMENT.md)** | Centralized state manager (GameStateManager) | Working with application state |
-| **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Server-side rendering strategy & caching | Understanding SSR patterns |
-| **[TECH_CACHE_TRACKING_IMPLEMENTATION.md](TECH_CACHE_TRACKING_IMPLEMENTATION.md)** | Cache tracking system implementation | Understanding cache invalidation |
-| **[TECH_UI_HELPER_DUPLICATION.md](TECH_UI_HELPER_DUPLICATION.md)** | UI helper duplication tracking | Technical debt reference |
-| **[TECH_GAMES_PLAYERS_ARRAY_DEPRECATION.md](TECH_GAMES_PLAYERS_ARRAY_DEPRECATION.md)** | games.players[] array deprecation guide | Understanding deprecated patterns |
+| **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Server-side rendering strategy & caching (includes Routing Phase 1) | Understanding SSR patterns |
+| **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking (includes UI helper duplication & games.players[] deprecation) | Current cleanup initiatives |
 
 ### 3️⃣ Features (Game Mechanics & Functionality)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
 | **[FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md)** | Season League vs Single Race modes | Understanding game structure |
-| **[FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building | Working on draft features |
+| **[FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building (includes auto-save & roster lock features) | Working on draft features |
 | **[FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md)** | Complete scoring documentation | Understanding/modifying scoring |
-| **[FEATURE_ROSTER_LOCK_TIME.md](FEATURE_ROSTER_LOCK_TIME.md)** | Automatic roster locking feature | Working on roster lock logic |
 | **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
 | **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
 | **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
-| **[FEATURE_AUTO_SAVE_ROSTER.md](FEATURE_AUTO_SAVE_ROSTER.md)** | Automatic roster saving feature | Understanding auto-save |
 | **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |
 
 ### 4️⃣ Process & Maintenance (Project History)
@@ -89,11 +94,8 @@ Learn how to join games, rank athletes, and follow live results.
 |----------|---------|--------------|
 | **[PROCESS_AUTH_PHASE_1_SUMMARY.md](PROCESS_AUTH_PHASE_1_SUMMARY.md)** | Database migration for user accounts (Phase 1) | Understanding auth database design |
 | **[PROCESS_AUTH_PHASE_2_SUMMARY.md](PROCESS_AUTH_PHASE_2_SUMMARY.md)** | Authentication Phase 2 implementation summary | Understanding auth architecture |
-| **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation lessons learned | Learning from past mistakes |
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
-| **[PROCESS_PHASE4_PERFORMANCE_REPORT.md](PROCESS_PHASE4_PERFORMANCE_REPORT.md)** | Performance metrics for code splitting | Understanding optimization results |
-| **[PROCESS_ROUTING_PHASE1.md](PROCESS_ROUTING_PHASE1.md)** | Routing Phase 1 implementation summary | Understanding new page structure |
 | **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking | Current cleanup initiatives |
 
 ### 5️⃣ Setup & Authentication
@@ -223,14 +225,22 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
+<<<<<<< Updated upstream
 | Total Documents | 32 docs + 1 index (33 files) | Well-organized with category prefixes |
+=======
+| Total Documents | 25 docs + 1 index (26 files) | Well-organized with category prefixes |
+>>>>>>> Stashed changes
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently updated for merge cleanup |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
+<<<<<<< Updated upstream
 **Last Audit:** November 10, 2025 (Added MANUAL_TESTING_DRAFT_EXTRACTION.md)  
+=======
+**Last Audit:** November 20, 2025 (Documentation consolidation: 33 → 25 files, 24% reduction)  
+>>>>>>> Stashed changes
 **Next Review:** February 2026
 
 ---
