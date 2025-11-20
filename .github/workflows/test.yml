@@ -278,7 +278,7 @@ jobs:
               const runNumber = '${{ github.run_number }}';
               const runUrl = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}';
               const commitSha = '${{ github.sha }}';
-              const emoji = failedCount > 0 ? '❌' : '✅';
+              const emoji = failedCount > 0 ? '❌' : '🧪';
               
               const summary = failedCount > 0
                 ? `⚠️ ${failedCount} of ${totalTests} test suites failed. Please review the [workflow logs](${runUrl}) for details.`
