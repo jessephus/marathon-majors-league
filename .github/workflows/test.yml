@@ -285,22 +285,6 @@ jobs:
                 : `🎉 All ${passedCount} test suites passed! Your changes are safe to merge.`;
               
               const testSectionContent = [
-                `## ${emoji} Test Suite Results`,
-                '',
-                `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
-                `**Run:** [#${runNumber}](${runUrl})`,
-                `**Commit:** ${commitSha}`,
-                '',
-                `### Test Results (${passedCount}/${totalTests} passed)`,
-                '',
-                testResultsList,
-                summary,
-                '',
-                '---',
-                '_Tests will fail the workflow if any suite fails, preventing merge of broken code._'
-              ].join('\n');
-              
-              const testSectionContent = [
                 `### ${emoji} Test Suite Results`,
                 '',
                 `**Status:** ${failedCount > 0 ? 'FAILED' : 'SUCCESS'}`,
