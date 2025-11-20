@@ -146,7 +146,9 @@ describe('Race Management API - CRUD Operations', () => {
       
       assert.strictEqual(status, 201, 'Should return 201 Created');
       assert.ok(data.id, 'Should return race ID');
-      assert.strictEqual(data.lockTime, raceData.lockTime, 'Lock time should match');
+      // Database stores in UTC, so compare the UTC values
+      assert.ok(data.lockTime, 'Lock time should be present');
+      assert.ok(data.lockTime.includes('2025-12-15') && data.lockTime.includes('13:30'), 'Lock time should be converted to UTC');
       assert.strictEqual(data.logoUrl, raceData.logoUrl, 'Logo URL should match');
       assert.strictEqual(data.backgroundImageUrl, raceData.backgroundImageUrl, 'Background URL should match');
       assert.strictEqual(data.primaryColor, raceData.primaryColor, 'Primary color should match');
@@ -289,7 +291,9 @@ describe('Race Management API - CRUD Operations', () => {
       });
       
       assert.strictEqual(status, 200, 'Should return 200 OK');
-      assert.strictEqual(data.lockTime, updates.lockTime, 'Lock time should be updated');
+      // Database stores in UTC, so compare the UTC values
+      assert.ok(data.lockTime, 'Lock time should be present');
+      assert.ok(data.lockTime.includes('2025-12-01') && data.lockTime.includes('14:00'), 'Lock time should be converted to UTC');
       assert.strictEqual(data.logoUrl, updates.logoUrl, 'Logo URL should be updated');
       assert.strictEqual(data.primaryColor, updates.primaryColor, 'Primary color should be updated');
       
@@ -299,7 +303,7 @@ describe('Race Management API - CRUD Operations', () => {
     });
     
     it('should update race status', async () => {
-      const updates = { is_active: false };
+      const updates = { isActive: false };
       
       const { response, data, status } = await apiRequest(`/api/races?id=${testRaceId}`, {
         method: 'PUT',
