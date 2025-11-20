@@ -980,6 +980,159 @@ export async function getRacesForAthlete(athleteId) {
   return races;
 }
 
+// ============================================================================
+// RACE NEWS
+// ============================================================================
+
+export async function getRaceNews(raceId, visibleOnly = true) {
+  let news;
+  
+  if (visibleOnly) {
+    news = await sql`
+      SELECT 
+        id,
+        race_id as "raceId",
+        headline,
+        description,
+        article_url as "articleUrl",
+        image_url as "imageUrl",
+        published_date as "publishedDate",
+        display_order as "displayOrder",
+        is_visible as "isVisible",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM race_news
+      WHERE race_id = ${raceId} AND is_visible = true
+      ORDER BY display_order ASC, published_date DESC
+    `;
+  } else {
+    news = await sql`
+      SELECT 
+        id,
+        race_id as "raceId",
+        headline,
+        description,
+        article_url as "articleUrl",
+        image_url as "imageUrl",
+        published_date as "publishedDate",
+        display_order as "displayOrder",
+        is_visible as "isVisible",
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM race_news
+      WHERE race_id = ${raceId}
+      ORDER BY display_order ASC, published_date DESC
+    `;
+  }
+  
+  return news;
+}
+
+export async function getRaceNewsById(id) {
+  const [news] = await sql`
+    SELECT 
+      id,
+      race_id as "raceId",
+      headline,
+      description,
+      article_url as "articleUrl",
+      image_url as "imageUrl",
+      published_date as "publishedDate",
+      display_order as "displayOrder",
+      is_visible as "isVisible",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+    FROM race_news
+    WHERE id = ${id}
+  `;
+  return news;
+}
+
+export async function createRaceNews(newsData) {
+  const { raceId, headline, description, articleUrl, imageUrl, publishedDate, displayOrder, isVisible } = newsData;
+  
+  const [news] = await sql`
+    INSERT INTO race_news (
+      race_id, 
+      headline, 
+      description, 
+      article_url, 
+      image_url, 
+      published_date, 
+      display_order, 
+      is_visible
+    )
+    VALUES (
+      ${raceId},
+      ${headline},
+      ${description || null},
+      ${articleUrl || null},
+      ${imageUrl || null},
+      ${publishedDate || null},
+      ${displayOrder || 0},
+      ${isVisible !== undefined ? isVisible : true}
+    )
+    RETURNING 
+      id,
+      race_id as "raceId",
+      headline,
+      description,
+      article_url as "articleUrl",
+      image_url as "imageUrl",
+      published_date as "publishedDate",
+      display_order as "displayOrder",
+      is_visible as "isVisible",
+      created_at as "createdAt",
+      updated_at as "updatedAt"
+  `;
+  
+  return news;
+}
+
+export async function updateRaceNews(id, updates) {
+  const { headline, description, articleUrl, imageUrl, publishedDate, displayOrder, isVisible } = updates;
+  
+  // Execute updates one field at a time using tagged templates
+  if (headline !== undefined) {
+    await sql`UPDATE race_news SET headline = ${headline}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (description !== undefined) {
+    await sql`UPDATE race_news SET description = ${description}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (articleUrl !== undefined) {
+    await sql`UPDATE race_news SET article_url = ${articleUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (imageUrl !== undefined) {
+    await sql`UPDATE race_news SET image_url = ${imageUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (publishedDate !== undefined) {
+    await sql`UPDATE race_news SET published_date = ${publishedDate}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (displayOrder !== undefined) {
+    await sql`UPDATE race_news SET display_order = ${displayOrder}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (isVisible !== undefined) {
+    await sql`UPDATE race_news SET is_visible = ${isVisible}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  
+  return await getRaceNewsById(id);
+}
+
+export async function deleteRaceNews(id) {
+  // Check if news item exists
+  const news = await getRaceNewsById(id);
+  if (!news) {
+    throw new Error('News item not found');
+  }
+  
+  await sql`
+    DELETE FROM race_news
+    WHERE id = ${id}
+  `;
+  
+  return news;
+}
+
 export async function seedNYMarathon2025() {
   // Check if race already exists
   const existing = await sql`

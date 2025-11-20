@@ -776,6 +776,88 @@ export const athleteRacesApi = {
 };
 
 /**
+ * Race News API - Manage curated news items for races
+ */
+export const raceNewsApi = {
+  /**
+   * Get news items for a race
+   */
+  async list(params: { raceId: number; includeHidden?: boolean }) {
+    const queryString = new URLSearchParams({
+      raceId: String(params.raceId),
+      ...(params.includeHidden ? { includeHidden: 'true' } : {}),
+    });
+    return apiRequest<Array<{
+      id: number;
+      raceId: number;
+      headline: string;
+      description?: string;
+      articleUrl?: string;
+      imageUrl?: string;
+      publishedDate?: string;
+      displayOrder: number;
+      isVisible: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>>(`/api/race-news?${queryString}`);
+  },
+
+  /**
+   * Get a specific news item
+   */
+  async get(id: number) {
+    return apiRequest<any>(`/api/race-news?id=${id}`);
+  },
+
+  /**
+   * Create a new news item
+   */
+  async create(newsData: {
+    raceId: number;
+    headline: string;
+    description?: string;
+    articleUrl?: string;
+    imageUrl?: string;
+    publishedDate?: string;
+    displayOrder?: number;
+    isVisible?: boolean;
+  }) {
+    return apiRequest<any>('/api/race-news', {
+      method: 'POST',
+      body: JSON.stringify(newsData),
+    });
+  },
+
+  /**
+   * Update an existing news item
+   */
+  async update(id: number, updates: Partial<{
+    headline: string;
+    description: string;
+    articleUrl: string;
+    imageUrl: string;
+    publishedDate: string;
+    displayOrder: number;
+    isVisible: boolean;
+  }>) {
+    return apiRequest<any>(`/api/race-news?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  /**
+   * Delete a news item
+   */
+  async delete(id: number) {
+    return apiRequest<{ success: boolean; message?: string; news?: any }>(
+      `/api/race-news?id=${id}`,
+      { method: 'DELETE' }
+    );
+  },
+};
+
+/**
  * Standings API - Fantasy league standings
  */
 export const standingsApi = {
@@ -945,6 +1027,7 @@ export const apiClient = {
   commissioner: commissionerApi,
   races: racesApi,
   athleteRaces: athleteRacesApi,
+  raceNews: raceNewsApi,
 };
 
 export default apiClient;
