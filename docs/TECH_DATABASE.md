@@ -88,6 +88,39 @@ CREATE TABLE athlete_races (
 );
 ```
 
+#### Race News Table
+Curated news feed for races (NEW - November 2025):
+
+```sql
+CREATE TABLE race_news (
+    id SERIAL PRIMARY KEY,
+    race_id INTEGER NOT NULL REFERENCES races(id) ON DELETE CASCADE,
+    headline VARCHAR(500) NOT NULL,
+    description TEXT,
+    article_url TEXT,
+    image_url TEXT,
+    published_date TIMESTAMP WITH TIME ZONE,
+    display_order INTEGER DEFAULT 0,
+    is_visible BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Key Features:**
+- Multiple news items per race
+- Support for external article links and images
+- Display order control for commissioners
+- Visibility toggle to show/hide news from players
+- Published date tracking for chronological display
+
+**Usage:**
+Commissioners can curate race-related news such as:
+- Elite field announcements
+- Course changes or weather updates
+- Pre-race interviews and previews
+- Post-race recaps and highlights
+
 #### Games Table
 Game configuration and state:
 
@@ -345,6 +378,59 @@ GET /api/races?id=1
 
 // GET active races with athletes
 GET /api/races?active=true&includeAthletes=true
+
+// CREATE a new race
+POST /api/races
+Body: { name, date, location, distance?, eventType?, worldAthleticsEventId?, description?, isActive? }
+
+// UPDATE an existing race
+PUT /api/races?id=1
+Body: { name?, date?, location?, distance?, eventType?, worldAthleticsEventId?, description?, isActive? }
+
+// DELETE a race
+DELETE /api/races?id=1
+```
+
+### /api/race-news
+Manages curated news items for races:
+
+```javascript
+// GET news for a race (visible only)
+GET /api/race-news?raceId=1
+
+// GET news for a race (include hidden)
+GET /api/race-news?raceId=1&includeHidden=true
+
+// GET specific news item
+GET /api/race-news?id=1
+
+// CREATE a news item
+POST /api/race-news
+Body: { 
+  raceId, 
+  headline, 
+  description?, 
+  articleUrl?, 
+  imageUrl?, 
+  publishedDate?, 
+  displayOrder?, 
+  isVisible? 
+}
+
+// UPDATE a news item
+PUT /api/race-news?id=1
+Body: { 
+  headline?, 
+  description?, 
+  articleUrl?, 
+  imageUrl?, 
+  publishedDate?, 
+  displayOrder?, 
+  isVisible? 
+}
+
+// DELETE a news item
+DELETE /api/race-news?id=1
 ```
 
 ### /api/init-db

@@ -151,6 +151,14 @@ jobs:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
+      - name: Run race management tests
+        id: test-race
+        run: npm run test:race
+        continue-on-error: true
+        env:
+          TEST_URL: http://localhost:3000
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
       - name: Run frontend integration tests
         id: test-frontend
         run: npm run test:frontend
@@ -252,6 +260,7 @@ jobs:
                 'Performance Instrumentation Tests': '${{ steps.test-perf-instrumentation.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
+                'Race Management Tests': '${{ steps.test-race.outcome }}',
                 'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
                 'Game Flow Tests': '${{ steps.test-flow.outcome }}',
                 'Next.js Routing & SSR Tests': '${{ steps.test-nextjs.outcome }}',
@@ -467,6 +476,16 @@ jobs:
           
           if [ "${{ steps.test-db.outcome }}" != "success" ]; then
             echo "❌ Database tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-race.outcome }}" != "success" ]; then
+            echo "❌ Race management tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-frontend.outcome }}" != "success" ]; then
+            echo "❌ Race management tests failed"
             TESTS_FAILED=true
           fi
           

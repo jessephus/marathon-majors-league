@@ -48,12 +48,22 @@ const TeamsOverviewPanel = dynamicImport(
   }
 );
 
+const RaceManagementPanel = dynamicImport(
+  () => import(/* webpackChunkName: "chunk-commissioner-races" */ '@/components/commissioner/RaceManagementPanel'),
+  {
+    chunkName: CHUNK_NAMES.COMMISSIONER_RACES,
+    featureFlag: FeatureFlag.DYNAMIC_COMMISSIONER_PANELS,
+    loading: () => <SkeletonLoader lines={5} />,
+    ssr: false,
+  }
+);
+
 interface CommissionerPageProps {
   isAuthenticated: boolean;
   initialGameId?: string;
 }
 
-type ActivePanel = 'dashboard' | 'results' | 'athletes' | 'teams';
+type ActivePanel = 'dashboard' | 'results' | 'athletes' | 'teams' | 'races';
 
 function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId = 'default' }: CommissionerPageProps) {
   const router = useRouter();
@@ -445,6 +455,12 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
                   >
                     🏃 Manage Athletes
                   </button>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => setActivePanel('races')}
+                  >
+                    🏁 Manage Races
+                  </button>
                 </div>
               </div>
 
@@ -479,6 +495,7 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
           {activePanel === 'results' && <ResultsManagementPanel />}
           {activePanel === 'athletes' && <AthleteManagementPanel />}
           {activePanel === 'teams' && <TeamsOverviewPanel />}
+          {activePanel === 'races' && <RaceManagementPanel />}
         </main>
 
         <Footer 

@@ -703,6 +703,12 @@ export const racesApi = {
     event_type?: string;
     world_athletics_event_id?: string;
     description?: string;
+    lock_time?: string;
+    logo_url?: string;
+    background_image_url?: string;
+    primary_color?: string;
+    secondary_color?: string;
+    accent_color?: string;
   }) {
     return apiRequest<any>('/api/races', {
       method: 'POST',
@@ -722,11 +728,27 @@ export const racesApi = {
     world_athletics_event_id: string;
     description: string;
     is_active: boolean;
+    lock_time: string;
+    logo_url: string;
+    background_image_url: string;
+    primary_color: string;
+    secondary_color: string;
+    accent_color: string;
   }>) {
-    return apiRequest<any>('/api/races', {
+    return apiRequest<any>(`/api/races?id=${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ id, ...raceData }),
+      body: JSON.stringify(raceData),
     });
+  },
+
+  /**
+   * Delete a race
+   */
+  async delete(id: number) {
+    return apiRequest<{ success: boolean; message?: string; race?: any }>(
+      `/api/races?id=${id}`,
+      { method: 'DELETE' }
+    );
   },
 };
 
@@ -760,6 +782,88 @@ export const athleteRacesApi = {
   async unconfirm(athleteId: number, raceId: number) {
     return apiRequest<{ success: boolean; message?: string }>(
       `/api/athlete-races?athleteId=${athleteId}&raceId=${raceId}`,
+      { method: 'DELETE' }
+    );
+  },
+};
+
+/**
+ * Race News API - Manage curated news items for races
+ */
+export const raceNewsApi = {
+  /**
+   * Get news items for a race
+   */
+  async list(params: { raceId: number; includeHidden?: boolean }) {
+    const queryString = new URLSearchParams({
+      raceId: String(params.raceId),
+      ...(params.includeHidden ? { includeHidden: 'true' } : {}),
+    });
+    return apiRequest<Array<{
+      id: number;
+      raceId: number;
+      headline: string;
+      description?: string;
+      articleUrl?: string;
+      imageUrl?: string;
+      publishedDate?: string;
+      displayOrder: number;
+      isVisible: boolean;
+      createdAt: string;
+      updatedAt: string;
+    }>>(`/api/race-news?${queryString}`);
+  },
+
+  /**
+   * Get a specific news item
+   */
+  async get(id: number) {
+    return apiRequest<any>(`/api/race-news?id=${id}`);
+  },
+
+  /**
+   * Create a new news item
+   */
+  async create(newsData: {
+    raceId: number;
+    headline: string;
+    description?: string;
+    articleUrl?: string;
+    imageUrl?: string;
+    publishedDate?: string;
+    displayOrder?: number;
+    isVisible?: boolean;
+  }) {
+    return apiRequest<any>('/api/race-news', {
+      method: 'POST',
+      body: JSON.stringify(newsData),
+    });
+  },
+
+  /**
+   * Update an existing news item
+   */
+  async update(id: number, updates: Partial<{
+    headline: string;
+    description: string;
+    articleUrl: string;
+    imageUrl: string;
+    publishedDate: string;
+    displayOrder: number;
+    isVisible: boolean;
+  }>) {
+    return apiRequest<any>(`/api/race-news?id=${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  /**
+   * Delete a news item
+   */
+  async delete(id: number) {
+    return apiRequest<{ success: boolean; message?: string; news?: any }>(
+      `/api/race-news?id=${id}`,
       { method: 'DELETE' }
     );
   },
@@ -935,6 +1039,7 @@ export const apiClient = {
   commissioner: commissionerApi,
   races: racesApi,
   athleteRaces: athleteRacesApi,
+  raceNews: raceNewsApi,
 };
 
 export default apiClient;

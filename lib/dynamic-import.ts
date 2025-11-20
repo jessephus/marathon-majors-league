@@ -100,6 +100,7 @@ export const CHUNK_NAMES = {
   COMMISSIONER_RESULTS: 'chunk-commissioner-results',
   COMMISSIONER_ATHLETES: 'chunk-commissioner-athletes',
   COMMISSIONER_TEAMS: 'chunk-commissioner-teams',
+  COMMISSIONER_RACES: 'chunk-commissioner-races',
   LEADERBOARD_TABLE: 'chunk-leaderboard-table',
   BUDGET_TRACKER: 'chunk-budget-tracker',
 } as const;

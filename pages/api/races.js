@@ -1,8 +1,8 @@
-import { getAllRaces, getActiveRaces, getRaceById, createRace, getAthletesForRace } from './db';
+import { getAllRaces, getActiveRaces, getRaceById, createRace, updateRace, deleteRace, getAthletesForRace } from './db';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -45,6 +45,29 @@ export default async function handler(req, res) {
       
       const race = await createRace(raceData);
       res.status(201).json(race);
+      
+    } else if (req.method === 'PUT') {
+      // Update an existing race
+      if (!id) {
+        return res.status(400).json({ error: 'Race ID is required for updates' });
+      }
+      
+      const updates = req.body;
+      const race = await updateRace(parseInt(id), updates);
+      res.status(200).json(race);
+      
+    } else if (req.method === 'DELETE') {
+      // Delete a race
+      if (!id) {
+        return res.status(400).json({ error: 'Race ID is required for deletion' });
+      }
+      
+      const deletedRace = await deleteRace(parseInt(id));
+      res.status(200).json({ 
+        success: true,
+        message: `Race "${deletedRace.name}" has been deleted`,
+        race: deletedRace
+      });
       
     } else {
       res.status(405).json({ error: 'Method not allowed' });
