@@ -190,10 +190,12 @@ All API endpoints follow RESTful conventions with game isolation via query param
 | Endpoint | Methods | Purpose | Parameters |
 |----------|---------|---------|------------|
 | `/api/athletes` | GET | Retrieve elite athlete database with extended fields | None |
-| `/api/races` | GET, POST | Race event management | `id`, `active`, `includeAthletes` |
+| `/api/races` | GET, POST, PUT, DELETE | Race event management | `id`, `active`, `includeAthletes` |
+| `/api/race-news` | GET, POST, PUT, DELETE | Race news feed management | `id`, `raceId`, `includeHidden` |
+| `/api/athlete-races` | GET, POST, DELETE | Athlete race confirmations | `athleteId`, `raceId`, `bibNumber` |
 | `/api/game-state` | GET, POST | Game configuration management | `gameId` |
-| `/api/rankings` | GET, POST | Player rankings storage | `gameId`, `playerCode` |
-| `/api/draft` | GET, POST | Snake draft execution | `gameId` |
+| `/api/rankings` | GET, POST | Player rankings storage (⚠️ DEPRECATED) | `gameId`, `playerCode` |
+| `/api/draft` | GET, POST | Snake draft execution (⚠️ DEPRECATED) | `gameId` |
 | `/api/results` | GET, POST | Race results management | `gameId` |
 | `/api/init-db` | GET, POST | Database initialization & seeding | None |
 | `/api/session/delete` | POST | Suspend/reactivate team session | `sessionToken` (preferred) or `gameId` + `playerCode` (legacy) |

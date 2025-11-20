@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Race Management System** (November 20, 2025)
+  - Complete CRUD operations for race events via `/api/races` endpoint
+  - Race Management Panel in commissioner dashboard for managing races
+  - Public race detail page (`/race?id=X`) to display race information
+  - Race news feed system for curated news items
+    - New `race_news` database table with headline, description, article URL, image URL
+    - `/api/race-news` endpoint for managing news items (GET, POST, PUT, DELETE)
+    - Support for display ordering and visibility control
+    - Published date tracking for news chronology
+  - Database helper functions in `db.js`:
+    - `getAllRaces()`, `getActiveRaces()`, `getRaceById()`
+    - `createRace()`, `updateRace()`, `deleteRace()`
+    - `getRaceNews()`, `createRaceNews()`, `updateRaceNews()`, `deleteRaceNews()`
+  - API client methods in `lib/api-client.ts`:
+    - `apiClient.races.list/create/update/delete`
+    - `apiClient.raceNews.list/get/create/update/delete`
+  - Dynamic import for Race Management Panel with performance tracking
+  - Migration script `012_add_race_news_table.sql` for news feed feature
+
 ### Changed
 - **Documentation Organization** (November 19, 2025)
   - Cleaned up docs folder by removing 6 temporary PROCESS documents (1,717 lines)
