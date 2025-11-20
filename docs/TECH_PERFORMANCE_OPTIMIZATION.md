@@ -509,8 +509,132 @@ gtag('event', 'performance_issue', {
 
 All thresholds are enforced via automated monitoring and testing. See `PERFORMANCE_BUDGETS` in `lib/performance-monitor.ts` for definitive values.
 
-<<<<<<< Updated upstream
-=======
+---
+
+## Cache Tracking Implementation
+
+### Overview
+
+The application implements HTTP cache performance tracking to monitor cache effectiveness across all API endpoints. This system tracks cache hits and misses and reports them in the Performance Dashboard.
+
+### Problem Statement
+
+HTTP caching (ETags, 304 Not Modified responses) happens entirely within the browser's HTTP layer and is invisible to JavaScript. The browser doesn't expose whether a `fetch()` request was satisfied from cache (304) or required fresh data (200).
+
+### Solution Architecture
+
+We implemented a server-to-client communication protocol using custom HTTP headers:
+
+1. **Server-side**: API routes add `X-Cache-Status` and `X-Cache-Type` headers to every response
+2. **Client-side**: API client reads these headers and tracks cache performance
+3. **Performance Monitor**: Aggregates cache statistics for display in dashboard
+
+### Implementation Details
+
+#### Server-Side
+
+**Enhanced `checkETag()` function (`pages/api/lib/cache-utils.js`):**
+```javascript
+export function checkETag(req, etag, cacheType = 'unknown', res = null) {
+  const clientETag = req.headers['if-none-match'];
+  const isHit = clientETag === `"${etag}"`;
+  
+  // Set X-Cache-Status header for client-side performance tracking
+  if (res) {
+    res.setHeader('X-Cache-Status', isHit ? 'HIT' : 'MISS');
+    res.setHeader('X-Cache-Type', cacheType);
+  }
+  
+  return isHit;
+}
+```
+
+**Cache type classification:**
+- `'athletes'` - Athlete profile data (changes infrequently, 1-hour cache)
+- `'results'` - Race results (changes frequently during races, 15-second cache)
+- `'gameState'` - Standings/leaderboard (changes moderately, 30-second cache)
+
+#### Client-Side
+
+**Enhanced `apiRequest()` function (`lib/api-client.ts`):**
+```javascript
+async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(url, options);
+
+  // Track cache performance based on X-Cache-Status header
+  const cacheStatus = response.headers.get('X-Cache-Status');
+  const cacheType = response.headers.get('X-Cache-Type');
+  
+  if (cacheStatus && cacheType) {
+    const isHit = cacheStatus === 'HIT';
+    trackCacheAccess(cacheType, isHit);
+  }
+  
+  // ... rest of response handling
+}
+```
+
+### Cache Types and Expected Behavior
+
+**Athletes Cache (`/api/athletes`)**
+- Data frequency: Rarely changes (only when athletes added/updated)
+- Cache duration: 1 hour browser, 2 hours CDN
+- Expected hit ratio: 75-100% in normal usage
+
+**Game State Cache (`/api/standings`)**
+- Data frequency: Moderate (updates when results change)
+- Cache duration: 30 seconds browser, 60 seconds CDN
+- Expected hit ratio: 50-75% in normal usage
+
+**Results Cache (`/api/results`)**
+- Data frequency: High during active races
+- Cache duration: 15 seconds browser, 30 seconds CDN
+- Expected hit ratio: 30-60% during active races, higher when race complete
+
+### Performance Dashboard
+
+Cache Performance section shows:
+- **Overall hit ratio**: Percentage across all cache types
+- **Per-type hit ratios**: Athletes, Game State, Results
+- **Total cache accesses**: Count of all API calls
+- **Recent cache accesses table**: Type, Hit/Miss, Timestamp
+
+Dashboard refreshes every 2 seconds with real-time cache statistics.
+
+### Testing
+
+**Console debugging:**
+```javascript
+// View cache statistics
+window.getCacheStats();
+// Shows: overall: "66.7%", results: "50.0%", gameState: "75.0%", athletes: "100.0%"
+
+// View all cache accesses
+window.__performanceMonitor.cacheAccesses.forEach(access => {
+  console.log(`${access.type}: ${access.hit ? 'HIT' : 'MISS'} at ${new Date(access.timestamp).toLocaleTimeString()}`);
+});
+```
+
+**Network tab verification:**
+Response Headers should include:
+- `X-Cache-Status: HIT` or `X-Cache-Status: MISS`
+- `X-Cache-Type: athletes` (or results, gameState)
+- `ETag: "abc123"`
+- `Cache-Control: public, max-age=...`
+
+### Benefits
+
+1. **Performance Insights**: See which API endpoints are being cached effectively
+2. **Debugging**: Server and client logs show cache HIT/MISS in development
+3. **Optimization**: Low hit ratios indicate cache duration too short
+4. **Production Monitoring**: Cache metrics exported with performance report
+
+### Related Files
+
+- `lib/api-client.ts` - Centralized API client implementation
+- `pages/api/lib/cache-utils.js` - Server-side cache utilities
+- `lib/performance-monitor.ts` - Performance tracking implementation
+
 ---
 
 ## Cache Tracking Implementation

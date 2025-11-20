@@ -295,8 +295,182 @@ This document tracks technical debt across the Marathon Majors Fantasy League co
 
 ---
 
+## UI Helper Duplication (November 2025)
+
+### Status: Documented (Not Yet Resolved)
+
+Three UI helper functions are duplicated across multiple files for backward compatibility reasons:
+
+1. **getRunnerSvg(gender)** - Returns default athlete avatar based on gender
+2. **getTeamInitials(teamName)** - Generates 1-2 letter initials from team name
+3. **createTeamAvatarSVG(teamName, size)** - Creates SVG avatar with initials
+
+#### Locations
+
+| Function | File | Status |
+|----------|------|--------|
+| All 3 | `lib/ui-helpers.tsx` | ✅ **Source of Truth** (TypeScript, React + DOM versions) |
+| All 3 | `public/app.js` | ⚠️ **Duplicate** (Marked with comments) |
+| All 3 | `public/salary-cap-draft.js` | ⚠️ **Duplicate** (Marked with comments) |
+
+#### Why Duplicates Exist
+
+**Technical Constraints:**
+- `lib/ui-helpers.tsx` uses TypeScript and ES6 exports
+- `public/app.js` (6,581 lines) and `public/salary-cap-draft.js` (1,691 lines) are loaded as plain `<script>` tags (not modules)
+- Cannot use `import` statements in non-module scripts
+- Gradual migration from vanilla JS to React/TypeScript
+
+**Impact:**
+- **3 functions × 3 files = 9 copies** to maintain
+- Bug fixes must be applied in multiple places (~200 lines of duplicated code)
+
+**Mitigation:**
+- ✅ All duplicate functions marked with `DUPLICATE: See lib/ui-helpers.tsx` comments
+- ✅ Source of truth established (`lib/ui-helpers.tsx`)
+- ✅ New code imports from shared modules
+
+#### Resolution Plan
+
+**Option A: ES6 Modules (Short-term)**
+Make legacy files ES6 modules with `type="module"` attribute.
+
+**Option B: Component Extraction (Preferred Long-term)**
+Convert legacy files to React components (aligns with PROCESS_MONOLITH_AUDIT.md Phase 4):
+- Extract `public/salary-cap-draft.js` → `src/features/draft/` components
+- Extract `public/app.js` functions → React components in `components/`
+- All code naturally uses shared `lib/ui-helpers.tsx`
+
+#### Usage Guidelines
+
+**For New Code:**
+✅ **DO**: Import from shared modules
+```typescript
+import { getRunnerSvg, getTeamInitials, createTeamAvatarSVG } from '@/lib/ui-helpers';
+```
+
+❌ **DON'T**: Copy functions again
+
+**For Bug Fixes:**
+If a bug is found, fix in all 3 locations:
+1. Fix in `lib/ui-helpers.tsx` (source of truth)
+2. Copy fix to `public/app.js`
+3. Copy fix to `public/salary-cap-draft.js`
+
+---
+
+## games.players[] Array Deprecation (November 2025)
+
+### Status: Deprecated (Maintained for Legacy Compatibility Only)
+
+The `games.players[]` PostgreSQL array column is **DEPRECATED** for salary cap draft games. It is no longer the source of truth for team data.
+
+### Background
+
+**Original Purpose:**
+```sql
+CREATE TABLE games (
+    game_id VARCHAR(255),
+    players TEXT[],  -- e.g., ['RUNNER', 'SPRINTER', 'PACER']
+    ...
+);
+```
+
+This made sense for snake draft mode when players submitted rankings and the draft assigned teams.
+
+**Why It's Now Deprecated:**
+
+With **salary cap draft mode** and **anonymous sessions**, teams are now tracked in dedicated tables:
+
+```
+Modern Source of Truth:
+├── anonymous_sessions table
+│   ├── session_token (UUID)
+│   ├── player_code
+│   ├── display_name
+│   ├── is_active (soft delete flag)
+│   └── game_id
+└── salary_cap_teams table
+    ├── player_code
+    ├── athlete_id
+    ├── total_spent
+    └── submitted_at
+```
+
+The `games.players[]` array became:
+- ❌ **Redundant** - Duplicates data in `anonymous_sessions`
+- ❌ **Stale** - Not updated when teams are created/deleted
+- ❌ **Unmaintainable** - Requires manual sync across multiple places
+- ❌ **Wrong abstraction** - Array doesn't support soft deletes or metadata
+
+### Current State
+
+**What Still Uses `games.players[]` (Legacy):**
+- `public/app.js` - Line ~110 (`loadGameState()`), Line ~1710 (`displayTeamsTable()`)
+- `/api/game-state.js` - Returns it to legacy site
+
+**What DOESN'T Use `games.players[]` (Modern):**
+- `components/commissioner/TeamsOverviewPanel.tsx` - Queries `anonymous_sessions`
+- `/api/salary-cap-draft.js` - Returns teams from database tables
+- `/api/session/delete.js` - Soft deletes, doesn't touch array
+
+### Migration Strategy
+
+**Phase 1: Documentation ✅ COMPLETE**
+Added deprecation warnings to all affected files.
+
+**Phase 2: Stop Maintaining (Current)**
+Do NOT sync `games.players[]` for new salary cap teams.
+- ✅ Modern site works perfectly (uses `anonymous_sessions`)
+- ⚠️ Legacy site shows stale data (acceptable trade-off)
+
+**Phase 3: Update Legacy Site (Future)**
+Update `displayTeamsTable()` in `public/app.js` to query `/api/salary-cap-draft` instead.
+
+**Phase 4: Remove Column (Future)**
+Once legacy site is updated:
+```sql
+ALTER TABLE games DROP COLUMN players;
+```
+
+### Developer Guide
+
+❌ **DON'T**: Use games.players[] for new features
+```javascript
+// BAD - Don't do this for salary cap teams
+gameState.players.push(playerCode);
+```
+
+✅ **DO**: Query anonymous_sessions table
+```javascript
+// GOOD - Query the source of truth
+const teams = await sql`
+  SELECT player_code, display_name, created_at
+  FROM anonymous_sessions
+  WHERE game_id = ${gameId}
+    AND session_type = 'player'
+    AND is_active = true
+`;
+```
+
+### FAQs
+
+**Q: Why not just update games.players[] when teams are created?**  
+**A:** Dual maintenance burden is error-prone. Better to have one authoritative source.
+
+**Q: What happens to existing data in games.players[]?**  
+**A:** It remains for backward compatibility with legacy snake draft games. We just don't update it for new salary cap teams.
+
+**Q: Will the legacy site stop working?**  
+**A:** It will show stale data for teams created after deprecation, but won't crash. This is acceptable during transition.
+
+**Q: What about snake draft mode?**  
+**A:** Snake draft games still use `games.players[]` and will continue to work. The deprecation only affects salary cap draft.
+
+---
+
 **Document Status:** Active tracking document  
-**Last Session:** November 13, 2025  
+**Last Session:** November 20, 2025 (Documentation consolidation)  
 **Next Review:** After session state migration to React Context  
 **Maintained By:** Development team
 
