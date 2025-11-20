@@ -347,6 +347,7 @@ This runs all test suites sequentially and provides a summary.
 # Core functionality tests
 npm run test:api
 npm run test:db
+npm run test:race        # Race management tests
 npm run test:frontend
 npm run test:flow
 
@@ -362,9 +363,166 @@ npm run test:legacy       # Legacy regression tests
 ```bash
 node tests/api-endpoints.test.js
 node tests/database.test.js
+node tests/race-management.test.js
 node tests/frontend-integration.test.js
 node tests/game-flow.test.js
 ```
+
+---
+
+## 🔧 Adding New Tests to the Workflow
+
+When you create a new feature that needs tests, follow these steps to ensure your tests run both locally and in GitHub Actions CI/CD:
+
+### Step 1: Create Your Test File
+
+Create your test in the `tests/` directory following the naming convention:
+
+```bash
+tests/your-feature-name.test.js
+```
+
+**Example:** `tests/payment-processing.test.js`
+
+### Step 2: Add npm Script
+
+Add a test script to `package.json` following the naming pattern:
+
+```json
+{
+  "scripts": {
+    "test:feature": "node tests/your-feature-name.test.js"
+  }
+}
+```
+
+**Naming conventions:**
+- ✅ Use singular form: `test:race` not `test:races`  
+- ✅ Keep it short: `test:api`, `test:db`, `test:payment`
+- ✅ Match the feature: If the feature is "salary cap draft", use `test:salarycap`
+
+**Example:**
+```json
+"test:payment": "node tests/payment-processing.test.js"
+```
+
+### Step 3: Add to GitHub Actions Workflow
+
+Edit `.github/workflows/test.yml` and add your test in **THREE PLACES**:
+
+#### 3a. Add Test Execution Step
+
+Find the appropriate section (before or after "Build application" depending on if your test needs a running server):
+
+```yaml
+- name: Run {feature name} tests
+  id: test-{feature}
+  run: npm run test:{feature}
+  continue-on-error: true
+  env:
+    TEST_URL: http://localhost:3000
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+```
+
+**Where to place it:**
+- **Unit tests (no server required):** BEFORE the "Build application" step
+- **Integration tests (need server):** AFTER the "Start server in background" step
+
+**Example:**
+```yaml
+- name: Run payment processing tests
+  id: test-payment
+  run: npm run test:payment
+  continue-on-error: true
+  env:
+    TEST_URL: http://localhost:3000
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+```
+
+#### 3b. Add to Test Results Collection
+
+Find the `testResults` object in the "Comment test results on PR" step:
+
+```javascript
+const testResults = {
+  'State Manager Unit Tests': '${{ steps.test-state-unit.outcome }}',
+  // ... other tests ...
+  'Database Tests': '${{ steps.test-db.outcome }}',
+  '{Your Feature Name} Tests': '${{ steps.test-{feature}.outcome }}',  // ← Add this line
+  'Frontend Integration Tests': '${{ steps.test-frontend.outcome }}',
+  // ... more tests ...
+};
+```
+
+**Example:**
+```javascript
+'Payment Processing Tests': '${{ steps.test-payment.outcome }}',
+```
+
+#### 3c. Add to Failure Checking
+
+Find the "Check test results and fail if needed" step and add:
+
+```bash
+if [ "${{ steps.test-{feature}.outcome }}" != "success" ]; then
+  echo "❌ {Feature name} tests failed"
+  TESTS_FAILED=true
+fi
+```
+
+**Example:**
+```bash
+if [ "${{ steps.test-payment.outcome }}" != "success" ]; then
+  echo "❌ Payment processing tests failed"
+  TESTS_FAILED=true
+fi
+```
+
+### Step 4: Add to Local Test Runner (Optional)
+
+If you want your test included when running `npm test` locally, edit `tests/run-tests.js`:
+
+```javascript
+const tests = [
+  // ... existing tests
+  {
+    name: '{Feature Name}',
+    file: 'tests/your-feature-name.test.js',
+    description: 'Brief description of what this tests'
+  },
+  // ... more tests
+];
+```
+
+**Example:**
+```javascript
+{
+  name: 'Payment Processing',
+  file: 'tests/payment-processing.test.js',
+  description: 'Tests payment gateway integration and transaction flows'
+}
+```
+
+### Quick Reference Checklist
+
+When adding a new test, verify you've completed:
+
+- [ ] Created test file: `tests/{feature-name}.test.js`
+- [ ] Added npm script: `"test:{feature}": "node tests/{feature-name}.test.js"`
+- [ ] Added GitHub Actions execution step with correct ID
+- [ ] Added test to `testResults` object in PR comment section
+- [ ] Added test to failure checking shell script
+- [ ] (Optional) Added to `tests/run-tests.js` for local `npm test`
+- [ ] Committed all changes including workflow file
+
+### Common Mistakes to Avoid
+
+❌ **Typo in script name** - `test:races` vs `test:race` (use singular!)  
+❌ **Missing from PR comment** - Test runs but doesn't show in PR  
+❌ **Missing from failure check** - Test fails but workflow passes  
+❌ **Wrong test ID** - `id: test-race` must match `steps.test-race.outcome`
+
+---
 
 ## Environment Variables
 
