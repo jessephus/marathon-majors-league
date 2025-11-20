@@ -185,7 +185,9 @@ jobs:
               '',
               '</details>',
               '',
-              statusMessage
+              statusMessage,
+              '',
+              '---'
             ].join('\n');
             
             if (masterComment) {
