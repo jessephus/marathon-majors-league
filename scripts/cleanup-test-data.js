@@ -168,6 +168,67 @@ async function main() {
       await cleanupTestGame(game.game_id);
     }
     
+    // Clean up orphaned test data (records where game was already deleted)
+    console.log('\n🧹 Cleaning up orphaned test data...');
+    
+    // Clean salary_cap_teams with test player_codes or test game_ids
+    const orphanedSalaryCapTeams = await sql`
+      DELETE FROM salary_cap_teams 
+      WHERE game_id LIKE 'test-%' 
+         OR game_id LIKE 'e2e-%' 
+         OR game_id LIKE 'integration-%'
+         OR game_id = 'test-game'
+         OR player_code LIKE '%Test%test-%'
+         OR player_code LIKE 'Draft Test%'
+         OR player_code LIKE 'Validation Test%'
+         OR player_code LIKE 'Invalid IDs Test%'
+         OR player_code LIKE 'Verify Test%'
+         OR player_code LIKE 'Extend Test%'
+      RETURNING id
+    `;
+    console.log(`   Deleted ${orphanedSalaryCapTeams.length} orphaned salary_cap_teams records`);
+    
+    // Clean anonymous_sessions with test display names or test game_ids
+    const orphanedSessions = await sql`
+      DELETE FROM anonymous_sessions 
+      WHERE game_id LIKE 'test-%' 
+         OR game_id LIKE 'e2e-%' 
+         OR game_id LIKE 'integration-%'
+         OR game_id = 'test-game'
+         OR display_name LIKE '%Test test-%'
+         OR display_name LIKE 'Draft Test%'
+         OR display_name LIKE 'Validation Test%'
+         OR display_name LIKE 'Invalid IDs Test%'
+         OR display_name LIKE 'Verify Test%'
+         OR display_name LIKE 'Extend Test%'
+         OR display_name LIKE 'Team test-%'
+         OR display_name LIKE '%leaderboardtest%'
+      RETURNING id
+    `;
+    console.log(`   Deleted ${orphanedSessions.length} orphaned anonymous_sessions records`);
+    
+    // Clean player_rankings with test game_ids
+    const orphanedRankings = await sql`
+      DELETE FROM player_rankings 
+      WHERE game_id LIKE 'test-%' 
+         OR game_id LIKE 'e2e-%' 
+         OR game_id LIKE 'integration-%'
+         OR game_id = 'test-game'
+      RETURNING id
+    `;
+    console.log(`   Deleted ${orphanedRankings.length} orphaned player_rankings records`);
+    
+    // Clean race_results with test game_ids
+    const orphanedResults = await sql`
+      DELETE FROM race_results 
+      WHERE game_id LIKE 'test-%' 
+         OR game_id LIKE 'e2e-%' 
+         OR game_id LIKE 'integration-%'
+         OR game_id = 'test-game'
+      RETURNING id
+    `;
+    console.log(`   Deleted ${orphanedResults.length} orphaned race_results records`);
+    
     console.log('\n✅ Database cleanup complete!\n');
     process.exit(0);
   } catch (error) {

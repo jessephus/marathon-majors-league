@@ -228,6 +228,41 @@ Tests for leaderboard React components.
 - ✅ Visibility tracking
 - ✅ State event integration
 
+### 14. `audit-zero-pollution.test.js` 🆕
+Automated test that verifies no test data pollution remains after test execution.
+
+**Coverage:**
+- ✅ Checks all database tables for test data patterns
+- ✅ Excludes production data (game='default', player='311')
+- ✅ Fails with detailed errors when pollution detected
+- ✅ Passes when database is clean (0 test records)
+- ✅ Provides summary report with cleanup recommendations
+- ✅ Runs automatically after all other tests in CI
+
+**Purpose:**
+This test acts as a safety net to catch any test cleanup failures. It uses pattern matching (LIKE '%test%', '%e2e%', '%integration%') to identify leftover test data across:
+- `games` table
+- `anonymous_sessions` table
+- `salary_cap_teams` table
+- `draft_teams` table
+- `player_rankings` table
+- `race_results` table
+
+**Integration:**
+Automatically runs as the final test in `tests/run-tests.js` with description:
+```
+🔍 Verifies no test data pollution - MUST PASS for clean database
+```
+
+**Expected Behavior:**
+- ✅ **PASS**: All 7 assertions pass, summary shows "Total test records found: 0"
+- ❌ **FAIL**: One or more assertions fail with detailed error showing which table has pollution and specific game_id/player_code values
+
+**Manual Execution:**
+```bash
+node tests/audit-zero-pollution.test.js
+```
+
 ## Code Coverage Reporting
 
 ### Coverage Tool: c8
@@ -293,6 +328,142 @@ Coverage is tracked for:
 - `lib/api-client.ts` - Centralized API client
 - `components/` - All React components
 
+## Test Data Cleanup Standards
+
+### Critical Requirement: All Tests MUST Clean Up
+
+Every test that creates database records **MUST** implement proper cleanup to prevent test data pollution. The `audit-zero-pollution.test.js` runs after all tests to verify cleanup was successful.
+
+### Two Standardized Cleanup Approaches
+
+#### 1. TestContext (Complex Tests)
+
+Use `test-context.js` for tests that:
+- Create multiple resources (games, sessions, teams)
+- Need automatic resource tracking
+- Require suite-level lifecycle management
+
+**Example from `game-flow.test.js`:**
+```javascript
+import { describe, it, before, after } from 'node:test';
+import { TestContext } from './test-context.js';
+import assert from 'node:assert';
+
+const context = new TestContext();
+
+describe('Complete Game Flow', () => {
+  before(async () => {
+    await context.setup();
+  });
+
+  after(async () => {
+    await context.cleanup();
+  });
+
+  it('should create game with players', async () => {
+    const gameId = await context.createGame(['PLAYER1', 'PLAYER2']);
+    // Test logic...
+  });
+
+  it('should execute draft', async () => {
+    await context.executeDraft();
+    // Test logic...
+  });
+});
+```
+
+**Key Features:**
+- Automatic resource tracking (games, sessions, athletes)
+- Suite-level `before()` and `after()` hooks
+- **game_id-based deletion** for child tables (solves API-created records)
+- No pattern matching in cleanup (uses only tracked IDs)
+
+**How TestContext Cleanup Works:**
+```javascript
+// For each tracked game_id, delete child records first:
+await sql`DELETE FROM race_results WHERE game_id = ${gameId}`;
+await sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId}`;
+await sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
+await sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
+await sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId}`;
+
+// Then delete parent game:
+await sql`DELETE FROM games WHERE game_id = ${gameId}`;
+```
+
+**Why game_id-based deletion?**
+The database has **NO CASCADE DELETE** configured on foreign keys. API endpoints create child records (sessions, teams, results) without returning their IDs, so we can't track them individually. Deleting by `game_id` ensures all related data is removed.
+
+#### 2. Array Tracking (Simple Tests)
+
+Use module-level arrays for tests that:
+- Create few resources (1-3 games)
+- Have simple lifecycle requirements
+- Need explicit control over cleanup timing
+
+**Example from `api-endpoints.test.js`:**
+```javascript
+import { describe, it, after } from 'node:test';
+import { neon } from '@neondatabase/serverless';
+import assert from 'node:assert';
+
+const sql = neon(process.env.DATABASE_URL);
+const createdGames = [];
+
+after(async () => {
+  console.log(`Cleaning up ${createdGames.length} test games...`);
+  
+  for (const gameId of createdGames) {
+    // Delete child records first (same pattern as TestContext)
+    await sql`DELETE FROM race_results WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId}`;
+    
+    // Delete parent game
+    await sql`DELETE FROM games WHERE game_id = ${gameId}`;
+  }
+  
+  console.log('✅ Cleanup complete');
+});
+
+describe('API Endpoints', () => {
+  it('should create game', async () => {
+    const gameId = `test-game-${Date.now()}`;
+    createdGames.push(gameId); // Track for cleanup
+    
+    // Test logic...
+  });
+});
+```
+
+**Key Features:**
+- Module-level array for tracking: `const createdGames = []`
+- Manual `.push()` when creating resources
+- Cleanup in `after()` hook with game_id-based deletion
+- **Uses ONLY tracked IDs** (no pattern matching)
+
+**Critical Design Rule:**
+Array Tracking cleanup uses **ONLY the tracked IDs from the array**. It does NOT use pattern matching (like `LIKE '%test%'`). This prevents accidentally deleting games from prior tests or production data.
+
+### When to Use Each Approach
+
+| Test Type | Use | Reason |
+|-----------|-----|--------|
+| Complex game flows | TestContext | Automatic tracking, multiple resources |
+| Multiple draft scenarios | TestContext | Suite-level lifecycle |
+| Simple API tests | Array Tracking | Explicit control, few resources |
+| Single endpoint tests | Array Tracking | Minimal overhead |
+| Read-only tests | None | No database writes |
+
+### Read-Only Tests (No Cleanup Needed)
+
+These tests perform only GET requests and don't create data:
+- `performance-benchmarks.test.js` - Only measures existing data
+- `legacy-regression.test.js` - Schema validation only (non-mutating POSTs)
+- `database.test.js` - Only calls GET endpoints
+
 ## Test Utilities & Cleanup
 
 ### Test Utilities (`test-utils.js`)
@@ -340,6 +511,156 @@ The test runner (`run-tests.js`) automatically runs `globalTestCleanup()` after 
 - All games matching `test-%`, `e2e-%`, `integration-%`
 - All sessions with display_name like `Test Team%` or `Test%`
 
+### Verification: Audit Script
+
+After cleanup, the `audit-zero-pollution.test.js` runs to verify no test data remains. If pollution is detected, the test fails with details.
+
+**Manual audit:**
+```bash
+node scripts/audit-test-data.js
+```
+
+**Expected output:**
+```
+📊 Test Data Audit Summary
+========================================
+Total test records found: 0
+
+✅ Database is clean! No test data pollution detected.
+```
+
+## Adding a New Test to the Suite
+
+### Step 1: Create Your Test File
+
+Create a new test file in `/tests/` directory following the naming convention:
+- `feature-name.test.js` for feature tests
+- `api-name.test.js` for API tests
+- `component-name.test.js` for component tests
+
+### Step 2: Implement Cleanup (if creating data)
+
+Choose the appropriate cleanup approach:
+
+**For complex tests with multiple resources:**
+```javascript
+import { TestContext } from './test-context.js';
+
+const context = new TestContext();
+
+describe('My Feature', () => {
+  before(async () => {
+    await context.setup();
+  });
+
+  after(async () => {
+    await context.cleanup();
+  });
+  
+  // Your tests...
+});
+```
+
+**For simple tests with few resources:**
+```javascript
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.DATABASE_URL);
+const createdGames = [];
+
+after(async () => {
+  for (const gameId of createdGames) {
+    await sql`DELETE FROM race_results WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId}`;
+    await sql`DELETE FROM games WHERE game_id = ${gameId}`;
+  }
+});
+
+describe('My API Test', () => {
+  it('creates a game', async () => {
+    const gameId = `test-${Date.now()}`;
+    createdGames.push(gameId); // Track for cleanup
+    // Test logic...
+  });
+});
+```
+
+**For read-only tests (no cleanup needed):**
+```javascript
+describe('My Read-Only Test', () => {
+  it('fetches data', async () => {
+    // Only GET requests, no cleanup needed
+  });
+});
+```
+
+### Step 3: Add to Test Runner
+
+Edit `tests/run-tests.js` and add your test to the `testSuites` array:
+
+```javascript
+const testSuites = [
+  // ... existing tests ...
+  
+  {
+    name: 'My Feature Test',
+    file: 'tests/my-feature.test.js',
+    description: 'Brief description of what this test covers'
+  },
+  
+  // Audit test should always be last
+  {
+    name: 'Zero Pollution Audit',
+    file: 'tests/audit-zero-pollution.test.js',
+    description: '🔍 Verifies no test data pollution - MUST PASS for clean database'
+  }
+];
+```
+
+**Important:** Always keep the `audit-zero-pollution.test.js` as the **last test** in the array.
+
+### Step 4: Add npm Script (optional)
+
+For convenience, add a dedicated npm script in `package.json`:
+
+```json
+{
+  "scripts": {
+    "test:myfeature": "node tests/my-feature.test.js"
+  }
+}
+```
+
+### Step 5: Verify Cleanup
+
+Run your test and verify it cleans up properly:
+
+```bash
+# Run your test
+node tests/my-feature.test.js
+
+# Verify cleanup with audit
+node scripts/audit-test-data.js
+
+# Should show: Total test records found: 0
+```
+
+### Step 6: Update Documentation
+
+Add your test to this README under the appropriate section:
+- Core Functionality Tests
+- Testing Baseline
+- Enhanced Test Suites
+
+Include:
+- Test name and purpose
+- Coverage checklist
+- Cleanup approach used
+- Any special notes
+
 ## Running Tests
 
 ### Prerequisites
@@ -367,16 +688,20 @@ This runs all test suites sequentially and provides a summary.
 
 ```bash
 # Core functionality tests
-npm run test:api
-npm run test:db
-npm run test:frontend
-npm run test:flow
+npm run test:api          # API endpoints
+npm run test:db           # Database connectivity
+npm run test:frontend     # Frontend integration
+npm run test:flow         # Complete game flow
 
 # Testing baseline (Issue #69)
 npm run test:nextjs       # Next.js routing and SSR tests
 npm run test:salarycap    # Salary cap draft tests
 npm run test:performance  # Performance benchmarks
 npm run test:legacy       # Legacy regression tests
+
+# Cleanup verification
+node tests/audit-zero-pollution.test.js  # Verify no test data pollution
+node scripts/audit-test-data.js          # Manual audit script
 ```
 
 ### Run Specific Test File Directly
@@ -562,9 +887,11 @@ Current coverage:
 - ✅ Salary cap draft: 95%
 - ✅ Performance baselines: Established
 - ✅ Legacy compatibility: 100%
+- ✅ Test cleanup verification: 100%
 
-**Total Test Suites:** 8 comprehensive suites
-**Total Test Cases:** 100+ individual tests
+**Total Test Suites:** 14 comprehensive suites
+**Total Test Cases:** 125+ individual tests
+**Cleanup Status:** ✅ Zero pollution (verified by audit test)
 
 ## Performance Baselines
 
@@ -666,6 +993,44 @@ These tests need `DATABASE_URL` configured:
 
 This is **correct behavior** - tests detect missing database configuration and report it appropriately.
 
+## Cleanup Migration Status
+
+### Completed Migrations ✅
+
+All test files have been reviewed and migrated to standardized cleanup patterns:
+
+| Test File | Status | Cleanup Approach | Notes |
+|-----------|--------|------------------|-------|
+| `game-flow.test.js` | ✅ Migrated | TestContext | 12 tests, 0 pollution |
+| `salary-cap-draft.test.js` | ✅ Migrated | TestContext | 22 tests, 0 pollution |
+| `api-endpoints.test.js` | ✅ Migrated | Array Tracking | 20 tests, 0 pollution |
+| `frontend-integration.test.js` | ✅ Migrated | Array Tracking | 14 tests, 0 pollution |
+| `race-management.test.js` | ✅ Verified | Array Tracking | Already had cleanup |
+| `performance-benchmarks.test.js` | ✅ Verified | None | Read-only tests |
+| `legacy-regression.test.js` | ✅ Verified | None | Non-mutating POSTs |
+| `database.test.js` | ✅ Verified | None | GET requests only |
+| `audit-zero-pollution.test.js` | ✅ Created | N/A | Verifies cleanup |
+
+**Verification:** All tests show **0 test records** when audit script runs after execution.
+
+### Database Architecture Notes
+
+**Critical:** The database has **NO CASCADE DELETE** configured on foreign keys. This is why both TestContext and Array Tracking use game_id-based deletion for child tables.
+
+**Foreign Key Structure:**
+```
+games (parent)
+  ├── anonymous_sessions (child)
+  ├── salary_cap_teams (child)
+  ├── draft_teams (child)
+  ├── player_rankings (child)
+  └── race_results (child)
+```
+
+**Cleanup Order:**
+1. Delete child records by `game_id` (prevents foreign key violations)
+2. Delete parent game record
+
 ## Future Improvements
 
 - [ ] Add visual regression testing (screenshots)
@@ -674,6 +1039,7 @@ This is **correct behavior** - tests detect missing database configuration and r
 - [ ] Increase component test coverage to 90%
 - [ ] Add E2E tests for complete user journeys
 - [ ] Add authentication tests (when user accounts implemented)
+- [ ] Consider adding CASCADE DELETE to database schema (breaking change)
 
 ## Support
 

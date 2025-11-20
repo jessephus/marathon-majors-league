@@ -3,33 +3,40 @@
  * Tests the complete salary cap draft flow including team creation, 
  * athlete selection, budget validation, and team submission
  * 
+ * Uses TestContext for automatic resource cleanup via game_id-based deletion.
+ * Sequential execution within test suites - DO NOT run tests in parallel.
+ * 
  * Run with: node tests/salary-cap-draft.test.js
  */
 
-import { describe, it, after } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
-import { generateTestId, cleanupTestGame, cleanupTestSessions } from './test-utils.js';
+import { TestContext } from './test-context.js';
+import { generateTestId } from './test-utils.js';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
-const TEST_GAME_ID = generateTestId('salarycap-test');
+let testCtx;
+let gameId;
 
 console.log('🧪 Testing Salary Cap Draft functionality at:', BASE_URL);
-console.log('🎮 Test game ID:', TEST_GAME_ID);
 
 describe('Salary Cap Draft System Tests', () => {
+  
+  // Setup TestContext before all tests
+  before(async () => {
+    testCtx = new TestContext();
+    // Create game for all tests to use
+    gameId = await testCtx.createGame({
+      gameName: 'Salary Cap Draft Test',
+      raceId: 1
+    });
+    console.log('🎮 Test game ID:', gameId);
+  });
   
   // Cleanup after all tests complete
   after(async () => {
     console.log('\n🧹 Cleaning up test data...');
-    try {
-      // Clean up the test game
-      await cleanupTestGame(TEST_GAME_ID);
-      // Clean up any test sessions created
-      await cleanupTestSessions('Test Team%');
-      console.log('✅ Test data cleaned up successfully\n');
-    } catch (error) {
-      console.error('⚠️  Cleanup warning:', error.message, '\n');
-    }
+    await testCtx.cleanup();
   });
   
   describe('Team Session Creation Flow', () => {
@@ -42,7 +49,7 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
@@ -53,6 +60,9 @@ describe('Salary Cap Draft System Tests', () => {
       assert.ok(data.session.token, 'Should return session token');
       assert.ok(data.uniqueUrl, 'Should return unique URL');
       assert.strictEqual(data.session.displayName, displayName, 'Should return correct display name');
+      
+      // Track the session for cleanup
+      testCtx.trackResource('sessions', data.session.id);
       
       console.log(`✅ Player session created: ${data.session.token.substring(0, 10)}...`);
     });
@@ -84,11 +94,13 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: displayName1,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       assert.strictEqual(response1.status, 201, 'First session should be created');
+      const data1 = await response1.json();
+      testCtx.trackResource('sessions', data1.session.id);
       
       // Create second session
       const response2 = await fetch(`${BASE_URL}/api/session/create`, {
@@ -97,14 +109,13 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: displayName2,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       assert.strictEqual(response2.status, 201, 'Second session should be created');
-      
-      const data1 = await response1.json();
       const data2 = await response2.json();
+      testCtx.trackResource('sessions', data2.session.id);
       
       // Sessions should be different
       assert.notStrictEqual(
@@ -126,11 +137,12 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Verify Test ${generateTestId()}`,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       const createData = await createResponse.json();
+      testCtx.trackResource('sessions', createData.session.id);
       const sessionToken = createData.session.token;
       
       // Verify the session - API expects GET with query parameter
@@ -162,11 +174,12 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Extend Test ${generateTestId()}`,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       const createData = await createResponse.json();
+      testCtx.trackResource('sessions', createData.session.id);
       const sessionToken = createData.session.token;
       
       // Extend the session - API expects 'token' not 'sessionToken'
@@ -216,11 +229,12 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Draft Test ${generateTestId()}`,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       const createData = await createResponse.json();
+      testCtx.trackResource('sessions', createData.session.id);
       const sessionToken = createData.session.token;
       
       // Get athletes to select from
@@ -244,7 +258,7 @@ describe('Salary Cap Draft System Tests', () => {
       assert.ok(totalSalary <= 30000, 'Total salary should be under cap');
       
       // Submit the draft
-      const draftResponse = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`, {
+      const draftResponse = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=${gameId}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -276,11 +290,12 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Validation Test ${generateTestId()}`,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       const createData = await createResponse.json();
+      testCtx.trackResource('sessions', createData.session.id);
       const sessionToken = createData.session.token;
       
       // Get athletes
@@ -295,7 +310,7 @@ describe('Salary Cap Draft System Tests', () => {
       if (men.length >= 4 && women.length >= 2) {
         const totalSalary = [...men, ...women].reduce((sum, a) => sum + (a.salary || 5000), 0);
         
-        const draftResponse = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`, {
+        const draftResponse = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=${gameId}`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -332,7 +347,7 @@ describe('Salary Cap Draft System Tests', () => {
   describe('Draft Persistence and Retrieval', () => {
     it('should persist drafted team and retrieve it', async () => {
       // Simplify - just test that GET endpoint works
-      const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`);
+      const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=${gameId}`);
       
       // Should respond successfully (even if empty)
       assert.ok(response.status === 200 || response.status === 500, 'API should respond');
@@ -345,7 +360,7 @@ describe('Salary Cap Draft System Tests', () => {
     it('should handle missing session token', async () => {
       // Try submitting with minimal valid structure but no auth
       // Since validation happens before auth, we'll accept 400 or 401
-      const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`, {
+      const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=${gameId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -383,15 +398,16 @@ describe('Salary Cap Draft System Tests', () => {
         body: JSON.stringify({ 
           sessionType: 'player',
           displayName: `Invalid IDs Test ${generateTestId()}`,
-          gameId: TEST_GAME_ID
+          gameId: gameId
         })
       });
       
       const createData = await createResponse.json();
+      testCtx.trackResource('sessions', createData.session.id);
       const sessionToken = createData.session.token;
       
       // Try with invalid athlete IDs
-      const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=test-game`, {
+      const response = await fetch(`${BASE_URL}/api/salary-cap-draft?gameId=${gameId}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

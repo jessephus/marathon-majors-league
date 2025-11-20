@@ -5,12 +5,63 @@
  * Run with: node tests/frontend-integration.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert';
+import { neon } from '@neondatabase/serverless';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
 
+// Initialize database connection (only if DATABASE_URL is available)
+let sql = null;
+if (process.env.DATABASE_URL) {
+  sql = neon(process.env.DATABASE_URL);
+}
+
+// Track created resources for cleanup
+const createdGames = [];
+
 console.log('🧪 Testing frontend integration at:', BASE_URL);
+
+// Cleanup function - runs after ALL tests complete
+after(async () => {
+  console.log('\n🧹 Cleaning up frontend integration test data...');
+  
+  if (createdGames.length === 0) {
+    console.log('   No test data to clean up\n');
+    return;
+  }
+  
+  if (!sql) {
+    console.log('   ⚠️  DATABASE_URL not set, skipping cleanup\n');
+    return;
+  }
+  
+  try {
+    let deletedGames = 0;
+    
+    // Delete child records first, then parent games (no CASCADE configured)
+    for (const gameId of createdGames) {
+      try {
+        // Delete all child records by game_id
+        await sql`DELETE FROM race_results WHERE game_id = ${gameId}`;
+        await sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId}`;
+        await sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
+        await sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
+        await sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId}`;
+        
+        // Delete parent game
+        await sql`DELETE FROM games WHERE game_id = ${gameId}`;
+        deletedGames++;
+      } catch (e) {
+        console.warn(`   ⚠️  Could not delete game ${gameId}: ${e.message}`);
+      }
+    }
+    
+    console.log(`✅ Cleaned up ${deletedGames} game(s)\n`);
+  } catch (error) {
+    console.error('⚠️  Cleanup error:', error.message, '\n');
+  }
+});
 
 async function fetchHTML(path = '/') {
   const response = await fetch(`${BASE_URL}${path}`);
@@ -169,6 +220,9 @@ describe('Frontend Integration Tests', () => {
       });
       
       assert.ok(createResponse.status === 200 || createResponse.status === 201, 'Should create game');
+      
+      // Track game for cleanup
+      createdGames.push(testGameId);
       
       // Test retrieving the game
       const getResponse = await fetch(`${BASE_URL}/api/game-state?gameId=${testGameId}`);
