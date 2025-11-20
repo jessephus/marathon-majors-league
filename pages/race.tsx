@@ -79,13 +79,15 @@ export default function RacePage({ raceId }: RacePageProps) {
       setError(null);
       
       // Fetch race with athletes
-      const races = await apiClient.races.list({ 
+      // NOTE: When an ID is provided, the API returns a single race object, not an array
+      const raceData = await apiClient.races.list({ 
         id: parseInt(raceId!), 
         includeAthletes: true 
       });
       
-      if (races && races.length > 0) {
-        setRace(races[0]);
+      // Check if we received a race object (API returns single object when id is specified)
+      if (raceData && typeof raceData === 'object' && !Array.isArray(raceData)) {
+        setRace(raceData);
       } else {
         setError('Race not found');
       }

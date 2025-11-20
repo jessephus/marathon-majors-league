@@ -11,6 +11,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import RaceDetailModal from '@/components/RaceDetailModal';
 
 interface Race {
   id: number;
@@ -86,6 +87,10 @@ export default function RaceManagementPanel() {
   const [selectedRace, setSelectedRace] = useState<Race | null>(null);
   const [confirmedAthletes, setConfirmedAthletes] = useState<any[]>([]);
   const [showAthleteModal, setShowAthleteModal] = useState(false);
+  
+  // Race detail modal state
+  const [showRaceDetailModal, setShowRaceDetailModal] = useState(false);
+  const [selectedRaceId, setSelectedRaceId] = useState<number | null>(null);
 
   useEffect(() => {
     loadRaces();
@@ -239,6 +244,16 @@ export default function RaceManagementPanel() {
     } catch (err: any) {
       setError(err.message || 'Failed to load athletes');
     }
+  };
+
+  const handleViewRaceDetails = (raceId: number) => {
+    setSelectedRaceId(raceId);
+    setShowRaceDetailModal(true);
+  };
+
+  const handleCloseRaceDetailModal = () => {
+    setShowRaceDetailModal(false);
+    setSelectedRaceId(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -500,6 +515,13 @@ export default function RaceManagementPanel() {
         </div>
       )}
 
+      {/* Race Detail Modal */}
+      {showRaceDetailModal && selectedRaceId && (
+        <RaceDetailModal 
+          raceId={selectedRaceId} 
+          onClose={handleCloseRaceDetailModal}
+        />
+      )}
       {/* Races List */}
       <div className="races-list">
         {races.length === 0 ? (
@@ -520,7 +542,17 @@ export default function RaceManagementPanel() {
               {races.map((race) => (
                 <tr key={race.id}>
                   <td>
-                    <strong>{race.name}</strong>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleViewRaceDetails(race.id);
+                      }}
+                      className="race-name-link"
+                      title="View race details"
+                    >
+                      {race.name}
+                    </button>
                     {race.description && (
                       <div className="race-description">{race.description.substring(0, 100)}...</div>
                     )}
@@ -714,6 +746,32 @@ export default function RaceManagementPanel() {
           font-size: 12px;
           color: #666;
           margin-top: 4px;
+        }
+
+        .race-name-link {
+          background: none;
+          border: none;
+          color: #007bff;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+          text-align: left;
+          padding: 0;
+          text-decoration: none;
+          transition: color 0.2s;
+          display: inline-block;
+          position: relative;
+          z-index: 1;
+          pointer-events: auto;
+        }
+
+        .race-name-link:hover {
+          color: #0056b3;
+          text-decoration: underline;
+        }
+
+        .race-name-link:active {
+          opacity: 0.7;
         }
 
         .status-badge {
