@@ -4,15 +4,14 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **7 main categories** with **32 total documents**.
+Our documentation is organized into **7 main categories** with **34 total documents**.
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
-- `TECH_*.md` - Technical reference (7 docs)
-- `FEATURE_*.md` - Game features (7 docs)
-- `PROCESS_*.md` - Project history (10 docs)
+- `TECH_*.md` - Technical reference (8 docs)
+- `FEATURE_*.md` - Game features (8 docs)
+- `PROCESS_*.md` - Project history (8 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
-- `MANUAL_*.md` - Testing documentation (1 doc)
 
 ---
 
@@ -55,7 +54,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 
-#### Technical Reference (6 docs)
+#### Technical Reference (10 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -65,6 +64,9 @@ Learn how to join games, rank athletes, and follow live results.
 | **[TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md)** | Auth API endpoints and examples | Implementing auth features |
 | **[TECH_PERFORMANCE_OPTIMIZATION.md](TECH_PERFORMANCE_OPTIMIZATION.md)** | Performance tuning and optimization | Improving app performance |
 | **[TECH_STATE_MANAGEMENT.md](TECH_STATE_MANAGEMENT.md)** | Centralized state manager (GameStateManager) | Working with application state |
+| **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Server-side rendering strategy & caching | Understanding SSR patterns |
+| **[TECH_CACHE_TRACKING_IMPLEMENTATION.md](TECH_CACHE_TRACKING_IMPLEMENTATION.md)** | Cache tracking system implementation | Understanding cache invalidation |
+| **[TECH_UI_HELPER_DUPLICATION.md](TECH_UI_HELPER_DUPLICATION.md)** | UI helper duplication tracking | Technical debt reference |
 | **[TECH_GAMES_PLAYERS_ARRAY_DEPRECATION.md](TECH_GAMES_PLAYERS_ARRAY_DEPRECATION.md)** | games.players[] array deprecation guide | Understanding deprecated patterns |
 
 ### 3️⃣ Features (Game Mechanics & Functionality)
@@ -78,39 +80,27 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
 | **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
 | **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
+| **[FEATURE_AUTO_SAVE_ROSTER.md](FEATURE_AUTO_SAVE_ROSTER.md)** | Automatic roster saving feature | Understanding auto-save |
+| **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |
 
 ### 4️⃣ Process & Maintenance (Project History)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
+| **[PROCESS_AUTH_PHASE_1_SUMMARY.md](PROCESS_AUTH_PHASE_1_SUMMARY.md)** | Database migration for user accounts (Phase 1) | Understanding auth database design |
 | **[PROCESS_AUTH_PHASE_2_SUMMARY.md](PROCESS_AUTH_PHASE_2_SUMMARY.md)** | Authentication Phase 2 implementation summary | Understanding auth architecture |
-| **[PROCESS_CLEANUP_SUMMARY.md](PROCESS_CLEANUP_SUMMARY.md)** | Code and scripts cleanup | Tracking deprecated code |
-| **[PROCESS_COMPLETE_CLEANUP_SUMMARY.md](PROCESS_COMPLETE_CLEANUP_SUMMARY.md)** | Full cleanup session summary | Understanding recent cleanup |
-| **[PROCESS_CONSOLIDATION_PLAN.md](PROCESS_CONSOLIDATION_PLAN.md)** | Original consolidation strategy | Understanding doc organization |
-| **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation process | Learning from past mistakes |
+| **[PROCESS_CONSOLIDATION_RECOVERY.md](PROCESS_CONSOLIDATION_RECOVERY.md)** | Documentation consolidation lessons learned | Learning from past mistakes |
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
-| **[PROCESS_EDITABLE_WA_ID_FEATURE.md](PROCESS_EDITABLE_WA_ID_FEATURE.md)** | World Athletics ID editing feature | Feature completion reference |
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
+| **[PROCESS_PHASE4_PERFORMANCE_REPORT.md](PROCESS_PHASE4_PERFORMANCE_REPORT.md)** | Performance metrics for code splitting | Understanding optimization results |
 | **[PROCESS_ROUTING_PHASE1.md](PROCESS_ROUTING_PHASE1.md)** | Routing Phase 1 implementation summary | Understanding new page structure |
-| **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Comprehensive SSR strategy & standardized fetching/caching | Understanding SSR and API client patterns |
+| **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking | Current cleanup initiatives |
 
 ### 5️⃣ Setup & Authentication
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
 | **[SETUP_AUTHENTICATION.md](SETUP_AUTHENTICATION.md)** | Email/SMS service configuration | Setting up authentication |
-
-### 6️⃣ Technical Debt & Maintenance
-
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| **[TECH_UI_HELPER_DUPLICATION.md](TECH_UI_HELPER_DUPLICATION.md)** | UI helper function duplication tracking | Understanding technical debt |
-
-### 7️⃣ Manual Testing
-
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| **[MANUAL_TESTING_DRAFT_EXTRACTION.md](MANUAL_TESTING_DRAFT_EXTRACTION.md)** | Manual testing plan for PR #111 draft feature extraction | Testing draft validation refactoring |
 
 ---
 
@@ -135,7 +125,7 @@ Learn how to join games, rank athletes, and follow live results.
 | Game Modes | [FEATURE_GAME_MODES.md](FEATURE_GAME_MODES.md) | CORE_USER_GUIDE.md, FEATURE_SALARY_CAP_DRAFT.md |
 | Salary Cap Draft | [FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md) | FEATURE_GAME_MODES.md, FEATURE_POINTS_SCORING_SYSTEM.md |
 | Points Scoring | [FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md) | CORE_DEPLOYMENT.md, CORE_CHANGELOG.md |
-| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, PROCESS_EDITABLE_WA_ID_FEATURE.md |
+| Athlete Sync | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) | CORE_ARCHITECTURE.md, TECH_DATABASE.md |
 | Authentication | [TECH_AUTHENTICATION_API.md](TECH_AUTHENTICATION_API.md) | SETUP_AUTHENTICATION.md, PROCESS_AUTH_PHASE_2_SUMMARY.md |
 | Anonymous Teams | [FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md) | CORE_USER_GUIDE.md, CORE_ARCHITECTURE.md |
 
@@ -163,7 +153,7 @@ Our documentation follows these categories:
    - Naming: `FEATURE_*.md` prefix
 
 4. **Process** - Project history and maintenance records
-   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CLEANUP_SUMMARY.md
+   - Examples: CORE_CHANGELOG.md, TECH_MIGRATION.md, PROCESS_CONSOLIDATION_RECOVERY.md
    - Format: Chronological with decision rationale
    - Naming: `PROCESS_*.md` prefix (or `CORE_`/`TECH_` if ongoing)
 

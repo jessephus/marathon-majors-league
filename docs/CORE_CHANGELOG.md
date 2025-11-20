@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Documentation Organization** (November 19, 2025)
+  - Cleaned up docs folder by removing 6 temporary PROCESS documents (1,717 lines)
+  - Removed completed summaries: PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_PLAN, PROCESS_DRAFT_FEATURE_EXTRACTION, PROCESS_EDITABLE_WA_ID_FEATURE, PROCESS_MONOLITH_CLEANUP_SUMMARY, PROCESS_UTILITY_EXTRACTION
+  - Retained 8 important PROCESS docs: AUTH_PHASE_1_SUMMARY, AUTH_PHASE_2_SUMMARY, CONSOLIDATION_RECOVERY, DOCS_HEALTH_CHECK, MONOLITH_AUDIT, PHASE4_PERFORMANCE_REPORT, ROUTING_PHASE1, TECH_DEBT
+  - Moved migrations/PHASE_1_SUMMARY.md to docs/PROCESS_AUTH_PHASE_1_SUMMARY.md
+  - Updated docs/README.md with accurate category counts (34 total docs)
+  - Updated .github/copilot-instructions.md with current documentation structure
+  - Fixed all broken references to removed documents
+  - Documentation now organized into 5 categories: CORE (5), TECH (10), FEATURE (9), PROCESS (8), SETUP (1)
+
 ### Deprecated
 - **Snake Draft and Player Rankings System** (November 11, 2025)
   - Season League mode with ranking + snake draft is now deprecated
