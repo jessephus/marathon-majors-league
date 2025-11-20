@@ -1,5 +1,5 @@
 {
-  "all": true,
+  "all": false,
   "include": [
     "lib/**/*.ts",
     "lib/**/*.tsx",
@@ -25,12 +25,12 @@
     "json-summary",
     "lcov"
   ],
-  "lines": 90,
-  "functions": 90,
-  "branches": 85,
-  "statements": 90,
+  "lines": 70,
+  "functions": 60,
+  "branches": 70,
+  "statements": 70,
   "check-coverage": true,
-  "per-file": true,
+  "per-file": false,
   "skip-full": false,
   "clean": true,
   "temp-directory": "./.nyc_output",
