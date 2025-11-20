@@ -43,6 +43,15 @@ export default async function handler(req, res) {
       });
     }
     
+    // Validate required fields - prevent incomplete sessions
+    // Sessions MUST have game_id and either displayName or playerCode
+    if (!gameId || (!displayName && !playerCode)) {
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        message: 'gameId and either displayName or playerCode are required'
+      });
+    }
+    
     // Validate expiry days
     if (expiryDays < 1 || expiryDays > 365) {
       return res.status(400).json({ 
