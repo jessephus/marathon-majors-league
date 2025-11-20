@@ -204,26 +204,65 @@ jobs:
               issue_number: context.issue.number,
             });
             
-            const botComment = comments.find(comment => 
+            const masterComment = comments.find(comment => 
               comment.user.type === 'Bot' && 
-              comment.body.includes('📚 Documentation Health Check Report')
+              comment.body.includes('<!-- AUTOMATED_TESTS_MASTER_COMMENT -->')
             );
             
-            if (botComment) {
-              // Update existing comment
+            const docsSectionMarker = '<!-- DOCS_HEALTH_SECTION -->';
+            const docsSectionEnd = '<!-- DOCS_HEALTH_SECTION_END -->';
+            
+            const docsSectionContent = report.replace(/^## 📚 Documentation Health Check Report$/m, '### 📚 Documentation Health Check');
+            
+            if (masterComment) {
+              // Update existing master comment
+              let updatedBody = masterComment.body;
+              
+              // Replace docs section if it exists, otherwise append
+              const docsSectionRegex = new RegExp(
+                `${docsSectionMarker}[\\s\\S]*?${docsSectionEnd}`,
+                'g'
+              );
+              
+              if (updatedBody.includes(docsSectionMarker)) {
+                updatedBody = updatedBody.replace(
+                  docsSectionRegex,
+                  `${docsSectionMarker}\n${docsSectionContent}\n${docsSectionEnd}`
+                );
+              } else {
+                // Add docs section before the footer
+                updatedBody = updatedBody.replace(
+                  /---\n\n_Updated by automated workflows/,
+                  `${docsSectionMarker}\n${docsSectionContent}\n${docsSectionEnd}\n\n---\n\n_Updated by automated workflows`
+                );
+              }
+              
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
-                body: report
+                comment_id: masterComment.id,
+                body: updatedBody
               });
             } else {
-              // Create new comment
+              // Create new master comment
+              const newBody = [
+                '<!-- AUTOMATED_TESTS_MASTER_COMMENT -->',
+                '## 🤖 Automated Tests',
+                '',
+                `${docsSectionMarker}`,
+                docsSectionContent,
+                `${docsSectionEnd}`,
+                '',
+                '---',
+                '',
+                '_Updated by automated workflows • Do not edit manually_'
+              ].join('\n');
+              
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: report
+                body: newBody
               });
             }
       
