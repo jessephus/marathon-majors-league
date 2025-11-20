@@ -36,7 +36,8 @@
     "test:dynamic:e2e": "node tests/dynamic-import-e2e.test.js",
     "test:perf-instrumentation": "tsx tests/performance-instrumentation.test.js",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=json-summary npm test",
-    "test:coverage:new": "c8 --reporter=text --reporter=json-summary --include='lib/**/*.ts' --include='lib/**/*.tsx' --include='components/**/*.tsx' --lines 70 --functions 60 --branches 70 -- sh -c 'npm run test:state && npm run test:dynamic && npm run test:ssr'",
+    "test:api-client:coverage": "tsx tests/api-client-coverage.test.js",
+    "test:coverage:new": "c8 --reporter=text --reporter=json-summary --include='lib/**/*.ts' --include='lib/**/*.tsx' --include='components/**/*.tsx' --lines 70 --functions 60 --branches 70 -- sh -c 'npm run test:state && npm run test:dynamic && npm run test:api-client:coverage && npm run test:ssr'",
     "validate:no-legacy": "node scripts/validate-no-legacy-imports.js"
   },
   "dependencies": {
