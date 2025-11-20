@@ -4,13 +4,13 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **7 main categories** with **34 total documents**.
+Our documentation is organized into **5 main categories** with **27 documentation files** (plus this README = 28 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
 - `TECH_*.md` - Technical reference (8 docs)
-- `FEATURE_*.md` - Game features (8 docs)
-- `PROCESS_*.md` - Project history (8 docs)
+- `FEATURE_*.md` - Game features (7 docs)
+- `PROCESS_*.md` - Project history (6 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 
 ---
@@ -223,14 +223,14 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 32 docs + 1 index (33 files) | Well-organized with category prefixes |
+| Total Documents | 27 docs + 1 index (28 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently updated for merge cleanup |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
-**Last Audit:** November 10, 2025 (Added MANUAL_TESTING_DRAFT_EXTRACTION.md)  
+**Last Audit:** November 20, 2025 (Documentation consolidation: 33 → 27 files)  
 **Next Review:** February 2026
 
 ---
