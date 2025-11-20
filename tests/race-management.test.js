@@ -131,12 +131,12 @@ describe('Race Management API - CRUD Operations', () => {
         name: 'Visual Test Marathon 2025',
         date: '2025-12-15',
         location: 'Visual Test City, USA',
-        lock_time: '2025-12-15T08:30:00-05:00',
-        logo_url: 'https://example.com/logo.png',
-        background_image_url: 'https://example.com/background.jpg',
-        primary_color: '#FF5733',
-        secondary_color: '#33C3FF',
-        accent_color: '#FFD700'
+        lockTime: '2025-12-15T08:30:00-05:00',
+        logoUrl: 'https://example.com/logo.png',
+        backgroundImageUrl: 'https://example.com/background.jpg',
+        primaryColor: '#FF5733',
+        secondaryColor: '#33C3FF',
+        accentColor: '#FFD700'
       };
       
       const { response, data, status } = await apiRequest('/api/races', {
@@ -146,12 +146,12 @@ describe('Race Management API - CRUD Operations', () => {
       
       assert.strictEqual(status, 201, 'Should return 201 Created');
       assert.ok(data.id, 'Should return race ID');
-      assert.strictEqual(data.lockTime, raceData.lock_time, 'Lock time should match');
-      assert.strictEqual(data.logoUrl, raceData.logo_url, 'Logo URL should match');
-      assert.strictEqual(data.backgroundImageUrl, raceData.background_image_url, 'Background URL should match');
-      assert.strictEqual(data.primaryColor, raceData.primary_color, 'Primary color should match');
-      assert.strictEqual(data.secondaryColor, raceData.secondary_color, 'Secondary color should match');
-      assert.strictEqual(data.accentColor, raceData.accent_color, 'Accent color should match');
+      assert.strictEqual(data.lockTime, raceData.lockTime, 'Lock time should match');
+      assert.strictEqual(data.logoUrl, raceData.logoUrl, 'Logo URL should match');
+      assert.strictEqual(data.backgroundImageUrl, raceData.backgroundImageUrl, 'Background URL should match');
+      assert.strictEqual(data.primaryColor, raceData.primaryColor, 'Primary color should match');
+      assert.strictEqual(data.secondaryColor, raceData.secondaryColor, 'Secondary color should match');
+      assert.strictEqual(data.accentColor, raceData.accentColor, 'Accent color should match');
       
       testData.races.push(data.id);
       
@@ -276,11 +276,11 @@ describe('Race Management API - CRUD Operations', () => {
     
     it('should update race visual customization fields', async () => {
       const updates = {
-        lock_time: '2025-12-01T09:00:00-05:00',
-        logo_url: 'https://example.com/new-logo.png',
-        primary_color: '#FF0000',
-        secondary_color: '#00FF00',
-        accent_color: '#0000FF'
+        lockTime: '2025-12-01T09:00:00-05:00',
+        logoUrl: 'https://example.com/new-logo.png',
+        primaryColor: '#FF0000',
+        secondaryColor: '#00FF00',
+        accentColor: '#0000FF'
       };
       
       const { response, data, status } = await apiRequest(`/api/races?id=${testRaceId}`, {
@@ -289,9 +289,9 @@ describe('Race Management API - CRUD Operations', () => {
       });
       
       assert.strictEqual(status, 200, 'Should return 200 OK');
-      assert.strictEqual(data.lockTime, updates.lock_time, 'Lock time should be updated');
-      assert.strictEqual(data.logoUrl, updates.logo_url, 'Logo URL should be updated');
-      assert.strictEqual(data.primaryColor, updates.primary_color, 'Primary color should be updated');
+      assert.strictEqual(data.lockTime, updates.lockTime, 'Lock time should be updated');
+      assert.strictEqual(data.logoUrl, updates.logoUrl, 'Logo URL should be updated');
+      assert.strictEqual(data.primaryColor, updates.primaryColor, 'Primary color should be updated');
       
       console.log('✅ Race visual fields updated successfully');
       console.log('   New lock time:', data.lockTime);
