@@ -4,7 +4,7 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **25 documentation files** (plus this README = 26 total).
+Our documentation is organized into **5 main categories** with **26 documentation files** (plus this README = 27 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
@@ -78,7 +78,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
 | **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |
 
-### 4️⃣ Process & Maintenance (Project History - 5 docs)
+### 4️⃣ Process & Maintenance (Project History - 6 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -87,6 +87,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
 | **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking (includes UI helper duplication & games.players[] deprecation) | Current cleanup initiatives |
 | **[PROCESS_UI_UX_AUDIT.md](PROCESS_UI_UX_AUDIT.md)** | Complete UI/UX inventory and gap analysis | Planning redesign and improvements |
+| **[UI_INVENTORY_QUICK_REFERENCE.md](UI_INVENTORY_QUICK_REFERENCE.md)** | Quick lookup guide for all UI elements | Fast reference during development |
 
 ### 5️⃣ Setup & Authentication
 
@@ -215,14 +216,14 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 25 docs + 1 index (26 files) | Well-organized with category prefixes |
+| Total Documents | 26 docs + 1 index (27 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently updated for merge cleanup |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
-**Last Audit:** November 20, 2025 (Documentation consolidation: 27 → 24 files, UI/UX audit added)  
+**Last Audit:** November 20, 2025 (UI/UX audit and quick reference added)  
 **Next Review:** February 2026
 
 ---
