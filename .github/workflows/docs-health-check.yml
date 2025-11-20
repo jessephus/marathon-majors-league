@@ -182,6 +182,8 @@ jobs:
               echo "💡 **Recommendation**: Review the [Documentation Standards](https://github.com/${{ github.repository }}/blob/main/docs/README.md#-documentation-standards) for guidance."
               echo ""
               echo "<sub>This check runs automatically when documentation changes. See [docs-health-check.yml](https://github.com/${{ github.repository }}/blob/main/.github/workflows/docs-health-check.yml) for details.</sub>"
+              echo ""
+              echo "---"
             } > /tmp/doc-health-report.md
             
             echo "summary=⚠️ Documentation health: NEEDS ATTENTION ($ERROR_COUNT issues)" >> $GITHUB_OUTPUT
@@ -212,7 +214,9 @@ jobs:
                 '',
                 '✅ **All checks passed!**',
                 '',
-                '_No issues detected. Documentation is healthy!_'
+                '_No issues detected. Documentation is healthy!_',
+                '',
+                '---'
               ].join('\n');
             }
             
