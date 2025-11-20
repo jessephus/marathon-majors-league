@@ -37,8 +37,9 @@
     "test:perf-instrumentation": "tsx tests/performance-instrumentation.test.js",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=json-summary npm test",
     "test:api-client:coverage": "tsx tests/api-client-coverage.test.js",
+    "test:feature-flags:coverage": "tsx tests/feature-flags-coverage.test.js",
     "test:dynamic-import:coverage": "tsx tests/dynamic-import-coverage.test.js",
-    "test:coverage:new": "c8 --reporter=text --reporter=json-summary --include='lib/**/*.ts' --include='lib/**/*.tsx' --include='components/**/*.tsx' --lines 70 --functions 60 --branches 70 -- sh -c 'npm run test:state && npm run test:dynamic && npm run test:perf-instrumentation && npm run test:api-client:coverage && npm run test:dynamic-import:coverage && npm run test:ssr'",
+    "test:coverage:new": "c8 --reporter=text --reporter=json-summary --include='lib/**/*.ts' --include='lib/**/*.tsx' --include='components/**/*.tsx' --lines 70 --functions 60 --branches 70 -- sh -c 'npm run test:state && npm run test:dynamic && npm run test:perf-instrumentation && npm run test:api-client:coverage && npm run test:dynamic-import:coverage && npm run test:feature-flags:coverage && npm run test:ssr'",
     "validate:no-legacy": "node scripts/validate-no-legacy-imports.js"
   },
   "dependencies": {
