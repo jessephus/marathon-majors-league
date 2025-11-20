@@ -232,6 +232,18 @@ test('should handle feature flag disabled scenario', () => {
     featureFlags.clearOverrides();
 });
 
+// Additional Dynamic Import Tests
+console.log('\nAdditional Dynamic Import Coverage:');
+
+test('should have all chunk names defined', () => {
+    assertHasProperty(CHUNK_NAMES, 'ATHLETE_MODAL', 'Should have ATHLETE_MODAL');
+    assertHasProperty(CHUNK_NAMES, 'COMMISSIONER_RESULTS', 'Should have COMMISSIONER_RESULTS');
+    assertHasProperty(CHUNK_NAMES, 'COMMISSIONER_ATHLETES', 'Should have COMMISSIONER_ATHLETES');
+    assertHasProperty(CHUNK_NAMES, 'COMMISSIONER_TEAMS', 'Should have COMMISSIONER_TEAMS');
+    assertHasProperty(CHUNK_NAMES, 'LEADERBOARD_TABLE', 'Should have LEADERBOARD_TABLE');
+    assertHasProperty(CHUNK_NAMES, 'BUDGET_TRACKER', 'Should have BUDGET_TRACKER');
+});
+
 // Print summary
 console.log('\n' + '='.repeat(50));
 console.log(`Test Results: ${passedTests} passed, ${failedTests} failed`);
