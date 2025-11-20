@@ -1324,6 +1324,218 @@ npm run build:analyze
 
 ---
 
+## Routing Phase 1 Implementation
+
+**Completion Date:** November 4, 2025  
+**Status:** ✅ Completed  
+**Related Issue:** [#82 - Componentization](https://github.com/jessephus/marathon-majors-league/issues/82)
+
+### Overview
+
+Phase 1 establishes Next.js page structure with feature flags, enabling parallel implementation where new React pages coexist with legacy monolithic code. This foundation enables gradual migration without breaking existing functionality.
+
+### New Page Structure
+
+| Route | File | Purpose | Bundle Size |
+|-------|------|---------|-------------|
+| `/` | `pages/index.js` | Landing page with SSR (PR #107) | SSR-enabled |
+| `/leaderboard` | `pages/leaderboard.tsx` | Fantasy/race results | 2.33 KB |
+| `/commissioner` | `pages/commissioner.tsx` | Admin dashboard | 2.71 KB |
+| `/team/[session]` | `pages/team/[session].tsx` | Salary cap draft | 2.79 KB |
+
+**Note:** The experimental `/landing` route has been **deprecated and removed** as of November 9, 2025. The primary landing page is now `/` (pages/index.js) with full SSR support.
+
+**Total new code:** ~8 KB (excluding shared framework)  
+**Shared framework:** 97.5 KB (React, Next.js, state provider)
+
+### Shared Infrastructure
+
+| Module | Purpose | Location |
+|--------|---------|----------|
+| **State Provider** | React Context for global state | `lib/state-provider.tsx` |
+| **API Client** | Centralized API communication | `lib/api-client.ts` |
+| **Feature Flags** | Environment-based toggles | `lib/feature-flags.ts` |
+
+### Components
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| **AthleteModal** | Portal-based athlete details modal | `components/AthleteModal.tsx` |
+| **Footer** | Shared footer with session buttons | `components/Footer.tsx` |
+
+### Architecture Principles
+
+**✅ Acceptance Criteria Met:**
+
+1. **Bundle Separation:** Each page has its own bundle (verified via `npm run build:analyze`)
+2. **SSR Stub Data:** All pages render with stub data matching this SSR strategy
+3. **No Legacy Imports:** Zero imports from `/public/app.js` or `/public/salary-cap-draft.js`
+4. **Shared Infrastructure Only:** Pages import only state provider and API client
+
+**Key Design Decisions:**
+
+**State Management:**
+- React Context API instead of global variables
+- Matches legacy state shape for easy migration
+- Type-safe with TypeScript interfaces
+
+**API Communication:**
+- Centralized `apiClient` with organized endpoint methods
+- Consistent error handling
+- Easy to mock for testing
+
+**Feature Flags:**
+- Environment variables control new vs. legacy pages
+- Gradual rollout without deployment risk
+- Easy A/B testing
+
+### Enabling New Pages
+
+Create `.env.local` file:
+
+```bash
+# Enable individual pages
+NEXT_PUBLIC_ENABLE_NEW_LANDING=true
+NEXT_PUBLIC_ENABLE_NEW_LEADERBOARD=true
+NEXT_PUBLIC_ENABLE_NEW_COMMISSIONER=true
+NEXT_PUBLIC_ENABLE_NEW_TEAM_SESSION=true
+NEXT_PUBLIC_ENABLE_ATHLETE_MODAL=true
+```
+
+### Using State Provider
+
+```typescript
+import { AppStateProvider, useGameState } from '@/lib/state-provider';
+
+function MyComponent() {
+  const { gameState, setGameState } = useGameState();
+  
+  // Read state
+  const athletes = gameState.athletes;
+  
+  // Update state
+  setGameState({ draftComplete: true });
+}
+
+// Wrap app in provider
+<AppStateProvider>
+  <MyComponent />
+</AppStateProvider>
+```
+
+### Using API Client
+
+```typescript
+import { apiClient } from '@/lib/api-client';
+
+// Fetch athletes
+const athletes = await apiClient.athletes.list();
+
+// Create session
+const session = await apiClient.session.create('Team Name', 'Owner');
+
+// Submit team
+await apiClient.salaryCapDraft.submitTeam(gameId, playerCode, team);
+```
+
+### Performance Metrics
+
+**Bundle Analysis:**
+```
+Route                  Size       First Load JS
+/ (index)             SSR        Varies (feature flag)
+/leaderboard          2.33 kB     99.8 kB
+/commissioner         2.71 kB     100 kB
+/team/[session]       2.79 kB     100 kB
+```
+
+**Shared bundle:** 97.5 KB (React 19, Next.js 15.5.6)
+
+### Build Performance
+
+- TypeScript compilation: ✅ No errors
+- Bundle optimization: ✅ Successful
+- SSR rendering: ✅ Working
+- Development HMR: ✅ Fast refresh enabled
+
+### File Structure
+
+```
+/marathon-majors-league
+├── components/
+│   ├── AthleteModal.tsx          # Portal-based modal component
+│   └── Footer.tsx                # Shared footer component
+├── lib/
+│   ├── state-provider.tsx        # React Context state management
+│   ├── api-client.ts             # Centralized API layer
+│   └── feature-flags.ts          # Feature toggle system
+├── pages/
+│   ├── index.js                  # Legacy app (unchanged)
+│   ├── leaderboard.tsx           # New leaderboard
+│   ├── commissioner.tsx          # New commissioner dashboard
+│   └── team/
+│       └── [session].tsx         # New team session
+├── public/
+│   ├── app.js                    # Legacy monolith (unchanged)
+│   └── salary-cap-draft.js       # Legacy draft UI (unchanged)
+└── .env.example                  # Feature flag documentation
+```
+
+### Migration Path
+
+**Current State (Phase 1):**
+```
+pages/
+├── index.js          # Legacy monolithic SPA (still primary)
+├── leaderboard.tsx   # New leaderboard (feature flagged)
+├── commissioner.tsx  # New commissioner (feature flagged)
+└── team/
+    └── [session].tsx # New team session (feature flagged)
+```
+
+**Phase 2 (Future):**
+- Replace `pages/index.js` with Next.js pages
+- Remove feature flags (new pages become default)
+- Add actual data fetching in SSR
+- Implement ISR (Incremental Static Regeneration)
+
+**Phase 3 (Future):**
+- Extract remaining features from monolith
+- Remove legacy `app.js` and `salary-cap-draft.js`
+- Complete React component migration
+- Optimize bundle sizes
+
+### Testing Checklist
+
+- [x] Build succeeds without TypeScript errors
+- [x] Bundle analyzer shows page-specific bundles
+- [x] No imports from legacy monolith files
+- [x] State provider works with React Context
+- [x] API client organizes endpoint methods
+- [x] Feature flags toggle page visibility
+- [ ] Pages render correctly in development mode
+- [ ] Session verification works
+- [ ] API calls succeed with stub responses
+- [ ] AthleteModal opens as portal
+- [ ] Mobile responsive design verified
+
+### Known Limitations (Phase 1)
+
+1. **No actual data fetching in SSR:** Pages use stub data per this SSR strategy
+2. **Feature flags required:** New pages hidden by default
+3. **Limited functionality:** Pages are placeholders - full UX in Phase 2
+4. **No legacy replacement:** Old pages still serve traffic
+5. **Manual testing required:** Automated tests for Phase 2
+
+### Related Files
+
+- Original documentation: `docs/PROCESS_ROUTING_PHASE1.md` (consolidated here)
+- State provider: `lib/state-provider.tsx`
+- API client: `lib/api-client.ts`
+- Feature flags: `lib/feature-flags.ts`
+
+---
+
 ## Next Steps
 
 ### Phase 1 (Current - Routing)

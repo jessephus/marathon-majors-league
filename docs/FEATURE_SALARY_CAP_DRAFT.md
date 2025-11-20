@@ -297,11 +297,192 @@ Manual test checklist:
 - Verify athletes table has data
 - Check browser console for API errors
 
+---
+
+## Auto-Save Feature
+
+### Overview
+
+The auto-save feature automatically saves partial team rosters to prevent data loss when users navigate away before completing their team selection.
+
+### User Experience
+
+#### For New Teams (No Complete Roster Submitted)
+
+When a user is building their team for the first time:
+
+1. **Automatic Saving**: Every time they select or remove an athlete, the roster auto-saves to the database after a 1-second delay
+2. **Seamless Experience**: No visible indicators - happens silently in the background
+3. **Data Persistence**: If the user closes their browser or navigates away, their partial selections are preserved
+4. **Return Visit**: When they return using their session URL, their partial roster loads automatically
+
+#### For Editing Submitted Teams
+
+When a user has already submitted a complete team and returns to edit:
+
+1. **No Auto-Save**: Changes are NOT automatically saved
+2. **Explicit Submit**: User must click "Submit Team" to save any modifications
+3. **Safety**: Prevents accidental overwrites of carefully constructed rosters
+
+#### For Locked Rosters
+
+After the race starts (roster lock time):
+
+1. **Read-Only**: Auto-save is disabled (roster cannot be modified)
+2. **View Only**: Users can view their team but cannot make changes
+
+### Technical Implementation
+
+#### Database Schema
+
+Added `is_complete` column to `salary_cap_teams` table:
+
+```sql
+ALTER TABLE salary_cap_teams 
+ADD COLUMN is_complete BOOLEAN DEFAULT FALSE;
+```
+
+- `is_complete = FALSE`: Auto-saved partial roster (in progress)
+- `is_complete = TRUE`: Fully submitted complete roster (3 men + 3 women)
+
+#### API Endpoints
+
+**POST `/api/teams/partial-save`**
+
+Auto-saves partial rosters without marking them as complete.
+
+Request:
+```json
+{
+  "roster": [
+    { "slotId": "M1", "athleteId": 123, "salary": 5000 },
+    { "slotId": "M2", "athleteId": null, "salary": null },
+    ...
+  ]
+}
+```
+
+Response:
+```json
+{
+  "message": "Partial roster auto-saved",
+  "athleteCount": 2,
+  "totalSpent": 11000,
+  "autoSaveEnabled": true
+}
+```
+
+Behavior:
+- Accepts incomplete rosters (any number of athletes)
+- Sets `is_complete = FALSE` in database
+- Rejects if roster already marked as complete (returns `autoSaveEnabled: false`)
+- Requires valid session token for authentication
+
+#### Frontend Implementation
+
+**Component: `pages/team/[session].tsx`**
+
+Auto-save logic with 1-second debounce:
+- Triggers after every roster change
+- Skips if team already submitted or roster is locked
+- Silent failure handling (console error only, no user interruption)
+- Uses `useRef` to prevent auto-save on initial page load
+
+### Migration
+
+Migration script: `migrations/011_add_is_complete_to_salary_cap_teams.sql`
+
+Marks all existing rosters with 6 athletes as complete for backward compatibility.
+
+---
+
+## Roster Lock Time
+
+### Overview
+
+The roster lock time feature allows commissioners to set a deadline after which roster edits are permanently locked. This prevents team changes after a certain time, ensuring fairness when the race or event begins.
+
+### Database Schema
+
+A `roster_lock_time` column was added to the `games` table:
+
+```sql
+ALTER TABLE games 
+ADD COLUMN roster_lock_time TIMESTAMP WITH TIME ZONE;
+```
+
+### Default Configuration
+
+For the **default game**, the roster lock time is set to:
+- **Date**: November 2, 2025
+- **Time**: 8:35 AM EST (13:35 UTC)
+
+This is configured via the migration script `migrations/005_roster_lock_time.sql`.
+
+### Behavior
+
+1. **Before Lock Time**: Users can edit their rosters normally via the salary cap draft interface
+2. **After Lock Time**: 
+   - The roster becomes permanently locked (similar to when race results are entered)
+   - All edit buttons are hidden
+   - Users can view their roster but cannot make changes
+   - A notice is displayed showing the lock time
+
+### UI Indicators
+
+The salary cap draft page displays:
+- **Before lock**: "⏰ Roster Lock: Rosters will lock at [date/time]" (orange background)
+- **After lock**: "⏰ Roster Lock: Rosters locked as of [date/time]" (red background)
+
+### API Changes
+
+**GET /api/game-state** now includes:
+```json
+{
+  "rosterLockTime": "2025-11-02T13:35:00.000Z"
+}
+```
+
+### Customization
+
+To set a different lock time for a game:
+
+```sql
+UPDATE games 
+SET roster_lock_time = '2025-11-03 09:00:00+00'::timestamptz
+WHERE game_id = 'your-game-id';
+```
+
+Or via the API:
+
+```javascript
+await fetch('/api/game-state?gameId=your-game-id', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    rosterLockTime: '2025-11-03T09:00:00.000Z'
+  })
+});
+```
+
+### Time Zone Considerations
+
+- The database stores times in UTC with timezone information (`TIMESTAMP WITH TIME ZONE`)
+- The frontend displays times in the user's local timezone
+- EST (Eastern Standard Time) is UTC-5
+- EDT (Eastern Daylight Time) is UTC-4
+
+---
+
 ## References
 
 - Salary calculation algorithm: `scripts/calculate-athlete-salaries.js`
 - Test script: `scripts/test-salary-calculation.js`
 - API endpoint: `pages/api/salary-cap-draft.js`
+- Partial save endpoint: `pages/api/teams/partial-save.js`
 - Client UI logic: `public/salary-cap-draft.js`
+- Team page component: `pages/team/[session].tsx`
 - Styles: `public/style.css` (Salary Cap Draft section)
-- Database schema: `schema.sql` (athletes table)
+- Database schema: `schema.sql` (athletes, salary_cap_teams, games tables)
+- Auto-save migration: `migrations/011_add_is_complete_to_salary_cap_teams.sql`
+- Roster lock migration: `migrations/005_roster_lock_time.sql`
