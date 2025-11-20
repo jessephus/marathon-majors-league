@@ -9,6 +9,7 @@ import {
   GameStateManager, 
   LocalStorageAdapter,
   resetStateManager,
+  getStateManager,
 } from '../lib/state-manager.ts';
 
 // Mock localStorage for Node.js environment
@@ -443,6 +444,89 @@ async function runTests() {
     manager.clearCommissionerSession();
     
     assert(logoutEventFired === true, 'Commissioner logout event fired');
+  }
+  console.log('');
+  
+  // Test 16: LocalStorageAdapter Verification
+  console.log('❌ Test 16: LocalStorageAdapter Verification');
+  {
+    // The LocalStorageAdapter methods work with localStorage
+    // In our test environment, localStorage is mocked, so these operations work
+    const adapter = new LocalStorageAdapter();
+    
+    // Just verify the adapter exists and has the required methods
+    assert(typeof adapter.saveSession === 'function', 'Should have saveSession method');
+    assert(typeof adapter.loadSession === 'function', 'Should have loadSession method');
+    assert(typeof adapter.clearSession === 'function', 'Should have clearSession method');
+    assert(typeof adapter.saveCommissionerSession === 'function', 'Should have saveCommissionerSession method');
+    assert(typeof adapter.loadCommissionerSession === 'function', 'Should have loadCommissionerSession method');
+    assert(typeof adapter.clearCommissionerSession === 'function', 'Should have clearCommissionerSession method');
+    assert(typeof adapter.saveGameId === 'function', 'Should have saveGameId method');
+    assert(typeof adapter.loadGameId === 'function', 'Should have loadGameId method');
+  }
+  console.log('');
+  
+  // Test 17: getStateManager Singleton
+  console.log('🔄 Test 17: getStateManager Singleton');
+  {
+    resetStateManager();
+    
+    const manager1 = getStateManager({ debug: false });
+    const manager2 = getStateManager({ debug: false });
+    
+    assert(manager1 === manager2, 'Should return same instance');
+    
+    manager1.updateGameState({ testValue: 'shared' });
+    const state = manager2.getGameState();
+    assert(state.testValue === 'shared', 'State should be shared across instances');
+  }
+  console.log('');
+  
+  // Test 18: Edge Cases in Session Updates
+  console.log('🔍 Test 18: Edge Cases in Session Updates');
+  {
+    resetStateManager();
+    const adapter = new MockStorageAdapter();
+    const manager = new GameStateManager({ storageAdapter: adapter, debug: false });
+    
+    // Test partial session updates
+    manager.updateSession({ token: 'token1' });
+    manager.updateSession({ teamName: 'New Team' });
+    const session = manager.getSessionState();
+    assert(session.token === 'token1', 'Token should persist');
+    assert(session.teamName === 'New Team', 'Team name should update');
+    
+    // Test null/undefined values
+    manager.updateSession({ token: null });
+    const sessionAfterNull = manager.getSessionState();
+    assert(sessionAfterNull.token === null, 'Should handle null token');
+  }
+  console.log('');
+  
+  // Test 19: Cache Expiry Edge Cases
+  console.log('⏰ Test 19: Cache Expiry Edge Cases');
+  {
+    resetStateManager();
+    const adapter = new MockStorageAdapter();
+    const manager = new GameStateManager({ 
+      storageAdapter: adapter, 
+      debug: false,
+      gameStateCacheTTL: 50, // Very short TTL
+    });
+    
+    // Load state
+    await manager.loadGameState('test-game');
+    const state1 = manager.getGameState();
+    
+    // Wait for cache to expire
+    await new Promise(resolve => setTimeout(resolve, 60));
+    
+    // Load again - should fetch fresh
+    await manager.loadGameState('test-game');
+    const state2 = manager.getGameState();
+    
+    assert(state1.draftComplete === true, 'First load successful');
+    assert(state2.draftComplete === true, 'Second load after expiry successful');
   }
   console.log('');
   
