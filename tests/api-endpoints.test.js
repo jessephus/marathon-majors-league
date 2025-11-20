@@ -2,17 +2,27 @@
  * API Endpoints Test Suite
  * Tests all critical API endpoints after Next.js migration
  * 
+ * Uses Array Tracking for cleanup - resources tracked in module-level arrays
+ * and deleted in after() hook.
+ * 
  * Run with: node tests/api-endpoints.test.js
  * Or: npm test (if test script is added to package.json)
  */
 
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert';
-import { generateTestId, cleanupTestGame } from './test-utils.js';
+import { generateTestId } from './test-utils.js';
+import { neon } from '@neondatabase/serverless';
+
+const sql = neon(process.env.DATABASE_URL);
 
 // Configuration
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
 const GAME_ID = generateTestId('test-game');
+
+// Array Tracking - module-level arrays to track created resources
+const createdGames = [];
+const createdSessions = [];
 
 console.log('🧪 Testing API endpoints at:', BASE_URL);
 console.log('🎮 Using test game ID:', GAME_ID);
@@ -48,11 +58,48 @@ describe('API Endpoints - Post Migration Tests', () => {
   // Cleanup after all tests complete
   after(async () => {
     console.log('\n🧹 Cleaning up test data...');
+    const errors = [];
+    
     try {
-      await cleanupTestGame(GAME_ID);
-      console.log('✅ Test data cleaned up successfully\n');
+      // Delete sessions
+      if (createdSessions.length > 0) {
+        console.log(`   Deleting ${createdSessions.length} sessions...`);
+        for (const sessionId of createdSessions) {
+          try {
+            await sql`DELETE FROM anonymous_sessions WHERE id = ${sessionId}`;
+          } catch (error) {
+            errors.push(`session[${sessionId}]: ${error.message}`);
+          }
+        }
+      }
+      
+      // Delete games and all related data
+      if (createdGames.length > 0) {
+        console.log(`   Deleting ${createdGames.length} games...`);
+        for (const gameId of createdGames) {
+          try {
+            // Delete child records first
+            await sql`DELETE FROM race_results WHERE game_id = ${gameId}`;
+            await sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId}`;
+            await sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
+            await sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
+            await sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId}`;
+            
+            // Delete the game
+            await sql`DELETE FROM games WHERE game_id = ${gameId}`;
+          } catch (error) {
+            errors.push(`game[${gameId}]: ${error.message}`);
+          }
+        }
+      }
+      
+      if (errors.length > 0) {
+        console.error('⚠️  Cleanup errors:', errors);
+      } else {
+        console.log('✅ Cleanup successful');
+      }
     } catch (error) {
-      console.error('⚠️  Cleanup warning:', error.message, '\n');
+      console.error('⚠️  Cleanup failed:', error.message);
     }
   });
   
@@ -149,6 +196,9 @@ describe('API Endpoints - Post Migration Tests', () => {
       
       assert.strictEqual(status, 200, 'Should return 200 OK');
       assert.ok(data.message || data.success, 'Should indicate success');
+      
+      // Track the game for cleanup
+      createdGames.push(GAME_ID);
       
       console.log('✅ Game state creation working');
     });
@@ -335,13 +385,23 @@ describe('API Endpoints - Post Migration Tests', () => {
     
     it('should have session management endpoints', async () => {
       // Verify session endpoints exist (tested in detail by salary-cap-draft tests)
-      const { status } = await apiRequest('/api/session/create', {
+      const { status, data } = await apiRequest('/api/session/create', {
         method: 'POST',
-        body: JSON.stringify({ sessionType: 'player', displayName: 'Test' })
+        body: JSON.stringify({ 
+          sessionType: 'player', 
+          displayName: 'Test',
+          gameId: GAME_ID
+        })
       });
       
-      // Should respond (may be 400 for missing gameId, but endpoint exists)
+      // Should respond (may be 400 for validation errors, but endpoint exists)
       assert.ok(status !== 404, 'Session endpoint should exist');
+      
+      // Track session if created successfully
+      if (status === 201 && data.session?.id) {
+        createdSessions.push(data.session.id);
+      }
+      
       console.log('✅ Session management endpoints available');
     });
   });

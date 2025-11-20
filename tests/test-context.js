@@ -352,11 +352,19 @@ export class TestContext {
         }
       }
       
-      // 6. Games
+      // 6. Games (delete all related records by game_id first, then delete games)
       if (this.createdResources.games.length > 0) {
         console.log(`   Deleting ${this.createdResources.games.length} games...`);
         for (const gameId of this.createdResources.games) {
           try {
+            // Delete all child records for this game (in case they weren't tracked individually)
+            await this.sql`DELETE FROM race_results WHERE game_id = ${gameId}`;
+            await this.sql`DELETE FROM salary_cap_teams WHERE game_id = ${gameId}`;
+            await this.sql`DELETE FROM draft_teams WHERE game_id = ${gameId}`;
+            await this.sql`DELETE FROM player_rankings WHERE game_id = ${gameId}`;
+            await this.sql`DELETE FROM anonymous_sessions WHERE game_id = ${gameId}`;
+            
+            // Now delete the game itself
             await this.sql`DELETE FROM games WHERE game_id = ${gameId}`;
           } catch (error) {
             errors.push(`games[${gameId}]: ${error.message}`);

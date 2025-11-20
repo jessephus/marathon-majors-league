@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-11-20T18:37:53.829Z",
+  "timestamp": "2025-11-20T20:30:01.860Z",
   "tables": {
     "games": {
       "totalTestRecords": 0,
@@ -23,20 +23,13 @@
       "sampleRecords": []
     },
     "salary_cap_teams": {
-      "totalTestRecords": 6,
-      "uniqueTeams": 1,
+      "totalTestRecords": 0,
+      "uniqueTeams": 0,
       "patterns": {
         "test game_id": 0,
         "Test player_code": 0
       },
-      "sampleRecords": [
-        {
-          "game_id": "default",
-          "player_code": "311 leaderboardtest",
-          "athlete_count": 6,
-          "is_complete": true
-        }
-      ]
+      "sampleRecords": []
     },
     "draft_teams": {
       "totalTestRecords": 0,
@@ -103,15 +96,8 @@
     }
   },
   "summary": {
-    "totalTestRecords": 6,
-    "tablesWithTestData": 1,
-    "recommendations": [
-      {
-        "table": "salary_cap_teams",
-        "action": "Delete test salary cap teams",
-        "records": 6,
-        "command": "node scripts/cleanup-test-data.js"
-      }
-    ]
+    "totalTestRecords": 0,
+    "tablesWithTestData": 0,
+    "recommendations": []
   }
 }

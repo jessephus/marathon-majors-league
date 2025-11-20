@@ -43,9 +43,10 @@ async function auditTestData() {
       SELECT game_id, created_at, draft_complete, results_finalized, 
              array_length(players, 1) as player_count
       FROM games 
-      WHERE game_id LIKE '%test%' 
+      WHERE (game_id LIKE '%test%' 
          OR game_id LIKE '%e2e%' 
-         OR game_id LIKE '%integration%'
+         OR game_id LIKE '%integration%')
+        AND game_id != 'default'
       ORDER BY created_at DESC
     `;
     
@@ -71,11 +72,13 @@ async function auditTestData() {
       SELECT id, session_token, session_type, display_name, game_id, 
              created_at, is_active, expires_at
       FROM anonymous_sessions 
-      WHERE display_name LIKE '%Test%' 
+      WHERE (display_name LIKE '%Test%' 
          OR display_name LIKE '%test%'
          OR game_id LIKE '%test%'
          OR game_id LIKE '%e2e%'
-         OR game_id LIKE '%integration%'
+         OR game_id LIKE '%integration%')
+        AND game_id != 'default'
+        AND display_name NOT LIKE '%311%'
       ORDER BY created_at DESC
     `;
     
@@ -105,11 +108,13 @@ async function auditTestData() {
              MIN(submitted_at) as first_submission,
              BOOL_OR(is_complete) as is_complete
       FROM salary_cap_teams 
-      WHERE game_id LIKE '%test%' 
+      WHERE (game_id LIKE '%test%' 
          OR game_id LIKE '%e2e%' 
          OR game_id LIKE '%integration%'
          OR player_code LIKE '%Test%'
-         OR player_code LIKE '%test%'
+         OR player_code LIKE '%test%')
+        AND game_id != 'default'
+        AND player_code != '311'
       GROUP BY game_id, player_code
       ORDER BY first_submission DESC
     `;
@@ -136,11 +141,13 @@ async function auditTestData() {
       SELECT game_id, player_code, COUNT(*) as athlete_count,
              MIN(drafted_at) as first_draft
       FROM draft_teams 
-      WHERE game_id LIKE '%test%' 
+      WHERE (game_id LIKE '%test%' 
          OR game_id LIKE '%e2e%' 
          OR game_id LIKE '%integration%'
          OR player_code LIKE '%Test%'
-         OR player_code LIKE '%test%'
+         OR player_code LIKE '%test%')
+        AND game_id != 'default'
+        AND player_code != '311'
       GROUP BY game_id, player_code
       ORDER BY first_draft DESC
     `;
@@ -166,11 +173,13 @@ async function auditTestData() {
       SELECT game_id, player_code, COUNT(*) as ranking_count,
              MIN(submitted_at) as first_submission
       FROM player_rankings 
-      WHERE game_id LIKE '%test%' 
+      WHERE (game_id LIKE '%test%' 
          OR game_id LIKE '%e2e%' 
          OR game_id LIKE '%integration%'
          OR player_code LIKE '%Test%'
-         OR player_code LIKE '%test%'
+         OR player_code LIKE '%test%')
+        AND game_id != 'default'
+        AND player_code != '311'
       GROUP BY game_id, player_code
       ORDER BY first_submission DESC
     `;
@@ -197,9 +206,10 @@ async function auditTestData() {
              COUNT(CASE WHEN is_final THEN 1 END) as final_results,
              MIN(updated_at) as first_update
       FROM race_results 
-      WHERE game_id LIKE '%test%' 
+      WHERE (game_id LIKE '%test%' 
          OR game_id LIKE '%e2e%' 
-         OR game_id LIKE '%integration%'
+         OR game_id LIKE '%integration%')
+        AND game_id != 'default'
       GROUP BY game_id
       ORDER BY first_update DESC
     `;

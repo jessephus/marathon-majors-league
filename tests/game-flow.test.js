@@ -2,18 +2,21 @@
  * Complete Game Flow Test
  * Tests an entire game flow from start to finish
  * 
+ * Uses TestContext for automatic resource tracking and cleanup.
+ * Sequential execution: each test builds on the previous one.
+ * Suite-level cleanup ensures all resources are cleaned up after
+ * the complete flow finishes.
+ * 
  * Run with: node tests/game-flow.test.js
  */
 
-import { describe, it, after } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
-import { generateTestId, cleanupTestGame } from './test-utils.js';
+import { TestContext } from './test-context.js';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';
-const GAME_ID = generateTestId('e2e-test');
 
 console.log('🧪 Testing complete game flow at:', BASE_URL);
-console.log('🎮 Game ID:', GAME_ID);
 
 async function apiRequest(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
@@ -38,18 +41,19 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 describe('Complete Game Flow Test', () => {
+  let testCtx;
+  let gameId;
   let athletes = null;
   let teamNames = ['Team Alpha', 'Team Bravo', 'Team Charlie'];
   
-  // Cleanup after all tests complete
+  // Create context once for the entire suite (sequential flow test)
+  before(async () => {
+    testCtx = new TestContext('game-flow-test');
+  });
+  
+  // Cleanup once after all tests complete (suite-level cleanup)
   after(async () => {
-    console.log('\n🧹 Cleaning up test data...');
-    try {
-      await cleanupTestGame(GAME_ID);
-      console.log('✅ Test data cleaned up successfully\n');
-    } catch (error) {
-      console.error('⚠️  Cleanup warning:', error.message, '\n');
-    }
+    await testCtx.cleanup();
   });
   
   describe('1. Game Setup', () => {
@@ -65,20 +69,19 @@ describe('Complete Game Flow Test', () => {
     });
     
     it('should create game state', async () => {
-      // Modern game state (no players array - teams managed via salary cap draft)
-      const gameData = {
-        draftComplete: false,
-        resultsFinalized: false,
-        rosterLockTime: null
-      };
-      
-      const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`, {
-        method: 'POST',
-        body: JSON.stringify(gameData),
+      // Create game using TestContext - automatically tracked for cleanup
+      gameId = await testCtx.createGame({
+        players: [],
+        draft_complete: false,
+        results_finalized: false,
+        roster_lock_time: null
       });
       
-      assert.ok(status === 200 || status === 201, 'Should create game');
-      console.log('✅ Game state created');
+      console.log('✅ Game state created:', gameId);
+      
+      // Verify game was created
+      const { data, status } = await apiRequest(`/api/game-state?gameId=${gameId}`);
+      assert.strictEqual(status, 200, 'Should retrieve game state');
     });
   });
   
@@ -97,16 +100,19 @@ describe('Complete Game Flow Test', () => {
           body: JSON.stringify({
             sessionType: 'player',
             displayName: teamName,
-            gameId: GAME_ID
+            gameId
           })
         });
         
         assert.strictEqual(sessionResponse.status, 201, `Should create session for ${teamName}`);
-  const sessionToken = sessionResponse.data.session.token;
+        const sessionToken = sessionResponse.data.session.token;
         
-    // Then submit a salary cap draft team
-    const menAthletes = sortedMen.slice(i * 3, i * 3 + 3);
-    const womenAthletes = sortedWomen.slice(i * 3, i * 3 + 3);
+        // Track this session for cleanup (API creates it, we track it)
+        testCtx.trackResource('sessions', sessionResponse.data.session.id);
+        
+        // Then submit a salary cap draft team
+        const menAthletes = sortedMen.slice(i * 3, i * 3 + 3);
+        const womenAthletes = sortedWomen.slice(i * 3, i * 3 + 3);
         
         // Convert to API format (just IDs in objects)
         const team = {
@@ -123,7 +129,7 @@ describe('Complete Game Flow Test', () => {
           teamName
         };
         
-        const draftResponse = await apiRequest(`/api/salary-cap-draft?gameId=${GAME_ID}`, {
+        const draftResponse = await apiRequest(`/api/salary-cap-draft?gameId=${gameId}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${sessionToken}`
@@ -145,7 +151,7 @@ describe('Complete Game Flow Test', () => {
         draftComplete: true
       };
       
-      const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`, {
+      const { data, status } = await apiRequest(`/api/game-state?gameId=${gameId}`, {
         method: 'POST',
         body: JSON.stringify(updateData),
       });
@@ -163,7 +169,7 @@ describe('Complete Game Flow Test', () => {
         3: { finishTime: '2:07:45', splits: {} }
       };
       
-      const { data, status } = await apiRequest(`/api/results?gameId=${GAME_ID}`, {
+      const { data, status } = await apiRequest(`/api/results?gameId=${gameId}`, {
         method: 'POST',
         body: JSON.stringify(results),
       });
@@ -173,7 +179,7 @@ describe('Complete Game Flow Test', () => {
     });
     
     it('should retrieve race results', async () => {
-      const { data, status } = await apiRequest(`/api/results?gameId=${GAME_ID}`);
+      const { data, status } = await apiRequest(`/api/results?gameId=${gameId}`);
       
       assert.strictEqual(status, 200, 'Should retrieve results');
       console.log('✅ Race results retrieved');
@@ -186,7 +192,7 @@ describe('Complete Game Flow Test', () => {
         resultsFinalized: true
       };
       
-      const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`, {
+      const { data, status } = await apiRequest(`/api/game-state?gameId=${gameId}`, {
         method: 'POST',
         body: JSON.stringify(finalData),
       });
@@ -196,7 +202,7 @@ describe('Complete Game Flow Test', () => {
     });
     
     it('should verify final game state', async () => {
-      const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`);
+      const { data, status } = await apiRequest(`/api/game-state?gameId=${gameId}`);
       
       assert.strictEqual(status, 200, 'Should retrieve final state');
       assert.strictEqual(data.resultsFinalized, true, 'Should be finalized');
@@ -215,7 +221,7 @@ describe('Complete Game Flow Test', () => {
       // Fetch game state again after a delay
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      const { data, status } = await apiRequest(`/api/game-state?gameId=${GAME_ID}`);
+      const { data, status } = await apiRequest(`/api/game-state?gameId=${gameId}`);
       
       assert.strictEqual(status, 200, 'Should retrieve persisted data');
       // Note: data.players removed in PR #131 (deprecated snake draft)
@@ -238,7 +244,7 @@ describe('Complete Game Flow Test', () => {
     
     it('should reject invalid rankings data', async () => {
       const { data, status } = await apiRequest(
-        `/api/rankings?gameId=${GAME_ID}&playerCode=ALPHA`,
+        `/api/rankings?gameId=${gameId}&playerCode=ALPHA`,
         {
           method: 'POST',
           body: JSON.stringify({ men: [], women: [] }), // Invalid: empty arrays
@@ -263,7 +269,6 @@ describe('Complete Game Flow Test', () => {
 
 console.log('\n🎉 Complete game flow test completed!\n');
 console.log('📊 Summary:');
-console.log('   Game ID:', GAME_ID);
 console.log('   All critical paths tested');
 console.log('   Error handling verified');
 console.log('   Ready for production! ✨\n');
