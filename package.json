@@ -27,7 +27,7 @@
     "test:state": "tsx tests/state-manager.test.js",
     "test:state:integration": "tsx tests/state-manager-integration.test.js",
     "test:draft": "node src/features/draft/__tests__/validation.test.js",
-    "test:api-client": "node tests/api-client.test.js",
+    "test:api-client": "tsx tests/api-client.test.js",
     "test:ssr": "node tests/ssr-integration.test.js",
     "test:ssr:landing": "node tests/landing-page-ssr.test.js",
     "test:ssr:team": "node tests/team-session-ssr.test.js",

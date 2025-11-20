@@ -16,16 +16,48 @@ import assert from 'node:assert';
 console.log('🧪 Testing API Client\n');
 
 // Mock global.fetch for testing
-let mockFetch;
-let fetchCallCount = 0;
 let fetchCalls = [];
 
 beforeEach(() => {
-  fetchCallCount = 0;
   fetchCalls = [];
-  mockFetch = mock.fn(async (url, options) => {
-    fetchCallCount++;
+  
+  global.fetch = async (url, options) => {
     fetchCalls.push({ url, options });
+    
+    // Return appropriate mock response based on the URL
+    let responseData = { data: 'test' };
+    
+    if (url.includes('/api/session/create')) {
+      responseData = {
+        message: 'Session created',
+        session: {
+          token: 'test-token',
+          expiresAt: '2025-12-31T23:59:59Z',
+          sessionType: 'player',
+          displayName: 'Test Team',
+          gameId: 'default',
+        },
+        uniqueUrl: 'http://test.com/team/test-token',
+        instructions: 'Test instructions',
+      };
+    } else if (url.includes('/api/session/verify')) {
+      responseData = {
+        valid: true,
+        session: {
+          id: 'test-session-id',
+          type: 'player',
+          gameId: 'default',
+          playerCode: null,
+          displayName: 'Test Team',
+          expiresAt: '2025-12-31T23:59:59Z',
+          daysUntilExpiry: 365,
+        },
+      };
+    } else if (url.includes('/api/athletes')) {
+      responseData = { men: [], women: [] };
+    } else if (url.includes('/api/results')) {
+      responseData = { results: [] };
+    }
     
     // Default successful response
     return {
@@ -35,11 +67,9 @@ beforeEach(() => {
       headers: new Map([
         ['content-type', 'application/json'],
       ]),
-      json: async () => ({ data: 'test' }),
+      json: async () => responseData,
     };
-  });
-  
-  global.fetch = mockFetch;
+  };
 });
 
 describe('API Client - Module Loading', () => {
@@ -99,12 +129,6 @@ describe('API Client - Athlete API', () => {
   it('should list all athletes', async () => {
     const { athleteApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async (url) => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ men: [], women: [] }),
-    }));
     
     const result = await athleteApi.list();
     assert.ok(result, 'Should return result');
@@ -116,12 +140,6 @@ describe('API Client - Athlete API', () => {
   it('should list confirmed athletes only', async () => {
     const { athleteApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async (url) => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ men: [], women: [] }),
-    }));
     
     await athleteApi.list({ confirmedOnly: true });
     assert.ok(fetchCalls[0].url.includes('confirmedOnly=true'), 'Should pass confirmedOnly parameter');
@@ -131,12 +149,6 @@ describe('API Client - Athlete API', () => {
   it('should fetch athlete details', async () => {
     const { athleteApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ id: 1, name: 'Test Athlete' }),
-    }));
     
     await athleteApi.details(1);
     assert.ok(fetchCalls[0].url.includes('id=1'), 'Should include athlete ID');
@@ -146,12 +158,6 @@ describe('API Client - Athlete API', () => {
   it('should include optional parameters in athlete details', async () => {
     const { athleteApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ id: 1, progression: [] }),
-    }));
     
     await athleteApi.details(1, { progression: true, results: true });
     assert.ok(fetchCalls[0].url.includes('progression=true'), 'Should include progression parameter');
@@ -164,12 +170,6 @@ describe('API Client - Game State API', () => {
   it('should load game state', async () => {
     const { gameStateApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ draftComplete: false }),
-    }));
     
     await gameStateApi.load('test-game');
     assert.ok(fetchCalls[0].url.includes('gameId=test-game'), 'Should include gameId parameter');
@@ -179,12 +179,6 @@ describe('API Client - Game State API', () => {
   it('should save game state', async () => {
     const { gameStateApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     const state = { draftComplete: true };
     await gameStateApi.save('test-game', state);
@@ -199,20 +193,6 @@ describe('API Client - Session API', () => {
   it('should create a session', async () => {
     const { sessionApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({
-        session: {
-          token: 'test-token',
-          expiresAt: '2025-12-31',
-          sessionType: 'player',
-          displayName: 'Test Team',
-          gameId: 'default',
-        },
-      }),
-    }));
     
     const result = await sessionApi.create('Test Team', 'Owner', 'default');
     assert.strictEqual(result.token, 'test-token', 'Should return session token');
@@ -223,12 +203,6 @@ describe('API Client - Session API', () => {
   it('should verify a session token', async () => {
     const { sessionApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ valid: true }),
-    }));
     
     const result = await sessionApi.verify('test-token');
     assert.strictEqual(result.valid, true, 'Should return valid status');
@@ -241,12 +215,6 @@ describe('API Client - Results API', () => {
   it('should fetch results', async () => {
     const { resultsApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ results: [] }),
-    }));
     
     await resultsApi.fetch('test-game');
     assert.ok(fetchCalls[0].url.includes('gameId=test-game'), 'Should include gameId');
@@ -256,12 +224,6 @@ describe('API Client - Results API', () => {
   it('should fetch results with skipDNS option', async () => {
     const { resultsApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ results: [] }),
-    }));
     
     await resultsApi.fetch('test-game', { skipDNS: true });
     assert.ok(fetchCalls[0].url.includes('skipDNS=true'), 'Should include skipDNS parameter');
@@ -271,12 +233,6 @@ describe('API Client - Results API', () => {
   it('should update results', async () => {
     const { resultsApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     const results = { men: [], women: [] };
     await resultsApi.update('test-game', results);
@@ -287,12 +243,6 @@ describe('API Client - Results API', () => {
   it('should fetch scoring', async () => {
     const { resultsApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ scoring: {} }),
-    }));
     
     await resultsApi.getScoring('test-game');
     assert.ok(fetchCalls[0].url.includes('/api/scoring'), 'Should call scoring endpoint');
@@ -304,12 +254,6 @@ describe('API Client - Salary Cap Draft API', () => {
   it('should submit team', async () => {
     const { salaryCapDraftApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     const team = { men: [], women: [] };
     await salaryCapDraftApi.submitTeam('test-game', 'P123', team);
@@ -320,12 +264,6 @@ describe('API Client - Salary Cap Draft API', () => {
   it('should partial save roster', async () => {
     const { salaryCapDraftApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     const roster = { men: [], women: [] };
     await salaryCapDraftApi.partialSave('test-game', roster, 'token-123');
@@ -338,12 +276,6 @@ describe('API Client - Salary Cap Draft API', () => {
   it('should get team', async () => {
     const { salaryCapDraftApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ team: {} }),
-    }));
     
     await salaryCapDraftApi.getTeam('test-game', 'P123');
     assert.ok(fetchCalls[0].url.includes('playerCode=P123'), 'Should include playerCode');
@@ -355,12 +287,6 @@ describe('API Client - Commissioner API', () => {
   it('should verify TOTP code', async () => {
     const { commissionerApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     await commissionerApi.verifyTOTP('123456');
     assert.strictEqual(fetchCalls[0].options.method, 'POST', 'Should use POST method');
@@ -371,12 +297,6 @@ describe('API Client - Commissioner API', () => {
   it('should reset game', async () => {
     const { commissionerApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     await commissionerApi.resetGame('test-game');
     assert.ok(fetchCalls[0].url.includes('/api/reset-game'), 'Should call reset endpoint');
@@ -386,12 +306,6 @@ describe('API Client - Commissioner API', () => {
   it('should logout', async () => {
     const { commissionerApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     await commissionerApi.logout();
     assert.ok(fetchCalls[0].url.includes('/api/auth/totp/logout'), 'Should call logout endpoint');
@@ -403,12 +317,6 @@ describe('API Client - Races API', () => {
   it('should list races', async () => {
     const { racesApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ([]),
-    }));
     
     await racesApi.list();
     assert.ok(fetchCalls[0].url.includes('/api/races'), 'Should call races endpoint');
@@ -418,12 +326,6 @@ describe('API Client - Races API', () => {
   it('should list races with filters', async () => {
     const { racesApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ([]),
-    }));
     
     await racesApi.list({ active: true, includeAthletes: true });
     assert.ok(fetchCalls[0].url.includes('active=true'), 'Should include active filter');
@@ -434,12 +336,6 @@ describe('API Client - Races API', () => {
   it('should create race', async () => {
     const { racesApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ id: 1 }),
-    }));
     
     const raceData = { name: 'Test Marathon', date: '2025-11-20', location: 'Test City' };
     await racesApi.create(raceData);
@@ -450,12 +346,6 @@ describe('API Client - Races API', () => {
   it('should update race', async () => {
     const { racesApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ success: true }),
-    }));
     
     await racesApi.update(1, { name: 'Updated Name' });
     assert.strictEqual(fetchCalls[0].options.method, 'PUT', 'Should use PUT method');
@@ -467,12 +357,6 @@ describe('API Client - Standings API', () => {
   it('should fetch standings', async () => {
     const { standingsApi } = await import('../lib/api-client.ts');
     
-    mockFetch.mock.mockImplementationOnce(async () => ({
-      ok: true,
-      status: 200,
-      headers: new Map(),
-      json: async () => ({ standings: [], lastUpdated: Date.now() }),
-    }));
     
     await standingsApi.fetch('test-game');
     assert.ok(fetchCalls[0].url.includes('/api/standings'), 'Should call standings endpoint');
