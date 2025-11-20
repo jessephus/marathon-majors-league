@@ -216,33 +216,38 @@
 
 ## Recommendation Summary
 
-**I recommend a phased approach:**
+**Industry Standard Targets (IMPLEMENTED):**
 
-### Phase 1: Set Baseline Targets (IMPLEMENTED)
-
-Set targets to current coverage levels to establish a baseline and prevent regression:
+Set targets to industry standards to drive incremental improvement:
 
 ```json
 {
-  "lines": 59,      // Current: 59.43%
-  "functions": 38,  // Current: 38.97%
-  "branches": 61,   // Current: 61.65%
-  "statements": 59, // Current: 59.43%
+  "lines": 70,      // Google "good" standard
+  "functions": 60,  // Solid function coverage
+  "branches": 70,   // Comprehensive edge cases
+  "statements": 70,
   "per-file": false // Check overall, not per-file
 }
 ```
 
+**Current Coverage:**
+- Lines: 59.43% (need +11% to reach target)
+- Functions: 38.97% (need +21% to reach target)
+- Branches: 61.65% (need +9% to reach target)
+
 **Rationale:**
-1. ✅ **Prevents regression**: New code won't lower coverage
-2. ✅ **Non-blocking**: Current PRs can merge
-3. ✅ **Realistic**: Matches actual coverage
-4. ✅ **Foundation**: Establishes baseline for improvement
+1. ✅ **Industry-aligned**: 70/60/70 matches Google/Microsoft "good" standards
+2. ✅ **Motivating**: Failing tests serve as reminder to incrementally improve
+3. ✅ **Realistic**: Achievable with focused test additions (see Phase 2 below)
+4. ✅ **Quality-focused**: Targets meaningful coverage, not just metrics
 
-### Phase 2: Incremental Improvement (NEXT STEPS)
+### Phased Improvement Plan
 
-Target: **70% lines, 60% functions, 70% branches** within 2-3 PRs
+**Current State (59/39/62):**
+- 5 files tested: state-manager, feature-flags, performance-monitor, dynamic-import, api-client
+- 9 lib files untested, 13 component files untested
 
-**High-Priority Test Additions:**
+**Path to Industry Standards (70/60/70):**
 1. **api-client.ts** (currently 47% lines, 13% functions)
    - Add tests for each API method group
    - Test error handling and retry logic
@@ -271,30 +276,7 @@ This aligns with industry best practices for well-tested codebases.
 
 ## Implementation Plan
 
-### ✅ Phase 1: Baseline Targets (COMPLETED)
-
-**Status**: IMPLEMENTED in this PR
-
-**Changes Made:**
-```json
-// .c8rc.json and package.json
-{
-  "lines": 59,
-  "functions": 38,
-  "branches": 61,
-  "statements": 59,
-  "per-file": false  // Changed from true
-}
-```
-
-**Result**: Coverage tests now pass! ✅
-
-This establishes a baseline that:
-- Prevents regression (new code can't lower coverage below current levels)
-- Unblocks PRs (no arbitrary failures on untested files)
-- Provides foundation for incremental improvement
-
-### Phase 2: Add High-Value Tests (NEXT PR - Estimated 4-6 hours)
+### Phase 1: Add High-Value Tests (NEXT - Estimated 4-6 hours)
 
 **Priority 1: Expand api-client.ts tests**
 - Current: 47% lines, 13% functions
@@ -328,21 +310,14 @@ This establishes a baseline that:
 - File: `tests/dynamic-imports.test.js` (expand existing)
 - **Impact**: +3-5% overall line coverage
 
-**After Phase 2:**
+**After Phase 1:**
 - Lines: 59% → ~73%
 - Functions: 39% → ~55%
 - Branches: 62% → ~70%
 
-**Update targets to:**
-```json
-{
-  "lines": 70,
-  "functions": 55,
-  "branches": 70
-}
-```
+**✅ Meets industry standard line and branch targets!**
 
-### Phase 3: Add Session & Hook Tests (FUTURE PR - Estimated 3-4 hours)
+### Phase 2: Add Session & Hook Tests (FUTURE - Estimated 3-4 hours)
 
 **Add session-manager.ts tests**
 - Current: 0% (not imported by any tests)
@@ -358,12 +333,14 @@ This establishes a baseline that:
 - Create: `tests/hooks.test.js`
 - **Impact**: +3-5% overall coverage
 
-**After Phase 3:**
+**After Phase 2:**
 - Lines: 73% → ~80%
 - Functions: 55% → ~65%
 - Branches: 70% → ~75%
 
-### Long-term: Component Testing (Optional)
+**🎉 Exceeds all industry standard targets!**
+
+### Phase 3: Component Testing (Optional)
 
 React components currently have 0% coverage. This is acceptable because:
 - UI components are harder to test meaningfully

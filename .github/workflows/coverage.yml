@@ -87,42 +87,36 @@ jobs:
             const functions = '${{ steps.coverage.outputs.functions }}';
             const branches = '${{ steps.coverage.outputs.branches }}';
             
-            const linesEmoji = lines >= 70 ? '✅' : lines >= 59 ? '⚠️' : '❌';
-            const statementsEmoji = statements >= 70 ? '✅' : statements >= 59 ? '⚠️' : '❌';
-            const functionsEmoji = functions >= 60 ? '✅' : functions >= 38 ? '⚠️' : '❌';
-            const branchesEmoji = branches >= 70 ? '✅' : branches >= 61 ? '⚠️' : '❌';
+            const linesEmoji = lines >= 70 ? '✅' : lines >= 60 ? '⚠️' : '❌';
+            const statementsEmoji = statements >= 70 ? '✅' : statements >= 60 ? '⚠️' : '❌';
+            const functionsEmoji = functions >= 60 ? '✅' : functions >= 50 ? '⚠️' : '❌';
+            const branchesEmoji = branches >= 70 ? '✅' : branches >= 60 ? '⚠️' : '❌';
             
             const allTargetsMet = lines >= 70 && statements >= 70 && functions >= 60 && branches >= 70;
-            const baselinesMet = lines >= 59 && statements >= 59 && functions >= 38 && branches >= 61;
             const statusMessage = allTargetsMet 
               ? '🎉 **All coverage targets met!**' 
-              : baselinesMet 
-              ? '✅ **Baseline coverage maintained** - targets are stretch goals for future improvement'
-              : '❌ **Coverage below baseline** - please add tests to maintain at least 59% lines, 38% functions, 61% branches';
+              : '⚠️ **Coverage below industry standard targets** - incremental improvement needed';
             
             const comment = [
               '## 📊 Test Coverage Report',
               '',
               '| Metric | Coverage | Status | Target |',
               '|--------|----------|--------|--------|',
-              '| Lines | ' + lines + '% | ' + linesEmoji + ' | 59% (baseline) / 70% (target) |',
-              '| Statements | ' + statements + '% | ' + statementsEmoji + ' | 59% (baseline) / 70% (target) |',
-              '| Functions | ' + functions + '% | ' + functionsEmoji + ' | 38% (baseline) / 60% (target) |',
-              '| Branches | ' + branches + '% | ' + branchesEmoji + ' | 61% (baseline) / 70% (target) |',
+              '| Lines | ' + lines + '% | ' + linesEmoji + ' | 70% |',
+              '| Statements | ' + statements + '% | ' + statementsEmoji + ' | 70% |',
+              '| Functions | ' + functions + '% | ' + functionsEmoji + ' | 60% |',
+              '| Branches | ' + branches + '% | ' + branchesEmoji + ' | 70% |',
               '',
               '**Scope:** New modules in lib/ and components/ directories',
               '',
               '### Coverage Requirements',
               '',
-              '**Baseline (Required):**',
-              '- ✅ **59% lines** - prevents regression',
-              '- ✅ **38% functions** - maintains current level',
-              '- ✅ **61% branches** - ensures critical paths tested',
+              '**Industry Standard Targets:**',
+              '- 🎯 **70% lines** - "good" coverage per Google guidelines',
+              '- 🎯 **60% functions** - solid function coverage',
+              '- 🎯 **70% branches** - comprehensive edge case coverage',
               '',
-              '**Targets (Stretch Goals):**',
-              '- 🎯 **70% lines** - aligns with industry standards',
-              '- 🎯 **60% functions** - improved function coverage',
-              '- 🎯 **70% branches** - better edge case coverage',
+              '**Current Status:** ' + lines + '% lines, ' + functions + '% functions, ' + branches + '% branches',
               '',
               statusMessage,
               '',
@@ -175,35 +169,34 @@ jobs:
           # Check thresholds (allowing for floating point comparison)
           EXIT_CODE=0
           
-          if (( $(echo "$LINES < 59" | bc -l) )); then
-            echo "❌ Lines coverage ($LINES%) below 59% baseline"
+          if (( $(echo "$LINES < 70" | bc -l) )); then
+            echo "⚠️  Lines coverage ($LINES%) below 70% target"
             EXIT_CODE=1
           fi
           
-          if (( $(echo "$STATEMENTS < 59" | bc -l) )); then
-            echo "❌ Statements coverage ($STATEMENTS%) below 59% baseline"
+          if (( $(echo "$STATEMENTS < 70" | bc -l) )); then
+            echo "⚠️  Statements coverage ($STATEMENTS%) below 70% target"
             EXIT_CODE=1
           fi
           
-          if (( $(echo "$FUNCTIONS < 38" | bc -l) )); then
-            echo "❌ Functions coverage ($FUNCTIONS%) below 38% baseline"
+          if (( $(echo "$FUNCTIONS < 60" | bc -l) )); then
+            echo "⚠️  Functions coverage ($FUNCTIONS%) below 60% target"
             EXIT_CODE=1
           fi
           
-          if (( $(echo "$BRANCHES < 61" | bc -l) )); then
-            echo "❌ Branches coverage ($BRANCHES%) below 61% baseline"
+          if (( $(echo "$BRANCHES < 70" | bc -l) )); then
+            echo "⚠️  Branches coverage ($BRANCHES%) below 70% target"
             EXIT_CODE=1
           fi
           
           if [ $EXIT_CODE -eq 0 ]; then
-            echo "✅ All baseline coverage thresholds met!"
-            
-            # Check stretch goals (informational only)
-            if (( $(echo "$LINES >= 70" | bc -l) )) && (( $(echo "$FUNCTIONS >= 60" | bc -l) )) && (( $(echo "$BRANCHES >= 70" | bc -l) )); then
-              echo "🎉 Stretch goal targets achieved!"
-            else
-              echo "ℹ️  Baseline met. Stretch goals (70/60/70) are future targets."
-            fi
+            echo ""
+            echo "✅ All coverage targets met!"
           else
-            exit $EXIT_CODE
+            echo ""
+            echo "📋 Reminder: Coverage below industry standard targets."
+            echo "   This is tracked for incremental improvement."
+            echo "   See COVERAGE_ANALYSIS.md for improvement plan."
           fi
+          
+          exit $EXIT_CODE
