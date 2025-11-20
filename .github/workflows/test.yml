@@ -207,6 +207,13 @@ jobs:
           TEST_URL: http://localhost:3000
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
+      - name: Run audit zero pollution test
+        id: test-audit
+        run: node tests/audit-zero-pollution.test.js
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
       - name: Stop server
         if: always()
         run: |
@@ -259,7 +266,8 @@ jobs:
                 'Next.js Routing & SSR Tests': '${{ steps.test-nextjs.outcome }}',
                 'Salary Cap Draft Tests': '${{ steps.test-salarycap.outcome }}',
                 'Performance Benchmarks': '${{ steps.test-performance.outcome }}',
-                'Legacy Regression Tests': '${{ steps.test-legacy.outcome }}'
+                'Legacy Regression Tests': '${{ steps.test-legacy.outcome }}',
+                'Audit Zero Pollution Test': '${{ steps.test-audit.outcome }}'
               };
               
               console.log('Test results:', JSON.stringify(testResults, null, 2));
@@ -508,6 +516,11 @@ jobs:
           
           if [ "${{ steps.test-legacy.outcome }}" != "success" ]; then
             echo "❌ Legacy regression tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          if [ "${{ steps.test-audit.outcome }}" != "success" ]; then
+            echo "❌ Audit zero pollution test failed"
             TESTS_FAILED=true
           fi
           

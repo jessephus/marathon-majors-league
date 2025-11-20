@@ -74,6 +74,11 @@ const tests = [
     name: 'Legacy Regression',
     file: 'tests/legacy-regression.test.js',
     description: 'Ensures backward compatibility with legacy features'
+  },
+  {
+    name: 'Zero Pollution Audit',
+    file: 'tests/audit-zero-pollution.test.js',
+    description: '🔍 Verifies no test data pollution - MUST PASS for clean database'
   }
 ];
 

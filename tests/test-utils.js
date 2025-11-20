@@ -3,6 +3,19 @@
  * 
  * Provides helper functions for test cleanup and data management
  * to prevent test data pollution in the database.
+ * 
+ * ⚠️ DEPRECATION NOTICE:
+ * Pattern-matching cleanup functions (cleanupTestGames, cleanupTestSessions, 
+ * globalTestCleanup) are DEPRECATED. Use the new TestContext class instead.
+ * 
+ * NEW APPROACH (Recommended):
+ * Use test-context.js TestContext class which tracks exactly what resources
+ * each test creates and cleans them up explicitly.
+ * 
+ * OLD APPROACH (Deprecated):
+ * Pattern matching with LIKE queries - risky and incomplete.
+ * 
+ * See tests/game-flow-with-context.test.js for migration example.
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -110,6 +123,7 @@ export async function cleanupTestGame(gameId) {
 /**
  * Clean up all test games matching a pattern
  * 
+ * @deprecated Use TestContext class from test-context.js instead
  * @param {string} pattern - SQL LIKE pattern (e.g., 'test-%', 'e2e-%')
  * @returns {Promise<number>} - Number of games cleaned up
  */
@@ -196,6 +210,7 @@ export async function withCleanup(gameId, testFn) {
 /**
  * Clean up test sessions that match a pattern
  * 
+ * @deprecated Use TestContext class from test-context.js instead
  * @param {string} namePattern - SQL LIKE pattern for display_name
  * @returns {Promise<number>} - Number of sessions deleted
  */
@@ -254,6 +269,10 @@ export async function cleanupRosterLockTestData() {
 /**
  * Hook to run after all tests complete
  * Cleans up any remaining test data
+ * 
+ * @deprecated Use TestContext class from test-context.js instead
+ * This function uses pattern matching which is risky and incomplete.
+ * Only use for emergency cleanup of existing test data.
  * 
  * Call this in your test runner's teardown
  */
