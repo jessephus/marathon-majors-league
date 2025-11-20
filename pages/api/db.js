@@ -895,6 +895,22 @@ export async function updateRace(id, updates) {
   return await getRaceById(id);
 }
 
+export async function deleteRace(id) {
+  // Check if race exists
+  const race = await getRaceById(id);
+  if (!race) {
+    throw new Error('Race not found');
+  }
+  
+  // Delete will cascade to athlete_races due to ON DELETE CASCADE
+  await sql`
+    DELETE FROM races
+    WHERE id = ${id}
+  `;
+  
+  return race;
+}
+
 // ============================================================================
 // ATHLETE-RACE LINKS
 // ============================================================================

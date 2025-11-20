@@ -723,10 +723,20 @@ export const racesApi = {
     description: string;
     is_active: boolean;
   }>) {
-    return apiRequest<any>('/api/races', {
+    return apiRequest<any>(`/api/races?id=${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ id, ...raceData }),
+      body: JSON.stringify(raceData),
     });
+  },
+
+  /**
+   * Delete a race
+   */
+  async delete(id: number) {
+    return apiRequest<{ success: boolean; message?: string; race?: any }>(
+      `/api/races?id=${id}`,
+      { method: 'DELETE' }
+    );
   },
 };
 
