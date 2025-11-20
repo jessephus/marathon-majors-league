@@ -36,7 +36,34 @@ Verifies database connectivity and data integrity.
 - ✅ Type safety (VARCHAR vs INTEGER bug)
 - ✅ Connection pooling
 
-### 3. `frontend-integration.test.js`
+### 3. `race-management.test.js` 🆕
+Tests comprehensive race management features including CRUD operations, athlete confirmations, and news feed.
+
+**Coverage:**
+- ✅ Race creation with basic and visual fields
+- ✅ Race listing (all, active, by ID)
+- ✅ Race updates (basic fields, visual customization, status)
+- ✅ Race deletion with cascade
+- ✅ Athlete confirmation for races
+- ✅ Athlete confirmation listing and removal
+- ✅ Race news creation and management
+- ✅ News visibility toggling
+- ✅ News display order control
+- ✅ Visual customization fields (lock time, logo, background, theme colors)
+- ✅ Required field validation
+- ✅ Error handling for invalid data
+- ✅ CASCADE delete behavior
+- ✅ Test data cleanup
+
+**Key Features Tested:**
+- Race visual branding (logo URL, background image URL, theme colors)
+- Roster lock time configuration
+- Athlete-race confirmations with bib numbers
+- Curated news feed with visibility control
+- Display order management for news items
+- Foreign key constraints and cascading deletes
+
+### 4. `frontend-integration.test.js`
 Tests frontend asset serving and HTML structure.
 
 **Coverage:**

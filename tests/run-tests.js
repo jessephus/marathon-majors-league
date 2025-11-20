@@ -34,6 +34,11 @@ const tests = [
     description: 'Verifies database connectivity and data integrity'
   },
   {
+    name: 'Race Management',
+    file: 'tests/race-management.test.js',
+    description: 'Tests race CRUD, athlete confirmations, and news management'
+  },
+  {
     name: 'Frontend Integration',
     file: 'tests/frontend-integration.test.js',
     description: 'Tests frontend asset serving and structure'
