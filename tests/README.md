@@ -48,6 +48,28 @@ Tests comprehensive race management features including CRUD operations, athlete 
 - ✅ Athlete confirmation listing and removal
 - ✅ Race news creation and management
 - ✅ News visibility toggling
+
+**Automatic Cleanup:**
+This test suite includes automatic cleanup that runs **after each test execution** via a module-level `after()` hook. Test data is tracked in the `testData` object and deleted when tests complete. This prevents test race pollution in the database.
+
+**Manual Cleanup:**
+If test races accumulate (e.g., from test failures or interrupted runs), use the cleanup utility:
+
+```bash
+# Clean up all test races (pattern-match by name)
+npm run cleanup:test-races
+
+# Or run directly
+node scripts/cleanup-test-races.js
+```
+
+The cleanup script identifies races with "Test" in the name and deletes them along with CASCADE-related data (athlete confirmations and news items).
+
+**Test Race Patterns:**
+- "Visual Test Marathon 2025" - Visual fields tests
+- "Race News Test Race" - News management tests  
+- "Athlete Confirmation Test Race" - Athlete confirmation tests
+- "Updated Test Marathon 2025" - Update operation tests
 - ✅ News display order control
 - ✅ Visual customization fields (lock time, logo, background, theme colors)
 - ✅ Required field validation

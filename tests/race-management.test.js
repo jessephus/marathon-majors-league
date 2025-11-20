@@ -51,6 +51,46 @@ const testData = {
   raceNews: []
 };
 
+// Module-level cleanup - runs after ALL tests in this file complete
+// Note: This must be registered at module level, outside any describe() blocks
+after(async () => {
+  console.log('\n🧹 Cleaning up race test data...');
+  
+  if (testData.races.length === 0 && testData.raceNews.length === 0) {
+    console.log('   No test data to clean up\n');
+    return;
+  }
+  
+  try {
+    let deletedRaces = 0;
+    let deletedNews = 0;
+    
+    // Clean up race news first
+    for (const newsId of testData.raceNews) {
+      try {
+        const { status } = await apiRequest(`/api/race-news?id=${newsId}`, { method: 'DELETE' });
+        if (status === 200) deletedNews++;
+      } catch (e) {
+        console.warn(`   ⚠️  Could not delete race news ${newsId}: ${e.message}`);
+      }
+    }
+    
+    // Clean up races (CASCADE deletes athlete_races and remaining race_news)
+    for (const raceId of testData.races) {
+      try {
+        const { status } = await apiRequest(`/api/races?id=${raceId}`, { method: 'DELETE' });
+        if (status === 200) deletedRaces++;
+      } catch (e) {
+        console.warn(`   ⚠️  Could not delete race ${raceId}: ${e.message}`);
+      }
+    }
+    
+    console.log(`✅ Cleaned up ${deletedRaces} race(s) and ${deletedNews} news item(s)\n`);
+  } catch (error) {
+    console.error('⚠️  Cleanup error:', error.message, '\n');
+  }
+});
+
 // Test Suite
 describe('Race Management API - CRUD Operations', () => {
   
@@ -64,36 +104,6 @@ describe('Race Management API - CRUD Operations', () => {
     if (data.men && data.men.length > 0) {
       testAthleteId = data.men[0].id;
       console.log(`   Using test athlete ID: ${testAthleteId}`);
-    }
-  });
-  
-  // Cleanup after all tests complete
-  after(async () => {
-    console.log('\n🧹 Cleaning up race test data...');
-    try {
-      // Clean up race news
-      for (const newsId of testData.raceNews) {
-        try {
-          await apiRequest(`/api/race-news?id=${newsId}`, { method: 'DELETE' });
-        } catch (e) {
-          console.warn(`   ⚠️  Could not delete race news ${newsId}`);
-        }
-      }
-      
-      // Clean up athlete-race confirmations (will cascade delete on race delete)
-      
-      // Clean up races (will cascade delete to athlete_races and race_news)
-      for (const raceId of testData.races) {
-        try {
-          await apiRequest(`/api/races?id=${raceId}`, { method: 'DELETE' });
-        } catch (e) {
-          console.warn(`   ⚠️  Could not delete race ${raceId}`);
-        }
-      }
-      
-      console.log('✅ Race test data cleaned up successfully\n');
-    } catch (error) {
-      console.error('⚠️  Cleanup warning:', error.message, '\n');
     }
   });
   

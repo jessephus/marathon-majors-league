@@ -12,6 +12,7 @@
     "deploy": "vercel --prod",
     "postbuild": "node scripts/init-db.js",
     "seed": "node scripts/init-db.js",
+    "cleanup:test-races": "node scripts/cleanup-test-races.js",
     "test": "node tests/run-tests.js",
     "test:api": "node tests/api-endpoints.test.js",
     "test:db": "node tests/database.test.js",
