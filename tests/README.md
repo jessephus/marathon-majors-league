@@ -846,6 +846,8 @@ The test suite runs automatically on:
 
 **Workflow file:** `.github/workflows/test.yml`
 
+DO NOT just add the test to `tests/run-tests.js`. That file is only for manual testing; it is not called by the CI/CD GitHub Actions Workflow.
+
 **What it does:**
 1. Builds the Next.js application
 2. Starts the production server
