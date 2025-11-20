@@ -103,7 +103,7 @@ async function auditTestData() {
     const testSalaryCapTeams = await sql`
       SELECT game_id, player_code, COUNT(*) as athlete_count, 
              MIN(submitted_at) as first_submission,
-             MAX(is_complete) as is_complete
+             BOOL_OR(is_complete) as is_complete
       FROM salary_cap_teams 
       WHERE game_id LIKE '%test%' 
          OR game_id LIKE '%e2e%' 
