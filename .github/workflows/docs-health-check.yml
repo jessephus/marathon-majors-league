@@ -189,13 +189,32 @@ jobs:
           fi
       
       - name: Comment on PR (if applicable)
-        if: github.event_name == 'pull_request' && steps.health-check.outputs.has_warnings == 'true'
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const report = fs.readFileSync('/tmp/doc-health-report.md', 'utf8');
+            
+            // Read report if it exists (warnings case), otherwise create success report
+            let report;
+            if (fs.existsSync('/tmp/doc-health-report.md')) {
+              report = fs.readFileSync('/tmp/doc-health-report.md', 'utf8');
+            } else {
+              // No warnings - create success report
+              const totalDocs = '${{ steps.health-check.outputs.total_docs }}';
+              const distribution = '${{ steps.health-check.outputs.distribution }}';
+              report = [
+                '## 📚 Documentation Health Check Report',
+                '',
+                `**Total documentation files**: ${totalDocs}`,
+                `**Category distribution**: ${distribution}`,
+                '',
+                '✅ **All checks passed!**',
+                '',
+                '_No issues detected. Documentation is healthy!_'
+              ].join('\n');
+            }
             
             // Check if we already commented
             const { data: comments } = await github.rest.issues.listComments({
