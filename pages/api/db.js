@@ -752,6 +752,12 @@ export async function getAllRaces() {
       world_athletics_event_id as "worldAthleticsEventId",
       description,
       is_active as "isActive",
+      lock_time as "lockTime",
+      logo_url as "logoUrl",
+      background_image_url as "backgroundImageUrl",
+      primary_color as "primaryColor",
+      secondary_color as "secondaryColor",
+      accent_color as "accentColor",
       created_at as "createdAt",
       updated_at as "updatedAt"
     FROM races
@@ -772,6 +778,12 @@ export async function getActiveRaces() {
       world_athletics_event_id as "worldAthleticsEventId",
       description,
       is_active as "isActive",
+      lock_time as "lockTime",
+      logo_url as "logoUrl",
+      background_image_url as "backgroundImageUrl",
+      primary_color as "primaryColor",
+      secondary_color as "secondaryColor",
+      accent_color as "accentColor",
       created_at as "createdAt",
       updated_at as "updatedAt"
     FROM races
@@ -793,6 +805,12 @@ export async function getRaceById(id) {
       world_athletics_event_id as "worldAthleticsEventId",
       description,
       is_active as "isActive",
+      lock_time as "lockTime",
+      logo_url as "logoUrl",
+      background_image_url as "backgroundImageUrl",
+      primary_color as "primaryColor",
+      secondary_color as "secondaryColor",
+      accent_color as "accentColor",
       created_at as "createdAt",
       updated_at as "updatedAt"
     FROM races
@@ -802,10 +820,40 @@ export async function getRaceById(id) {
 }
 
 export async function createRace(raceData) {
-  const { name, date, location, distance, eventType, worldAthleticsEventId, description, isActive } = raceData;
+  const { 
+    name, 
+    date, 
+    location, 
+    distance, 
+    eventType, 
+    worldAthleticsEventId, 
+    description, 
+    isActive,
+    lockTime,
+    logoUrl,
+    backgroundImageUrl,
+    primaryColor,
+    secondaryColor,
+    accentColor
+  } = raceData;
   
   const [race] = await sql`
-    INSERT INTO races (name, date, location, distance, event_type, world_athletics_event_id, description, is_active)
+    INSERT INTO races (
+      name, 
+      date, 
+      location, 
+      distance, 
+      event_type, 
+      world_athletics_event_id, 
+      description, 
+      is_active,
+      lock_time,
+      logo_url,
+      background_image_url,
+      primary_color,
+      secondary_color,
+      accent_color
+    )
     VALUES (
       ${name}, 
       ${date}, 
@@ -814,57 +862,54 @@ export async function createRace(raceData) {
       ${eventType || 'Marathon Majors'}, 
       ${worldAthleticsEventId || null}, 
       ${description || null}, 
-      ${isActive !== undefined ? isActive : true}
+      ${isActive !== undefined ? isActive : true},
+      ${lockTime || null},
+      ${logoUrl || null},
+      ${backgroundImageUrl || null},
+      ${primaryColor || null},
+      ${secondaryColor || null},
+      ${accentColor || null}
     )
-    RETURNING id, name, date, location, distance, event_type as "eventType", world_athletics_event_id as "worldAthleticsEventId", description, is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
+    RETURNING 
+      id, 
+      name, 
+      date, 
+      location, 
+      distance, 
+      event_type as "eventType", 
+      world_athletics_event_id as "worldAthleticsEventId", 
+      description, 
+      is_active as "isActive",
+      lock_time as "lockTime",
+      logo_url as "logoUrl",
+      background_image_url as "backgroundImageUrl",
+      primary_color as "primaryColor",
+      secondary_color as "secondaryColor",
+      accent_color as "accentColor",
+      created_at as "createdAt", 
+      updated_at as "updatedAt"
   `;
   
   return race;
 }
 
 export async function updateRace(id, updates) {
-  const { name, date, location, distance, eventType, worldAthleticsEventId, description, isActive } = updates;
-  
-  // Build update query dynamically
-  const setParts = [];
-  const values = [];
-  
-  if (name !== undefined) {
-    setParts.push('name = $' + (values.length + 1));
-    values.push(name);
-  }
-  if (date !== undefined) {
-    setParts.push('date = $' + (values.length + 1));
-    values.push(date);
-  }
-  if (location !== undefined) {
-    setParts.push('location = $' + (values.length + 1));
-    values.push(location);
-  }
-  if (distance !== undefined) {
-    setParts.push('distance = $' + (values.length + 1));
-    values.push(distance);
-  }
-  if (eventType !== undefined) {
-    setParts.push('event_type = $' + (values.length + 1));
-    values.push(eventType);
-  }
-  if (worldAthleticsEventId !== undefined) {
-    setParts.push('world_athletics_event_id = $' + (values.length + 1));
-    values.push(worldAthleticsEventId);
-  }
-  if (description !== undefined) {
-    setParts.push('description = $' + (values.length + 1));
-    values.push(description);
-  }
-  if (isActive !== undefined) {
-    setParts.push('is_active = $' + (values.length + 1));
-    values.push(isActive);
-  }
-  
-  if (setParts.length === 0) {
-    return await getRaceById(id);
-  }
+  const { 
+    name, 
+    date, 
+    location, 
+    distance, 
+    eventType, 
+    worldAthleticsEventId, 
+    description, 
+    isActive,
+    lockTime,
+    logoUrl,
+    backgroundImageUrl,
+    primaryColor,
+    secondaryColor,
+    accentColor
+  } = updates;
   
   // Execute update one field at a time using tagged templates
   if (name !== undefined) {
@@ -890,6 +935,24 @@ export async function updateRace(id, updates) {
   }
   if (isActive !== undefined) {
     await sql`UPDATE races SET is_active = ${isActive}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (lockTime !== undefined) {
+    await sql`UPDATE races SET lock_time = ${lockTime}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (logoUrl !== undefined) {
+    await sql`UPDATE races SET logo_url = ${logoUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (backgroundImageUrl !== undefined) {
+    await sql`UPDATE races SET background_image_url = ${backgroundImageUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (primaryColor !== undefined) {
+    await sql`UPDATE races SET primary_color = ${primaryColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (secondaryColor !== undefined) {
+    await sql`UPDATE races SET secondary_color = ${secondaryColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  }
+  if (accentColor !== undefined) {
+    await sql`UPDATE races SET accent_color = ${accentColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
   
   return await getRaceById(id);

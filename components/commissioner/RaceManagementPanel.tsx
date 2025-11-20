@@ -22,6 +22,12 @@ interface Race {
   worldAthleticsEventId?: string;
   description?: string;
   isActive: boolean;
+  lockTime?: string;
+  logoUrl?: string;
+  backgroundImageUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +48,12 @@ interface RaceFormData {
   worldAthleticsEventId: string;
   description: string;
   isActive: boolean;
+  lockTime: string;
+  logoUrl: string;
+  backgroundImageUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
 }
 
 export default function RaceManagementPanel() {
@@ -61,7 +73,13 @@ export default function RaceManagementPanel() {
     eventType: 'Marathon Majors',
     worldAthleticsEventId: '',
     description: '',
-    isActive: true
+    isActive: true,
+    lockTime: '',
+    logoUrl: '',
+    backgroundImageUrl: '',
+    primaryColor: '',
+    secondaryColor: '',
+    accentColor: ''
   });
   
   // Athletes confirmation state
@@ -96,7 +114,13 @@ export default function RaceManagementPanel() {
       eventType: 'Marathon Majors',
       worldAthleticsEventId: '',
       description: '',
-      isActive: true
+      isActive: true,
+      lockTime: '',
+      logoUrl: '',
+      backgroundImageUrl: '',
+      primaryColor: '',
+      secondaryColor: '',
+      accentColor: ''
     });
     setShowForm(true);
   };
@@ -111,7 +135,13 @@ export default function RaceManagementPanel() {
       eventType: race.eventType,
       worldAthleticsEventId: race.worldAthleticsEventId || '',
       description: race.description || '',
-      isActive: race.isActive
+      isActive: race.isActive,
+      lockTime: race.lockTime || '',
+      logoUrl: race.logoUrl || '',
+      backgroundImageUrl: race.backgroundImageUrl || '',
+      primaryColor: race.primaryColor || '',
+      secondaryColor: race.secondaryColor || '',
+      accentColor: race.accentColor || ''
     });
     setShowForm(true);
   };
@@ -130,7 +160,13 @@ export default function RaceManagementPanel() {
         eventType: formData.eventType,
         worldAthleticsEventId: formData.worldAthleticsEventId || null,
         description: formData.description || null,
-        isActive: formData.isActive
+        isActive: formData.isActive,
+        lockTime: formData.lockTime || null,
+        logoUrl: formData.logoUrl || null,
+        backgroundImageUrl: formData.backgroundImageUrl || null,
+        primaryColor: formData.primaryColor || null,
+        secondaryColor: formData.secondaryColor || null,
+        accentColor: formData.accentColor || null
       };
 
       if (editingRace) {
@@ -143,7 +179,13 @@ export default function RaceManagementPanel() {
           event_type: payload.eventType,
           world_athletics_event_id: payload.worldAthleticsEventId,
           description: payload.description,
-          is_active: payload.isActive
+          is_active: payload.isActive,
+          lock_time: payload.lockTime,
+          logo_url: payload.logoUrl,
+          background_image_url: payload.backgroundImageUrl,
+          primary_color: payload.primaryColor,
+          secondary_color: payload.secondaryColor,
+          accent_color: payload.accentColor
         });
         setSuccessMessage(`Race "${formData.name}" updated successfully`);
       } else {
@@ -155,7 +197,13 @@ export default function RaceManagementPanel() {
           distance: payload.distance,
           event_type: payload.eventType,
           world_athletics_event_id: payload.worldAthleticsEventId,
-          description: payload.description
+          description: payload.description,
+          lock_time: payload.lockTime,
+          logo_url: payload.logoUrl,
+          background_image_url: payload.backgroundImageUrl,
+          primary_color: payload.primaryColor,
+          secondary_color: payload.secondaryColor,
+          accent_color: payload.accentColor
         });
         setSuccessMessage(`Race "${formData.name}" created successfully`);
       }
@@ -314,6 +362,87 @@ export default function RaceManagementPanel() {
                   rows={4}
                   placeholder="Add race details, news, or updates..."
                 />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="lockTime">Roster Lock Time</label>
+                <input
+                  id="lockTime"
+                  type="datetime-local"
+                  value={formData.lockTime}
+                  onChange={(e) => setFormData({ ...formData, lockTime: e.target.value })}
+                  placeholder="When rosters lock (e.g., race start time)"
+                />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Optional: When should rosters lock for this race?
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="logoUrl">Logo URL</label>
+                <input
+                  id="logoUrl"
+                  type="url"
+                  value={formData.logoUrl}
+                  onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+                  placeholder="https://example.com/race-logo.png"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="backgroundImageUrl">Background Image URL</label>
+                <input
+                  id="backgroundImageUrl"
+                  type="url"
+                  value={formData.backgroundImageUrl}
+                  onChange={(e) => setFormData({ ...formData, backgroundImageUrl: e.target.value })}
+                  placeholder="https://example.com/race-background.jpg"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Theme Colors</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="primaryColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                      Primary
+                    </label>
+                    <input
+                      id="primaryColor"
+                      type="color"
+                      value={formData.primaryColor || '#007bff'}
+                      onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
+                      style={{ width: '100%', height: '40px' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="secondaryColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                      Secondary
+                    </label>
+                    <input
+                      id="secondaryColor"
+                      type="color"
+                      value={formData.secondaryColor || '#6c757d'}
+                      onChange={(e) => setFormData({ ...formData, secondaryColor: e.target.value })}
+                      style={{ width: '100%', height: '40px' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label htmlFor="accentColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                      Accent
+                    </label>
+                    <input
+                      id="accentColor"
+                      type="color"
+                      value={formData.accentColor || '#ffc107'}
+                      onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
+                      style={{ width: '100%', height: '40px' }}
+                    />
+                  </div>
+                </div>
+                <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                  Colors for race detail page styling
+                </small>
               </div>
 
               <div className="form-group checkbox-group">

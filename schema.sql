@@ -47,12 +47,19 @@ CREATE TABLE IF NOT EXISTS races (
     world_athletics_event_id VARCHAR(50),
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
+    lock_time TIMESTAMP WITH TIME ZONE,
+    logo_url TEXT,
+    background_image_url TEXT,
+    primary_color VARCHAR(7),
+    secondary_color VARCHAR(7),
+    accent_color VARCHAR(7),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_races_date ON races(date);
 CREATE INDEX idx_races_is_active ON races(is_active);
+CREATE INDEX idx_races_lock_time ON races(lock_time);
 
 -- Athlete-Race junction table (links athletes to races they're competing in)
 CREATE TABLE IF NOT EXISTS athlete_races (

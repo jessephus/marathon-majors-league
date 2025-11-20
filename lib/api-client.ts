@@ -703,6 +703,12 @@ export const racesApi = {
     event_type?: string;
     world_athletics_event_id?: string;
     description?: string;
+    lock_time?: string;
+    logo_url?: string;
+    background_image_url?: string;
+    primary_color?: string;
+    secondary_color?: string;
+    accent_color?: string;
   }) {
     return apiRequest<any>('/api/races', {
       method: 'POST',
@@ -722,6 +728,12 @@ export const racesApi = {
     world_athletics_event_id: string;
     description: string;
     is_active: boolean;
+    lock_time: string;
+    logo_url: string;
+    background_image_url: string;
+    primary_color: string;
+    secondary_color: string;
+    accent_color: string;
   }>) {
     return apiRequest<any>(`/api/races?id=${id}`, {
       method: 'PUT',
