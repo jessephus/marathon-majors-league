@@ -52,7 +52,7 @@ Where L1 is the relative luminance of the lighter color and L2 is the relative l
 | navy.800 | #1F2D47 | **11.8:1** | ✅ Pass | ✅ Pass | Subheaders, emphasis text |
 | navy.700 | #2A3B5E | **9.2:1** | ✅ Pass | ✅ Pass | Body text, links |
 | navy.600 | #3A4D7E | **7.1:1** | ✅ Pass | ✅ Pass | Secondary text, hover states |
-| navy.500 | #4A5F9D | **6.8:1** | ✅ Pass | ⚠️ Fail | Primary buttons, active states |
+| navy.500 | #4A5F9D | **6.8:1** | ✅ Pass | ⚠️ Fail (6.8:1 < 7:1) | Primary buttons, active states |
 | navy.400 | #7A8DBF | **3.9:1** | ⚠️ Fail | ⚠️ Fail | Large text only, disabled states |
 | navy.300 | #9EADD1 | **2.7:1** | ⚠️ Fail | ⚠️ Fail | Borders, dividers only |
 | navy.200 | #C3CDE3 | **1.7:1** | ⚠️ Fail | ⚠️ Fail | Backgrounds, subtle highlights |

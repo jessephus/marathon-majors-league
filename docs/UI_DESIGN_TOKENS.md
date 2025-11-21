@@ -204,9 +204,10 @@ primary: {
 
 **Usage:**
 ```tsx
-// These are equivalent:
+// These are equivalent ways to reference the same color:
 <Button colorScheme="primary">Submit</Button>
 <Button colorScheme="navy">Submit</Button>
+// Both use the navy color scale - "primary" is a semantic alias for "navy"
 
 // Primary buttons
 <Button colorScheme="primary" size="lg">Create Team</Button>
@@ -220,11 +221,11 @@ primary: {
 <Text color="primary.800">Important information</Text>
 ```
 
-**Benefits:**
-- Consistent naming across the application
-- Easier to refactor if brand colors change
-- Aligns with Chakra UI conventions
-- Self-documenting code (primary = main action)
+**When to use primary vs navy:**
+- Use `primary` for semantic intent (this is a main action)
+- Use `navy` when you specifically want the brand navy color
+- Both reference the same color values, so they're functionally identical
+- Prefer `primary` for component props (more maintainable if brand colors change)
 
 #### Secondary (Gold)
 Maps directly to the gold color scale for accent and highlight elements.
@@ -246,9 +247,10 @@ secondary: {
 
 **Usage:**
 ```tsx
-// These are equivalent:
+// These are equivalent ways to reference the same color:
 <Button colorScheme="secondary">Upgrade</Button>
 <Button colorScheme="gold">Upgrade</Button>
+// Both use the gold color scale - "secondary" is a semantic alias for "gold"
 
 // Secondary buttons (accent actions)
 <Button colorScheme="secondary" variant="outline">
@@ -268,6 +270,12 @@ secondary: {
 // Star ratings
 <Icon as={StarIcon} color="secondary.500" />
 ```
+
+**When to use secondary vs gold:**
+- Use `secondary` for semantic intent (this is an accent/secondary action)
+- Use `gold` when you specifically want the brand gold color
+- Both reference the same color values, so they're functionally identical
+- Prefer `secondary` for component props (more maintainable if brand colors change)
 
 **When to Use:**
 - **Primary (Navy):** Main actions, primary navigation, default buttons

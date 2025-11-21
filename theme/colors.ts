@@ -100,6 +100,9 @@ export const colors = {
 
   // Semantic Color Mappings
   // These provide consistent names for use across components
+  // Note: Values are intentionally duplicated (not referenced) to align with
+  // Chakra UI v3's token system which requires explicit value objects.
+  // This is the recommended pattern for semantic color mappings in Chakra UI v3.
   
   // Primary - Maps to Navy (main brand color for buttons, links, primary actions)
   primary: {
