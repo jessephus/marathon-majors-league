@@ -4,15 +4,15 @@ Welcome to the Marathon Majors Fantasy League documentation! This guide helps yo
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **6 main categories** with **33 documentation files** (plus this README = 34 total).
+Our documentation is organized into **6 main categories** with **32 documentation files** (plus this README = 33 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (6 docs)
 - `TECH_*.md` - Technical reference (7 docs)
 - `FEATURE_*.md` - Game features (7 docs)
-- `PROCESS_*.md` - Project history (10 docs)
+- `PROCESS_*.md` - Project history (4 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
-- `PHASE*.md` - Phase-specific deliverables (2 docs)
+- `UI_*.md` - UI/UX redesign process (7 docs)
 
 ---
 
@@ -80,7 +80,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
 | **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |
 
-### 4️⃣ Process & Maintenance (Project History - 10 docs)
+### 4️⃣ Process & Maintenance (Project History - 4 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -88,26 +88,24 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
 | **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking (includes UI helper duplication & games.players[] deprecation) | Current cleanup initiatives |
+
+### 5️⃣ UI/UX Redesign Process (7 docs)
+
+| Document | Purpose | When to Read |
+|----------|---------|--------------||
+| **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** | Chakra UI migration plan (7 phases, 40 weeks) | Planning Chakra migration work |
+| **[UI_PHASE2_COMPONENT_MAPPING.md](UI_PHASE2_COMPONENT_MAPPING.md)** | Complete Chakra UI component mapping & migration guide | Phase 2 (Weeks 3-4) - Component audit |
+| **[UI_PHASE2_NAVIGATION_SPEC.md](UI_PHASE2_NAVIGATION_SPEC.md)** | Navigation system specifications (header + bottom toolbar) | Phase 3 (Weeks 11-14) - Navigation implementation |
 | **[PROCESS_UI_UX_AUDIT.md](PROCESS_UI_UX_AUDIT.md)** | Complete UI/UX inventory and gap analysis | Planning redesign and improvements |
 | **[UI_INVENTORY_QUICK_REFERENCE.md](UI_INVENTORY_QUICK_REFERENCE.md)** | Quick lookup guide for all UI elements | Fast reference during development |
 | **[UI_ARCHITECTURE_VISUAL_MAP.md](UI_ARCHITECTURE_VISUAL_MAP.md)** | ASCII diagrams of all interfaces | Visual overview of structure |
 | **[UI_AUDIT_COMPLETION_SUMMARY.md](UI_AUDIT_COMPLETION_SUMMARY.md)** | UI/UX audit executive summary | Issue completion status and next steps |
-| **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** | Chakra UI migration plan (7 phases, 40 weeks) | Planning Chakra migration work |
-| **[DESIGN_V2_SUMMARY.md](DESIGN_V2_SUMMARY.md)** | Design v2 summary document | Legacy design documentation |
 
-### 5️⃣ Setup & Authentication
+### 6️⃣ Setup & Authentication
 
 | Document | Purpose | When to Read |
-|----------|---------|--------------|
+|----------|---------|--------------||
 | **[SETUP_AUTHENTICATION.md](SETUP_AUTHENTICATION.md)** | Email/SMS service configuration | Setting up authentication |
-
-### 6️⃣ Phase-Specific Deliverables (2 docs + 1 component guide)
-
-| Document | Purpose | When to Read |
-|----------|---------|--------------|
-| **[PHASE2_COMPONENT_MAPPING.md](PHASE2_COMPONENT_MAPPING.md)** | Complete Chakra UI component mapping & migration guide | Phase 2 (Weeks 3-4) - Component audit |
-| **[PHASE2_NAVIGATION_SPEC.md](PHASE2_NAVIGATION_SPEC.md)** | Navigation system specifications (header + bottom toolbar) | Phase 3 (Weeks 11-14) - Navigation implementation |
-| **[/components/chakra/README.md](../components/chakra/README.md)** | Chakra UI component patterns and best practices | Building new components with Chakra |
 
 ---
 
@@ -125,8 +123,8 @@ Learn how to join games, rank athletes, and follow live results.
 | Run database migrations | [TECH_MIGRATION.md](TECH_MIGRATION.md) → Migration Guide |
 | Debug database issues | [TECH_DATABASE.md](TECH_DATABASE.md) → Troubleshooting |
 | **Plan UI redesign** | **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** → **Phase-by-phase plan** |
-| **Map legacy to Chakra components** | **[PHASE2_COMPONENT_MAPPING.md](PHASE2_COMPONENT_MAPPING.md)** → **Complete mapping** |
-| **Build new navigation** | **[PHASE2_NAVIGATION_SPEC.md](PHASE2_NAVIGATION_SPEC.md)** → **Header & toolbar specs** |
+| **Map legacy to Chakra components** | **[UI_PHASE2_COMPONENT_MAPPING.md](UI_PHASE2_COMPONENT_MAPPING.md)** → **Complete mapping** |
+| **Build new navigation** | **[UI_PHASE2_NAVIGATION_SPEC.md](UI_PHASE2_NAVIGATION_SPEC.md)** → **Header & toolbar specs** |
 | **Create Chakra components** | **[/components/chakra/README.md](../components/chakra/README.md)** → **Patterns & best practices** |
 
 ### Understanding Features
@@ -234,14 +232,14 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 30 docs + 1 index (31 files) | Well-organized with category prefixes |
+| Total Documents | 32 docs + 1 index (33 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
-| Outdated Docs | 0 | Recently updated for merge cleanup |
+| Outdated Docs | 0 | Recently updated for UI redesign reorganization |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
-**Last Audit:** November 21, 2025 (UI/UX audit suite + redesign docs added: 6 new docs)  
+**Last Reorganization:** November 21, 2025 (UI redesign docs moved to UI_ prefix)  
 **Next Review:** February 2026
 
 ---
@@ -261,6 +259,6 @@ Our documentation follows these categories:
 
 ---
 
-**Last Updated:** November 20, 2025  
+**Last Updated:** November 21, 2025  
 **Documentation Maintainer:** Project Contributors  
-**Version:** 2.3 (UI/UX Audit Added)
+**Version:** 2.4 (UI Redesign Docs Reorganized)
