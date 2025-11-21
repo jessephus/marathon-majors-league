@@ -17,26 +17,20 @@ import { initWebVitals } from '@/lib/web-vitals';
 import { system } from '@/theme';
 import '../public/style.css';
 
-// Dynamic import of PerformanceDashboard only in development
-let PerformanceDashboard: any = null;
-if (process.env.NODE_ENV === 'development') {
-  import('@/components/PerformanceDashboard').then((mod) => {
-    PerformanceDashboard = mod.default;
-  });
-}
-
 export default function App({ Component, pageProps }: AppProps) {
   const [showDashboard, setShowDashboard] = useState(false);
+  const [PerformanceDashboard, setPerformanceDashboard] = useState<any>(null);
 
-  // Initialize Web Vitals monitoring
+  // Initialize Web Vitals monitoring and load PerformanceDashboard in browser only
   useEffect(() => {
     initWebVitals();
-  }, []);
-
-  // Register dashboard toggle in development
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      (window as any).__performanceDashboard?._register(setShowDashboard);
+    
+    // Load PerformanceDashboard only in development AND in browser
+    if (process.env.NODE_ENV === 'development') {
+      import('@/components/PerformanceDashboard').then((mod) => {
+        setPerformanceDashboard(() => mod.default);
+        (window as any).__performanceDashboard?._register(setShowDashboard);
+      });
     }
   }, []);
 
