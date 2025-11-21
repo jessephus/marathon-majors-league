@@ -178,9 +178,9 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
     },
   }
   ```
-- [x] Implement gold color palette
-- [x] Define semantic colors (success, warning, error, info)
-- [x] Test contrast ratios (WCAG AA compliance)
+- [ ] Implement gold color palette
+- [ ] Define semantic colors (success, warning, error, info)
+- [ ] Test contrast ratios (WCAG AA compliance)
 - [x] Create color usage documentation
 
 #### Deliverables
