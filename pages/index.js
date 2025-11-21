@@ -84,7 +84,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <style dangerouslySetInnerHTML={{ __html: `
           body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
           .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
-          header { background: linear-gradient(135deg, #161C4F 0%, #D4AF37 100%); color: white; padding: 1rem; text-align: center; }
+          header { background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-blue) 100%); color: white; padding: 1rem; text-align: center; }
           header h1 { margin: 0; font-size: 2rem; }
           .loading-spinner { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; color: #D4AF37; font-size: 16px; font-weight: 600; }
           .loading-spinner::before { content: ''; display: block; width: 40px; height: 40px; margin-bottom: 20px; border: 4px solid rgba(212, 175, 55, 0.2); border-top-color: #D4AF37; border-radius: 50%; animation: spin 1s linear infinite; }

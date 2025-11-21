@@ -268,7 +268,7 @@ function LeaderboardPageContent({
         <header>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
             <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-            <h1>MMFL</h1>
+            <h1>Marathon Majors Fantasy League</h1>
           </div>
         </header>
 

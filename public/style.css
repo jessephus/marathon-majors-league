@@ -39,7 +39,7 @@ body {
 }
 
 header {
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-blue) 100%);
     color: var(--white);
     padding: 30px 20px;
     border-radius: 10px;
@@ -1541,7 +1541,7 @@ footer .btn {
     align-items: center;
     gap: 1.5rem;
     padding: 2rem;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, #ff8533 100%);
+    background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-blue) 100%);
     color: white;
 }
 
