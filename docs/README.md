@@ -4,14 +4,15 @@ Welcome to the Marathon Majors Fantasy League documentation! This guide helps yo
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **30 documentation files** (plus this README = 31 total).
+Our documentation is organized into **6 main categories** with **33 documentation files** (plus this README = 34 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
-- `CORE_*.md` - Essential guides (5 docs)
+- `CORE_*.md` - Essential guides (6 docs)
 - `TECH_*.md` - Technical reference (7 docs)
 - `FEATURE_*.md` - Game features (7 docs)
-- `PROCESS_*.md` - Project history (4 docs)
+- `PROCESS_*.md` - Project history (10 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
+- `PHASE*.md` - Phase-specific deliverables (2 docs)
 
 ---
 
@@ -53,6 +54,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_DEVELOPMENT.md](CORE_DEVELOPMENT.md)** | Local development setup and standards | Starting development work |
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
+| **[CORE_DESIGN_GUIDELINES.md](CORE_DESIGN_GUIDELINES.md)** | Aspirational design system (Navy & Gold, Chakra UI) | Future design standards for Chakra implementation |
 
 ### 2️⃣ Technical Reference (7 docs)
 
@@ -89,15 +91,23 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_UI_UX_AUDIT.md](PROCESS_UI_UX_AUDIT.md)** | Complete UI/UX inventory and gap analysis | Planning redesign and improvements |
 | **[UI_INVENTORY_QUICK_REFERENCE.md](UI_INVENTORY_QUICK_REFERENCE.md)** | Quick lookup guide for all UI elements | Fast reference during development |
 | **[UI_ARCHITECTURE_VISUAL_MAP.md](UI_ARCHITECTURE_VISUAL_MAP.md)** | ASCII diagrams of all interfaces | Visual overview of structure |
-| **[AUDIT_COMPLETION_SUMMARY.md](AUDIT_COMPLETION_SUMMARY.md)** | UI/UX audit executive summary | Issue completion status and next steps |
+| **[UI_AUDIT_COMPLETION_SUMMARY.md](UI_AUDIT_COMPLETION_SUMMARY.md)** | UI/UX audit executive summary | Issue completion status and next steps |
 | **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** | Chakra UI migration plan (7 phases, 40 weeks) | Planning Chakra migration work |
-| **[CORE_DESIGN_GUIDELINES.md](CORE_DESIGN_GUIDELINES.md)** | Aspirational design system (Navy & Gold, Chakra UI) | Future design standards for Chakra implementation |
+| **[DESIGN_V2_SUMMARY.md](DESIGN_V2_SUMMARY.md)** | Design v2 summary document | Legacy design documentation |
 
 ### 5️⃣ Setup & Authentication
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
 | **[SETUP_AUTHENTICATION.md](SETUP_AUTHENTICATION.md)** | Email/SMS service configuration | Setting up authentication |
+
+### 6️⃣ Phase-Specific Deliverables (2 docs + 1 component guide)
+
+| Document | Purpose | When to Read |
+|----------|---------|--------------|
+| **[PHASE2_COMPONENT_MAPPING.md](PHASE2_COMPONENT_MAPPING.md)** | Complete Chakra UI component mapping & migration guide | Phase 2 (Weeks 3-4) - Component audit |
+| **[PHASE2_NAVIGATION_SPEC.md](PHASE2_NAVIGATION_SPEC.md)** | Navigation system specifications (header + bottom toolbar) | Phase 3 (Weeks 11-14) - Navigation implementation |
+| **[/components/chakra/README.md](../components/chakra/README.md)** | Chakra UI component patterns and best practices | Building new components with Chakra |
 
 ---
 
@@ -114,6 +124,10 @@ Learn how to join games, rank athletes, and follow live results.
 | Add new athletes | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) → Manual Process |
 | Run database migrations | [TECH_MIGRATION.md](TECH_MIGRATION.md) → Migration Guide |
 | Debug database issues | [TECH_DATABASE.md](TECH_DATABASE.md) → Troubleshooting |
+| **Plan UI redesign** | **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** → **Phase-by-phase plan** |
+| **Map legacy to Chakra components** | **[PHASE2_COMPONENT_MAPPING.md](PHASE2_COMPONENT_MAPPING.md)** → **Complete mapping** |
+| **Build new navigation** | **[PHASE2_NAVIGATION_SPEC.md](PHASE2_NAVIGATION_SPEC.md)** → **Header & toolbar specs** |
+| **Create Chakra components** | **[/components/chakra/README.md](../components/chakra/README.md)** → **Patterns & best practices** |
 
 ### Understanding Features
 
