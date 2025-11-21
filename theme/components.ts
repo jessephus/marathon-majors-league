@@ -4,6 +4,18 @@
  * Chakra UI component-specific theme customizations.
  * Defines default variants, sizes, and styles for common components.
  * 
+ * NOTE: This file serves as reference documentation for Chakra UI v3.
+ * Component overrides in Chakra v3 use a different API (recipes/slots).
+ * This file is kept for:
+ * 1. Documentation of desired component behaviors
+ * 2. Reference when implementing v3 recipes
+ * 3. Migration guide for future component customization
+ * 
+ * For Chakra v3, component styles are better implemented using:
+ * - Recipe overrides in theme configuration
+ * - Inline style props on components
+ * - Custom wrapper components in /components/chakra/
+ * 
  * Reference: docs/CORE_DESIGN_GUIDELINES.md
  */
 

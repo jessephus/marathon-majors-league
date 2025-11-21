@@ -3,6 +3,13 @@
  * 
  * Configures fonts, type scale, weights, line heights, and letter spacing.
  * 
+ * NOTE: This file serves as reference documentation for Chakra UI v3.
+ * The actual typography tokens are defined inline in theme/index.ts
+ * using the Chakra v3 token format. This file is kept for:
+ * 1. Documentation of typography decisions
+ * 2. Reference for font guidelines
+ * 3. Future potential use if Chakra v3 API changes
+ * 
  * Reference: docs/CORE_DESIGN_GUIDELINES.md
  */
 

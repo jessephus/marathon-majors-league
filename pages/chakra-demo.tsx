@@ -161,10 +161,10 @@ export default function ChakraDemoPage() {
                 <Box>
                   <Text fontWeight="semibold" mb={2}>Semantic Colors</Text>
                   <HStack gap={4} flexWrap="wrap">
-                    <Badge colorPalette="green" size="lg">Success</Badge>
-                    <Badge colorPalette="yellow" size="lg">Warning</Badge>
-                    <Badge colorPalette="red" size="lg">Error</Badge>
-                    <Badge colorPalette="blue" size="lg">Info</Badge>
+                    <Badge colorPalette="success" size="lg">Success</Badge>
+                    <Badge colorPalette="warning" size="lg">Warning</Badge>
+                    <Badge colorPalette="error" size="lg">Error</Badge>
+                    <Badge colorPalette="info" size="lg">Info</Badge>
                   </HStack>
                 </Box>
               </VStack>
