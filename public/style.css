@@ -3272,7 +3272,7 @@ footer .btn {
 }
 
 .draft-slot:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 4px 12px rgba(255, 105, 0, 0.2);
 }
 
@@ -3282,7 +3282,7 @@ footer .btn {
 
 .draft-slot.filled {
     background: white;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
 }
 
 .slot-label {
