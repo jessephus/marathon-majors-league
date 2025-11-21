@@ -270,14 +270,253 @@ export default function ChakraDemoPage() {
             </Card.Body>
           </Card.Root>
 
+          {/* NEW: Spacing System Demo */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Spacing System (4px Base Unit)</Heading>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={6} align="stretch">
+                <Box>
+                  <Text fontWeight="semibold" mb={2}>Common Spacing Values</Text>
+                  <VStack gap={0} align="stretch">
+                    {[
+                      { size: '1', px: '4px', use: 'Tiny gap' },
+                      { size: '2', px: '8px', use: 'Compact spacing' },
+                      { size: '3', px: '12px', use: 'Small spacing' },
+                      { size: '4', px: '16px', use: 'Base unit (DEFAULT)' },
+                      { size: '6', px: '24px', use: 'Large spacing' },
+                      { size: '8', px: '32px', use: 'Extra large' },
+                      { size: '12', px: '48px', use: 'Major sections' },
+                    ].map((space) => (
+                      <HStack key={space.size} gap={4} py={2} borderBottom="1px solid" borderColor="gray.100">
+                        <Box w="60px">
+                          <Text fontSize="sm" fontWeight="bold">{space.size}</Text>
+                        </Box>
+                        <Box 
+                          bg="navy.500" 
+                          h="20px" 
+                          w={`calc(${space.px})`}
+                          borderRadius="sm"
+                        />
+                        <Box flex={1}>
+                          <Text fontSize="sm">{space.px}</Text>
+                          <Text fontSize="xs" color="gray.500">{space.use}</Text>
+                        </Box>
+                      </HStack>
+                    ))}
+                  </VStack>
+                </Box>
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
+          {/* NEW: Shadow System Demo */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Shadow System (Elevation)</Heading>
+            </Card.Header>
+            <Card.Body>
+              <Grid 
+                templateColumns={{ base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} 
+                gap={6}
+              >
+                {['xs', 'sm', 'md', 'lg', 'xl', '2xl'].map((shadow) => (
+                  <Box
+                    key={shadow}
+                    bg="white"
+                    p={6}
+                    borderRadius="lg"
+                    boxShadow={shadow}
+                    textAlign="center"
+                  >
+                    <Text fontWeight="semibold" mb={1}>shadow="{shadow}"</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      {shadow === 'xs' && 'Subtle'}
+                      {shadow === 'sm' && 'Card default'}
+                      {shadow === 'md' && 'Hover state'}
+                      {shadow === 'lg' && 'Elevated'}
+                      {shadow === 'xl' && 'Modal'}
+                      {shadow === '2xl' && 'Maximum'}
+                    </Text>
+                  </Box>
+                ))}
+              </Grid>
+            </Card.Body>
+          </Card.Root>
+
+          {/* NEW: Transition Durations Demo */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Transition Durations</Heading>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={3} align="stretch">
+                <Text fontSize="sm" color="gray.600" mb={2}>
+                  Hover over each box to see the transition speed
+                </Text>
+                {[
+                  { duration: '75ms', name: 'ultra', use: 'Instant feedback (hover colors)' },
+                  { duration: '100ms', name: 'faster', use: 'Quick (button press)' },
+                  { duration: '150ms', name: 'fast', use: 'Standard (hover effects)' },
+                  { duration: '250ms', name: 'normal', use: 'Comfortable (modal open) - DEFAULT' },
+                  { duration: '350ms', name: 'slow', use: 'Deliberate (page transition)' },
+                ].map((transition) => (
+                  <Box
+                    key={transition.name}
+                    bg="navy.500"
+                    color="white"
+                    p={4}
+                    borderRadius="md"
+                    transition={`all ${transition.duration} cubic-bezier(0, 0, 0.2, 1)`}
+                    cursor="pointer"
+                    _hover={{
+                      bg: 'gold.500',
+                      color: 'navy.900',
+                      transform: 'translateX(10px)',
+                    }}
+                  >
+                    <HStack justify="space-between">
+                      <Box>
+                        <Text fontWeight="bold">{transition.duration}</Text>
+                        <Text fontSize="sm" opacity={0.9}>{transition.use}</Text>
+                      </Box>
+                      <Text fontSize="xs" opacity={0.7}>Hover me →</Text>
+                    </HStack>
+                  </Box>
+                ))}
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
+          {/* NEW: Z-Index Layers Demo */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Z-Index Scale (Layering)</Heading>
+            </Card.Header>
+            <Card.Body>
+              <Box position="relative" h="300px" bg="gray.50" borderRadius="md" overflow="hidden">
+                <VStack gap={0} align="stretch" h="full" justify="space-around" p={4}>
+                  {[
+                    { level: 'base', value: '0', desc: 'Base layer' },
+                    { level: 'docked', value: '10', desc: 'Sticky elements' },
+                    { level: 'dropdown', value: '1000', desc: 'Dropdown menus' },
+                    { level: 'modal', value: '1400', desc: 'Modal dialogs' },
+                    { level: 'toast', value: '1700', desc: 'Toast notifications' },
+                    { level: 'tooltip', value: '1800', desc: 'Tooltips (highest)' },
+                  ].map((layer, index) => (
+                    <Box
+                      key={layer.level}
+                      position="relative"
+                      bg={`navy.${(index + 1) * 100}`}
+                      color={index > 2 ? 'white' : 'navy.900'}
+                      p={3}
+                      borderRadius="md"
+                      fontSize="sm"
+                      zIndex={layer.value}
+                      boxShadow="md"
+                    >
+                      <HStack justify="space-between">
+                        <Text fontWeight="bold">{layer.level}</Text>
+                        <Text opacity={0.8}>z-index: {layer.value}</Text>
+                      </HStack>
+                      <Text fontSize="xs" opacity={0.7}>{layer.desc}</Text>
+                    </Box>
+                  ))}
+                </VStack>
+              </Box>
+              <Text fontSize="sm" color="gray.600" mt={3}>
+                Visual representation of z-index layering system (darker = higher z-index)
+              </Text>
+            </Card.Body>
+          </Card.Root>
+
+          {/* NEW: Border Radius Demo */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Border Radius Scale</Heading>
+            </Card.Header>
+            <Card.Body>
+              <Grid 
+                templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }} 
+                gap={4}
+              >
+                {[
+                  { size: 'sm', label: '2px' },
+                  { size: 'md', label: '6px' },
+                  { size: 'lg', label: '8px' },
+                  { size: 'xl', label: '12px' },
+                  { size: '2xl', label: '16px' },
+                  { size: '3xl', label: '24px' },
+                  { size: 'full', label: '9999px' },
+                ].map((radius) => (
+                  <Box key={radius.size} textAlign="center">
+                    <Box
+                      bg="navy.500"
+                      w="80px"
+                      h="80px"
+                      borderRadius={radius.size}
+                      mx="auto"
+                      mb={2}
+                    />
+                    <Text fontSize="sm" fontWeight="semibold">{radius.size}</Text>
+                    <Text fontSize="xs" color="gray.500">{radius.label}</Text>
+                  </Box>
+                ))}
+              </Grid>
+            </Card.Body>
+          </Card.Root>
+
+          {/* NEW: Container Sizes Demo */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Container Max-Widths</Heading>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={3} align="stretch">
+                {[
+                  { size: 'sm', width: '640px', use: 'Mobile landscape' },
+                  { size: 'md', width: '768px', use: 'Tablet' },
+                  { size: 'lg', width: '1024px', use: 'Desktop' },
+                  { size: 'xl', width: '1280px', use: 'Large desktop (DEFAULT for MMFL)' },
+                  { size: '2xl', width: '1536px', use: 'Extra large' },
+                ].map((container) => (
+                  <Box key={container.size}>
+                    <Box
+                      bg="navy.100"
+                      borderRadius="md"
+                      p={3}
+                      maxW={container.width}
+                      mx="auto"
+                    >
+                      <HStack justify="space-between">
+                        <Text fontWeight="semibold">{container.size}</Text>
+                        <Text fontSize="sm" color="gray.600">{container.width}</Text>
+                      </HStack>
+                      <Text fontSize="xs" color="gray.500">{container.use}</Text>
+                    </Box>
+                  </Box>
+                ))}
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
           {/* Accessibility Info */}
           <Box bg="success.50" borderLeft="4px solid" borderColor="success.500" p={4} borderRadius="md">
             <Heading fontSize="lg" color="success.700" mb={2}>
-              WCAG 2.1 AA Compliant
+              ✅ Phase 2 Complete: Design Tokens Implemented
             </Heading>
-            <Text color="success.800">
-              All color combinations meet accessibility standards:
-              Navy 900 on white (13.5:1 ✅ AAA) • Gold 500 on navy 900 (8.2:1 ✅ AAA)
+            <Text color="success.800" mb={2}>
+              All design tokens from CORE_DESIGN_GUIDELINES.md are now implemented:
+            </Text>
+            <Text color="success.800" fontSize="sm">
+              • Colors (navy/gold + semantics) • Typography (Inter/Roboto) • Spacing (4px base unit) 
+              • Shadows (elevation) • Transitions (durations + easing) • Z-Index (layering) 
+              • Border Radius • Container Sizes • Breakpoints (mobile-first)
+            </Text>
+            <Box h="1px" bg="success.200" my={3} />
+            <Text color="success.800" fontSize="sm">
+              <strong>WCAG 2.1 AA Compliant:</strong> Navy 900 on white (13.5:1 ✅ AAA) • Gold 500 on navy 900 (8.2:1 ✅ AAA)
             </Text>
           </Box>
 
