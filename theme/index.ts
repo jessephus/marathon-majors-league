@@ -79,6 +79,10 @@ const config = defineConfig({
         full: { value: '9999px' },
       },
       // Spacing Scale (4px base unit)
+      // Note: Values follow Chakra UI defaults with selective additions
+      // to maintain consistency with the ecosystem. Intermediate values
+      // (7, 9, 11, 14, 18) are intentionally omitted to enforce the 4px
+      // grid system. Use responsive props or combinations for edge cases.
       spacing: {
         px: { value: '1px' },          // Hairline
         0: { value: '0' },             // No space
