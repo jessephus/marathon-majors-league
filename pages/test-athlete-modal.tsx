@@ -70,14 +70,17 @@ function AthleteModalTestContent() {
   return (
     <>
       <Head>
-        <title>AthleteModal Test - Fantasy NY Marathon</title>
+        <title>AthleteModal Test - Marathon Majors Fantasy League</title>
         <meta name="description" content="Test page for AthleteModal component" />
       </Head>
 
       <div className="container">
         <header>
-          <h1>🗽 AthleteModal Component Test</h1>
-          <p style={{ fontSize: '0.9rem', color: '#666' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+            <h1>AthleteModal Component Test</h1>
+          </div>
+          <p style={{ fontSize: '0.9rem', color: '#666', textAlign: 'center' }}>
             Click any athlete card to test the modal functionality
           </p>
         </header>
@@ -136,7 +139,7 @@ function AthleteModalTestContent() {
                         background: 'white'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#ff6900';
+                        e.currentTarget.style.borderColor = '#6c757d';
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.2)';
                       }}
                       onMouseLeave={(e) => {
@@ -151,7 +154,7 @@ function AthleteModalTestContent() {
                         {athlete.country} • PB: {athlete.pb || 'N/A'}
                       </p>
                       {athlete.salary && (
-                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#ff6900', fontWeight: 'bold' }}>
+                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#2C39A2', fontWeight: 'bold' }}>
                           ${athlete.salary.toLocaleString()}
                         </p>
                       )}
@@ -182,7 +185,7 @@ function AthleteModalTestContent() {
                         background: 'white'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#ff6900';
+                        e.currentTarget.style.borderColor = '#6c757d';
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.2)';
                       }}
                       onMouseLeave={(e) => {
@@ -197,7 +200,7 @@ function AthleteModalTestContent() {
                         {athlete.country} • PB: {athlete.pb || 'N/A'}
                       </p>
                       {athlete.salary && (
-                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#ff6900', fontWeight: 'bold' }}>
+                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#6c757d', fontWeight: 'bold' }}>
                           ${athlete.salary.toLocaleString()}
                         </p>
                       )}

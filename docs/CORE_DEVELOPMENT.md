@@ -465,4 +465,4 @@ trackEvent('draft_completed', { playerCount: 3, gameId: 'default' });
 - **Multi-region deployment**: Global performance optimization
 - **Read replicas**: Neon read replicas for high traffic
 
-This development guide provides comprehensive information for maintaining and enhancing the Fantasy NY Marathon application while preserving its core simplicity and ease of use.
+This development guide provides comprehensive information for maintaining and enhancing the Marathon Majors Fantasy League application while preserving its core simplicity and ease of use.

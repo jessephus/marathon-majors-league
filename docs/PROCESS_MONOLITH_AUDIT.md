@@ -45,7 +45,7 @@
 
 ## Executive Summary
 
-The Fantasy NY Marathon application consists of three primary monolithic files totaling **8,097+ lines of code**:
+The Marathon Majors Fantasy League application consists of three primary monolithic files totaling **8,097+ lines of code**:
 
 | File | Lines | Functions | Purpose |
 |------|-------|-----------|---------|

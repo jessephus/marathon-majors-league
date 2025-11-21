@@ -1,6 +1,6 @@
 # Neon Postgres Setup Guide
 
-This document provides instructions for setting up a Neon Postgres database for the Fantasy NY Marathon application.
+This document provides instructions for setting up a Neon Postgres database for the Marathon Majors Fantasy League application.
 
 ## Prerequisites
 

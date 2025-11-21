@@ -710,7 +710,7 @@ function getCountryGradient(countryCode: string): string {
     'TUR': ['#E30A17', '#FFFFFF'], // Turkey - Red, White
   };
   
-  const colors = flagColors[countryCode] || ['#2C39A2', '#ff6900']; // Default to app colors
+  const colors = flagColors[countryCode] || ['#2C39A2', '#6c757d']; // Default to app colors
   
   // Create gradient with 2-3 colors
   if (colors.length === 2) {
@@ -860,12 +860,12 @@ function ProgressionChart({ progression }: ProgressionChartProps) {
         datasets: [{
           label: selectedDiscipline,
           data: chartData,
-          borderColor: '#ff6900',
-          backgroundColor: 'rgba(255, 105, 0, 0.1)',
+          borderColor: '#2C39A2',
+          backgroundColor: 'rgba(2, 2, 2, 0.1)',
           borderWidth: 3,
           pointRadius: 6,
           pointHoverRadius: 8,
-          pointBackgroundColor: '#ff6900',
+          pointBackgroundColor: '#2C39A2',
           pointBorderColor: '#fff',
           pointBorderWidth: 2,
           tension: 0.2,

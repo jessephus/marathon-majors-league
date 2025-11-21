@@ -123,7 +123,7 @@ describe('Landing Page SSR Tests', () => {
       const html = await response.text();
       
       assert.strictEqual(response.status, 200, 'Should return 200 OK');
-      assert.ok(html.includes('Fantasy NY Marathon'), 'Should contain page title');
+      assert.ok(html.includes('Marathon Majors Fantasy League'), 'Should contain page title');
       
       console.log('✅ Landing page renders successfully');
     });
@@ -257,7 +257,7 @@ describe('Landing Page SSR Tests', () => {
       const html = await response.text();
       
       // Check that initial HTML contains actual content, not just loading state
-      const hasActualContent = html.includes('Welcome to the Fantasy NY Marathon') ||
+      const hasActualContent = html.includes('Welcome to Marathon Majors Fantasy League') ||
                               html.includes('Join the Competition');
       
       assert.ok(hasActualContent, 'Should pre-render content to avoid flicker');
@@ -418,7 +418,7 @@ describe('Landing Page SSR Tests', () => {
       
       // Critical assertion: Initial HTML must contain rendered content
       // This prevents flash of empty content while waiting for JavaScript
-      const hasWelcomeContent = html.includes('Welcome to the Fantasy NY Marathon') ||
+      const hasWelcomeContent = html.includes('Welcome to Marathon Majors Fantasy League') ||
                                html.includes('Join the Competition') ||
                                html.includes('Create a New Team');
       

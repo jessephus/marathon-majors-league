@@ -33,7 +33,7 @@ const AthleteModal = dynamicImport(
           width: '40px', 
           height: '40px', 
           border: '4px solid rgba(255, 105, 0, 0.2)', 
-          borderTopColor: '#ff6900', 
+          borderTopColor: '#6c757d', 
           borderRadius: '50%', 
           animation: 'spin 1s linear infinite' 
         }} />
@@ -260,13 +260,16 @@ function LeaderboardPageContent({
   return (
     <>
       <Head>
-        <title>Leaderboard - Fantasy NY Marathon</title>
+        <title>Leaderboard - Marathon Majors Fantasy League</title>
         <meta name="description" content="Live fantasy standings and race results" />
       </Head>
 
       <div className="container">
         <header>
-          <h1>🗽 Fantasy NY Marathon</h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+            <h1>Marathon Majors Fantasy League</h1>
+          </div>
         </header>
 
         <main className="page active" id="leaderboard-page">

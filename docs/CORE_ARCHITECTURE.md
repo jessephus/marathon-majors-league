@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fantasy NY Marathon is built as a serverless web application optimized for simplicity, scalability, and real-time collaboration. The architecture prioritizes ease of deployment and maintenance while providing a robust fantasy sports experience.
+Marathon Majors Fantasy League is built as a serverless web application optimized for simplicity, scalability, and real-time collaboration. The architecture prioritizes ease of deployment and maintenance while providing a robust fantasy sports experience.
 
 ## System Architecture
 
@@ -625,4 +625,4 @@ Project Root
 - **Performance testing**: Mobile device and slow network testing
 - **Security testing**: CORS and data isolation verification
 
-This architecture provides a robust foundation for the Fantasy NY Marathon application while maintaining the simplicity and ease of deployment that are core to the project's design philosophy.
+This architecture provides a robust foundation for the Marathon Majors Fantasy League application while maintaining the simplicity and ease of deployment that are core to the project's design philosophy.

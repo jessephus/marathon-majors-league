@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the Fantasy NY Marathon project will be documented in this file.
+All notable changes to the Marathon Majors Fantasy League project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -315,7 +315,7 @@ This major version introduced significant changes to the data storage system:
 ## Development History
 
 ### Project Evolution
-The Fantasy NY Marathon project evolved from a simple proof-of-concept to a fully-featured fantasy sports application:
+The Marathon Majors Fantasy League project evolved from a simple proof-of-concept to a fully-featured fantasy sports application:
 
 1. **Initial Concept**: Basic athlete selection and team formation
 2. **Draft System**: Implementation of fair snake draft algorithm
@@ -366,7 +366,7 @@ The Fantasy NY Marathon project evolved from a simple proof-of-concept to a full
 
 ## Contributing
 
-We welcome contributions to the Fantasy NY Marathon project! Please see our [Development Guide](DEVELOPMENT.md) for detailed information on:
+We welcome contributions to the Marathon Majors Fantasy League project! Please see our [Development Guide](DEVELOPMENT.md) for detailed information on:
 
 - Development environment setup
 - Code standards and conventions
@@ -391,4 +391,4 @@ For questions, issues, or suggestions:
 
 ---
 
-*This changelog is maintained to help users understand the evolution of the Fantasy NY Marathon project and to assist developers in understanding the codebase history.*
+*This changelog is maintained to help users understand the evolution of the Marathon Majors Fantasy League project and to assist developers in understanding the codebase history.*

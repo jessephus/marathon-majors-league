@@ -1,6 +1,6 @@
 # Test Suite Documentation
 
-**Complete testing documentation for Fantasy NY Marathon** - Comprehensive test suite covering functionality verification, performance baselines, code coverage reporting, and test utilities for safe refactoring and continuous integration.
+**Complete testing documentation for Marathon Majors Fantasy League** - Comprehensive test suite covering functionality verification, performance baselines, code coverage reporting, and test utilities for safe refactoring and continuous integration.
 
 **Last Updated:** November 20, 2025  
 **Issue References:** [#69](https://github.com/jessephus/marathon-majors-league/issues/69), [#82](https://github.com/jessephus/marathon-majors-league/issues/82)

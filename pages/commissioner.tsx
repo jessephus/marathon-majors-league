@@ -287,12 +287,15 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
     return (
       <>
         <Head>
-          <title>Commissioner Login - Fantasy NY Marathon</title>
+          <title>Commissioner Login - Marathon Majors Fantasy League</title>
         </Head>
 
         <div className="container">
           <header>
-            <h1>🗽 Fantasy NY Marathon</h1>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+              <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+              <h1>Marathon Majors Fantasy League</h1>
+            </div>
           </header>
 
           <main className="page active">
@@ -356,13 +359,16 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
   return (
     <>
       <Head>
-        <title>Commissioner Dashboard - Fantasy NY Marathon</title>
+        <title>Commissioner Dashboard - Marathon Majors Fantasy League</title>
         <meta name="description" content="Manage your fantasy marathon game" />
       </Head>
 
       <div className="container">
         <header>
-          <h1>🗽 Fantasy NY Marathon</h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+            <h1>Marathon Majors Fantasy League</h1>
+          </div>
         </header>
 
         <main className="page active" id="commissioner-page">

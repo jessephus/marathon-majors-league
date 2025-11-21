@@ -1,6 +1,6 @@
 # Documentation Index
 
-Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate our comprehensive documentation based on your role and needs.
+Welcome to the Marathon Majors Fantasy League documentation! This guide helps you navigate our comprehensive documentation based on your role and needs.
 
 ## 📁 Documentation Organization
 

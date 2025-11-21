@@ -1,8 +1,8 @@
-# Fantasy NY Marathon
+# Marathon Majors Fantasy League
 
 **Turn marathon watching into the ultimate competitive experience!**
 
-Experience the thrill of the New York City Marathon like never before with this interactive fantasy game. Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory through the five boroughs of New York City.
+Experience the thrill of major marathons like never before with this interactive fantasy game. Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory in major marathons around the world.
 
 <img width="1536" height="1024" alt="AI generated image depicting a Ugandan athlete finishing a marathon with a Marathon Majors Fantasy League graphic on his racing singlet." src="https://github.com/user-attachments/assets/c66852b6-3087-4335-9be5-dd16ee4ed431" />
 
@@ -262,5 +262,5 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ---
 
-**Ready to make marathon watching unforgettable?** Deploy your own Fantasy NY Marathon game and let the competition begin!
+**Ready to make marathon watching unforgettable?** Deploy your own Marathon Majors Fantasy League game and let the competition begin!
 

@@ -47,7 +47,7 @@ async function setupCommissionerTOTP() {
     try {
         // 1. Generate TOTP secret
         const secret = speakeasy.generateSecret({
-            name: 'Fantasy NY Marathon (Commissioner)',
+            name: 'Marathon Majors Fantasy League (Commissioner)',
             issuer: 'Marathon Majors League'
         });
         
