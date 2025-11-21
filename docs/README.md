@@ -90,8 +90,8 @@ Learn how to join games, rank athletes, and follow live results.
 | **[UI_INVENTORY_QUICK_REFERENCE.md](UI_INVENTORY_QUICK_REFERENCE.md)** | Quick lookup guide for all UI elements | Fast reference during development |
 | **[UI_ARCHITECTURE_VISUAL_MAP.md](UI_ARCHITECTURE_VISUAL_MAP.md)** | ASCII diagrams of all interfaces | Visual overview of structure |
 | **[AUDIT_COMPLETION_SUMMARY.md](AUDIT_COMPLETION_SUMMARY.md)** | UI/UX audit executive summary | Issue completion status and next steps |
-| **[REDESIGN_ROADMAP.md](REDESIGN_ROADMAP.md)** | 4-phase redesign execution plan (30-40 weeks) | Planning and tracking redesign work |
-| **[DESIGN_GUIDELINES.md](DESIGN_GUIDELINES.md)** | Comprehensive design specifications and standards | Maintaining design consistency |
+| **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** | Chakra UI migration plan (7 phases, 40 weeks) | Planning Chakra migration work |
+| **[CORE_DESIGN_GUIDELINES.md](CORE_DESIGN_GUIDELINES.md)** | Aspirational design system (Navy & Gold, Chakra UI) | Future design standards for Chakra implementation |
 
 ### 5️⃣ Setup & Authentication
 
