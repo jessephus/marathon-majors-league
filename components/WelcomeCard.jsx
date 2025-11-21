@@ -412,7 +412,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
     console.log('[WelcomeCard] Rendering CREATE TEAM card');
     return (
       <>
-        <h2 style={criticalStyles.heading}>Welcome to the Fantasy NY Marathon!</h2>
+        <h2 style={criticalStyles.heading}>Welcome to Marathon Majors Fantasy League!</h2>
         <p style={criticalStyles.description}>
           Compete with friends by drafting elite marathon runners.
         </p>

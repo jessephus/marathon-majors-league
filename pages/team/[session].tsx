@@ -336,11 +336,14 @@ function TeamSessionPageContent({
     return (
       <>
         <Head>
-          <title>Session Error - Fantasy NY Marathon</title>
+          <title>Session Error - Marathon Majors Fantasy League</title>
         </Head>
         <div className="container">
           <header>
-            <h1>🗽 Fantasy NY Marathon</h1>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+              <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+              <h1>MMFL</h1>
+            </div>
           </header>
           <main className="page active">
             <div className="error-card">
@@ -386,7 +389,7 @@ function TeamSessionPageContent({
   return (
     <>
       <Head>
-        <title>{sessionState.teamName || 'My Team'} - Fantasy NY Marathon</title>
+        <title>{sessionState.teamName || 'My Team'} - Marathon Majors Fantasy League</title>
         <meta name="description" content="Build your fantasy marathon team with salary cap draft" />
       </Head>
 
@@ -398,7 +401,10 @@ function TeamSessionPageContent({
 
       <div className="container">
         <header>
-          <h1>🗽 Fantasy NY Marathon</h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+            <h1>MMFL</h1>
+          </div>
         </header>
 
         <main className="page active" id="salary-cap-draft-page">

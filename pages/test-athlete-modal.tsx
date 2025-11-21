@@ -70,14 +70,17 @@ function AthleteModalTestContent() {
   return (
     <>
       <Head>
-        <title>AthleteModal Test - Fantasy NY Marathon</title>
+        <title>AthleteModal Test - Marathon Majors Fantasy League</title>
         <meta name="description" content="Test page for AthleteModal component" />
       </Head>
 
       <div className="container">
         <header>
-          <h1>🗽 AthleteModal Component Test</h1>
-          <p style={{ fontSize: '0.9rem', color: '#666' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
+            <h1>AthleteModal Component Test</h1>
+          </div>
+          <p style={{ fontSize: '0.9rem', color: '#666', textAlign: 'center' }}>
             Click any athlete card to test the modal functionality
           </p>
         </header>

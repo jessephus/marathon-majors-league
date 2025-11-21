@@ -53,12 +53,12 @@ describe('Next.js Routing and SSR Tests', () => {
         'Should contain HTML doctype');
       
       // Check for app-specific content (more specific than just "Fantasy")
-      const hasFantasyMarathon = html.includes('Fantasy NY Marathon') || 
-                                 html.includes('Fantasy Marathon') ||
+      const hasFantasyMarathon = html.includes('Marathon Majors Fantasy League') || 
+                                 html.includes('MMFL') ||
                                  html.includes('fantasy') && html.includes('marathon');
       
       assert.ok(hasFantasyMarathon, 
-        'Should contain Fantasy Marathon related content');
+        'Should contain Marathon Majors Fantasy League related content');
       
       console.log('✅ Main route (/) renders correctly');
     });
