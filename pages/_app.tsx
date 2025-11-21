@@ -17,15 +17,35 @@ import { initWebVitals } from '@/lib/web-vitals';
 import { system } from '@/theme';
 import '../public/style.css';
 
+// Dynamic import of PerformanceDashboard only in development
+let PerformanceDashboard: any = null;
+if (process.env.NODE_ENV === 'development') {
+  import('@/components/PerformanceDashboard').then((mod) => {
+    PerformanceDashboard = mod.default;
+  });
+}
+
 export default function App({ Component, pageProps }: AppProps) {
+  const [showDashboard, setShowDashboard] = useState(false);
+
   // Initialize Web Vitals monitoring
   useEffect(() => {
     initWebVitals();
   }, []);
 
+  // Register dashboard toggle in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      (window as any).__performanceDashboard?._register(setShowDashboard);
+    }
+  }, []);
+
   return (
     <ChakraProvider value={system}>
       <Component {...pageProps} />
+      {process.env.NODE_ENV === 'development' && showDashboard && PerformanceDashboard && (
+        <PerformanceDashboard onClose={() => setShowDashboard(false)} />
+      )}
     </ChakraProvider>
   );
 }
