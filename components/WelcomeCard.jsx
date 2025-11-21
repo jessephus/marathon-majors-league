@@ -35,7 +35,7 @@ const criticalStyles = {
     margin: '0 auto',
   },
   heading: {
-    color: '#ff6900',
+    color: '#2C39A2',
     marginBottom: '15px',
     fontSize: '1.875rem',
     fontWeight: 'bold',
@@ -51,11 +51,11 @@ const criticalStyles = {
     padding: '30px',
     background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.08) 0%, rgba(44, 57, 162, 0.08) 100%)',
     borderRadius: '12px',
-    border: '2px solid #ff6900',
+    border: '2px solid #6c757d',
     textAlign: 'center',
   },
   sectionHeading: {
-    color: '#ff6900',
+    color: '#2C39A2',
     marginBottom: '10px',
     fontSize: '1.4rem',
     fontWeight: '600',
@@ -85,7 +85,7 @@ const criticalStyles = {
     transform: 'translateY(-2px)',
   },
   secondaryButton: {
-    backgroundColor: '#ff6900',
+    backgroundColor: '#2C39A2',
   },
   secondaryButtonHover: {
     backgroundColor: '#e05500',

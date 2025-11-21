@@ -97,7 +97,7 @@ footer .game-select {
 }
 
 footer .game-select:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
 }
 
 footer .btn {
@@ -134,7 +134,7 @@ footer .btn {
 }
 
 .welcome-card h2 {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-bottom: 15px;
 }
 
@@ -149,12 +149,12 @@ footer .btn {
     padding: 30px;
     background: linear-gradient(135deg, rgba(255, 105, 0, 0.08) 0%, rgba(44, 57, 162, 0.08) 100%);
     border-radius: 12px;
-    border: 2px solid var(--primary-orange);
+    border: 2px solid var(--dark-gray);
     text-align: center;
 }
 
 .create-team-section h3 {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-bottom: 10px;
     font-size: 1.4rem;
 }
@@ -382,7 +382,7 @@ footer .btn {
 }
 
 .player-info span {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 /* Ranking Container */
@@ -401,7 +401,7 @@ footer .btn {
 }
 
 .ranking-section h3 {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--medium-gray);
@@ -433,7 +433,7 @@ footer .btn {
 
 .ranking-item .rank {
     font-weight: bold;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-right: 10px;
     min-width: 25px;
 }
@@ -459,7 +459,7 @@ footer .btn {
 
 .ranking-item .rank-input:focus {
     outline: none;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     background: #fff8f0;
     box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
 }
@@ -481,7 +481,7 @@ footer .btn {
 }
 
 .ranking-item .remove-btn {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: var(--white);
     border: none;
     border-radius: 3px;
@@ -492,7 +492,7 @@ footer .btn {
 }
 
 .ranking-item .remove-btn:hover {
-    background: var(--dark-orange);
+    background: var(--dark-blue);
 }
 
 /* Athlete Selection */
@@ -648,7 +648,7 @@ footer .btn {
 }
 
 .team-card h3 {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 2px solid var(--medium-gray);
@@ -675,7 +675,7 @@ footer .btn {
 .team-card-name {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-bottom: 2px;
     white-space: nowrap;
     overflow: hidden;
@@ -759,7 +759,7 @@ footer .btn {
 .team-card .score {
     margin-top: 15px;
     padding: 15px;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-blue) 100%);
     color: var(--white);
     border-radius: 5px;
     text-align: center;
@@ -1008,7 +1008,7 @@ footer .btn {
 }
 
 .session-link {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     text-decoration: none;
     font-family: 'Courier New', monospace;
     font-size: 0.85rem;
@@ -1017,7 +1017,7 @@ footer .btn {
 }
 
 .session-link:hover {
-    color: var(--dark-orange);
+    color: var(--dark-blue);
     text-decoration: underline;
 }
 
@@ -1124,7 +1124,7 @@ footer .btn {
 #winner-display {
     margin-top: 20px;
     padding: 20px;
-    background: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%);
+    background: linear-gradient(135deg, var(--dark-gray) 0%, var(--primary-blue) 100%);
     color: var(--white);
     border-radius: 10px;
     text-align: center;
@@ -1325,8 +1325,8 @@ footer .btn {
 
 .wa-id-input:focus {
     outline: none;
-    border-color: var(--primary-orange);
-    box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(0, 105, 255, 0.1);
 }
 
 .wa-id-input::placeholder {
@@ -1340,7 +1340,7 @@ footer .btn {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    background-color: var(--primary-orange);
+    background-color: var(--primary-blue);
     color: white;
     transition: all 0.2s;
 }
@@ -1413,7 +1413,7 @@ footer .btn {
 }
 
 .athlete-name-link:hover {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     text-decoration: underline;
 }
 
@@ -1613,12 +1613,12 @@ footer .btn {
 
 .modal-tab:hover {
     background: rgba(255, 105, 0, 0.05);
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .modal-tab.active {
-    color: var(--primary-orange);
-    border-bottom-color: var(--primary-orange);
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
     background: white;
 }
 
@@ -1759,7 +1759,7 @@ footer .btn {
 }
 
 .modal-close:hover {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: white;
     transform: rotate(90deg) scale(1.1);
 }
@@ -1769,7 +1769,7 @@ footer .btn {
    ============================================================================ */
 
 .card-masthead {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-gray) 100%);
     padding: 24px 20px;
     position: relative;
     overflow: hidden;
@@ -1954,13 +1954,13 @@ footer .btn {
 }
 
 .tab-button:hover {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     background: rgba(255, 105, 0, 0.05);
 }
 
 .tab-button.active {
-    color: var(--primary-orange);
-    border-bottom-color: var(--primary-orange);
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
 }
 
 /* ============================================================================
@@ -2056,12 +2056,12 @@ footer .btn {
 .stat-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
 }
 
 .stat-card.highlighted {
     background: linear-gradient(135deg, #fff5f0 0%, #ffe8d9 100%);
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
 }
 
 .stat-card-label {
@@ -2162,7 +2162,7 @@ footer .btn {
     gap: 8px;
     width: 100%;
     padding: 14px 20px;
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-gray) 100%);
     color: white;
     text-decoration: none;
     border-radius: 8px;
@@ -2200,7 +2200,7 @@ footer .btn {
 .discipline-selector {
     padding: 8px 16px;
     border-radius: 6px;
-    border: 2px solid var(--primary-orange);
+    border: 2px solid var(--primary-blue);
     background: white;
     color: var(--primary-blue);
     font-weight: 600;
@@ -2214,7 +2214,7 @@ footer .btn {
 }
 
 .discipline-selector:hover {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: white;
 }
 
@@ -2278,7 +2278,7 @@ footer .btn {
 }
 
 .progression-item:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
 }
@@ -2318,7 +2318,7 @@ footer .btn {
 }
 
 .progression-badge {
-    background: linear-gradient(135deg, var(--primary-orange) 0%, #e55d00 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-gray) 100%);
     color: white;
     padding: 6px 12px;
     border-radius: 20px;
@@ -2351,7 +2351,7 @@ footer .btn {
 }
 
 .result-item:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
 }
@@ -2375,7 +2375,7 @@ footer .btn {
 }
 
 .result-position {
-    background: linear-gradient(135deg, var(--primary-orange) 0%, #e55d00 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-gray) 100%);
     color: white;
     padding: 6px 12px;
     border-radius: 20px;
@@ -2417,7 +2417,7 @@ footer .btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     font-size: 13px;
     font-weight: 600;
 }
@@ -2434,7 +2434,7 @@ footer .btn {
     justify-content: center;
     padding: 60px 20px;
     text-align: center;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     font-size: 16px;
     font-weight: 600;
 }
@@ -2446,7 +2446,7 @@ footer .btn {
     height: 40px;
     margin-bottom: 20px;
     border: 4px solid rgba(255, 105, 0, 0.2);
-    border-top-color: var(--primary-orange);
+    border-top-color: var(--primary-blue);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -2813,7 +2813,7 @@ footer .btn {
 }
 
 .athlete-table thead {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-orange) 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-gray) 100%);
     color: var(--white);
 }
 
@@ -2889,7 +2889,7 @@ footer .btn {
 }
 
 .drag-handle:active {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     cursor: grabbing;
 }
 
@@ -2926,7 +2926,7 @@ footer .btn {
 }
 
 .athlete-table .name-cell:hover {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     cursor: pointer;
 }
 
@@ -2937,7 +2937,7 @@ footer .btn {
 .athlete-table .rank-cell {
     text-align: center;
     font-weight: 600;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .athlete-table .rank-cell.top-rank {
@@ -2980,7 +2980,7 @@ footer .btn {
 
 .athlete-table .table-rank-input:focus {
     outline: none;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     background: #fff8f0;
     box-shadow: 0 0 0 2px rgba(255, 105, 0, 0.1);
 }
@@ -2988,7 +2988,7 @@ footer .btn {
 .athlete-table .rank-display-cell {
     text-align: center;
     font-weight: 600;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .athlete-table .rank-cell.top-rank {
@@ -3006,7 +3006,7 @@ footer .btn {
 }
 
 .athlete-table .add-btn {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: var(--white);
     border: none;
     padding: 6px 12px;
@@ -3017,7 +3017,7 @@ footer .btn {
 }
 
 .athlete-table .add-btn:hover {
-    background: var(--dark-orange);
+    background: var(--dark-blue);
     transform: translateY(-1px);
 }
 
@@ -3066,7 +3066,7 @@ footer .btn {
 
 .ranking-item .rank-input:focus {
     outline: none;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     background: #fff8f0;
 }
 
@@ -3118,7 +3118,7 @@ footer .btn {
 
 /* Draft Header with Budget */
 .draft-header {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: white;
     padding: 12px 20px;
     position: sticky;
@@ -3343,7 +3343,7 @@ footer .btn {
 .slot-athlete-salary {
     font-size: 1.2em;
     font-weight: bold;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .slot-remove-btn {
@@ -3464,9 +3464,9 @@ footer .btn {
 }
 
 .sort-tab.active {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: white;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
 }
 
 /* Modal Athlete List */
@@ -3490,7 +3490,7 @@ footer .btn {
 }
 
 .modal-athlete-item:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 2px 8px rgba(255, 105, 0, 0.2);
 }
 
@@ -3541,12 +3541,12 @@ footer .btn {
 .modal-athlete-salary {
     font-size: 1.1em;
     font-weight: bold;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     margin-right: 8px;
 }
 
 .modal-add-btn {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: white;
     border: none;
     border-radius: 50%;
@@ -3680,13 +3680,13 @@ footer .btn {
 }
 
 .leaderboard-tab:hover {
-    color: var(--primary-orange);
+    color: var(--primary-blue);
     background: rgba(255, 105, 0, 0.05);
 }
 
 .leaderboard-tab.active {
-    color: var(--primary-orange);
-    border-bottom-color: var(--primary-orange);
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
     font-weight: 600;
 }
 
@@ -3935,7 +3935,7 @@ footer .btn {
 }
 
 .gender-toggle-btn.active {
-    background: var(--primary-orange);
+    background: var(--primary-blue);
     color: white;
 }
 
@@ -3961,12 +3961,12 @@ footer .btn {
 }
 
 .split-select:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
 }
 
 .split-select:focus {
     outline: none;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.1);
 }
 
@@ -4011,7 +4011,7 @@ footer .btn {
     color: var(--primary-blue);
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 2px solid var(--primary-orange);
+    border-bottom: 2px solid var(--primary-blue);
 }
 
 .race-results-list {
@@ -4034,7 +4034,7 @@ footer .btn {
 }
 
 .race-result-row:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 2px 8px rgba(255, 105, 0, 0.15);
     transform: translateY(-1px);
 }
@@ -4144,7 +4144,7 @@ footer .btn {
 .points-value {
     font-size: 20px;
     font-weight: bold;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .points-breakdown {
@@ -4259,7 +4259,7 @@ footer .btn {
 .team-details-header h2 {
     margin: 0;
     font-size: 24px;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .team-details-temp-banner {
@@ -4380,7 +4380,7 @@ footer .btn {
 }
 
 .athlete-card:hover {
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 2px 8px rgba(255, 105, 0, 0.15);
 }
 
@@ -4591,13 +4591,13 @@ footer .btn {
     background: #f8f9fa;
     padding: 16px;
     border-radius: 8px;
-    border-left: 4px solid var(--primary-orange);
+    border-left: 4px solid var(--primary-blue);
 }
 
 .notation-example strong {
     display: block;
     margin-bottom: 8px;
-    color: var(--primary-orange);
+    color: var(--primary-blue);
 }
 
 .notation-example ul {
@@ -4876,7 +4876,7 @@ footer .btn {
 
 .view-selector:focus {
     outline: none;
-    border-color: var(--primary-orange);
+    border-color: var(--primary-blue);
     box-shadow: 0 0 0 3px rgba(255, 105, 0, 0.1);
 }
 
@@ -5297,7 +5297,7 @@ footer .btn {
    =========================== */
 
 .team-header-orange {
-  background: var(--primary-orange);
+  background: var(--dark-gray);
   color: white;
   padding: 16px 20px;
   display: flex;
@@ -5401,7 +5401,7 @@ footer .btn {
 }
 
 .roster-slot-legacy:hover:not(.locked) {
-  border-color: var(--primary-orange);
+  border-color: var(--primary-blue);
   box-shadow: 0 2px 8px rgba(255, 105, 0, 0.15);
 }
 
@@ -5473,7 +5473,7 @@ footer .btn {
 
 .slot-athlete-salary-legacy {
   font-weight: bold;
-  color: var(--primary-orange);
+  color: var(--primary-blue);
   font-size: 1em;
   white-space: nowrap;
 }
@@ -5483,7 +5483,7 @@ footer .btn {
   height: 28px;
   border-radius: 50%;
   border: none;
-  background: #f44336;
+  background: var(--primary-blue);
   color: white;
   font-size: 1.3em;
   line-height: 1;

@@ -139,7 +139,7 @@ function AthleteModalTestContent() {
                         background: 'white'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#ff6900';
+                        e.currentTarget.style.borderColor = '#6c757d';
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.2)';
                       }}
                       onMouseLeave={(e) => {
@@ -154,7 +154,7 @@ function AthleteModalTestContent() {
                         {athlete.country} • PB: {athlete.pb || 'N/A'}
                       </p>
                       {athlete.salary && (
-                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#ff6900', fontWeight: 'bold' }}>
+                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#2C39A2', fontWeight: 'bold' }}>
                           ${athlete.salary.toLocaleString()}
                         </p>
                       )}
@@ -185,7 +185,7 @@ function AthleteModalTestContent() {
                         background: 'white'
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = '#ff6900';
+                        e.currentTarget.style.borderColor = '#6c757d';
                         e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 105, 0, 0.2)';
                       }}
                       onMouseLeave={(e) => {
@@ -200,7 +200,7 @@ function AthleteModalTestContent() {
                         {athlete.country} • PB: {athlete.pb || 'N/A'}
                       </p>
                       {athlete.salary && (
-                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#ff6900', fontWeight: 'bold' }}>
+                        <p style={{ margin: '0.25rem 0', fontSize: '0.875rem', color: '#6c757d', fontWeight: 'bold' }}>
                           ${athlete.salary.toLocaleString()}
                         </p>
                       )}

@@ -318,7 +318,7 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
               URL.revokeObjectURL(url);
             }}
             style={{
-              background: '#ff6900',
+              background: '#2C39A2',
               color: 'white',
               border: 'none',
               padding: '0.5rem 1rem',

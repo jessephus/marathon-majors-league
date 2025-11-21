@@ -33,7 +33,7 @@ const AthleteModal = dynamicImport(
           width: '40px', 
           height: '40px', 
           border: '4px solid rgba(255, 105, 0, 0.2)', 
-          borderTopColor: '#ff6900', 
+          borderTopColor: '#6c757d', 
           borderRadius: '50%', 
           animation: 'spin 1s linear infinite' 
         }} />
