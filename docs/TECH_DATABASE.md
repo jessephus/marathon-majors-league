@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Fantasy NY Marathon application uses **Neon Postgres** (serverless PostgreSQL) as its database. This document covers the schema, initialization process, and troubleshooting.
+The Marathon Majors Fantasy League application uses **Neon Postgres** (serverless PostgreSQL) as its database. This document covers the schema, initialization process, and troubleshooting.
 
 ## Database Schema
 

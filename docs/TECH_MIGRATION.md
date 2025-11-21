@@ -1,7 +1,7 @@
 # Database Migration History
 
 ## Overview
-This document summarizes the database migrations for the Fantasy NY Marathon application, tracking the evolution from a simple blob storage system to a full-featured user account system with relational database architecture.
+This document summarizes the database migrations for the Marathon Majors Fantasy League application, tracking the evolution from a simple blob storage system to a full-featured user account system with relational database architecture.
 
 ## Migration Timeline
 

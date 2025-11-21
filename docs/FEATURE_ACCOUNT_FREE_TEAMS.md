@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fantasy NY Marathon now supports **account-free team creation and management**. Users can create teams, join games, and compete without traditional account registration. This feature provides a frictionless experience while maintaining security and data persistence through anonymous sessions.
+Marathon Majors Fantasy League now supports **account-free team creation and management**. Users can create teams, join games, and compete without traditional account registration. This feature provides a frictionless experience while maintaining security and data persistence through anonymous sessions.
 
 ## Key Features
 

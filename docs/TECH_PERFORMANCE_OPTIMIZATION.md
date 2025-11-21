@@ -9,7 +9,7 @@ This document describes the performance optimizations implemented to speed up si
 
 ## Overview
 
-The Fantasy NY Marathon application has been optimized following Next.js best practices to improve page load times, reduce bundle sizes, and enhance overall user experience.
+The Marathon Majors Fantasy League application has been optimized following Next.js best practices to improve page load times, reduce bundle sizes, and enhance overall user experience.
 
 ## Key Optimizations Implemented
 

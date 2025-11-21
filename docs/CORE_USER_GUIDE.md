@@ -1,4 +1,4 @@
-# User Guide - Fantasy NY Marathon
+# User Guide - Marathon Majors Fantasy League
 
 ## Table of Contents
 - [Getting Started](#getting-started)
@@ -10,8 +10,8 @@
 
 ## Getting Started
 
-### What is Fantasy NY Marathon?
-Fantasy NY Marathon is a fun, competitive game where you and your friends draft elite marathon runners and compete to see whose team performs best in the actual New York City Marathon. Think fantasy football, but for marathon running!
+### What is Marathon Majors Fantasy League?
+Marathon Majors Fantasy League (MMFL) is a fun, competitive game where you and your friends draft elite marathon runners and compete to see whose team performs best in major marathons around the world. Think fantasy football, but for marathon running!
 
 ### Requirements
 - **2-4 friends** to play with
