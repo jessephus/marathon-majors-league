@@ -4,6 +4,14 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        {/* Google Fonts - Inter (headings) and Roboto (body) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap" 
+          rel="stylesheet" 
+        />
+        
         {/* Favicon and app icons */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
@@ -12,7 +20,7 @@ export default function Document() {
         <link rel="manifest" href="/site.webmanifest" />
         
         {/* Meta tags */}
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#161C4F" />
       </Head>
       <body>
         <Main />
