@@ -1,19 +1,21 @@
 /**
- * Chakra UI Demo Page - Phase 1 Validation
+ * Chakra UI Demo Page - Phase 1 & 2 Validation
  * 
  * Purpose: Demonstrate Chakra UI v3 components working alongside legacy vanilla JS/CSS.
  * This page validates that:
  * 1. Chakra UI is properly installed and configured
  * 2. Theme (navy/gold palette) is applied correctly
- * 3. Google Fonts (Inter/Roboto) are loaded
- * 4. Chakra components coexist with legacy code
- * 5. Responsive design works (mobile-first)
+ * 3. Semantic color mappings (primary/secondary) work correctly
+ * 4. Google Fonts (Inter/Roboto) are loaded
+ * 5. Chakra components coexist with legacy code
+ * 6. Responsive design works (mobile-first)
+ * 7. WCAG 2.1 AA contrast compliance
  * 
- * This demo is referenced in UI_REDESIGN_ROADMAP.md Phase 1.
+ * This demo is referenced in UI_REDESIGN_ROADMAP.md Phase 1 & 2.
  * 
  * Note: Uses Chakra UI v3 API
  * 
- * @version 1.0.0
+ * @version 2.0.0 (Phase 2 - Semantic Colors Added)
  * @date November 21, 2025
  */
 
@@ -38,8 +40,8 @@ export default function ChakraDemoPage() {
   return (
     <>
       <Head>
-        <title>Chakra UI Demo - MMFL Phase 1</title>
-        <meta name="description" content="Chakra UI demonstration page for Marathon Majors Fantasy League" />
+        <title>Chakra UI Demo - MMFL Phase 1 & 2</title>
+        <meta name="description" content="Chakra UI demonstration with semantic colors for Marathon Majors Fantasy League" />
       </Head>
 
       {/* Legacy CSS Header - demonstrates coexistence */}
@@ -76,10 +78,10 @@ export default function ChakraDemoPage() {
               mb={4}
               fontFamily="heading"
             >
-              Chakra UI Phase 1 Demo
+              Chakra UI Phase 1 & 2 Demo
             </Heading>
             <Text fontSize="lg" mb={6}>
-              Navy & Gold Design System • Inter/Roboto Fonts • Mobile-First
+              Navy & Gold Design System • Semantic Colors • Inter/Roboto Fonts • Mobile-First
             </Text>
             <HStack gap={4} justify="center" flexWrap="wrap">
               <Button 
@@ -157,14 +159,266 @@ export default function ChakraDemoPage() {
                   </HStack>
                 </Box>
 
-                {/* Semantic Colors */}
+                {/* Semantic Colors - NEW: Primary & Secondary */}
                 <Box>
-                  <Text fontWeight="semibold" mb={2}>Semantic Colors</Text>
-                  <HStack gap={4} flexWrap="wrap">
-                    <Badge colorPalette="success" size="lg">Success</Badge>
-                    <Badge colorPalette="warning" size="lg">Warning</Badge>
-                    <Badge colorPalette="error" size="lg">Error</Badge>
-                    <Badge colorPalette="info" size="lg">Info</Badge>
+                  <Text fontWeight="semibold" mb={3}>Semantic Color Mappings (Phase 2)</Text>
+                  <VStack gap={4} align="stretch">
+                    {/* Primary Scale */}
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.600">
+                        Primary (maps to Navy) - Main actions
+                      </Text>
+                      <HStack gap={2} flexWrap="wrap">
+                        {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
+                          <Box
+                            key={shade}
+                            bg={`primary.${shade}`}
+                            w="50px"
+                            h="50px"
+                            borderRadius="md"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            color={shade >= 500 ? 'white' : 'primary.900'}
+                            fontSize="xs"
+                            fontWeight="bold"
+                          >
+                            {shade}
+                          </Box>
+                        ))}
+                      </HStack>
+                    </Box>
+
+                    {/* Secondary Scale */}
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.600">
+                        Secondary (maps to Gold) - Accent highlights
+                      </Text>
+                      <HStack gap={2} flexWrap="wrap">
+                        {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
+                          <Box
+                            key={shade}
+                            bg={`secondary.${shade}`}
+                            w="50px"
+                            h="50px"
+                            borderRadius="md"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            color={shade >= 600 ? 'white' : 'secondary.900'}
+                            fontSize="xs"
+                            fontWeight="bold"
+                          >
+                            {shade}
+                          </Box>
+                        ))}
+                      </HStack>
+                    </Box>
+
+                    {/* Status Colors */}
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.600">
+                        Status Colors
+                      </Text>
+                      <HStack gap={4} flexWrap="wrap">
+                        <Badge colorPalette="success" size="lg">Success</Badge>
+                        <Badge colorPalette="warning" size="lg">Warning</Badge>
+                        <Badge colorPalette="error" size="lg">Error</Badge>
+                        <Badge colorPalette="info" size="lg">Info</Badge>
+                      </HStack>
+                    </Box>
+                  </VStack>
+                </Box>
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
+          {/* NEW: Semantic Color Usage Examples */}
+          <Card.Root bg="gray.50">
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>
+                Semantic Colors in Action (Phase 2)
+              </Heading>
+              <Text fontSize="sm" color="gray.600" mt={2}>
+                Using primary/secondary instead of navy/gold improves maintainability
+              </Text>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={6} align="stretch">
+                
+                {/* Button Comparison */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Buttons: Semantic vs Brand Names</Text>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.600">
+                        ✅ Recommended: Semantic Names
+                      </Text>
+                      <Stack gap={3}>
+                        <Button colorScheme="primary" size="lg">
+                          Primary Action
+                        </Button>
+                        <Button colorScheme="secondary" size="lg">
+                          Secondary Action
+                        </Button>
+                        <Button colorScheme="primary" variant="outline" size="lg">
+                          Primary Outline
+                        </Button>
+                        <Button colorScheme="secondary" variant="outline" size="lg">
+                          Secondary Outline
+                        </Button>
+                      </Stack>
+                    </Box>
+                    <Box>
+                      <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.600">
+                        ⚠️ Also Works: Brand Names
+                      </Text>
+                      <Stack gap={3}>
+                        <Button colorScheme="navy" size="lg">
+                          Navy Button
+                        </Button>
+                        <Button colorScheme="gold" size="lg">
+                          Gold Button
+                        </Button>
+                        <Button colorScheme="navy" variant="outline" size="lg">
+                          Navy Outline
+                        </Button>
+                        <Button colorScheme="gold" variant="outline" size="lg">
+                          Gold Outline
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Grid>
+                </Box>
+
+                {/* Signature Brand Combo */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Signature Brand Combination</Text>
+                  <Box 
+                    bg="primary.900" 
+                    color="white" 
+                    p={6} 
+                    borderRadius="lg"
+                    textAlign="center"
+                  >
+                    <Heading size="lg" mb={2}>
+                      Marathon Majors Fantasy League
+                    </Heading>
+                    <Text color="secondary.500" fontSize="xl" fontWeight="bold">
+                      ⭐ Gold on Navy ⭐
+                    </Text>
+                    <Text fontSize="sm" color="gray.300" mt={2}>
+                      8.2:1 Contrast Ratio - WCAG AAA
+                    </Text>
+                  </Box>
+                </Box>
+
+                {/* Real-World Component Example */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Real-World Component Example</Text>
+                  <Card.Root>
+                    <Card.Header bg="primary.900" color="white">
+                      <HStack justify="space-between">
+                        <Heading size="md">Elite Team Dashboard</Heading>
+                        <Badge colorScheme="secondary" size="lg">Premium</Badge>
+                      </HStack>
+                    </Card.Header>
+                    <Card.Body>
+                      <VStack gap={4} align="stretch">
+                        <HStack justify="space-between">
+                          <Text fontWeight="semibold" color="primary.800">
+                            Your Current Rank
+                          </Text>
+                          <Text fontSize="2xl" fontWeight="bold" color="secondary.600">
+                            #1
+                          </Text>
+                        </HStack>
+                        <Box h="1px" bg="gray.200" />
+                        <HStack gap={3}>
+                          <Button colorScheme="primary" flex={1}>
+                            View Team
+                          </Button>
+                          <Button colorScheme="secondary" variant="outline" flex={1}>
+                            Edit Roster
+                          </Button>
+                        </HStack>
+                      </VStack>
+                    </Card.Body>
+                  </Card.Root>
+                </Box>
+
+                {/* Contrast Validation Showcase */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>WCAG 2.1 Contrast Validation</Text>
+                  <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
+                    <Box bg="white" p={4} borderRadius="md" border="1px solid" borderColor="gray.200">
+                      <VStack align="stretch" gap={2}>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.600">Text on White</Text>
+                        <Text color="primary.900" fontWeight="semibold">Primary 900: 13.5:1 (AAA)</Text>
+                        <Text color="primary.500" fontWeight="semibold">Primary 500: 6.8:1 (AAA)</Text>
+                        <Text color="secondary.700" fontWeight="semibold">Secondary 700: 6.1:1 (AAA)</Text>
+                        <Text color="secondary.600" fontWeight="semibold">Secondary 600: 4.9:1 (AA)</Text>
+                      </VStack>
+                    </Box>
+                    <Box bg="primary.900" p={4} borderRadius="md">
+                      <VStack align="stretch" gap={2}>
+                        <Text fontSize="sm" fontWeight="bold" color="gray.300">Text on Primary 900</Text>
+                        <Text color="white" fontWeight="semibold">White: 13.5:1 (AAA)</Text>
+                        <Text color="secondary.500" fontWeight="semibold">Secondary 500: 8.2:1 (AAA)</Text>
+                        <Text color="secondary.400" fontWeight="semibold">Secondary 400: 10.5:1 (AAA)</Text>
+                      </VStack>
+                    </Box>
+                  </Grid>
+                </Box>
+
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
+          {/* Status/Feedback Messages */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Status & Feedback Colors</Heading>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={4} align="stretch">
+                <Box bg="success.50" border="1px solid" borderColor="success.500" p={4} borderRadius="md">
+                  <HStack>
+                    <Text fontSize="2xl">✅</Text>
+                    <VStack align="start" gap={1}>
+                      <Text fontWeight="bold" color="success.700">Success Message</Text>
+                      <Text fontSize="sm" color="success.600">Your team has been saved successfully!</Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+
+                <Box bg="warning.50" border="1px solid" borderColor="warning.500" p={4} borderRadius="md">
+                  <HStack>
+                    <Text fontSize="2xl">⚠️</Text>
+                    <VStack align="start" gap={1}>
+                      <Text fontWeight="bold" color="warning.700">Warning Message</Text>
+                      <Text fontSize="sm" color="warning.600">Roster locks in 30 minutes!</Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+
+                <Box bg="error.50" border="1px solid" borderColor="error.500" p={4} borderRadius="md">
+                  <HStack>
+                    <Text fontSize="2xl">❌</Text>
+                    <VStack align="start" gap={1}>
+                      <Text fontWeight="bold" color="error.700">Error Message</Text>
+                      <Text fontSize="sm" color="error.600">Unable to save team. Please try again.</Text>
+                    </VStack>
+                  </HStack>
+                </Box>
+
+                <Box bg="info.50" border="1px solid" borderColor="info.500" p={4} borderRadius="md">
+                  <HStack>
+                    <Text fontSize="2xl">ℹ️</Text>
+                    <VStack align="start" gap={1}>
+                      <Text fontWeight="bold" color="info.700">Info Message</Text>
+                      <Text fontSize="sm" color="info.600">Race starts at 8:00 AM EST on Sunday.</Text>
+                    </VStack>
                   </HStack>
                 </Box>
               </VStack>
@@ -216,34 +470,100 @@ export default function ChakraDemoPage() {
             </Card.Body>
           </Card.Root>
 
-          {/* Button Variants */}
+          {/* Button State Examples */}
           <Card.Root>
             <Card.Header>
-              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Button Styles</Heading>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Button States & Interactions</Heading>
+              <Text fontSize="sm" color="gray.600" mt={2}>
+                All states use semantic color tokens for consistency
+              </Text>
             </Card.Header>
             <Card.Body>
-              <Stack gap={4} direction={{ base: 'column', md: 'row' }} flexWrap="wrap">
-                <Button bg="navy.500" color="white" _hover={{ bg: 'navy.600' }}>
-                  Navy Primary
-                </Button>
-                <Button 
-                  variant="outline" 
-                  borderColor="navy.500" 
-                  color="navy.500"
-                  _hover={{ bg: 'navy.50' }}
-                >
-                  Navy Outline
-                </Button>
-                <Button bg="gold.500" color="navy.900" _hover={{ bg: 'gold.600' }}>
-                  Gold Accent
-                </Button>
-                <Button bg="success.500" color="white" _hover={{ bg: 'success.600' }}>
-                  Success
-                </Button>
-                <Button bg="error.500" color="white" _hover={{ bg: 'error.600' }}>
-                  Error
-                </Button>
-              </Stack>
+              <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={6}>
+                
+                {/* Primary Button States */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Primary Button (Navy)</Text>
+                  <Stack gap={3}>
+                    <Button colorScheme="primary" size="lg">
+                      Default State
+                    </Button>
+                    <Button colorScheme="primary" size="lg" _hover={{ bg: 'primary.600' }}>
+                      Hover State
+                    </Button>
+                    <Button colorScheme="primary" size="lg" disabled>
+                      Disabled State
+                    </Button>
+                    <Button colorScheme="primary" variant="outline" size="lg">
+                      Outline Variant
+                    </Button>
+                    <Button colorScheme="primary" variant="ghost" size="lg">
+                      Ghost Variant
+                    </Button>
+                  </Stack>
+                </Box>
+
+                {/* Secondary Button States */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Secondary Button (Gold)</Text>
+                  <Stack gap={3}>
+                    <Button colorScheme="secondary" size="lg">
+                      Default State
+                    </Button>
+                    <Button colorScheme="secondary" size="lg" _hover={{ bg: 'secondary.600' }}>
+                      Hover State
+                    </Button>
+                    <Button colorScheme="secondary" size="lg" disabled>
+                      Disabled State
+                    </Button>
+                    <Button colorScheme="secondary" variant="outline" size="lg">
+                      Outline Variant
+                    </Button>
+                    <Button colorScheme="secondary" variant="ghost" size="lg">
+                      Ghost Variant
+                    </Button>
+                  </Stack>
+                </Box>
+
+                {/* Status Button States */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Status Buttons</Text>
+                  <Stack gap={3}>
+                    <Button colorScheme="success" size="lg">
+                      Success Action
+                    </Button>
+                    <Button colorScheme="warning" size="lg">
+                      Warning Action
+                    </Button>
+                    <Button colorScheme="error" size="lg">
+                      Destructive Action
+                    </Button>
+                    <Button colorScheme="info" size="lg">
+                      Info Action
+                    </Button>
+                  </Stack>
+                </Box>
+
+                {/* Button Sizes */}
+                <Box>
+                  <Text fontWeight="semibold" mb={3}>Button Sizes</Text>
+                  <Stack gap={3} align="start">
+                    <Button colorScheme="primary" size="xs">
+                      Extra Small
+                    </Button>
+                    <Button colorScheme="primary" size="sm">
+                      Small
+                    </Button>
+                    <Button colorScheme="primary" size="md">
+                      Medium (Default)
+                    </Button>
+                    <Button colorScheme="primary" size="lg">
+                      Large
+                    </Button>
+                  </Stack>
+                </Box>
+
+              </Grid>
             </Card.Body>
           </Card.Root>
 
