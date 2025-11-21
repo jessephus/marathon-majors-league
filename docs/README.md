@@ -4,7 +4,7 @@ Welcome to the Fantasy NY Marathon documentation! This guide helps you navigate 
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **5 main categories** with **24 documentation files** (plus this README = 25 total).
+Our documentation is organized into **5 main categories** with **30 documentation files** (plus this README = 31 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (5 docs)
@@ -78,7 +78,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
 | **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |
 
-### 4️⃣ Process & Maintenance (Project History - 4 docs)
+### 4️⃣ Process & Maintenance (Project History - 10 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -86,6 +86,12 @@ Learn how to join games, rank athletes, and follow live results.
 | **[PROCESS_DOCS_HEALTH_CHECK.md](PROCESS_DOCS_HEALTH_CHECK.md)** | Automated documentation health monitoring | Understanding CI/CD health checks |
 | **[PROCESS_MONOLITH_AUDIT.md](PROCESS_MONOLITH_AUDIT.md)** | Monolith audit and modularization guide | Planning componentization |
 | **[PROCESS_TECH_DEBT.md](PROCESS_TECH_DEBT.md)** | Active technical debt tracking (includes UI helper duplication & games.players[] deprecation) | Current cleanup initiatives |
+| **[PROCESS_UI_UX_AUDIT.md](PROCESS_UI_UX_AUDIT.md)** | Complete UI/UX inventory and gap analysis | Planning redesign and improvements |
+| **[UI_INVENTORY_QUICK_REFERENCE.md](UI_INVENTORY_QUICK_REFERENCE.md)** | Quick lookup guide for all UI elements | Fast reference during development |
+| **[UI_ARCHITECTURE_VISUAL_MAP.md](UI_ARCHITECTURE_VISUAL_MAP.md)** | ASCII diagrams of all interfaces | Visual overview of structure |
+| **[AUDIT_COMPLETION_SUMMARY.md](AUDIT_COMPLETION_SUMMARY.md)** | UI/UX audit executive summary | Issue completion status and next steps |
+| **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** | Chakra UI migration plan (7 phases, 40 weeks) | Planning Chakra migration work |
+| **[CORE_DESIGN_GUIDELINES.md](CORE_DESIGN_GUIDELINES.md)** | Aspirational design system (Navy & Gold, Chakra UI) | Future design standards for Chakra implementation |
 
 ### 5️⃣ Setup & Authentication
 
@@ -214,14 +220,14 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 24 docs + 1 index (25 files) | Well-organized with category prefixes |
+| Total Documents | 30 docs + 1 index (31 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
 | Outdated Docs | 0 | Recently updated for merge cleanup |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
-**Last Audit:** November 20, 2025 (Documentation consolidation: 27 → 24 files)  
+**Last Audit:** November 21, 2025 (UI/UX audit suite + redesign docs added: 6 new docs)  
 **Next Review:** February 2026
 
 ---
@@ -241,6 +247,6 @@ Our documentation follows these categories:
 
 ---
 
-**Last Updated:** November 10, 2025  
+**Last Updated:** November 20, 2025  
 **Documentation Maintainer:** Project Contributors  
-**Version:** 2.2 (Post-Merge Audit)
+**Version:** 2.3 (UI/UX Audit Added)
