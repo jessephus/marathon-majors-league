@@ -47,7 +47,8 @@ import {
 } from '@chakra-ui/react';
 import {
   HomeIcon,
-  UsersIcon,
+  ClipboardDocumentListIcon,
+  UserGroupIcon,
   TrophyIcon,
   QuestionMarkCircleIcon,
   Cog6ToothIcon,
@@ -87,7 +88,7 @@ function getDefaultMenuItems(): MenuItem[] {
     description: 'Race details and athletes',
   },
     {
-      icon: UsersIcon,
+      icon: ClipboardDocumentListIcon,
       label: 'My Team',
       href: getTeamHref(), // Dynamic based on session
       description: 'Manage your roster',
@@ -100,7 +101,7 @@ function getDefaultMenuItems(): MenuItem[] {
       description: 'League rankings',
     },
     {
-      icon: UsersIcon,
+      icon: UserGroupIcon,
       label: 'Athletes',
       href: '/athletes',
       description: 'Browse runners',

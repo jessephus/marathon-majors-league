@@ -33,7 +33,7 @@
 import { Flex, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
-import { HomeIcon, UsersIcon, TrophyIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, ClipboardDocumentListIcon, UserGroupIcon, TrophyIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { BottomNavItem } from './BottomNavItem';
 import { getTeamHref } from '@/lib/navigation-utils';
 
@@ -63,7 +63,7 @@ function getDefaultNavItems(): NavItem[] {
       matchPaths: [],
     },
     {
-      icon: UsersIcon,
+      icon: ClipboardDocumentListIcon,
       label: 'Team',
       href: getTeamHref(), // Dynamic based on session
       matchPaths: ['/team/[session]'], // Match team session pages
@@ -82,7 +82,7 @@ function getDefaultNavItems(): NavItem[] {
       matchPaths: [],
     },
     {
-      icon: UsersIcon, // Using UsersIcon for Athletes (can be changed to a running icon)
+      icon: UserGroupIcon, // Athletes browser page
       label: 'Athletes',
       href: '/athletes',
       matchPaths: [],
@@ -142,22 +142,37 @@ export function BottomNav({ items, className }: BottomNavProps) {
   const router = useRouter();
   const currentPath = router.pathname;
   
-  // Use default items if not provided, recomputing on each render for dynamic hrefs
-  const navItems = items || getDefaultNavItems();
+  // Initialize with truly static defaults to prevent hydration mismatch
+  // IMPORTANT: Do NOT call getDefaultNavItems() here - it uses dynamic logic
+  const [navItems, setNavItems] = useState<NavItem[]>(() => {
+    if (items) return items;
+    // Return static SSR-safe defaults (no dynamic hrefs)
+    return [
+      { label: 'Home', href: '/', icon: HomeIcon },
+      { label: 'Team', href: '/?action=create-team', icon: ClipboardDocumentListIcon }, // Static for SSR
+      { label: 'Race', href: '/race', icon: CalendarIcon },
+      { label: 'Standings', href: '/standings', icon: TrophyIcon },
+    ];
+  });
   
-  // Re-evaluate dynamic hrefs when router changes (for session updates)
-  const [, forceUpdate] = useState(0);
+  // Update nav items on client after hydration with dynamic hrefs
   useEffect(() => {
-    // Listen for session updates to re-render with new team href
+    const updatedItems = items || getDefaultNavItems();
+    setNavItems(updatedItems);
+  }, [items]);
+  
+  // Re-evaluate dynamic hrefs when session changes
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const handleSessionUpdate = () => {
-      forceUpdate(prev => prev + 1);
+      const updatedItems = items || getDefaultNavItems();
+      setNavItems(updatedItems);
     };
     
     window.addEventListener('sessionsUpdated', handleSessionUpdate);
     return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
-  }, []);
+  }, [items]);
   
   return (
     <Box

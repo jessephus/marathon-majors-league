@@ -39,7 +39,14 @@ import { Flex, Box, HStack, VStack, Heading, Text, Image } from '@chakra-ui/reac
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline';
+import { 
+  Bars3Icon, 
+  BellIcon,
+  HomeIcon,
+  ClipboardDocumentListIcon,
+  CalendarIcon,
+  TrophyIcon,
+} from '@heroicons/react/24/outline';
 import { Button } from '@/components/chakra/Button';
 import { NavLink } from './NavLink';
 import { MobileMenuDrawer } from '../MobileMenuDrawer';
@@ -163,22 +170,37 @@ export function StickyHeader({
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Use default items if not provided, recomputing on each render for dynamic hrefs
-  const computedNavItems = navItems || getDefaultNavItems();
+  // Initialize with truly static defaults to prevent hydration mismatch
+  // IMPORTANT: Do NOT call getDefaultNavItems() here - it uses dynamic logic
+  const [computedNavItems, setComputedNavItems] = useState<NavItem[]>(() => {
+    if (navItems) return navItems;
+    // Return static SSR-safe defaults (no dynamic hrefs)
+    return [
+      { label: 'Home', href: '/', icon: HomeIcon },
+      { label: 'Team', href: '/?action=create-team', icon: ClipboardDocumentListIcon }, // Static for SSR
+      { label: 'Race', href: '/race', icon: CalendarIcon },
+      { label: 'Standings', href: '/standings', icon: TrophyIcon },
+    ];
+  });
   
-  // Re-evaluate dynamic hrefs when router changes (for session updates)
-  const [, forceUpdate] = useState(0);
+  // Update nav items on client after hydration with dynamic hrefs
   useEffect(() => {
-    // Listen for session updates to re-render with new team href
+    const items = navItems || getDefaultNavItems();
+    setComputedNavItems(items);
+  }, [navItems]);
+  
+  // Re-evaluate dynamic hrefs when session changes
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     
     const handleSessionUpdate = () => {
-      forceUpdate(prev => prev + 1);
+      const items = navItems || getDefaultNavItems();
+      setComputedNavItems(items);
     };
     
     window.addEventListener('sessionsUpdated', handleSessionUpdate);
     return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
-  }, []);
+  }, [navItems]);
   
   // Track scroll position to add shadow with smooth transition
   useEffect(() => {
