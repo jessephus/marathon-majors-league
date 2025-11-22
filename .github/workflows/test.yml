@@ -9,6 +9,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'tests/**'
+      - 'theme/**'
+      - 'scripts/accessibility-audit.js'
       - '.github/workflows/test.yml'
   push:
     branches: [ main ]
@@ -19,6 +21,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'tests/**'
+      - 'theme/**'
+      - 'scripts/accessibility-audit.js'
       - '.github/workflows/test.yml'
   workflow_dispatch:
 
@@ -102,6 +106,12 @@ jobs:
       - name: Run performance instrumentation tests
         id: test-perf-instrumentation
         run: npm run test:perf-instrumentation
+        continue-on-error: true
+      
+      # Accessibility Audit Tests (no server required)
+      - name: Run accessibility audit
+        id: test-a11y
+        run: npm run audit:a11y
         continue-on-error: true
       
       - name: Build application
@@ -258,6 +268,7 @@ jobs:
                 'Dynamic Imports Tests': '${{ steps.test-dynamic.outcome }}',
                 'Dynamic Imports E2E Tests': '${{ steps.test-dynamic-e2e.outcome }}',
                 'Performance Instrumentation Tests': '${{ steps.test-perf-instrumentation.outcome }}',
+                'Accessibility Audit': '${{ steps.test-a11y.outcome }}',
                 'API Endpoint Tests': '${{ steps.test-api.outcome }}',
                 'Database Tests': '${{ steps.test-db.outcome }}',
                 'Race Management Tests': '${{ steps.test-race.outcome }}',
@@ -465,6 +476,12 @@ jobs:
           # Check performance instrumentation tests (run early, no server required)
           if [ "${{ steps.test-perf-instrumentation.outcome }}" != "success" ]; then
             echo "❌ Performance instrumentation tests failed"
+            TESTS_FAILED=true
+          fi
+          
+          # Check accessibility audit (run early, no server required)
+          if [ "${{ steps.test-a11y.outcome }}" != "success" ]; then
+            echo "❌ Accessibility audit failed"
             TESTS_FAILED=true
           fi
           

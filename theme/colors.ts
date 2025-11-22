@@ -205,3 +205,4 @@ export const colors = {
  * 5. For decorative elements (stars, badges): 500 shades acceptable if not conveying meaning
  * 
  * Run 'npm run audit:a11y' to validate any new color combinations
+ */
