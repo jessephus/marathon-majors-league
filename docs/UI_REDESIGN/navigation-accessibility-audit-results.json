@@ -1,0 +1,382 @@
+{
+  "timestamp": "2025-11-22T19:27:54.519Z",
+  "baseUrl": "http://localhost:3000",
+  "summary": {
+    "totalPages": 3,
+    "totalTests": 22,
+    "passed": 16,
+    "failed": 5,
+    "warnings": 7
+  },
+  "pages": [
+    {
+      "name": "StickyHeader",
+      "violations": 1,
+      "issues": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodes": [
+            {
+              "html": "<span class=\"chakra-badge css-1ozrbbm\">✅ Implemented</span>",
+              "target": [
+                ".css-1ozrbbm"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.29 (foreground color: #ffffff, background color: #16a34a, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BottomNav",
+      "violations": 1,
+      "issues": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodes": [
+            {
+              "html": "<span class=\"chakra-badge css-1u6a08d\">AAA</span>",
+              "target": [
+                ".css-1xrrdjr > .css-1igwmid.chakra-stack:nth-child(1) > .css-1u6a08d"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.29 (foreground color: #ffffff, background color: #16a34a, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "html": "<span class=\"chakra-badge css-1u6a08d\">AA</span>",
+              "target": [
+                ".css-1xrrdjr > .css-1igwmid.chakra-stack:nth-child(2) > .css-1u6a08d"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.29 (foreground color: #ffffff, background color: #16a34a, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+            },
+            {
+              "html": "<p class=\"css-1d0twq\">Bottom navigation should remain fixed at bottom</p>",
+              "target": [
+                ".css-1d0twq"
+              ],
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 4.39 (foreground color: #71717a, background color: #f4f4f5, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MobileMenuDrawer",
+      "violations": 0,
+      "issues": []
+    }
+  ],
+  "keyboardNavigation": [
+    {
+      "page": "StickyHeader",
+      "tests": [
+        {
+          "test": "Focusable elements count",
+          "expected": "> 0",
+          "actual": 23,
+          "passed": true
+        },
+        {
+          "test": "Tab key focuses element",
+          "expected": "Element should receive focus",
+          "actual": {
+            "tag": "A",
+            "role": null,
+            "ariaLabel": null,
+            "text": "Home"
+          },
+          "passed": true
+        },
+        {
+          "test": "Focus indicator visible",
+          "expected": "Visible outline or box-shadow",
+          "actual": {
+            "outline": "rgb(255, 255, 255) auto 0px",
+            "outlineWidth": "0px",
+            "boxShadow": "none"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "BottomNav",
+      "tests": [
+        {
+          "test": "Focusable elements count",
+          "expected": "> 0",
+          "actual": 18,
+          "passed": true
+        },
+        {
+          "test": "Tab key focuses element",
+          "expected": "Element should receive focus",
+          "actual": {
+            "tag": "A",
+            "role": null,
+            "ariaLabel": null,
+            "text": "Home"
+          },
+          "passed": true
+        },
+        {
+          "test": "Focus indicator visible",
+          "expected": "Visible outline or box-shadow",
+          "actual": {
+            "outline": "rgb(255, 255, 255) auto 0px",
+            "outlineWidth": "0px",
+            "boxShadow": "none"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "MobileMenuDrawer",
+      "tests": [
+        {
+          "test": "Focusable elements count",
+          "expected": "> 0",
+          "actual": 35,
+          "passed": true
+        },
+        {
+          "test": "Tab key focuses element",
+          "expected": "Element should receive focus",
+          "actual": {
+            "tag": "A",
+            "role": null,
+            "ariaLabel": null,
+            "text": "Home"
+          },
+          "passed": true
+        },
+        {
+          "test": "Focus indicator visible",
+          "expected": "Visible outline or box-shadow",
+          "actual": {
+            "outline": "rgb(255, 255, 255) auto 0px",
+            "outlineWidth": "0px",
+            "boxShadow": "none"
+          },
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "focusManagement": [
+    {
+      "page": "StickyHeader",
+      "tests": [
+        {
+          "test": "Skip links present",
+          "expected": "> 0 for accessibility",
+          "actual": 0,
+          "passed": false,
+          "optional": true
+        },
+        {
+          "test": "Tab order is logical",
+          "expected": "Top to bottom, left to right",
+          "actual": "No",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "BottomNav",
+      "tests": [
+        {
+          "test": "Skip links present",
+          "expected": "> 0 for accessibility",
+          "actual": 0,
+          "passed": false,
+          "optional": true
+        },
+        {
+          "test": "Tab order is logical",
+          "expected": "Top to bottom, left to right",
+          "actual": "No",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "MobileMenuDrawer",
+      "tests": [
+        {
+          "test": "Skip links present",
+          "expected": "> 0 for accessibility",
+          "actual": 0,
+          "passed": false,
+          "optional": true
+        }
+      ]
+    }
+  ],
+  "touchTargets": [
+    {
+      "page": "StickyHeader",
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "14 failing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "BottomNav",
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "13 failing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "MobileMenuDrawer",
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "26 failing",
+          "passed": false
+        }
+      ]
+    }
+  ],
+  "ariaAttributes": [
+    {
+      "page": "StickyHeader",
+      "tests": [
+        {
+          "test": "ARIA attributes present",
+          "expected": "> 0",
+          "actual": 14,
+          "passed": true
+        },
+        {
+          "test": "Navigation landmark present",
+          "expected": "> 0",
+          "actual": 3,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "BottomNav",
+      "tests": [
+        {
+          "test": "ARIA attributes present",
+          "expected": "> 0",
+          "actual": 15,
+          "passed": true
+        },
+        {
+          "test": "Navigation landmark present",
+          "expected": "> 0",
+          "actual": 3,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "MobileMenuDrawer",
+      "tests": [
+        {
+          "test": "ARIA attributes present",
+          "expected": "> 0",
+          "actual": 19,
+          "passed": true
+        },
+        {
+          "test": "Navigation landmark present",
+          "expected": "> 0",
+          "actual": 4,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "page": "StickyHeader",
+      "severity": "serious",
+      "type": "axe-violation",
+      "issue": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+      "instances": 1
+    },
+    {
+      "page": "StickyHeader",
+      "severity": "medium",
+      "type": "focus-management",
+      "issue": "Tab order may not follow visual layout",
+      "help": "Verify tab order in source code and consider using tabindex if necessary"
+    },
+    {
+      "page": "StickyHeader",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "14 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-width/min-height to meet WCAG 2.5.5",
+      "examples": [
+        "A: 29x22px",
+        "A: 89x22px",
+        "BUTTON: 0x0px"
+      ]
+    },
+    {
+      "page": "BottomNav",
+      "severity": "serious",
+      "type": "axe-violation",
+      "issue": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+      "instances": 3
+    },
+    {
+      "page": "BottomNav",
+      "severity": "medium",
+      "type": "focus-management",
+      "issue": "Tab order may not follow visual layout",
+      "help": "Verify tab order in source code and consider using tabindex if necessary"
+    },
+    {
+      "page": "BottomNav",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "13 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-width/min-height to meet WCAG 2.5.5",
+      "examples": [
+        "A: 29x22px",
+        "A: 89x22px",
+        "BUTTON: 0x0px"
+      ]
+    },
+    {
+      "page": "MobileMenuDrawer",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "26 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-width/min-height to meet WCAG 2.5.5",
+      "examples": [
+        "A: 29x22px",
+        "A: 89x22px",
+        "BUTTON: 0x0px"
+      ]
+    }
+  ]
+}
