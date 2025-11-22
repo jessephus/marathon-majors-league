@@ -13,10 +13,10 @@
  * 
  * This demo is referenced in UI_REDESIGN_ROADMAP.md Phase 1 & 2.
  * 
- * Note: Uses Chakra UI v3 API
+ * Note: Uses custom Button/Badge wrappers for semantic colorPalette support
  * 
- * @version 2.0.0 (Phase 2 - Semantic Colors Added)
- * @date November 21, 2025
+ * @version 2.1.0 (Phase 2 - Semantic Colors with Custom Components)
+ * @date November 22, 2025
  */
 
 import Head from 'next/head';
@@ -25,15 +25,14 @@ import {
   Container,
   Heading,
   Text,
-  Button,
   VStack,
   HStack,
   Card,
-  Badge,
   Grid,
   GridItem,
   Stack,
 } from '@chakra-ui/react';
+import { Button, Badge } from '@/components/chakra';
 
 export default function ChakraDemoPage() {
 
