@@ -1,0 +1,649 @@
+{
+  "timestamp": "2025-11-22T12:31:37.303Z",
+  "summary": {
+    "totalTests": 0,
+    "passed": 44,
+    "failed": 12,
+    "warnings": 3
+  },
+  "colorTests": [
+    {
+      "name": "Navy 900 on White",
+      "foreground": "#161C4F",
+      "background": "#FFFFFF",
+      "contrast": 15.99,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Headers, body text",
+      "status": "AAA"
+    },
+    {
+      "name": "Navy 800 on White",
+      "foreground": "#1F2D47",
+      "background": "#FFFFFF",
+      "contrast": 13.77,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Subheaders",
+      "status": "AAA"
+    },
+    {
+      "name": "Navy 700 on White",
+      "foreground": "#2A3B5E",
+      "background": "#FFFFFF",
+      "contrast": 11.14,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Body text, links",
+      "status": "AAA"
+    },
+    {
+      "name": "Navy 600 on White",
+      "foreground": "#3A4D7E",
+      "background": "#FFFFFF",
+      "contrast": 8.26,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Secondary text",
+      "status": "AAA"
+    },
+    {
+      "name": "Navy 500 on White",
+      "foreground": "#4A5F9D",
+      "background": "#FFFFFF",
+      "contrast": 6.15,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Primary buttons",
+      "status": "AA"
+    },
+    {
+      "name": "Navy 400 on White",
+      "foreground": "#7A8DBF",
+      "background": "#FFFFFF",
+      "contrast": 3.29,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Disabled states",
+      "status": "Large Only"
+    },
+    {
+      "name": "White on Navy 900",
+      "foreground": "#FFFFFF",
+      "background": "#161C4F",
+      "contrast": 15.99,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "App header, dark cards",
+      "status": "AAA"
+    },
+    {
+      "name": "White on Navy 800",
+      "foreground": "#FFFFFF",
+      "background": "#1F2D47",
+      "contrast": 13.77,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Secondary backgrounds",
+      "status": "AAA"
+    },
+    {
+      "name": "White on Navy 700",
+      "foreground": "#FFFFFF",
+      "background": "#2A3B5E",
+      "contrast": 11.14,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Button backgrounds",
+      "status": "AAA"
+    },
+    {
+      "name": "White on Navy 500",
+      "foreground": "#FFFFFF",
+      "background": "#4A5F9D",
+      "contrast": 6.15,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Active states",
+      "status": "AA"
+    },
+    {
+      "name": "Gold 900 on White",
+      "foreground": "#5E4808",
+      "background": "#FFFFFF",
+      "contrast": 8.73,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Strong emphasis",
+      "status": "AAA"
+    },
+    {
+      "name": "Gold 800 on White",
+      "foreground": "#7C610E",
+      "background": "#FFFFFF",
+      "contrast": 5.88,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Emphasis text",
+      "status": "AA"
+    },
+    {
+      "name": "Gold 700 on White",
+      "foreground": "#9A7A15",
+      "background": "#FFFFFF",
+      "contrast": 4.06,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Body text",
+      "status": "Large Only"
+    },
+    {
+      "name": "Gold 600 on White",
+      "foreground": "#B8941F",
+      "background": "#FFFFFF",
+      "contrast": 2.88,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": false,
+      "context": "Large text, buttons",
+      "status": "Fail"
+    },
+    {
+      "name": "Gold 500 on White",
+      "foreground": "#D4AF37",
+      "background": "#FFFFFF",
+      "contrast": 2.1,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": false,
+      "context": "Large text only",
+      "status": "Fail"
+    },
+    {
+      "name": "Gold 500 on Navy 900",
+      "foreground": "#D4AF37",
+      "background": "#161C4F",
+      "contrast": 7.61,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Logo, stars, highlights",
+      "status": "AAA"
+    },
+    {
+      "name": "Gold 400 on Navy 900",
+      "foreground": "#EDD35B",
+      "background": "#161C4F",
+      "contrast": 10.71,
+      "wcagAA": true,
+      "wcagAAA": true,
+      "wcagAALarge": true,
+      "context": "Bright highlights",
+      "status": "AAA"
+    },
+    {
+      "name": "Success 700 on White",
+      "foreground": "#15803D",
+      "background": "#FFFFFF",
+      "contrast": 5.02,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Success text",
+      "status": "AA"
+    },
+    {
+      "name": "Success 600 on White",
+      "foreground": "#16A34A",
+      "background": "#FFFFFF",
+      "contrast": 3.3,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Success buttons",
+      "status": "Large Only"
+    },
+    {
+      "name": "Success 500 on White",
+      "foreground": "#22C55E",
+      "background": "#FFFFFF",
+      "contrast": 2.28,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": false,
+      "context": "Success alerts",
+      "status": "Fail"
+    },
+    {
+      "name": "White on Success 600",
+      "foreground": "#FFFFFF",
+      "background": "#16A34A",
+      "contrast": 3.3,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Success button text",
+      "status": "Large Only"
+    },
+    {
+      "name": "Warning 700 on White",
+      "foreground": "#B45309",
+      "background": "#FFFFFF",
+      "contrast": 5.02,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Warning text",
+      "status": "AA"
+    },
+    {
+      "name": "Warning 600 on White",
+      "foreground": "#D97706",
+      "background": "#FFFFFF",
+      "contrast": 3.19,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Warning buttons",
+      "status": "Large Only"
+    },
+    {
+      "name": "Warning 500 on White",
+      "foreground": "#F59E0B",
+      "background": "#FFFFFF",
+      "contrast": 2.15,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": false,
+      "context": "Warning alerts",
+      "status": "Fail"
+    },
+    {
+      "name": "Error 700 on White",
+      "foreground": "#B91C1C",
+      "background": "#FFFFFF",
+      "contrast": 6.47,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Error text",
+      "status": "AA"
+    },
+    {
+      "name": "Error 600 on White",
+      "foreground": "#DC2626",
+      "background": "#FFFFFF",
+      "contrast": 4.83,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Error buttons",
+      "status": "AA"
+    },
+    {
+      "name": "Error 500 on White",
+      "foreground": "#EF4444",
+      "background": "#FFFFFF",
+      "contrast": 3.76,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Error alerts",
+      "status": "Large Only"
+    },
+    {
+      "name": "Info 700 on White",
+      "foreground": "#1D4ED8",
+      "background": "#FFFFFF",
+      "contrast": 6.7,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Info text",
+      "status": "AA"
+    },
+    {
+      "name": "Info 600 on White",
+      "foreground": "#2563EB",
+      "background": "#FFFFFF",
+      "contrast": 5.17,
+      "wcagAA": true,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Info buttons",
+      "status": "AA"
+    },
+    {
+      "name": "Info 500 on White",
+      "foreground": "#3B82F6",
+      "background": "#FFFFFF",
+      "contrast": 3.68,
+      "wcagAA": false,
+      "wcagAAA": false,
+      "wcagAALarge": true,
+      "context": "Info alerts",
+      "status": "Large Only"
+    }
+  ],
+  "typographyTests": [
+    {
+      "type": "fontSize",
+      "name": "xs",
+      "value": "0.75rem",
+      "pixelValue": 12,
+      "readable": true,
+      "largeText": false,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "sm",
+      "value": "0.875rem",
+      "pixelValue": 14,
+      "readable": true,
+      "largeText": false,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "md",
+      "value": "1rem",
+      "pixelValue": 16,
+      "readable": true,
+      "largeText": false,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "lg",
+      "value": "1.125rem",
+      "pixelValue": 18,
+      "readable": true,
+      "largeText": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "xl",
+      "value": "1.25rem",
+      "pixelValue": 20,
+      "readable": true,
+      "largeText": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "2xl",
+      "value": "1.5rem",
+      "pixelValue": 24,
+      "readable": true,
+      "largeText": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "3xl",
+      "value": "1.875rem",
+      "pixelValue": 30,
+      "readable": true,
+      "largeText": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "4xl",
+      "value": "2.25rem",
+      "pixelValue": 36,
+      "readable": true,
+      "largeText": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontSize",
+      "name": "5xl",
+      "value": "3rem",
+      "pixelValue": 48,
+      "readable": true,
+      "largeText": true,
+      "status": "pass"
+    },
+    {
+      "type": "lineHeight",
+      "name": "none",
+      "value": 1,
+      "accessible": false,
+      "optimal": false,
+      "status": "fail"
+    },
+    {
+      "type": "lineHeight",
+      "name": "tight",
+      "value": 1.25,
+      "accessible": false,
+      "optimal": false,
+      "status": "fail"
+    },
+    {
+      "type": "lineHeight",
+      "name": "snug",
+      "value": 1.375,
+      "accessible": false,
+      "optimal": false,
+      "status": "fail"
+    },
+    {
+      "type": "lineHeight",
+      "name": "normal",
+      "value": 1.5,
+      "accessible": true,
+      "optimal": true,
+      "status": "optimal"
+    },
+    {
+      "type": "lineHeight",
+      "name": "relaxed",
+      "value": 1.625,
+      "accessible": true,
+      "optimal": true,
+      "status": "optimal"
+    },
+    {
+      "type": "lineHeight",
+      "name": "loose",
+      "value": 1.75,
+      "accessible": true,
+      "optimal": true,
+      "status": "optimal"
+    },
+    {
+      "type": "fontWeight",
+      "name": "normal",
+      "value": 400,
+      "readable": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontWeight",
+      "name": "medium",
+      "value": 500,
+      "readable": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontWeight",
+      "name": "semibold",
+      "value": 600,
+      "readable": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontWeight",
+      "name": "bold",
+      "value": 700,
+      "readable": true,
+      "status": "pass"
+    },
+    {
+      "type": "fontWeight",
+      "name": "extrabold",
+      "value": 800,
+      "readable": true,
+      "status": "pass"
+    }
+  ],
+  "layoutTests": [
+    {
+      "type": "touchTarget",
+      "name": "Minimum (44x44px)",
+      "value": 44,
+      "passes": true
+    },
+    {
+      "type": "touchTarget",
+      "name": "Spacing.10 (40px)",
+      "value": 40,
+      "passes": false
+    },
+    {
+      "type": "touchTarget",
+      "name": "Spacing.12 (48px)",
+      "value": 48,
+      "passes": true
+    },
+    {
+      "type": "spacingConsistency",
+      "consistent": true,
+      "exceptions": []
+    },
+    {
+      "type": "containerWidth",
+      "name": "Mobile (sm)",
+      "value": "640px",
+      "optimal": true
+    },
+    {
+      "type": "containerWidth",
+      "name": "Tablet (md)",
+      "value": "768px",
+      "optimal": true
+    },
+    {
+      "type": "containerWidth",
+      "name": "Desktop (lg)",
+      "value": "1024px",
+      "optimal": true
+    },
+    {
+      "type": "containerWidth",
+      "name": "Large Desktop (xl)",
+      "value": "1280px",
+      "optimal": true
+    },
+    {
+      "type": "containerWidth",
+      "name": "Extra Large (2xl)",
+      "value": "1536px",
+      "optimal": true
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "Navy 400 on White only passes for large text (3.29:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "Gold 700 on White only passes for large text (4.06:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "color",
+      "severity": "high",
+      "issue": "Gold 600 on White fails WCAG AA (2.88:1)",
+      "suggestion": "Use a darker shade or only for decorative elements"
+    },
+    {
+      "type": "color",
+      "severity": "high",
+      "issue": "Gold 500 on White fails WCAG AA (2.10:1)",
+      "suggestion": "Use a darker shade or only for decorative elements"
+    },
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "Success 600 on White only passes for large text (3.30:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "color",
+      "severity": "high",
+      "issue": "Success 500 on White fails WCAG AA (2.28:1)",
+      "suggestion": "Use a darker shade or only for decorative elements"
+    },
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "White on Success 600 only passes for large text (3.30:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "Warning 600 on White only passes for large text (3.19:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "color",
+      "severity": "high",
+      "issue": "Warning 500 on White fails WCAG AA (2.15:1)",
+      "suggestion": "Use a darker shade or only for decorative elements"
+    },
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "Error 500 on White only passes for large text (3.76:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "color",
+      "severity": "medium",
+      "issue": "Info 500 on White only passes for large text (3.68:1)",
+      "suggestion": "Use only for large text (18pt+ or 14pt+ bold), or choose darker shade for normal text"
+    },
+    {
+      "type": "typography",
+      "severity": "medium",
+      "issue": "Line height none (1) is below accessible minimum",
+      "suggestion": "Increase to at least 1.4, ideally 1.5 for body text"
+    },
+    {
+      "type": "typography",
+      "severity": "medium",
+      "issue": "Line height tight (1.25) is below accessible minimum",
+      "suggestion": "Increase to at least 1.4, ideally 1.5 for body text"
+    },
+    {
+      "type": "typography",
+      "severity": "medium",
+      "issue": "Line height snug (1.375) is below accessible minimum",
+      "suggestion": "Increase to at least 1.4, ideally 1.5 for body text"
+    }
+  ],
+  "totalTests": null
+}
