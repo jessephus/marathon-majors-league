@@ -46,7 +46,8 @@
     "test:coverage:new": "c8 --reporter=text --reporter=json-summary --include='lib/**/*.ts' --include='lib/**/*.tsx' --include='components/**/*.tsx' --lines 70 --functions 60 --branches 70 -- sh -c 'npm run test:state && npm run test:dynamic && npm run test:perf-instrumentation && npm run test:api-client:coverage && npm run test:dynamic-import:coverage && npm run test:feature-flags:coverage && npm run test:session-manager:coverage && npm run test:web-vitals:coverage && npm run test:ssr'",
     "validate:no-legacy": "node scripts/validate-no-legacy-imports.js",
     "audit:a11y": "node scripts/accessibility-audit.js",
-    "audit:a11y:watch": "nodemon --watch theme --watch docs/CORE_DESIGN_GUIDELINES.md --exec npm run audit:a11y"
+    "audit:a11y:watch": "nodemon --watch theme --watch docs/CORE_DESIGN_GUIDELINES.md --exec npm run audit:a11y",
+    "audit:navigation": "node tests/navigation-accessibility.test.js"
   },
   "dependencies": {
     "@chakra-ui/next-js": "^2.4.2",
@@ -82,6 +83,7 @@
     "@types/react": "^19.2.2",
     "axe-core": "^4.11.0",
     "c8": "^10.1.3",
+    "playwright": "^1.56.1",
     "sharp": "^0.34.4",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
