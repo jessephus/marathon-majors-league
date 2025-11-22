@@ -1,17 +1,17 @@
 {
-  "timestamp": "2025-11-22T18:58:18.821Z",
+  "timestamp": "2025-11-22T19:27:54.519Z",
   "baseUrl": "http://localhost:3000",
   "summary": {
     "totalPages": 3,
-    "totalTests": 24,
-    "passed": 15,
-    "failed": 7,
+    "totalTests": 22,
+    "passed": 16,
+    "failed": 5,
     "warnings": 7
   },
   "pages": [
     {
       "name": "StickyHeader",
-      "violations": 2,
+      "violations": 1,
       "issues": [
         {
           "id": "color-contrast",
@@ -21,27 +21,11 @@
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
           "nodes": [
             {
-              "html": "<span class=\"chakra-badge css-xyrg7v\">✅ Implemented</span>",
+              "html": "<span class=\"chakra-badge css-1ozrbbm\">✅ Implemented</span>",
               "target": [
-                ".css-xyrg7v"
+                ".css-1ozrbbm"
               ],
-              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.27 (foreground color: #ffffff, background color: #22c55e, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
-            }
-          ]
-        },
-        {
-          "id": "document-title",
-          "impact": "serious",
-          "description": "Ensure each HTML document contains a non-empty <title> element",
-          "help": "Documents must have <title> element to aid in navigation",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright",
-          "nodes": [
-            {
-              "html": "<html lang=\"en\">",
-              "target": [
-                "html"
-              ],
-              "failureSummary": "Fix any of the following:\n  Document does not have a non-empty <title> element"
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.29 (foreground color: #ffffff, background color: #16a34a, font size: 10.5pt (14px), font weight: normal). Expected contrast ratio of 4.5:1"
             }
           ]
         }
@@ -59,18 +43,18 @@
           "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
           "nodes": [
             {
-              "html": "<span class=\"chakra-badge css-1nsuoby\">AAA</span>",
+              "html": "<span class=\"chakra-badge css-1u6a08d\">AAA</span>",
               "target": [
-                ".css-1xrrdjr > .css-1igwmid.chakra-stack:nth-child(1) > .css-1nsuoby"
+                ".css-1xrrdjr > .css-1igwmid.chakra-stack:nth-child(1) > .css-1u6a08d"
               ],
-              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.27 (foreground color: #ffffff, background color: #22c55e, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.29 (foreground color: #ffffff, background color: #16a34a, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
             },
             {
-              "html": "<span class=\"chakra-badge css-1nsuoby\">AA</span>",
+              "html": "<span class=\"chakra-badge css-1u6a08d\">AA</span>",
               "target": [
-                ".css-1xrrdjr > .css-1igwmid.chakra-stack:nth-child(2) > .css-1nsuoby"
+                ".css-1xrrdjr > .css-1igwmid.chakra-stack:nth-child(2) > .css-1u6a08d"
               ],
-              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 2.27 (foreground color: #ffffff, background color: #22c55e, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 3.29 (foreground color: #ffffff, background color: #16a34a, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
             },
             {
               "html": "<p class=\"css-1d0twq\">Bottom navigation should remain fixed at bottom</p>",
@@ -85,25 +69,8 @@
     },
     {
       "name": "MobileMenuDrawer",
-      "violations": 1,
-      "issues": [
-        {
-          "id": "document-title",
-          "impact": "serious",
-          "description": "Ensure each HTML document contains a non-empty <title> element",
-          "help": "Documents must have <title> element to aid in navigation",
-          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright",
-          "nodes": [
-            {
-              "html": "<html lang=\"en\">",
-              "target": [
-                "html"
-              ],
-              "failureSummary": "Fix any of the following:\n  Document does not have a non-empty <title> element"
-            }
-          ]
-        }
-      ]
+      "violations": 0,
+      "issues": []
     }
   ],
   "keyboardNavigation": [
@@ -261,7 +228,7 @@
         {
           "test": "All touch targets ≥44x44px",
           "expected": "0 failing",
-          "actual": "22 failing",
+          "actual": "14 failing",
           "passed": false
         }
       ]
@@ -272,7 +239,7 @@
         {
           "test": "All touch targets ≥44x44px",
           "expected": "0 failing",
-          "actual": "17 failing",
+          "actual": "13 failing",
           "passed": false
         }
       ]
@@ -283,7 +250,7 @@
         {
           "test": "All touch targets ≥44x44px",
           "expected": "0 failing",
-          "actual": "34 failing",
+          "actual": "26 failing",
           "passed": false
         }
       ]
@@ -354,15 +321,6 @@
     },
     {
       "page": "StickyHeader",
-      "severity": "serious",
-      "type": "axe-violation",
-      "issue": "Ensure each HTML document contains a non-empty <title> element",
-      "help": "Documents must have <title> element to aid in navigation",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright",
-      "instances": 1
-    },
-    {
-      "page": "StickyHeader",
       "severity": "medium",
       "type": "focus-management",
       "issue": "Tab order may not follow visual layout",
@@ -372,12 +330,12 @@
       "page": "StickyHeader",
       "severity": "high",
       "type": "touch-targets",
-      "issue": "22 touch targets smaller than 44x44px",
+      "issue": "14 touch targets smaller than 44x44px",
       "help": "Increase padding or min-width/min-height to meet WCAG 2.5.5",
       "examples": [
-        "A: 43x30px",
-        "A: 65x30px",
-        "A: 71x30px"
+        "A: 29x22px",
+        "A: 89x22px",
+        "BUTTON: 0x0px"
       ]
     },
     {
@@ -400,33 +358,24 @@
       "page": "BottomNav",
       "severity": "high",
       "type": "touch-targets",
-      "issue": "17 touch targets smaller than 44x44px",
+      "issue": "13 touch targets smaller than 44x44px",
       "help": "Increase padding or min-width/min-height to meet WCAG 2.5.5",
       "examples": [
-        "A: 43x30px",
-        "A: 65x30px",
-        "A: 71x30px"
+        "A: 29x22px",
+        "A: 89x22px",
+        "BUTTON: 0x0px"
       ]
-    },
-    {
-      "page": "MobileMenuDrawer",
-      "severity": "serious",
-      "type": "axe-violation",
-      "issue": "Ensure each HTML document contains a non-empty <title> element",
-      "help": "Documents must have <title> element to aid in navigation",
-      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/document-title?application=playwright",
-      "instances": 1
     },
     {
       "page": "MobileMenuDrawer",
       "severity": "high",
       "type": "touch-targets",
-      "issue": "34 touch targets smaller than 44x44px",
+      "issue": "26 touch targets smaller than 44x44px",
       "help": "Increase padding or min-width/min-height to meet WCAG 2.5.5",
       "examples": [
-        "A: 43x30px",
-        "A: 65x30px",
-        "A: 71x30px"
+        "A: 29x22px",
+        "A: 89x22px",
+        "BUTTON: 0x0px"
       ]
     }
   ]
