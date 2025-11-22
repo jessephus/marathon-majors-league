@@ -60,11 +60,12 @@ export default function TestStickyHeaderPage() {
   };
   
   return (
-    <Box minHeight="100vh" bg="gray.50">
-        {/* StickyHeader Component */}
-        <StickyHeader onMenuOpen={handleMenuOpen} />
-        
-        {/* Test Content */}
+    <>
+      {/* StickyHeader Component - Outside any container */}
+      <StickyHeader onMenuOpen={handleMenuOpen} />
+      
+      {/* Test Content */}
+      <Box minHeight="100vh" bg="gray.50">
         <Container maxW="container.xl" py={8}>
           <VStack align="stretch" gap={8}>
             {/* Header */}
@@ -268,5 +269,6 @@ export default function TestStickyHeaderPage() {
           </VStack>
         </Container>
       </Box>
+    </>
   );
 }

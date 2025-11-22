@@ -164,8 +164,6 @@ export function StickyHeader({
       as="header"
       position="sticky"
       top={0}
-      left={0}
-      right={0}
       zIndex={999}
       bg="navy.900"
       color="white"
@@ -177,8 +175,7 @@ export function StickyHeader({
       shadow={scrolled ? 'lg' : 'none'}
       height={{ base: '60px', md: '72px', lg: '80px' }}
       borderRadius={0}
-      marginX="calc(-50vw + 50%)"
-      width="100vw"
+      width="100%"
       className={className}
       role="banner"
       aria-label="Site header"
