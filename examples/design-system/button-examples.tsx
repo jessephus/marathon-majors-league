@@ -10,8 +10,9 @@
  * - /components/chakra/README.md
  */
 
-import { Button, IconButton, ButtonGroup, HStack, VStack, Box } from '@chakra-ui/react';
+import { Button, IconButton, ButtonGroup, HStack, VStack, Box, Text } from '@chakra-ui/react';
 import { AddIcon, EditIcon, DeleteIcon, DownloadIcon, SearchIcon, SettingsIcon } from '@chakra-ui/icons';
+import { useState } from 'react';
 
 // =============================================================================
 // PRIMARY BUTTONS
@@ -52,7 +53,7 @@ export function PrimaryButtonWithIcon() {
  * Usage: Async operations (API calls, form submissions)
  */
 export function PrimaryButtonLoading() {
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -265,7 +266,7 @@ export function HorizontalButtonGroup() {
  * Example: "List View" vs "Grid View"
  */
 export function SegmentedButtonGroup() {
-  const [view, setView] = React.useState<'list' | 'grid'>('list');
+  const [view, setView] = useState<'list' | 'grid'>('list');
 
   return (
     <ButtonGroup isAttached variant="outline">

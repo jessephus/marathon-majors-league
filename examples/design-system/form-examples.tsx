@@ -14,7 +14,7 @@ import {
   Input, Select, Checkbox, CheckboxGroup, Radio, RadioGroup,
   Textarea, Switch, Button, VStack, HStack, Stack, Box, Text
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 
 // =============================================================================
 // TEXT INPUTS
@@ -388,7 +388,7 @@ export function TeamCreationForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       console.log('Form submitted:', formData);
