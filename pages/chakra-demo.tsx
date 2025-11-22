@@ -255,16 +255,16 @@ export default function ChakraDemoPage() {
                         ✅ Recommended: Semantic Names
                       </Text>
                       <Stack gap={3}>
-                        <Button colorScheme="primary" size="lg">
+                        <Button colorPalette="primary" size="lg">
                           Primary Action
                         </Button>
-                        <Button colorScheme="secondary" size="lg">
+                        <Button colorPalette="secondary" size="lg">
                           Secondary Action
                         </Button>
-                        <Button colorScheme="primary" variant="outline" size="lg">
+                        <Button colorPalette="primary" variant="outline" size="lg">
                           Primary Outline
                         </Button>
-                        <Button colorScheme="secondary" variant="outline" size="lg">
+                        <Button colorPalette="secondary" variant="outline" size="lg">
                           Secondary Outline
                         </Button>
                       </Stack>
@@ -274,16 +274,16 @@ export default function ChakraDemoPage() {
                         ⚠️ Also Works: Brand Names
                       </Text>
                       <Stack gap={3}>
-                        <Button colorScheme="navy" size="lg">
+                        <Button colorPalette="navy" size="lg">
                           Navy Button
                         </Button>
-                        <Button colorScheme="gold" size="lg">
+                        <Button colorPalette="gold" size="lg">
                           Gold Button
                         </Button>
-                        <Button colorScheme="navy" variant="outline" size="lg">
+                        <Button colorPalette="navy" variant="outline" size="lg">
                           Navy Outline
                         </Button>
-                        <Button colorScheme="gold" variant="outline" size="lg">
+                        <Button colorPalette="gold" variant="outline" size="lg">
                           Gold Outline
                         </Button>
                       </Stack>
@@ -320,7 +320,7 @@ export default function ChakraDemoPage() {
                     <Card.Header bg="primary.900" color="white">
                       <HStack justify="space-between">
                         <Heading size="md">Elite Team Dashboard</Heading>
-                        <Badge colorScheme="secondary" size="lg">Premium</Badge>
+                        <Badge colorPalette="secondary" size="lg">Premium</Badge>
                       </HStack>
                     </Card.Header>
                     <Card.Body>
@@ -335,10 +335,10 @@ export default function ChakraDemoPage() {
                         </HStack>
                         <Box h="1px" bg="gray.200" />
                         <HStack gap={3}>
-                          <Button colorScheme="primary" flex={1}>
+                          <Button colorPalette="primary" flex={1}>
                             View Team
                           </Button>
-                          <Button colorScheme="secondary" variant="outline" flex={1}>
+                          <Button colorPalette="secondary" variant="outline" flex={1}>
                             Edit Roster
                           </Button>
                         </HStack>
@@ -485,19 +485,19 @@ export default function ChakraDemoPage() {
                 <Box>
                   <Text fontWeight="semibold" mb={3}>Primary Button (Navy)</Text>
                   <Stack gap={3}>
-                    <Button colorScheme="primary" size="lg">
+                    <Button colorPalette="primary" size="lg">
                       Default State
                     </Button>
-                    <Button colorScheme="primary" size="lg" _hover={{ bg: 'primary.600' }}>
+                    <Button colorPalette="primary" size="lg" _hover={{ bg: 'primary.600' }}>
                       Hover State
                     </Button>
-                    <Button colorScheme="primary" size="lg" disabled>
+                    <Button colorPalette="primary" size="lg" disabled>
                       Disabled State
                     </Button>
-                    <Button colorScheme="primary" variant="outline" size="lg">
+                    <Button colorPalette="primary" variant="outline" size="lg">
                       Outline Variant
                     </Button>
-                    <Button colorScheme="primary" variant="ghost" size="lg">
+                    <Button colorPalette="primary" variant="ghost" size="lg">
                       Ghost Variant
                     </Button>
                   </Stack>
@@ -507,19 +507,19 @@ export default function ChakraDemoPage() {
                 <Box>
                   <Text fontWeight="semibold" mb={3}>Secondary Button (Gold)</Text>
                   <Stack gap={3}>
-                    <Button colorScheme="secondary" size="lg">
+                    <Button colorPalette="secondary" size="lg">
                       Default State
                     </Button>
-                    <Button colorScheme="secondary" size="lg" _hover={{ bg: 'secondary.600' }}>
+                    <Button colorPalette="secondary" size="lg" _hover={{ bg: 'secondary.600' }}>
                       Hover State
                     </Button>
-                    <Button colorScheme="secondary" size="lg" disabled>
+                    <Button colorPalette="secondary" size="lg" disabled>
                       Disabled State
                     </Button>
-                    <Button colorScheme="secondary" variant="outline" size="lg">
+                    <Button colorPalette="secondary" variant="outline" size="lg">
                       Outline Variant
                     </Button>
-                    <Button colorScheme="secondary" variant="ghost" size="lg">
+                    <Button colorPalette="secondary" variant="ghost" size="lg">
                       Ghost Variant
                     </Button>
                   </Stack>
@@ -529,16 +529,16 @@ export default function ChakraDemoPage() {
                 <Box>
                   <Text fontWeight="semibold" mb={3}>Status Buttons</Text>
                   <Stack gap={3}>
-                    <Button colorScheme="success" size="lg">
+                    <Button colorPalette="success" size="lg">
                       Success Action
                     </Button>
-                    <Button colorScheme="warning" size="lg">
+                    <Button colorPalette="warning" size="lg">
                       Warning Action
                     </Button>
-                    <Button colorScheme="error" size="lg">
+                    <Button colorPalette="error" size="lg">
                       Destructive Action
                     </Button>
-                    <Button colorScheme="info" size="lg">
+                    <Button colorPalette="info" size="lg">
                       Info Action
                     </Button>
                   </Stack>
@@ -548,16 +548,16 @@ export default function ChakraDemoPage() {
                 <Box>
                   <Text fontWeight="semibold" mb={3}>Button Sizes</Text>
                   <Stack gap={3} align="start">
-                    <Button colorScheme="primary" size="xs">
+                    <Button colorPalette="primary" size="xs">
                       Extra Small
                     </Button>
-                    <Button colorScheme="primary" size="sm">
+                    <Button colorPalette="primary" size="sm">
                       Small
                     </Button>
-                    <Button colorScheme="primary" size="md">
+                    <Button colorPalette="primary" size="md">
                       Medium (Default)
                     </Button>
-                    <Button colorScheme="primary" size="lg">
+                    <Button colorPalette="primary" size="lg">
                       Large
                     </Button>
                   </Stack>

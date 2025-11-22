@@ -9,16 +9,16 @@
  * - Transitions (animation durations)
  * - Z-index (layering system)
  * - Breakpoints (mobile-first)
- * - Component overrides
+ * - Recipes (component color palette support)
  * 
  * This theme implements the design system specified in:
  * docs/CORE_DESIGN_GUIDELINES.md
  * 
- * Note: Chakra UI v3 uses a different theming API than v2.
- * We use createSystem() to define the theme configuration.
+ * Note: Chakra UI v3 uses the `colorPalette` prop system.
+ * Components automatically apply colorPalette.500, colorPalette.600, etc.
  * 
- * @version 2.0.0 (Phase 2 Complete)
- * @date November 21, 2025
+ * @version 2.1.0 (Phase 2 Complete + Proper Color Palettes)
+ * @date November 22, 2025
  */
 
 import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
