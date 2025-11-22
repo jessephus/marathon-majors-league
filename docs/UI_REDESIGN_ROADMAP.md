@@ -279,9 +279,9 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 
 ---
 
-## Phase 3: Core Navigation (4 weeks) ✅
+## Phase 3: Core Navigation (5 weeks) ✅
 
-**Goal:** Replace existing navigation with sticky header + bottom toolbar
+**Goal:** Replace existing navigation with sticky header + bottom toolbar, implement feature flags
 
 **Status:** ✅ Complete  
 **Completion Date:** November 22, 2025
@@ -371,6 +371,85 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 
 **GitHub Sub-Issue:** [#122 - Sticky Header](https://github.com/jessephus/marathon-majors-league/issues/122)  
 **Documentation:** `docs/UI_REDESIGN/UI_PHASE3_STICKYHEADER_IMPLEMENTATION.md`
+
+### Week 15: Feature Flags & Gradual Rollout ✅
+
+**Status:** ✅ Complete  
+**Completion Date:** November 22, 2025
+
+#### Tasks
+- [x] Add navigation feature flags to FeatureFlag enum
+  - `CHAKRA_HEADER` - Replace legacy header with Chakra UI StickyHeader
+  - `CHAKRA_BOTTOM_NAV` - Replace legacy mobile nav with Chakra UI BottomNav
+- [x] Configure feature flag registry
+  - Set initial rollout percentage (10%)
+  - Configure environment targeting (dev, preview, prod)
+  - Add detailed descriptions
+- [x] Create NavigationWrapper component
+  - Feature flag-based conditional rendering
+  - Fallback to legacy navigation when disabled
+  - Dynamic padding for fixed header/footer
+  - CSS hiding of legacy navigation when Chakra active
+  - Zero downtime during rollout
+- [x] Integrate NavigationWrapper into _app.tsx
+  - Wrap all pages with navigation logic
+  - Preserve existing page functionality
+  - Test coexistence with legacy code
+- [x] Create navigation module exports
+  - Central import point (`components/navigation/index.ts`)
+  - Export all navigation components
+  - Add `useNewNavigation` hook
+- [x] Document feature flag strategy
+  - Comprehensive rollout plan (10% → 25% → 50% → 75% → 100%)
+  - Testing guide with console commands
+  - Troubleshooting section
+  - Metrics to monitor
+- [x] Build and test implementation
+  - TypeScript validation passed
+  - Build successful
+  - Manual testing with console commands
+  - Screenshots captured (mobile + desktop)
+
+#### Deliverables
+- ✅ Feature flags added to `lib/feature-flags.ts` (2 new flags)
+- ✅ `NavigationWrapper` component (`components/navigation/NavigationWrapper.tsx`)
+- ✅ Navigation module index (`components/navigation/index.ts`)
+- ✅ Updated `_app.tsx` with NavigationWrapper integration
+- ✅ Comprehensive documentation (`docs/UI_REDESIGN/UI_PHASE3_FEATURE_FLAGS.md` - 17KB)
+- ✅ Rollout strategy documented (5-phase gradual rollout)
+- ✅ Testing guide with console helpers
+- ✅ Screenshots (mobile: 375px, desktop: 1280px)
+
+**GitHub Sub-Issue:** Navigation Feature Flags & Gradual Rollout  
+**Documentation:** `docs/UI_REDESIGN/UI_PHASE3_FEATURE_FLAGS.md`
+
+#### Rollout Plan
+
+**Phase 1: Internal Testing (Week 1)**
+- Rollout: 0% (manual overrides only)
+- Target: Development team
+- Success criteria: Zero visual regressions, all navigation works
+
+**Phase 2: Beta Testing (Week 2)**
+- Rollout: 10%
+- Target: Random 10% of users
+- Success criteria: Error rate < 0.5%, positive feedback
+
+**Phase 3: Gradual Expansion (Weeks 3-4)**
+- Rollout: 10% → 25% → 50% → 75%
+- Target: Incremental user cohorts
+- Success criteria: Stable metrics, no critical bugs
+
+**Phase 4: Full Launch (Week 5)**
+- Rollout: 100%
+- Target: All users
+- Success criteria: Complete migration, stable performance
+
+**Phase 5: Legacy Cleanup (Week 6+)**
+- Remove feature flags from code
+- Delete legacy navigation code
+- Update documentation
+- Close Phase 3 issues
 
 ---
 
