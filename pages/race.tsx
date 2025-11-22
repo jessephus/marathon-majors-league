@@ -64,12 +64,6 @@ export default function RacePage({ raceId }: RacePageProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!raceId) {
-      setError('No race ID provided');
-      setLoading(false);
-      return;
-    }
-
     loadRaceDetails();
   }, [raceId]);
 
@@ -77,6 +71,35 @@ export default function RacePage({ raceId }: RacePageProps) {
     try {
       setLoading(true);
       setError(null);
+      
+      // If no race ID provided, fetch active races and use the first one
+      if (!raceId) {
+        const activeRaces = await apiClient.races.list({ active: true });
+        
+        // Handle both array and single object responses
+        if (Array.isArray(activeRaces) && activeRaces.length > 0) {
+          // Fetch the first active race with athletes
+          const raceData = await apiClient.races.list({ 
+            id: activeRaces[0].id, 
+            includeAthletes: true 
+          });
+          
+          // Handle response type - could be object or array
+          if (Array.isArray(raceData) && raceData.length > 0) {
+            setRace(raceData[0]);
+          } else if (!Array.isArray(raceData) && raceData) {
+            setRace(raceData);
+          } else {
+            setError('Race not found');
+          }
+        } else if (!Array.isArray(activeRaces) && activeRaces) {
+          // If API returns a single object when active=true
+          setRace(activeRaces);
+        } else {
+          setError('No active races found');
+        }
+        return;
+      }
       
       // Fetch race with athletes
       // NOTE: When an ID is provided, the API returns a single race object, not an array
@@ -143,8 +166,8 @@ export default function RacePage({ raceId }: RacePageProps) {
             <div className="error-message">
               <h2>Race Not Found</h2>
               <p>{error || 'The requested race could not be found.'}</p>
-              <Link href="/">
-                <a className="btn btn-primary">Return to Home</a>
+              <Link href="/" className="btn btn-primary">
+                Return to Home
               </Link>
             </div>
           </div>
@@ -302,10 +325,8 @@ export default function RacePage({ raceId }: RacePageProps) {
 
           {/* Call to Action */}
           <div className="race-cta">
-            <Link href="/">
-              <a className="btn btn-primary btn-lg">
-                Create Your Fantasy Team
-              </a>
+            <Link href="/" className="btn btn-primary btn-lg">
+              Create Your Fantasy Team
             </Link>
           </div>
         </div>

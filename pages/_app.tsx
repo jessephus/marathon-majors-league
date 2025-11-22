@@ -19,6 +19,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { initWebVitals } from '@/lib/web-vitals';
 import { system } from '@/theme';
 import { NavigationWrapper } from '@/components/navigation';
+import { AppStateProvider } from '@/lib/state-provider';
 import '../public/style.css';
 
 // Dynamic import of PerformanceDashboard only in development
@@ -46,9 +47,11 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <ChakraProvider value={system}>
-      <NavigationWrapper>
-        <Component {...pageProps} />
-      </NavigationWrapper>
+      <AppStateProvider>
+        <NavigationWrapper>
+          <Component {...pageProps} />
+        </NavigationWrapper>
+      </AppStateProvider>
       {process.env.NODE_ENV === 'development' && showDashboard && PerformanceDashboard && (
         <PerformanceDashboard onClose={() => setShowDashboard(false)} />
       )}

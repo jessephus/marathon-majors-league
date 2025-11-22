@@ -56,6 +56,8 @@ export interface NavItem {
 }
 
 /**
+ * Default navigation items for desktop header
+ * Updated to include Race (5 items) - Phase 3 enhancement
  * Get default navigation items (with dynamic team link)
  * Called as a function to ensure team href is evaluated at render time
  */
@@ -72,6 +74,11 @@ function getDefaultNavItems(): NavItem[] {
       matchPaths: ['/team/[session]'], // Match team session pages
       isDynamic: true,
     },
+  {
+    label: 'Race',
+    href: '/race',
+    matchPaths: [],
+  },
     {
       label: 'Standings',
       href: '/leaderboard',

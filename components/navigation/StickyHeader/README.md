@@ -127,12 +127,13 @@ interface NavItem {
 
 ## Default Navigation Items
 
-The component ships with 4 default desktop navigation items:
+The component ships with 5 default desktop navigation items:
 
 1. **Home** (`/`) - Landing page
 2. **My Team** (`/team`) - Team management and draft
-3. **Standings** (`/leaderboard`) - Live leaderboard
-4. **Athletes** (`/athletes`) - Browse all athletes
+3. **Race** (`/race`) - Race details and information
+4. **Standings** (`/leaderboard`) - Live leaderboard
+5. **Athletes** (`/athletes`) - Browse all athletes
 
 ---
 

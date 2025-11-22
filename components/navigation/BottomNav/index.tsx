@@ -33,7 +33,7 @@
 import { Flex, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
-import { HomeIcon, UsersIcon, TrophyIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, UsersIcon, TrophyIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { BottomNavItem } from './BottomNavItem';
 import { getTeamHref } from '@/lib/navigation-utils';
 
@@ -49,6 +49,8 @@ interface NavItem {
 }
 
 /**
+ * Default navigation items for the bottom toolbar
+ * Updated to include Race (5 items) - Phase 3 enhancement
  * Get default navigation items (with dynamic team link)
  * Called as a function to ensure team href is evaluated at render time
  */
@@ -67,6 +69,12 @@ function getDefaultNavItems(): NavItem[] {
       matchPaths: ['/team/[session]'], // Match team session pages
       isDynamic: true,
     },
+  {
+    icon: CalendarIcon,
+    label: 'Race',
+    href: '/race',
+    matchPaths: [],
+  },
     {
       icon: TrophyIcon,
       label: 'Standings',

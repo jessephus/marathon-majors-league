@@ -53,6 +53,7 @@ import {
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   XMarkIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/chakra/Button';
 import { getTeamHref } from '@/lib/navigation-utils';
@@ -79,6 +80,12 @@ function getDefaultMenuItems(): MenuItem[] {
       href: '/',
       description: 'Dashboard and overview',
     },
+  {
+    icon: CalendarIcon,
+    label: 'Race',
+    href: '/race',
+    description: 'Race details and athletes',
+  },
     {
       icon: UsersIcon,
       label: 'My Team',
