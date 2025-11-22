@@ -11,8 +11,26 @@
  */
 
 import { Button, IconButton, ButtonGroup, HStack, VStack, Box, Text } from '@chakra-ui/react';
-import { AddIcon, EditIcon, DeleteIcon, DownloadIcon, SearchIcon, SettingsIcon } from '@chakra-ui/icons';
 import { useState } from 'react';
+
+/**
+ * Note: Icon examples use text placeholders.
+ * In production, use:
+ * - lucide-react: npm install lucide-react
+ * - react-icons: npm install react-icons
+ * - Custom SVG icons from your design system
+ * 
+ * Example with lucide-react:
+ * import { Plus, Edit, Trash2, Download, Search, Settings } from 'lucide-react';
+ */
+
+// Icon placeholder components (replace with actual icon library)
+const AddIcon = () => <span>+</span>;
+const EditIcon = () => <span>✎</span>;
+const DeleteIcon = () => <span>×</span>;
+const DownloadIcon = () => <span>↓</span>;
+const SearchIcon = () => <span>🔍</span>;
+const SettingsIcon = () => <span>⚙</span>;
 
 // =============================================================================
 // PRIMARY BUTTONS
@@ -38,11 +56,13 @@ export function PrimaryButton() {
  * Primary Button with Icon
  * 
  * Usage: Actions that benefit from visual reinforcement
+ * Note: Replace placeholder icon with actual icon library (lucide-react, react-icons, etc.)
  */
 export function PrimaryButtonWithIcon() {
   return (
-    <Button colorPalette="primary" size="lg" leftIcon={<AddIcon />}>
-      Add Athlete
+    <Button colorPalette="primary" size="lg" display="flex" gap={2}>
+      <AddIcon />
+      <span>Add Athlete</span>
     </Button>
   );
 }
@@ -66,11 +86,10 @@ export function PrimaryButtonLoading() {
     <Button 
       colorPalette="primary" 
       size="lg"
-      isLoading={isLoading}
-      loadingText="Saving..."
+      loading={isLoading}
       onClick={handleSubmit}
     >
-      Save Team
+      {isLoading ? 'Saving...' : 'Save Team'}
     </Button>
   );
 }
@@ -125,9 +144,11 @@ export function GoldButton() {
       _hover={{ bg: 'gold.600' }}
       _active={{ bg: 'gold.700' }}
       size="lg"
-      rightIcon={<DownloadIcon />}
+      display="flex"
+      gap={2}
     >
-      Upgrade to Pro
+      <span>Upgrade to Pro</span>
+      <DownloadIcon />
     </Button>
   );
 }
@@ -149,9 +170,11 @@ export function DestructiveButton() {
     <Button 
       colorPalette="error" 
       variant="outline"
-      leftIcon={<DeleteIcon />}
+      display="flex"
+      gap={2}
     >
-      Delete Team
+      <DeleteIcon />
+      <span>Delete Team</span>
     </Button>
   );
 }
@@ -185,27 +208,30 @@ export function DestructiveGhostButton() {
  */
 export function IconButtons() {
   return (
-    <HStack spacing={2}>
+    <HStack gap={2}>
       <IconButton 
-        icon={<EditIcon />}
         aria-label="Edit team"
         variant="outline"
         colorPalette="primary"
-      />
+      >
+        <EditIcon />
+      </IconButton>
       
       <IconButton 
-        icon={<DeleteIcon />}
         aria-label="Delete team"
         variant="ghost"
         colorPalette="error"
-      />
+      >
+        <DeleteIcon />
+      </IconButton>
       
       <IconButton 
-        icon={<SettingsIcon />}
         aria-label="Settings"
         variant="ghost"
         colorPalette="primary"
-      />
+      >
+        <SettingsIcon />
+      </IconButton>
     </HStack>
   );
 }
@@ -219,7 +245,6 @@ export function IconButtons() {
 export function FloatingActionButton() {
   return (
     <IconButton 
-      icon={<AddIcon />}
       aria-label="Add athlete"
       colorPalette="primary"
       size="lg"
@@ -229,7 +254,9 @@ export function FloatingActionButton() {
       right={{ base: 4, md: 8 }}
       shadow="lg"
       zIndex="sticky"
-    />
+    >
+      <AddIcon />
+    </IconButton>
   );
 }
 
@@ -245,7 +272,7 @@ export function FloatingActionButton() {
  */
 export function HorizontalButtonGroup() {
   return (
-    <ButtonGroup spacing={3}>
+    <ButtonGroup gap={3}>
       <Button variant="ghost" colorPalette="primary">
         Cancel
       </Button>
@@ -269,7 +296,7 @@ export function SegmentedButtonGroup() {
   const [view, setView] = useState<'list' | 'grid'>('list');
 
   return (
-    <ButtonGroup isAttached variant="outline">
+    <ButtonGroup attached variant="outline">
       <Button 
         colorPalette={view === 'list' ? 'primary' : 'gray'}
         bg={view === 'list' ? 'primary.500' : 'transparent'}
@@ -306,7 +333,7 @@ export function SegmentedButtonGroup() {
  */
 export function ButtonSizes() {
   return (
-    <VStack align="start" spacing={4}>
+    <VStack align="start" gap={4}>
       <Button colorPalette="primary" size="xs">Extra Small</Button>
       <Button colorPalette="primary" size="sm">Small</Button>
       <Button colorPalette="primary" size="md">Medium (Default)</Button>
@@ -331,8 +358,10 @@ export function ResponsiveButton() {
     <Button 
       colorPalette="primary"
       size={{ base: 'md', md: 'lg' }}
-      leftIcon={<AddIcon />}
+      display="flex"
+      gap={2}
     >
+      <AddIcon />
       <Box as="span" display={{ base: 'none', sm: 'inline' }}>
         Add Athlete
       </Box>
@@ -358,7 +387,7 @@ export function DisabledButton() {
     <Button 
       colorPalette="primary" 
       size="lg"
-      isDisabled
+      disabled
     >
       Submit (3 athletes required)
     </Button>
@@ -394,7 +423,7 @@ export function FullWidthButton() {
  */
 export function ModalFooterButtons() {
   return (
-    <HStack spacing={3} justify="flex-end">
+    <HStack gap={3} justify="flex-end">
       <Button variant="ghost" colorPalette="primary">
         Cancel
       </Button>
@@ -412,16 +441,17 @@ export function ModalFooterButtons() {
  */
 export function FormNavigationButtons() {
   return (
-    <HStack spacing={3} justify="space-between" width="full">
+    <HStack gap={3} justify="space-between" width="full">
       <Button variant="outline" colorPalette="primary">
         Previous
       </Button>
-      <HStack spacing={3}>
+      <HStack gap={3}>
         <Button variant="ghost">
           Save Draft
         </Button>
-        <Button colorPalette="primary" rightIcon={<AddIcon transform="rotate(90deg)" />}>
-          Next Step
+        <Button colorPalette="primary" display="flex" gap={2}>
+          <span>Next Step</span>
+          <span style={{ transform: 'rotate(90deg)' }}>→</span>
         </Button>
       </HStack>
     </HStack>
@@ -435,21 +465,23 @@ export function FormNavigationButtons() {
  */
 export function CardActionButtons() {
   return (
-    <HStack spacing={2}>
+    <HStack gap={2}>
       <IconButton 
-        icon={<EditIcon />}
         aria-label="Edit athlete"
         size="sm"
         variant="ghost"
         colorPalette="primary"
-      />
+      >
+        <EditIcon />
+      </IconButton>
       <IconButton 
-        icon={<DeleteIcon />}
         aria-label="Remove athlete"
         size="sm"
         variant="ghost"
         colorPalette="error"
-      />
+      >
+        <DeleteIcon />
+      </IconButton>
       <Button size="sm" colorPalette="primary">
         View Stats
       </Button>
@@ -464,14 +496,16 @@ export function CardActionButtons() {
  */
 export function SocialShareButtons() {
   return (
-    <HStack spacing={3}>
+    <HStack gap={3}>
       <Button 
         colorPalette="primary"
         variant="outline"
         size="sm"
-        leftIcon={<SearchIcon />}
+        display="flex"
+        gap={2}
       >
-        Copy Link
+        <span>🔗</span>
+        <span>Copy Link</span>
       </Button>
       <Button 
         bg="blue.500"
@@ -498,12 +532,19 @@ export function SocialShareButtons() {
  * - Provide loading states for async operations
  * - Use appropriate color contrast (WCAG AA minimum)
  * - Make touch targets at least 44x44px
+ * - Use proper icon libraries (lucide-react, react-icons) in production
  * 
  * ❌ DON'T:
  * - Use buttons for navigation (use Link component)
  * - Disable buttons without explanation
  * - Use only icons without labels (unless tooltip provided)
  * - Create custom buttons when Chakra has the pattern
+ * - Use emoji for production icons (use SVG icon libraries)
+ * 
+ * Icon Libraries:
+ * - lucide-react: npm install lucide-react
+ * - react-icons: npm install react-icons
+ * - Custom SVG icons from design system
  */
 
 // =============================================================================
@@ -517,10 +558,10 @@ export function SocialShareButtons() {
  */
 export function ButtonExamplesDemo() {
   return (
-    <VStack align="start" spacing={8} p={6}>
+    <VStack align="start" gap={8} p={6}>
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Primary Actions</Text>
-        <HStack spacing={4}>
+        <HStack gap={4}>
           <PrimaryButton />
           <PrimaryButtonWithIcon />
         </HStack>
@@ -528,7 +569,7 @@ export function ButtonExamplesDemo() {
 
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Secondary Actions</Text>
-        <HStack spacing={4}>
+        <HStack gap={4}>
           <SecondaryButton />
           <GhostButton />
         </HStack>
@@ -536,7 +577,7 @@ export function ButtonExamplesDemo() {
 
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Special Buttons</Text>
-        <HStack spacing={4}>
+        <HStack gap={4}>
           <GoldButton />
           <DestructiveButton />
         </HStack>
@@ -549,7 +590,7 @@ export function ButtonExamplesDemo() {
 
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Button Groups</Text>
-        <VStack align="start" spacing={4}>
+        <VStack align="start" gap={4}>
           <HorizontalButtonGroup />
           <SegmentedButtonGroup />
         </VStack>

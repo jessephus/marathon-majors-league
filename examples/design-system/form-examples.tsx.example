@@ -228,7 +228,7 @@ export function CheckboxGroupExample() {
     <FormControl>
       <FormLabel>Filter Athletes</FormLabel>
       <CheckboxGroup value={filters} onChange={(values) => setFilters(values as string[])}>
-        <VStack align="start" spacing={2}>
+        <VStack align="start" gap={2}>
           <Checkbox value="men" colorPalette="primary">Men</Checkbox>
           <Checkbox value="women" colorPalette="primary">Women</Checkbox>
           <Checkbox value="confirmed" colorPalette="primary">Confirmed Only</Checkbox>
@@ -259,9 +259,9 @@ export function RadioGroupExample() {
     <FormControl>
       <FormLabel>Game Mode</FormLabel>
       <RadioGroup value={gameMode} onChange={setGameMode}>
-        <Stack spacing={3}>
+        <Stack gap={3}>
           <Radio value="salary-cap" colorPalette="primary">
-            <VStack align="start" spacing={0}>
+            <VStack align="start" gap={0}>
               <Text fontWeight="semibold">Salary Cap Draft</Text>
               <Text fontSize="sm" color="gray.600">
                 Build your team within a $30,000 budget
@@ -269,7 +269,7 @@ export function RadioGroupExample() {
             </VStack>
           </Radio>
           <Radio value="snake-draft" colorPalette="primary">
-            <VStack align="start" spacing={0}>
+            <VStack align="start" gap={0}>
               <Text fontWeight="semibold">Snake Draft (Legacy)</Text>
               <Text fontSize="sm" color="gray.600">
                 Take turns picking athletes
@@ -398,7 +398,7 @@ export function TeamCreationForm() {
 
   return (
     <Box as="form" onSubmit={handleSubmit}>
-      <VStack spacing={6} align="stretch">
+      <VStack gap={6} align="stretch">
         {/* Team Name */}
         <FormControl isInvalid={!!errors.teamName} isRequired>
           <FormLabel>Team Name</FormLabel>
@@ -439,7 +439,7 @@ export function TeamCreationForm() {
             value={formData.gameMode}
             onChange={(value) => setFormData({ ...formData, gameMode: value })}
           >
-            <Stack spacing={2}>
+            <Stack gap={2}>
               <Radio value="salary-cap" colorPalette="primary">
                 Salary Cap Draft
               </Radio>
@@ -461,7 +461,7 @@ export function TeamCreationForm() {
         </FormControl>
 
         {/* Submit Buttons */}
-        <HStack spacing={3} justify="flex-end">
+        <HStack gap={3} justify="flex-end">
           <Button variant="ghost" type="button">
             Cancel
           </Button>
@@ -482,7 +482,7 @@ export function TeamCreationForm() {
  */
 export function SearchFilterForm() {
   return (
-    <Stack direction={{ base: 'column', md: 'row' }} spacing={4} align="end">
+    <Stack direction={{ base: 'column', md: 'row' }} gap={4} align="end">
       <FormControl flex={1}>
         <FormLabel>Search Athletes</FormLabel>
         <Input 
@@ -547,10 +547,10 @@ export function SearchFilterForm() {
 
 export function FormExamplesDemo() {
   return (
-    <VStack spacing={12} align="stretch" p={6} maxW="600px">
+    <VStack gap={12} align="stretch" p={6} maxW="600px">
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Text Inputs</Text>
-        <VStack spacing={6}>
+        <VStack gap={6}>
           <BasicTextInput />
           <ValidatedTextInput />
           <EmailInput />
@@ -560,7 +560,7 @@ export function FormExamplesDemo() {
 
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Selects</Text>
-        <VStack spacing={6}>
+        <VStack gap={6}>
           <BasicSelect />
           <ControlledSelect />
         </VStack>
@@ -568,7 +568,7 @@ export function FormExamplesDemo() {
 
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Checkboxes & Radios</Text>
-        <VStack spacing={6}>
+        <VStack gap={6}>
           <CheckboxGroupExample />
           <RadioGroupExample />
         </VStack>
@@ -576,7 +576,7 @@ export function FormExamplesDemo() {
 
       <Box>
         <Text fontSize="2xl" fontWeight="bold" mb={4}>Other Inputs</Text>
-        <VStack spacing={6}>
+        <VStack gap={6}>
           <TextareaExample />
           <SwitchExample />
           <SwitchWithDescription />
