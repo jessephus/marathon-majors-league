@@ -1,11 +1,13 @@
 # Design Guidelines - Marathon Majors Fantasy League
 
-**Document Version:** 2.0  
-**Last Updated:** November 21, 2025  
+**Document Version:** 2.1  
+**Last Updated:** November 22, 2025  
 **Purpose:** Aspirational design specifications for the modern MMFL redesign using Chakra UI  
 **Status:** 🟢 Active Development  
-**Framework:** Chakra UI v2+  
+**Framework:** Chakra UI v3  
 **GitHub Issue:** [#59 - Redesign UI with Modern Mobile-First Look](https://github.com/jessephus/marathon-majors-league/issues/59)
+
+> **⚠️ Important API Note:** This project uses Chakra UI v3, which changed the color prop from `colorScheme` to `colorPalette`. When viewing code examples in this document that use `colorScheme`, please note that in actual implementation you should use `colorPalette` instead. We use custom wrapper components (`/components/chakra/Button.tsx`, `/components/chakra/Badge.tsx`) that provide clean semantic color support with the `colorPalette` prop.
 
 ---
 

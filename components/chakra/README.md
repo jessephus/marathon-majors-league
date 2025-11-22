@@ -1,9 +1,12 @@
 # Chakra UI Component Patterns - Marathon Majors Fantasy League
 
-**Document Version:** 1.0  
+**Document Version:** 1.1  
 **Created:** November 21, 2025  
+**Last Updated:** November 22, 2025  
 **Purpose:** Component pattern documentation for Chakra UI migration  
 **Related:** Phase 2 - Component Library Audit & Planning
+
+> **⚠️ Important API Note:** This project uses Chakra UI v3, which changed the color prop from `colorScheme` (v2) to `colorPalette` (v3). Some older code examples in this document may still reference `colorScheme`, but all new code should use `colorPalette`. Our custom wrapper components (`Button.tsx`, `Badge.tsx`) provide clean semantic color support.
 
 ---
 
