@@ -33,7 +33,7 @@ import {
   Select,
 } from '@chakra-ui/react';
 import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
-import { AthleteModal } from '@/components/AthleteModal';
+import AthleteModal from '@/components/AthleteModal';
 import Head from 'next/head';
 
 interface Athlete {
@@ -41,12 +41,12 @@ interface Athlete {
   name: string;
   country: string;
   gender: string;
-  personal_best: string;
-  headshot_url?: string;
-  marathon_rank?: number;
+  pb: string;
+  headshotUrl?: string;
+  marathonRank?: number;
   age?: number;
   sponsor?: string;
-  season_best?: string;
+  seasonBest?: string;
 }
 
 type SortOption = 'rank' | 'pb' | 'name' | 'age';
@@ -120,9 +120,9 @@ export default function AthletesPage() {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'rank':
-          return (a.marathon_rank || 999) - (b.marathon_rank || 999);
+          return (a.marathonRank || 999) - (b.marathonRank || 999);
         case 'pb':
-          return a.personal_best.localeCompare(b.personal_best);
+          return a.pb.localeCompare(b.pb);
         case 'name':
           return a.name.localeCompare(b.name);
         case 'age':
@@ -216,33 +216,47 @@ export default function AthletesPage() {
               
               <Flex gap={3} flex={2} direction={{ base: 'column', sm: 'row' }}>
                 {/* Gender Filter */}
-                <Select
-                  value={genderFilter}
-                  onChange={(e) => setGenderFilter(e.target.value as GenderFilter)}
-                  size="md"
-                  borderColor="gray.300"
-                  _hover={{ borderColor: 'navy.400' }}
-                  _focus={{ borderColor: 'navy.500', boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)' }}
-                >
-                  <option value="all">All Athletes</option>
-                  <option value="men">Men</option>
-                  <option value="women">Women</option>
-                </Select>
+                <Box flex={1}>
+                  <select
+                    value={genderFilter}
+                    onChange={(e) => setGenderFilter(e.target.value as GenderFilter)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '0.375rem',
+                      border: '1px solid #E4E4E7',
+                      fontSize: '1rem',
+                      cursor: 'pointer',
+                      backgroundColor: 'white',
+                    }}
+                  >
+                    <option value="all">All Athletes</option>
+                    <option value="men">Men</option>
+                    <option value="women">Women</option>
+                  </select>
+                </Box>
 
-                {/* Sort By */}
-                <Select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  size="md"
-                  borderColor="gray.300"
-                  _hover={{ borderColor: 'navy.400' }}
-                  _focus={{ borderColor: 'navy.500', boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)' }}
-                >
-                  <option value="rank">Sort by Ranking</option>
-                  <option value="pb">Sort by Personal Best</option>
-                  <option value="name">Sort by Name</option>
-                  <option value="age">Sort by Age</option>
-                </Select>
+                {/* Sort Dropdown */}
+                <Box flex={1}>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '0.375rem',
+                      border: '1px solid #E4E4E7',
+                      fontSize: '1rem',
+                      cursor: 'pointer',
+                      backgroundColor: 'white',
+                    }}
+                  >
+                    <option value="rank">Sort by Rank</option>
+                    <option value="pb">Sort by PB</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="age">Sort by Age</option>
+                  </select>
+                </Box>
               </Flex>
             </Flex>
           </VStack>
@@ -259,7 +273,7 @@ export default function AthletesPage() {
         {loading && (
           <Flex justify="center" align="center" py={20}>
             <VStack gap={4}>
-              <Spinner size="xl" color="navy.500" thickness="4px" />
+              <Spinner size="xl" color="navy.500" />
               <Text color="gray.600">Loading athletes...</Text>
             </VStack>
           </Flex>
@@ -332,9 +346,9 @@ export default function AthletesPage() {
                   position="relative"
                   overflow="hidden"
                 >
-                  {athlete.headshot_url ? (
+                  {athlete.headshotUrl ? (
                     <Image
-                      src={athlete.headshot_url}
+                      src={athlete.headshotUrl}
                       alt={athlete.name}
                       objectFit="cover"
                       w="100%"
@@ -354,7 +368,7 @@ export default function AthletesPage() {
                   )}
                   
                   {/* Ranking Badge */}
-                  {athlete.marathon_rank && athlete.marathon_rank <= 10 && (
+                  {athlete.marathonRank && athlete.marathonRank <= 10 && (
                     <Badge
                       position="absolute"
                       top={3}
@@ -367,14 +381,14 @@ export default function AthletesPage() {
                       py={1}
                       borderRadius="full"
                     >
-                      #{athlete.marathon_rank}
+                      #{athlete.marathonRank}
                     </Badge>
                   )}
                 </Box>
 
                 {/* Athlete Info */}
                 <VStack align="stretch" p={4} gap={2}>
-                  <Heading as="h3" size="md" color="navy.900" noOfLines={1}>
+                  <Heading as="h3" size="md" color="navy.900" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
                     {athlete.name}
                   </Heading>
                   
@@ -382,9 +396,9 @@ export default function AthletesPage() {
                     <Badge colorScheme="navy" fontSize="xs">
                       {athlete.country}
                     </Badge>
-                    {athlete.marathon_rank && (
+                    {athlete.marathonRank && (
                       <Badge variant="outline" colorScheme="gray" fontSize="xs">
-                        Rank #{athlete.marathon_rank}
+                        Rank #{athlete.marathonRank}
                       </Badge>
                     )}
                   </HStack>
@@ -395,7 +409,7 @@ export default function AthletesPage() {
                         Personal Best
                       </Text>
                       <Text fontSize="sm" fontWeight="semibold" color="navy.700">
-                        {athlete.personal_best}
+                        {athlete.pb}
                       </Text>
                     </HStack>
                     
@@ -415,7 +429,7 @@ export default function AthletesPage() {
                         <Text fontSize="sm" color="gray.600">
                           Sponsor
                         </Text>
-                        <Text fontSize="sm" color="gray.700" noOfLines={1}>
+                        <Text fontSize="sm" color="gray.700" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
                           {athlete.sponsor}
                         </Text>
                       </HStack>
@@ -433,7 +447,7 @@ export default function AthletesPage() {
         <AthleteModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}
-          athleteId={selectedAthlete.id}
+          athlete={selectedAthlete}
         />
       )}
     </>
