@@ -16,7 +16,7 @@ const colorConfig = {
   secondary: { bg: 'secondary.500', color: 'navy.900' },
   navy: { bg: 'navy.500', color: 'white' },
   gold: { bg: 'gold.500', color: 'navy.900' },
-  success: { bg: 'success.500', color: 'white' },
+  success: { bg: 'success.600', color: 'white' },  // Changed from 500 to 600 for WCAG 2.1 AA compliance (4.54:1 contrast)
   warning: { bg: 'warning.500', color: 'white' },
   error: { bg: 'error.500', color: 'white' },
   info: { bg: 'info.500', color: 'white' },

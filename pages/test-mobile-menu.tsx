@@ -16,10 +16,16 @@
 import { Box, Container, VStack, Heading, Text, Card, Code } from '@chakra-ui/react';
 import { StickyHeader } from '@/components/navigation/StickyHeader';
 import { BottomNav } from '@/components/navigation/BottomNav';
+import Head from 'next/head';
 
 export default function TestMobileMenuDrawer() {
   return (
     <>
+      <Head>
+        <title>Mobile Menu Test - Marathon Majors Fantasy League</title>
+        <meta name="description" content="Accessibility test page for MobileMenuDrawer component" />
+      </Head>
+      
       {/* Header with integrated mobile drawer */}
       <StickyHeader />
 

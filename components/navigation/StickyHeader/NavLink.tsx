@@ -74,6 +74,12 @@ export function NavLink({ href, isActive, children, className }: NavLinkProps) {
         cursor="pointer"
         className={className}
         aria-current={isActive ? 'page' : undefined}
+        // WCAG 2.5.5 Touch Target Size - Minimum 44x44px
+        minHeight="44px"
+        minWidth="44px"
+        padding="12px 16px"
+        display="flex"
+        alignItems="center"
       >
         {children}
       </Box>

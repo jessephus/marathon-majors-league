@@ -23,6 +23,7 @@ import { Box, Container, Heading, Text, VStack, HStack, SimpleGrid, Code } from 
 import { StickyHeader } from '@/components/navigation/StickyHeader';
 import { Badge } from '@/components/chakra';
 import { useState, useEffect } from 'react';
+import Head from 'next/head';
 
 export default function TestStickyHeaderPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -61,6 +62,11 @@ export default function TestStickyHeaderPage() {
   
   return (
     <>
+      <Head>
+        <title>StickyHeader Test - Marathon Majors Fantasy League</title>
+        <meta name="description" content="Accessibility test page for StickyHeader component" />
+      </Head>
+      
       {/* Fixed Header Component */}
       <StickyHeader onMenuOpen={handleMenuOpen} />
       

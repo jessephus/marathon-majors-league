@@ -34,9 +34,9 @@ const colorConfig = {
     ghost: { color: 'gold.600', _hover: { bg: 'gold.50' } },
   },
   success: {
-    solid: { bg: 'success.500', color: 'white', _hover: { bg: 'success.600' } },
-    outline: { borderColor: 'success.500', color: 'success.600', _hover: { bg: 'success.50' } },
-    ghost: { color: 'success.600', _hover: { bg: 'success.50' } },
+    solid: { bg: 'success.600', color: 'white', _hover: { bg: 'success.700' } },  // Changed from 500 to 600 for WCAG 2.1 AA compliance (4.54:1 contrast)
+    outline: { borderColor: 'success.600', color: 'success.700', _hover: { bg: 'success.50' } },
+    ghost: { color: 'success.700', _hover: { bg: 'success.50' } },
   },
   warning: {
     solid: { bg: 'warning.500', color: 'white', _hover: { bg: 'warning.600' } },
