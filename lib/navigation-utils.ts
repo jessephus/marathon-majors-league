@@ -39,7 +39,6 @@ export function getTeamHref(): string {
   // Default to home with create-team action to trigger modal
   return '/?action=create-team';
 }
-}
 
 /**
  * Check if user has an active team session

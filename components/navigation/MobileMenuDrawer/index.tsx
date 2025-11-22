@@ -420,7 +420,7 @@ export function MobileMenuDrawer({
             {secondaryItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = isMenuItemActive(router.pathname, item.href);
-              const staggerIndex = menuItems.length + index;
+              const staggerIndex = computedMenuItems.length + index;
 
               return (
                 <Link key={item.href} href={item.href} passHref legacyBehavior>

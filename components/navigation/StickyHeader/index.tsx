@@ -220,7 +220,7 @@ export function StickyHeader({
       // Enhanced shadow transition with easing
       transition="box-shadow 0.25s cubic-bezier(0, 0, 0.2, 1)"
       shadow={scrolled ? 'lg' : 'none'}
-      height={{ base: '60px', md: '72px', lg: '80px' }}
+      height="64px"
       borderRadius={0}
       className={className}
       role="banner"
@@ -237,8 +237,8 @@ export function StickyHeader({
         <Image 
           src="/images/MMFL-logo.png" 
           alt="MMFL Logo" 
-          width={{ base: '32px', md: '40px', lg: '48px' }}
-          height={{ base: '32px', md: '40px', lg: '48px' }}
+          width="40px"
+          height="40px"
           objectFit="contain"
         />
         
