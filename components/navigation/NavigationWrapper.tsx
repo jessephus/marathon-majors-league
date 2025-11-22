@@ -105,30 +105,6 @@ export function NavigationWrapper({
       {/* Legacy navigation fallback */}
       {/* Note: Legacy navigation is rendered by the vanilla JS in public/app.js */}
       {/* When feature flags are disabled, the legacy navigation will be visible */}
-      {/* When enabled, we hide the legacy navigation via CSS (see below) */}
-      
-      {/* Hide legacy navigation when Chakra components are active */}
-      {(useChakraHeader || useChakraBottomNav) && (
-        <style jsx global>{`
-          /* Hide legacy header when Chakra header is active */
-          ${useChakraHeader ? `
-            #legacy-header,
-            .legacy-header,
-            header.legacy {
-              display: none !important;
-            }
-          ` : ''}
-          
-          /* Hide legacy mobile nav when Chakra bottom nav is active */
-          ${useChakraBottomNav ? `
-            #legacy-mobile-nav,
-            .legacy-mobile-nav,
-            nav.legacy-bottom {
-              display: none !important;
-            }
-          ` : ''}
-        `}</style>
-      )}
     </>
   );
 }

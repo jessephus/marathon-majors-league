@@ -1,12 +1,14 @@
 import Head from 'next/head'
 import Script from 'next/script'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import { AppStateProvider } from '../lib/state-provider'
 import WelcomeCard from '../components/WelcomeCard'
 import TeamCreationModal from '../components/TeamCreationModal'
 import CommissionerTOTPModal from '../components/CommissionerTOTPModal'
 import Footer from '../components/Footer'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
+import { getCurrentGameId } from '../lib/session-manager'
 
 export async function getServerSideProps(context) {
   const { req, query } = context;
@@ -29,16 +31,43 @@ export async function getServerSideProps(context) {
 }
 
 export default function Home({ serverSessionType, hasURLSession }) {
+  const router = useRouter();
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCommissionerModalOpen, setIsCommissionerModalOpen] = useState(false);
+  const [gameId, setGameId] = useState('default');
+  
+  // Handle action query parameter (works for both initial load and client-side navigation)
+  useEffect(() => {
+    const handleActionParam = () => {
+      const action = router.query.action;
+      
+      if (action === 'create-team') {
+        // Small delay to ensure modal renders after page is ready
+        setTimeout(() => {
+          setIsTeamModalOpen(true);
+        }, 100);
+        
+        // Clean up URL without reloading
+        router.replace('/', undefined, { shallow: true });
+      }
+    };
+    
+    // Check on mount and whenever query changes
+    if (router.isReady) {
+      handleActionParam();
+    }
+  }, [router.isReady, router.query.action]);
   
   // Client-side session detection (after hydration)
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Get current game ID
+      const currentGameId = getCurrentGameId();
+      setGameId(currentGameId);
+      
       // Check if there's a session token in the URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const sessionToken = urlParams.get('session');
+      const sessionToken = router.query.session;
       
       if (sessionToken) {
         // URL session will be handled by initSSRLandingPage() in the Script tag
@@ -50,7 +79,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
         setClientSessionType(detected);
       }
     }
-  }, []);
+  }, [router.query.session]);
 
   // Hide loading overlay on component mount (handles both initial load and client-side navigation)
   useEffect(() => {
@@ -247,6 +276,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <TeamCreationModal 
           isOpen={isTeamModalOpen}
           onClose={() => setIsTeamModalOpen(false)}
+          gameId={gameId}
         />
         <CommissionerTOTPModal 
           isOpen={isCommissionerModalOpen}

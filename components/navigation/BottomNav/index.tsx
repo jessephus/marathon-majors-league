@@ -11,14 +11,16 @@
  * - Fixed positioning at bottom
  * - Touch-optimized (44x44px minimum touch targets)
  * - WCAG 2.1 AA accessible
+ * - Dynamic team link (adapts based on active session)
  * 
  * Implementation:
  * - Uses Next.js router for navigation and route detection
  * - Integrates with Heroicons for consistent iconography
  * - Follows Chakra UI v3 design system
  * - Respects navy/gold brand palette
+ * - Team link dynamically routes to /team/{session} if session exists
  * 
- * Part of Phase 3: Core Navigation Implementation (Week 11-12)
+ * Part of Phase 3: Core Navigation Implementation (Week 11-12 + Polish)
  * Parent Issue: #122 - Core Navigation Implementation
  * Grand-parent Issue: #59 - Redesign UI with Modern Mobile-First Look
  * 
@@ -30,8 +32,10 @@
 
 import { Flex, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { HomeIcon, UsersIcon, TrophyIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from 'react';
+import { HomeIcon, ClipboardDocumentListIcon, UserGroupIcon, TrophyIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { BottomNavItem } from './BottomNavItem';
+import { getTeamHref } from '@/lib/navigation-utils';
 
 /**
  * Navigation item configuration
@@ -41,44 +45,50 @@ interface NavItem {
   label: string;
   href: string;
   matchPaths?: string[]; // Additional paths that should mark this nav item as active
+  isDynamic?: boolean; // Whether href should be computed dynamically
 }
 
 /**
  * Default navigation items for the bottom toolbar
  * Updated to include Race (5 items) - Phase 3 enhancement
+ * Get default navigation items (with dynamic team link)
+ * Called as a function to ensure team href is evaluated at render time
  */
-const DEFAULT_NAV_ITEMS: NavItem[] = [
-  {
-    icon: HomeIcon,
-    label: 'Home',
-    href: '/',
-    matchPaths: [],
-  },
-  {
-    icon: UsersIcon,
-    label: 'Team',
-    href: '/team',
-    matchPaths: ['/team/[session]'], // Match team session pages
-  },
+function getDefaultNavItems(): NavItem[] {
+  return [
+    {
+      icon: HomeIcon,
+      label: 'Home',
+      href: '/',
+      matchPaths: [],
+    },
+    {
+      icon: ClipboardDocumentListIcon,
+      label: 'Team',
+      href: getTeamHref(), // Dynamic based on session
+      matchPaths: ['/team/[session]'], // Match team session pages
+      isDynamic: true,
+    },
   {
     icon: CalendarIcon,
     label: 'Race',
     href: '/race',
     matchPaths: [],
   },
-  {
-    icon: TrophyIcon,
-    label: 'Standings',
-    href: '/leaderboard',
-    matchPaths: [],
-  },
-  {
-    icon: UsersIcon, // Using UsersIcon for Athletes (can be changed to a running icon)
-    label: 'Athletes',
-    href: '/athletes',
-    matchPaths: [],
-  },
-];
+    {
+      icon: TrophyIcon,
+      label: 'Standings',
+      href: '/leaderboard',
+      matchPaths: [],
+    },
+    {
+      icon: UserGroupIcon, // Athletes browser page
+      label: 'Athletes',
+      href: '/athletes',
+      matchPaths: [],
+    },
+  ];
+}
 
 export interface BottomNavProps {
   /**
@@ -126,10 +136,43 @@ function isNavItemActive(
  * 
  * Mobile-only bottom navigation toolbar with 4 primary navigation items.
  * Hidden on desktop (≥768px) per responsive design specifications.
+ * Team link dynamically adapts based on active session.
  */
-export function BottomNav({ items = DEFAULT_NAV_ITEMS, className }: BottomNavProps) {
+export function BottomNav({ items, className }: BottomNavProps) {
   const router = useRouter();
   const currentPath = router.pathname;
+  
+  // Initialize with truly static defaults to prevent hydration mismatch
+  // IMPORTANT: Do NOT call getDefaultNavItems() here - it uses dynamic logic
+  const [navItems, setNavItems] = useState<NavItem[]>(() => {
+    if (items) return items;
+    // Return static SSR-safe defaults (no dynamic hrefs)
+    return [
+      { label: 'Home', href: '/', icon: HomeIcon },
+      { label: 'Team', href: '/?action=create-team', icon: ClipboardDocumentListIcon }, // Static for SSR
+      { label: 'Race', href: '/race', icon: CalendarIcon },
+      { label: 'Standings', href: '/standings', icon: TrophyIcon },
+    ];
+  });
+  
+  // Update nav items on client after hydration with dynamic hrefs
+  useEffect(() => {
+    const updatedItems = items || getDefaultNavItems();
+    setNavItems(updatedItems);
+  }, [items]);
+  
+  // Re-evaluate dynamic hrefs when session changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleSessionUpdate = () => {
+      const updatedItems = items || getDefaultNavItems();
+      setNavItems(updatedItems);
+    };
+    
+    window.addEventListener('sessionsUpdated', handleSessionUpdate);
+    return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
+  }, [items]);
   
   return (
     <Box
@@ -155,19 +198,21 @@ export function BottomNav({ items = DEFAULT_NAV_ITEMS, className }: BottomNavPro
         justify="space-around"
         align="center"
       >
-        {items.map((item) => {
+        {navItems.map((item) => {
+          // Recompute dynamic hrefs at render time
+          const href = item.isDynamic ? getTeamHref() : item.href;
           const isActive = isNavItemActive(
             currentPath, 
-            item.href, 
+            href, 
             item.matchPaths
           );
           
           return (
             <BottomNavItem
-              key={item.href}
+              key={item.label}
               icon={item.icon}
               label={item.label}
-              href={item.href}
+              href={href}
               isActive={isActive}
             />
           );

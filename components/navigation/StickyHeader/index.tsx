@@ -39,10 +39,18 @@ import { Flex, Box, HStack, VStack, Heading, Text, Image } from '@chakra-ui/reac
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline';
+import { 
+  Bars3Icon, 
+  BellIcon,
+  HomeIcon,
+  ClipboardDocumentListIcon,
+  CalendarIcon,
+  TrophyIcon,
+} from '@heroicons/react/24/outline';
 import { Button } from '@/components/chakra/Button';
 import { NavLink } from './NavLink';
 import { MobileMenuDrawer } from '../MobileMenuDrawer';
+import { getTeamHref } from '@/lib/navigation-utils';
 
 /**
  * Navigation item configuration
@@ -51,39 +59,45 @@ export interface NavItem {
   label: string;
   href: string;
   matchPaths?: string[]; // Additional paths that should mark this nav item as active
+  isDynamic?: boolean; // Whether href should be computed dynamically
 }
 
 /**
  * Default navigation items for desktop header
  * Updated to include Race (5 items) - Phase 3 enhancement
+ * Get default navigation items (with dynamic team link)
+ * Called as a function to ensure team href is evaluated at render time
  */
-const DEFAULT_NAV_ITEMS: NavItem[] = [
-  {
-    label: 'Home',
-    href: '/',
-    matchPaths: [],
-  },
-  {
-    label: 'My Team',
-    href: '/team',
-    matchPaths: ['/team/[session]'], // Match team session pages
-  },
+function getDefaultNavItems(): NavItem[] {
+  return [
+    {
+      label: 'Home',
+      href: '/',
+      matchPaths: [],
+    },
+    {
+      label: 'My Team',
+      href: getTeamHref(), // Dynamic based on session
+      matchPaths: ['/team/[session]'], // Match team session pages
+      isDynamic: true,
+    },
   {
     label: 'Race',
     href: '/race',
     matchPaths: [],
   },
-  {
-    label: 'Standings',
-    href: '/leaderboard',
-    matchPaths: [],
-  },
-  {
-    label: 'Athletes',
-    href: '/athletes',
-    matchPaths: [],
-  },
-];
+    {
+      label: 'Standings',
+      href: '/leaderboard',
+      matchPaths: [],
+    },
+    {
+      label: 'Athletes',
+      href: '/athletes',
+      matchPaths: [],
+    },
+  ];
+}
 
 export interface StickyHeaderProps {
   /**
@@ -144,9 +158,10 @@ function isNavItemActive(
  * 
  * Responsive header with desktop navigation and mobile menu button.
  * Automatically adds shadow when page is scrolled.
+ * Team link dynamically adapts based on active session.
  */
 export function StickyHeader({
-  navItems = DEFAULT_NAV_ITEMS,
+  navItems,
   showNotifications = true,
   onMenuOpen,
   className,
@@ -155,12 +170,52 @@ export function StickyHeader({
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Track scroll position to add shadow
+  // Initialize with truly static defaults to prevent hydration mismatch
+  // IMPORTANT: Do NOT call getDefaultNavItems() here - it uses dynamic logic
+  const [computedNavItems, setComputedNavItems] = useState<NavItem[]>(() => {
+    if (navItems) return navItems;
+    // Return static SSR-safe defaults (no dynamic hrefs)
+    return [
+      { label: 'Home', href: '/', icon: HomeIcon },
+      { label: 'Team', href: '/?action=create-team', icon: ClipboardDocumentListIcon }, // Static for SSR
+      { label: 'Race', href: '/race', icon: CalendarIcon },
+      { label: 'Standings', href: '/standings', icon: TrophyIcon },
+    ];
+  });
+  
+  // Update nav items on client after hydration with dynamic hrefs
   useEffect(() => {
+    const items = navItems || getDefaultNavItems();
+    setComputedNavItems(items);
+  }, [navItems]);
+  
+  // Re-evaluate dynamic hrefs when session changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleSessionUpdate = () => {
+      const items = navItems || getDefaultNavItems();
+      setComputedNavItems(items);
+    };
+    
+    window.addEventListener('sessionsUpdated', handleSessionUpdate);
+    return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
+  }, [navItems]);
+  
+  // Track scroll position to add shadow with smooth transition
+  useEffect(() => {
+    let ticking = false;
+    
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isScrolled = window.scrollY > 10;
+          if (isScrolled !== scrolled) {
+            setScrolled(isScrolled);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     
@@ -184,21 +239,28 @@ export function StickyHeader({
       py={{ base: 3, md: 4 }}
       align="center"
       justify="space-between"
-      transition="box-shadow 0.2s ease-out"
+      // Enhanced shadow transition with easing
+      transition="box-shadow 0.25s cubic-bezier(0, 0, 0.2, 1)"
       shadow={scrolled ? 'lg' : 'none'}
-      height={{ base: '60px', md: '72px', lg: '80px' }}
+      height="64px"
       borderRadius={0}
       className={className}
       role="banner"
       aria-label="Site header"
+      // Respect user's motion preferences
+      css={{
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+        }
+      }}
     >
       {/* Left: Logo + Wordmark */}
       <HStack gap={{ base: 2, md: 3 }} flex={{ base: '0 0 auto', lg: 1 }}>
         <Image 
           src="/images/MMFL-logo.png" 
           alt="MMFL Logo" 
-          width={{ base: '32px', md: '40px', lg: '48px' }}
-          height={{ base: '32px', md: '40px', lg: '48px' }}
+          width="40px"
+          height="40px"
           objectFit="contain"
         />
         
@@ -233,17 +295,19 @@ export function StickyHeader({
         role="navigation"
         aria-label="Main navigation"
       >
-        {navItems.map((item) => {
+        {computedNavItems.map((item) => {
+          // Recompute dynamic hrefs at render time
+          const href = item.isDynamic ? getTeamHref() : item.href;
           const isActive = isNavItemActive(
             router.pathname,
-            item.href,
+            href,
             item.matchPaths
           );
           
           return (
             <NavLink
-              key={item.href}
-              href={item.href}
+              key={item.label}
+              href={href}
               isActive={isActive}
             >
               {item.label}

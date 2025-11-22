@@ -1,7 +1,7 @@
 # Design Guidelines - Marathon Majors Fantasy League
 
-**Document Version:** 2.1  
-**Last Updated:** November 22, 2025  
+**Document Version:** 2.2  
+**Last Updated:** November 22, 2025 (Phase 3 Navigation Polish Complete)  
 **Purpose:** Aspirational design specifications for the modern MMFL redesign using Chakra UI  
 **Status:** 🟢 Active Development  
 **Framework:** Chakra UI v3  
@@ -279,24 +279,34 @@ gray: {
 #### Success (Green)
 ```javascript
 success: {
-  50:  '#F0FDF4',
-  500: '#22C55E',  // Green for confirmations
-  600: '#16A34A',  // Hover state
-  700: '#15803D',  // Active state
+  50:  '#F0FDF4',  // Background tint
+  500: '#22C55E',  // Green for confirmations (background only)
+  600: '#16A34A',  // Hover state, badges with white text
+  700: '#15803D',  // Active state, text on white
 }
 ```
 **Usage:** Team saved, roster submitted, profile updated
 
+**⚠️ Accessibility Note:**
+- **NEVER use success.500 for text on white** (contrast 2.28:1 ❌)
+- **Use success.700 or darker for text on white** (contrast 5.02:1 ✅)
+- **For badges with white text, use success.600 or darker** (contrast 3.30:1 minimum)
+- **Example:** `<Badge colorPalette="success" bg="success.600">✓</Badge>`
+
 #### Warning (Amber)
 ```javascript
 warning: {
-  50:  '#FFFBEB',
-  500: '#F59E0B',  // Amber for cautions
+  50:  '#FFFBEB',  // Background tint
+  500: '#F59E0B',  // Amber for cautions (background only)
   600: '#D97706',  // Hover state
-  700: '#B45309',  // Active state
+  700: '#B45309',  // Active state, text on white
 }
 ```
 **Usage:** Roster lock warning, over budget, unsaved changes
+
+**⚠️ Accessibility Note:**
+- **NEVER use warning.500 for text on white** (contrast 2.15:1 ❌)
+- **Use warning.700 or darker for text on white** (contrast 5.02:1 ✅)
 
 #### Error (Red)
 ```javascript
@@ -1172,25 +1182,55 @@ import { HomeIcon, UsersIcon, TrophyIcon, UserIcon } from '@heroicons/react/24/o
 
 ```jsx
 // Country badge
-<Badge colorScheme="navy" variant="solid">
+<Badge colorPalette="navy" variant="solid">
   KEN
 </Badge>
 
-// Status badge
-<Badge colorScheme="green" variant="subtle">
+// Status badge - CORRECT (use darker shade for white text)
+<Badge colorPalette="success" bg="success.600" color="white">
   Active
 </Badge>
 
+// Status badge - INCORRECT ❌
+<Badge colorPalette="success">
+  Active  {/* Uses success.500 - insufficient contrast */}
+</Badge>
+
 // Ranking badge
-<Badge colorScheme="gold" variant="solid">
+<Badge colorPalette="gold" variant="solid">
   #1 World Ranking
 </Badge>
 
+// Warning badge - CORRECT
+<Badge colorPalette="warning" bg="warning.600" color="white">
+  Over Budget
+</Badge>
+
 // Tag (dismissible)
-<Tag size="lg" colorScheme="navy" borderRadius="full">
+<Tag size="lg" colorPalette="navy" borderRadius="full">
   <TagLabel>Eliud Kipchoge</TagLabel>
   <TagCloseButton />
 </Tag>
+```
+
+**⚠️ Badge Accessibility Rules:**
+1. **Always specify `bg` prop when using semantic colors** (success, warning, error)
+2. **Use 600+ shades for white text backgrounds** (600 = 3.3:1, 700 = 5.0:1+)
+3. **Test contrast ratio** with [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/)
+4. **Target: 4.5:1 minimum (WCAG AA)**, 7:1 recommended (WCAG AAA)
+
+**✅ Good Examples:**
+```jsx
+<Badge bg="success.700" color="white">Saved</Badge>  // 5.02:1 ✅
+<Badge bg="error.600" color="white">Error</Badge>   // 4.83:1 ✅
+<Badge bg="navy.500" color="white">Info</Badge>     // 6.15:1 ✅
+```
+
+**❌ Bad Examples:**
+```jsx
+<Badge colorPalette="success">✓</Badge>       // Uses 500, 2.28:1 ❌
+<Badge bg="warning.500" color="white">!</Badge>  // 2.15:1 ❌
+<Badge bg="gold.500" color="white">⭐</Badge>    // 2.10:1 ❌
 ```
 
 ---
@@ -1483,6 +1523,148 @@ easings: {
     },
   }}
 />
+```
+
+#### Ripple Effect (Touch Feedback)
+```jsx
+const [showRipple, setShowRipple] = useState(false);
+
+const handleClick = () => {
+  setShowRipple(true);
+  setTimeout(() => setShowRipple(false), 600);
+  // Handle action
+};
+
+return (
+  <Box position="relative" onClick={handleClick}>
+    {showRipple && (
+      <Box
+        position="absolute"
+        top="50%"
+        left="50%"
+        width="0"
+        height="0"
+        borderRadius="50%"
+        bg="navy.500"
+        opacity={0.3}
+        animation="ripple 0.6s cubic-bezier(0, 0, 0.2, 1)"
+        css={{
+          '@keyframes ripple': {
+            '0%': { width: '0', height: '0', marginTop: '0', marginLeft: '0', opacity: 0.3 },
+            '100%': { width: '100px', height: '100px', marginTop: '-50px', marginLeft: '-50px', opacity: 0 }
+          }
+        }}
+      />
+    )}
+    {/* Content */}
+  </Box>
+);
+```
+
+#### Animated Underline (Navigation Links)
+```jsx
+const [isHovered, setIsHovered] = useState(false);
+
+return (
+  <Box
+    position="relative"
+    onMouseEnter={() => setIsHovered(true)}
+    onMouseLeave={() => setIsHovered(false)}
+    pb={1}
+  >
+    Link Text
+    
+    {/* Animated underline */}
+    <Box
+      position="absolute"
+      bottom={0}
+      left={0}
+      right={0}
+      height="2px"
+      bg="gold.400"
+      transformOrigin="left"
+      transform={isHovered ? 'scaleX(1)' : 'scaleX(0)'}
+      transition="transform 0.25s cubic-bezier(0, 0, 0.2, 1)"
+    />
+  </Box>
+);
+```
+
+#### Stagger Animation (List Items)
+```jsx
+{items.map((item, index) => (
+  <Box
+    key={item.id}
+    opacity={isVisible ? 1 : 0}
+    transform={isVisible ? 'translateX(0)' : 'translateX(20px)'}
+    transition="all 0.2s cubic-bezier(0, 0, 0.2, 1)"
+    transitionDelay={`${index * 0.05}s`}
+  >
+    {item.content}
+  </Box>
+))}
+```
+
+### Accessibility & Motion
+
+#### prefers-reduced-motion Support
+
+**Always respect user motion preferences:**
+
+```jsx
+<Box
+  transform={isActive ? 'scale(1.1)' : 'scale(1)'}
+  transition="transform 0.2s cubic-bezier(0, 0, 0.2, 1)"
+  css={{
+    '@media (prefers-reduced-motion: reduce)': {
+      transition: 'none',
+      animation: 'none',
+      transform: 'none !important',
+    }
+  }}
+>
+  {/* Content */}
+</Box>
+```
+
+**What This Means:**
+- Users with vestibular disorders see instant state changes
+- No sliding, scaling, or fading animations
+- Full functionality preserved
+- Required for WCAG 2.1 AA compliance
+
+**Testing:**
+```javascript
+// Browser DevTools → Rendering → Emulate CSS media
+// Enable: "prefers-reduced-motion: reduce"
+// Verify: All animations are disabled
+```
+
+#### Animation Best Practices
+
+✅ **Do:**
+- Keep animations under 300ms for most interactions
+- Use GPU-accelerated properties (transform, opacity)
+- Provide instant feedback for user actions
+- Use easing functions that feel natural (ease-out default)
+- Test with prefers-reduced-motion enabled
+
+❌ **Don't:**
+- Animate width, height, top, left (causes reflows)
+- Use animations longer than 500ms for frequent interactions
+- Rely on animation alone to convey information
+- Animate on scroll without throttling (use requestAnimationFrame)
+- Forget to test on low-end devices
+
+**Performance Tip:**
+```javascript
+// Good: GPU-accelerated
+transform: 'translateX(100px)'
+opacity: 0.5
+
+// Bad: Triggers layout reflow
+width: '100px'
+left: '100px'
 ```
 
 ---
