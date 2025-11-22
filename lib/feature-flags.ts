@@ -156,23 +156,38 @@ class FeatureFlagManager {
 
   /**
    * Get current environment
+   * 
+   * Priority order:
+   * 1. NODE_ENV (respects build mode: production vs development)
+   * 2. Hostname detection (distinguishes preview vs production deployments)
+   * 
+   * This ensures production builds disable dev-only features even on localhost.
    */
   private getCurrentEnvironment(): 'development' | 'production' | 'preview' {
-    if (typeof window === 'undefined') {
-      return process.env.NODE_ENV === 'production' ? 'production' : 'development';
+    // Check NODE_ENV first - this respects the build mode
+    // Production builds should always return 'production' regardless of hostname
+    if (process.env.NODE_ENV === 'production') {
+      // In production builds, check if we're on a Vercel preview deployment
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname.includes('vercel.app') && !hostname.includes('marathonmajorsfantasy')) {
+          return 'preview';
+        }
+      }
+      return 'production';
     }
-
-    const hostname = window.location.hostname;
     
-    if (hostname.includes('vercel.app') && !hostname.includes('marathonmajorsfantasy')) {
-      return 'preview';
+    // Development builds (NODE_ENV !== 'production')
+    // Still check hostname to distinguish between dev and preview deployments
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      
+      if (hostname.includes('vercel.app')) {
+        return 'preview';
+      }
     }
     
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'development';
-    }
-    
-    return 'production';
+    return 'development';
   }
 
   /**
