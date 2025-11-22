@@ -97,20 +97,80 @@ export const colors = {
     800: { value: '#1E40AF' },  // Very dark
     900: { value: '#1E3A8A' },  // Darkest
   },
+
+  // Semantic Color Mappings
+  // These provide consistent names for use across components
+  // Note: Values are intentionally duplicated (not referenced) to align with
+  // Chakra UI v3's token system which requires explicit value objects.
+  // This is the recommended pattern for semantic color mappings in Chakra UI v3.
+  
+  // Primary - Maps to Navy (main brand color for buttons, links, primary actions)
+  primary: {
+    50: { value: '#F5F7FA' },
+    100: { value: '#E4E9F2' },
+    200: { value: '#C3CDE3' },
+    300: { value: '#9EADD1' },
+    400: { value: '#7A8DBF' },
+    500: { value: '#4A5F9D' },   // Main primary color
+    600: { value: '#3A4D7E' },
+    700: { value: '#2A3B5E' },
+    800: { value: '#1F2D47' },
+    900: { value: '#161C4F' },
+  },
+
+  // Secondary - Maps to Gold (accent color for highlights, achievements)
+  secondary: {
+    50: { value: '#FFFBF0' },
+    100: { value: '#FFF4D6' },
+    200: { value: '#FFE9AD' },
+    300: { value: '#FFDE84' },
+    400: { value: '#EDD35B' },
+    500: { value: '#D4AF37' },   // Main secondary color
+    600: { value: '#B8941F' },
+    700: { value: '#9A7A15' },
+    800: { value: '#7C610E' },
+    900: { value: '#5E4808' },
+  },
 };
 
 /**
- * Contrast Validation Results (WCAG 2.1)
+ * Semantic Color Usage Guide
  * 
- * Navy Combinations:
+ * Primary (Navy):
+ * - Use for main buttons, primary actions, navigation
+ * - Example: <Button colorScheme="primary">Submit</Button>
+ * - Example: <Button colorScheme="navy">Submit</Button> (equivalent)
+ * 
+ * Secondary (Gold):
+ * - Use for accent buttons, highlights, achievements
+ * - Example: <Button colorScheme="secondary">Upgrade</Button>
+ * - Example: <Badge colorScheme="gold">Premium</Badge> (equivalent)
+ * 
+ * Success (Green):
+ * - Use for confirmations, positive feedback
+ * - Example: <Alert status="success">Team saved!</Alert>
+ * 
+ * Warning (Amber):
+ * - Use for cautions, important notices
+ * - Example: <Alert status="warning">Roster locks in 10 minutes</Alert>
+ * 
+ * Error (Red):
+ * - Use for errors, destructive actions
+ * - Example: <Alert status="error">Invalid team name</Alert>
+ * 
+ * Info (Blue):
+ * - Use for informational messages, tips
+ * - Example: <Alert status="info">Draft starts at 7pm ET</Alert>
+ * 
+ * Contrast Validation Results (WCAG 2.1 AA)
+ * See docs/UI_COLOR_CONTRAST_VALIDATION.md for full report
+ * 
+ * Summary:
  * - Navy 900 on white: 13.5:1 ✅ AAA
  * - Navy 500 on white: 6.8:1 ✅ AAA
  * - White on navy 900: 13.5:1 ✅ AAA
- * 
- * Gold Combinations:
  * - Gold 500 on navy 900: 8.2:1 ✅ AAA
  * - Gold 600 on white: 4.9:1 ✅ AA (large text)
  * - Gold 700 on white: 6.1:1 ✅ AAA
- * 
- * All semantic colors meet WCAG AA standards for their intended use cases.
+ * - All semantic colors (success, warning, error, info) meet WCAG AA for their use cases
  */
