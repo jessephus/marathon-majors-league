@@ -204,28 +204,35 @@ primary: {
 
 **Usage:**
 ```tsx
-// These are equivalent ways to reference the same color:
-<Button colorScheme="primary">Submit</Button>
-<Button colorScheme="navy">Submit</Button>
-// Both use the navy color scale - "primary" is a semantic alias for "navy"
+// Chakra UI v3 with colorPalette prop (clean semantic approach):
+<Button colorPalette="primary">Submit</Button>
 
-// Primary buttons
-<Button colorScheme="primary" size="lg">Create Team</Button>
+// Automatically uses primary.500, primary.600 on hover, etc.
 
-// Primary links
+// For outline variants
+<Button colorPalette="primary" variant="outline">
+  Cancel
+</Button>
+
+// For ghost variants
+<Button colorPalette="primary" variant="ghost">
+  Dismiss
+</Button>
+
+// Primary links (direct color reference)
 <Link color="primary.600" _hover={{ color: 'primary.700' }}>
   View Details
 </Link>
 
-// Primary text
+// Primary text (direct color reference)
 <Text color="primary.800">Important information</Text>
 ```
 
 **When to use primary vs navy:**
-- Use `primary` for semantic intent (this is a main action)
-- Use `navy` when you specifically want the brand navy color
+- Use `colorPalette="primary"` for semantic intent (this is a main action)
+- Use `colorPalette="navy"` when you specifically want the brand navy color
 - Both reference the same color values, so they're functionally identical
-- Prefer `primary` for component props (more maintainable if brand colors change)
+- Prefer `primary` in component code (more maintainable if brand colors change)
 
 #### Secondary (Gold)
 Maps directly to the gold color scale for accent and highlight elements.
@@ -247,35 +254,35 @@ secondary: {
 
 **Usage:**
 ```tsx
-// These are equivalent ways to reference the same color:
-<Button colorScheme="secondary">Upgrade</Button>
-<Button colorScheme="gold">Upgrade</Button>
-// Both use the gold color scale - "secondary" is a semantic alias for "gold"
+// Chakra UI v3 with colorPalette prop (clean semantic approach):
+<Button colorPalette="secondary">Upgrade</Button>
 
-// Secondary buttons (accent actions)
-<Button colorScheme="secondary" variant="outline">
+// Automatically uses secondary.500, secondary.600 on hover, etc.
+
+// For outline variants
+<Button colorPalette="secondary" variant="outline">
   Learn More
 </Button>
 
 // Achievement badges
-<Badge colorScheme="secondary" fontSize="lg">
+<Badge colorPalette="secondary" fontSize="lg">
   🏆 Champion
 </Badge>
 
-// Highlight text
+// Highlight text (direct color reference)
 <Text color="secondary.600" fontWeight="bold">
   Premium Feature
 </Text>
 
-// Star ratings
+// Star ratings (direct color reference)
 <Icon as={StarIcon} color="secondary.500" />
 ```
 
 **When to use secondary vs gold:**
-- Use `secondary` for semantic intent (this is an accent/secondary action)
-- Use `gold` when you specifically want the brand gold color
+- Use `colorPalette="secondary"` for semantic intent (this is an accent/secondary action)
+- Use `colorPalette="gold"` when you specifically want the brand gold color
 - Both reference the same color values, so they're functionally identical
-- Prefer `secondary` for component props (more maintainable if brand colors change)
+- Prefer `secondary` in component code (more maintainable if brand colors change)
 
 **When to Use:**
 - **Primary (Navy):** Main actions, primary navigation, default buttons

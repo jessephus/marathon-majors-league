@@ -9,15 +9,18 @@
  * - Transitions (animation durations)
  * - Z-index (layering system)
  * - Breakpoints (mobile-first)
- * - Recipes (component color palette support)
+ * - Global CSS (color palette setup)
  * 
  * This theme implements the design system specified in:
  * docs/CORE_DESIGN_GUIDELINES.md
  * 
  * Note: Chakra UI v3 uses the `colorPalette` prop system.
- * Components automatically apply colorPalette.500, colorPalette.600, etc.
+ * The globalCss section sets up CSS variables to enable colorPalette prop
+ * to work with our custom colors (primary, secondary, navy, gold, etc.).
  * 
- * @version 2.1.0 (Phase 2 Complete + Proper Color Palettes)
+ * Usage: <Button colorPalette="primary">Text</Button>
+ * 
+ * @version 2.2.0 (Phase 2 Complete + Proper colorPalette Configuration)
  * @date November 22, 2025
  */
 
@@ -25,6 +28,13 @@ import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
 import { colors } from './colors';
 
 const config = defineConfig({
+  globalCss: {
+    // Set up default color palette CSS variable
+    // This enables colorPalette prop to work with our custom colors
+    ':root': {
+      '--colors-color-palette': 'colors.primary',
+    },
+  },
   theme: {
     tokens: {
       colors,
