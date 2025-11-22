@@ -9,7 +9,7 @@
 
 ## Overview
 
-The `BottomNav` component provides mobile-first bottom navigation for Marathon Majors Fantasy League. It displays 4 primary navigation items with icons and labels, automatically highlighting the active route.
+The `BottomNav` component provides mobile-first bottom navigation for Marathon Majors Fantasy League. It displays 5 primary navigation items with icons and labels, automatically highlighting the active route.
 
 ### Key Features
 
@@ -90,12 +90,13 @@ interface NavItem {
 
 ## Default Navigation Items
 
-The component ships with 4 default navigation items:
+The component ships with 5 default navigation items:
 
 1. **Home** (`/`) - Landing page and session management
 2. **Team** (`/team`) - Draft interface and roster management
-3. **Standings** (`/leaderboard`) - Live leaderboard and results
-4. **Athletes** (`/athletes`) - Browse all athletes and stats
+3. **Race** (`/race`) - Race details and information
+4. **Standings** (`/leaderboard`) - Live leaderboard and results
+5. **Athletes** (`/athletes`) - Browse all athletes and stats
 
 ---
 

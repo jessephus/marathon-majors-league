@@ -55,7 +55,7 @@ export interface NavItem {
 
 /**
  * Default navigation items for desktop header
- * Following the specification from UI_PHASE2_NAVIGATION_SPEC.md
+ * Updated to include Race (5 items) - Phase 3 enhancement
  */
 const DEFAULT_NAV_ITEMS: NavItem[] = [
   {
@@ -67,6 +67,11 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     label: 'My Team',
     href: '/team',
     matchPaths: ['/team/[session]'], // Match team session pages
+  },
+  {
+    label: 'Race',
+    href: '/race',
+    matchPaths: [],
   },
   {
     label: 'Standings',
