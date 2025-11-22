@@ -281,7 +281,9 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 
 ## Phase 3: Core Navigation (5 weeks) ✅
 
-**Goal:** Replace existing navigation with sticky header + bottom toolbar, implement feature flags
+**Goal:** Replace existing navigation with sticky header + mobile menu drawer + bottom toolbar
+**Goal:** Implement feature flags
+**Goal:** Replace existing navigation with sticky header + bottom toolbar
 
 **Status:** ✅ Complete  
 **Completion Date:** November 22, 2025
@@ -345,6 +347,7 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
   - Logo + wordmark on left
   - Desktop nav links in center
   - User actions on right
+  - Mobile menu button (hamburger)
 - [x] Implement fixed positioning (changed from sticky to resolve scrollbar gaps)
   - `position: fixed` + `top: 0`  + `left: 0` + `right: 0`
   - z-index management (999)
@@ -358,18 +361,33 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 - [x] Route-aware active states (gold underline)
 - [x] WCAG 2.1 AA accessibility compliance
 - [x] Keyboard navigation support
+- [x] **Mobile Menu Drawer** (Week 13-14 addition)
+  - [x] Create slide-out drawer component
+  - [x] Integrate with hamburger button
+  - [x] All navigation options included
+  - [x] Auto-close on route change
+  - [x] Accessibility compliance (48x48px targets, keyboard support)
 
 #### Deliverables
 - ✅ `<StickyHeader>` component (`components/navigation/StickyHeader/index.tsx`)
 - ✅ `<NavLink>` sub-component (`components/navigation/StickyHeader/NavLink.tsx`)
+- ✅ `<MobileMenuDrawer>` component (`components/navigation/MobileMenuDrawer/index.tsx`)
 - ✅ Responsive desktop/mobile layouts
 - ✅ Proper z-index layering (999)
 - ✅ Scroll shadow effect (after 10px scroll)
+- ✅ Mobile drawer with slide-in animation
+- ✅ Auto-close on navigation (router events)
 - ✅ Component documentation (`components/navigation/StickyHeader/README.md`)
+- ✅ Component documentation (`components/navigation/MobileMenuDrawer/README.md`)
 - ✅ Test page (`pages/test-sticky-header.tsx`)
+- ✅ Test page (`pages/test-mobile-menu.tsx`)
 - ✅ Implementation documentation (`docs/UI_REDESIGN/UI_PHASE3_STICKYHEADER_IMPLEMENTATION.md`)
+- ✅ Implementation documentation (`docs/UI_REDESIGN/UI_PHASE3_MOBILEMENU_IMPLEMENTATION.md`)
 
 **GitHub Sub-Issue:** [#122 - Sticky Header](https://github.com/jessephus/marathon-majors-league/issues/122)  
+**Documentation:** 
+- `docs/UI_REDESIGN/UI_PHASE3_STICKYHEADER_IMPLEMENTATION.md`
+- `docs/UI_REDESIGN/UI_PHASE3_MOBILEMENU_IMPLEMENTATION.md`
 **Documentation:** `docs/UI_REDESIGN/UI_PHASE3_STICKYHEADER_IMPLEMENTATION.md`
 
 ### Week 15: Feature Flags & Gradual Rollout ✅
