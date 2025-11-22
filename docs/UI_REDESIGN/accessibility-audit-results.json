@@ -1,7 +1,7 @@
 {
-  "timestamp": "2025-11-22T12:35:47.974Z",
+  "timestamp": "2025-11-22T12:46:11.398Z",
   "summary": {
-    "totalTests": 0,
+    "totalTests": 59,
     "passed": 44,
     "failed": 12,
     "warnings": 3
@@ -644,6 +644,5 @@
       "issue": "Line height snug (1.375) is below accessible minimum",
       "suggestion": "Increase to at least 1.4, ideally 1.5 for body text"
     }
-  ],
-  "totalTests": null
+  ]
 }

@@ -223,7 +223,7 @@ colorTests.forEach(test => {
   const passAAA = checkWCAG(contrast, 'normal', 'AAA');
   const passAALarge = checkWCAG(contrast, 'large', 'AA');
   
-  results.totalTests++;
+  results.summary.totalTests++;
   if (passAA) results.summary.passed++;
   else results.summary.failed++;
   
@@ -278,7 +278,7 @@ Object.entries(typography.fontSizes).forEach(([name, value]) => {
   const isReadable = pxValue >= 12; // Minimum 12px for body text
   const isLarge = pxValue >= 18; // WCAG large text threshold
   
-  results.totalTests++;
+  results.summary.totalTests++;
   if (isReadable) results.summary.passed++;
   else results.summary.failed++;
   
@@ -310,7 +310,7 @@ console.log('\nLine Height Tests:');
 Object.entries(typography.lineHeights).forEach(([name, value]) => {
   const isAccessible = value >= 1.4; // WCAG 1.4.12 recommends 1.5, minimum 1.4
   
-  results.totalTests++;
+  results.summary.totalTests++;
   if (isAccessible) results.summary.passed++;
   else results.summary.warnings++;
   
@@ -341,7 +341,7 @@ console.log('\nFont Weight Tests:');
 Object.entries(typography.fontWeights).forEach(([name, value]) => {
   const isReadable = value >= 300; // Minimum weight for readability
   
-  results.totalTests++;
+  results.summary.totalTests++;
   if (isReadable) results.summary.passed++;
   else results.summary.failed++;
   
@@ -375,7 +375,7 @@ const touchTargetTests = [
 ];
 
 touchTargetTests.forEach(test => {
-  results.totalTests++;
+  results.summary.totalTests++;
   const passes = test.value >= 44;
   if (passes) results.summary.passed++;
   else results.summary.failed++;
@@ -413,7 +413,7 @@ const gridInconsistencies = spacingValues.filter(s => {
   return s.px % 4 !== 0;
 });
 
-results.totalTests++;
+results.summary.totalTests++;
 const spacingConsistent = gridInconsistencies.length === 0;
 if (spacingConsistent) results.summary.passed++;
 else results.summary.warnings++;
@@ -437,7 +437,7 @@ const containerTests = [
 ];
 
 containerTests.forEach(test => {
-  results.totalTests++;
+  results.summary.totalTests++;
   results.summary.passed++;
   
   console.log(`  ✅ Pass  ${test.name.padEnd(20)} | ${test.value}`);
