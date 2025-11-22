@@ -4,10 +4,10 @@ Welcome to the Marathon Majors Fantasy League documentation! This guide helps yo
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **6 main categories** with **32 documentation files** (plus this README = 33 total).
+Our documentation is organized into **6 main categories** with **33 documentation files** (plus this README = 34 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
-- `CORE_*.md` - Essential guides (6 docs)
+- `CORE_*.md` - Essential guides (7 docs - includes new DESIGN_SYSTEM.md)
 - `TECH_*.md` - Technical reference (7 docs)
 - `FEATURE_*.md` - Game features (7 docs)
 - `PROCESS_*.md` - Project history (4 docs)
@@ -55,6 +55,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[CORE_DEPLOYMENT.md](CORE_DEPLOYMENT.md)** | Vercel deployment instructions | Deploying your own instance |
 | **[CORE_CHANGELOG.md](CORE_CHANGELOG.md)** | Version history with technical notes | Tracking project evolution |
 | **[CORE_DESIGN_GUIDELINES.md](CORE_DESIGN_GUIDELINES.md)** | Aspirational design system (Navy & Gold, Chakra UI) | Future design standards for Chakra implementation |
+| **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** | Central design system hub with usage examples | Working with Chakra UI components ⭐ NEW |
 
 ### 2️⃣ Technical Reference (7 docs)
 
@@ -122,9 +123,10 @@ Learn how to join games, rank athletes, and follow live results.
 | Add new athletes | [FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md) → Manual Process |
 | Run database migrations | [TECH_MIGRATION.md](TECH_MIGRATION.md) → Migration Guide |
 | Debug database issues | [TECH_DATABASE.md](TECH_DATABASE.md) → Troubleshooting |
+| **Use design system** | **[DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)** → **Component examples & patterns** ⭐ NEW |
 | **Plan UI redesign** | **[UI_REDESIGN_ROADMAP.md](UI_REDESIGN_ROADMAP.md)** → **Phase-by-phase plan** |
-| **Map legacy to Chakra components** | **[UI_PHASE2_COMPONENT_MAPPING.md](UI_PHASE2_COMPONENT_MAPPING.md)** → **Complete mapping** |
-| **Build new navigation** | **[UI_PHASE2_NAVIGATION_SPEC.md](UI_PHASE2_NAVIGATION_SPEC.md)** → **Header & toolbar specs** |
+| **Map legacy to Chakra components** | **[UI_PHASE2_COMPONENT_MAPPING.md](UI_REDESIGN/UI_PHASE2_COMPONENT_MAPPING.md)** → **Complete mapping** |
+| **Build new navigation** | **[UI_PHASE2_NAVIGATION_SPEC.md](UI_REDESIGN/UI_PHASE2_NAVIGATION_SPEC.md)** → **Header & toolbar specs** |
 | **Create Chakra components** | **[/components/chakra/README.md](../components/chakra/README.md)** → **Patterns & best practices** |
 
 ### Understanding Features
@@ -232,14 +234,15 @@ Our documentation follows these categories:
 
 | Metric | Status | Notes |
 |--------|--------|-------|
-| Total Documents | 32 docs + 1 index (33 files) | Well-organized with category prefixes |
+| Total Documents | 33 docs + 1 index (34 files) | Well-organized with category prefixes |
 | Orphaned Docs | 0 | All docs linked from index |
-| Outdated Docs | 0 | Recently updated for UI redesign reorganization |
+| Outdated Docs | 0 | Recently updated for Phase 2 completion |
 | Missing Docs | 0 | All features documented |
 | Broken Links | 0 | Index verified |
 
 **Last Major Cleanup:** November 2025 (42% reduction: 45 → 25 files)  
 **Last Reorganization:** November 21, 2025 (UI redesign docs moved to UI_ prefix)  
+**Latest Addition:** November 22, 2025 (DESIGN_SYSTEM.md - Phase 2 completion)  
 **Next Review:** February 2026
 
 ---
@@ -259,6 +262,6 @@ Our documentation follows these categories:
 
 ---
 
-**Last Updated:** November 21, 2025  
+**Last Updated:** November 22, 2025  
 **Documentation Maintainer:** Project Contributors  
-**Version:** 2.4 (UI Redesign Docs Reorganized)
+**Version:** 2.5 (Phase 2 Design System Documentation Complete)

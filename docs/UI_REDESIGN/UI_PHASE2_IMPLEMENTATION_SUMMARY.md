@@ -309,7 +309,47 @@ Created a 23KB reference guide (890 lines) covering:
 9. **Usage Examples:** Real component implementations
 10. **Accessibility:** WCAG compliance documentation
 
-### 3. Roadmap Updates (`docs/UI_REDESIGN_ROADMAP.md`)
+### 4. Icon Library Integration (Phase 2 Extension - November 22, 2025)
+
+**Standard Icon Library:** Heroicons (@heroicons/react v2.2.0)
+
+**Rationale:**
+- Professional, Tailwind-designed icon set
+- Three variants (outline, solid, mini) for different UI contexts
+- MIT licensed, free for commercial use
+- React-optimized, tree-shakeable SVG components
+- 200+ icons covering all common UI patterns
+
+**Installation:**
+```bash
+npm install @heroicons/react
+```
+
+**Usage Examples:**
+```tsx
+// Outline icons (24x24) - Primary use
+import { PlusIcon, PencilIcon } from '@heroicons/react/24/outline';
+
+// Solid icons (24x24) - Emphasis
+import { StarIcon } from '@heroicons/react/24/solid';
+
+// Mini icons (20px) - Compact UI
+import { CheckIcon } from '@heroicons/react/20/solid';
+```
+
+**Icon Sizing Guidelines:**
+- 16px: Dense tables, inline text, compact buttons
+- 20px: Standard buttons, form fields, cards
+- 24px: Large buttons, navigation, headers
+- 32px+: Hero sections, empty states
+
+**Documentation Added:**
+- Complete icon system guide in [CORE_DESIGN_GUIDELINES.md](../CORE_DESIGN_GUIDELINES.md#icon-system)
+- Production-ready examples in [/examples/design-system/button-examples.tsx](../../examples/design-system/button-examples.tsx)
+- Usage guidelines in [/examples/design-system/README.md](../../examples/design-system/README.md)
+- Updated [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) with icon reference section
+
+### 5. Roadmap Updates (`docs/UI_REDESIGN_ROADMAP.md`)
 
 Updated Phase 2 section (Weeks 5-10) to reflect completion:
 - Marked all tasks as ✅ completed
