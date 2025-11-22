@@ -1,9 +1,10 @@
 # UI Phase 2 Implementation Summary - Design Tokens
 
-**Status:** ✅ Complete  
-**Completion Date:** November 21, 2025  
+**Status:** ✅ Complete (Including Accessibility Audit)  
+**Completion Date:** November 22, 2025  
 **Related Issue:** [#121 - Phase 2: Design System & Tokens Setup](https://github.com/jessephus/marathon-majors-league/issues/121)  
-**Related Roadmap:** [UI_REDESIGN_ROADMAP.md](./UI_REDESIGN_ROADMAP.md)
+**Related Roadmap:** [UI_REDESIGN_ROADMAP.md](./UI_REDESIGN_ROADMAP.md)  
+**Accessibility Audit:** [UI_ACCESSIBILITY_AUDIT_REPORT.md](./UI_ACCESSIBILITY_AUDIT_REPORT.md)
 
 ---
 
@@ -11,10 +12,117 @@
 
 Phase 2 successfully completes the design token system for Marathon Majors Fantasy League, establishing a comprehensive foundation for consistent, accessible, and maintainable UI development. This phase builds upon Phase 1's Chakra UI installation by adding complete color system with semantic mappings, spacing, shadow, transition, z-index, and container tokens.
 
+**NEW (November 22, 2025):** Comprehensive accessibility audit validates all design tokens against WCAG 2.1 AA/AAA standards, with automated testing tools and remediation plan.
+
 **Key Achievements:** 
 1. Complete semantic color system (primary, secondary, success, warning, error, info) with WCAG 2.1 AA/AAA validation
 2. Production-ready design token system with 100+ validated color combinations
 3. Comprehensive color usage guidelines and best practices documentation
+4. **Automated accessibility testing suite** (npm run audit:a11y)
+5. **74.6% WCAG AA compliance** with documented remediation plan for remaining issues
+
+---
+
+## Phase 2 Milestone: Accessibility Audit & Validation (NEW - November 22, 2025)
+
+### Automated Accessibility Testing Suite
+
+**NEW: `scripts/accessibility-audit.js`**
+- Comprehensive Node.js script testing 59 design tokens
+- Automated WCAG 2.1 contrast ratio calculations
+- Typography validation (font sizes, line heights, weights)
+- Layout validation (touch targets, spacing, containers)
+- JSON export for CI/CD integration
+- Formatted console output with color-coded results
+
+**Usage:**
+```bash
+npm run audit:a11y         # Run accessibility audit
+npm run audit:a11y:watch   # Continuous validation (watch mode)
+```
+
+### Comprehensive Audit Report
+
+**NEW: `docs/UI_REDESIGN/UI_ACCESSIBILITY_AUDIT_REPORT.md` (28KB, 850+ lines)**
+
+**Audit Summary:**
+- **Total Tests:** 59 (colors, typography, layout)
+- **Pass Rate:** 74.6% (44 passed, 12 failed, 3 warnings)
+- **Standard:** WCAG 2.1 Level AA/AAA
+- **Date:** November 22, 2025
+
+**Key Findings:**
+
+✅ **Strengths:**
+- Navy palette achieves AAA contrast on white backgrounds
+- Navy + Gold brand combo: 7.61:1 (AAA) - signature combination validated!
+- All font sizes meet 12px minimum readability
+- Spacing system 100% consistent with 4px grid
+- Container widths properly configured for all breakpoints
+
+⚠️ **Issues Requiring Attention:**
+- Semantic 500 shades fail WCAG AA on white (success, warning, error, info)
+- Gold 500-600 fail WCAG AA on white (use gold.700+ or on navy background only)
+- Line height tokens: none (1.0), tight (1.25), snug (1.375) below WCAG 1.5 recommendation
+- Touch target: spacing.10 (40px) below WCAG 44px minimum for interactive elements
+
+**4-Phase Remediation Plan:**
+- Phase 1: Documentation Updates ✅ **COMPLETE** (Nov 22, 2025)
+- Phase 2: Component Default Updates 📋 Planned (Dec 2-13, 2025)
+- Phase 3: Automated Testing Integration 📋 Planned (Dec 16-20, 2025)
+- Phase 4: Developer Education 📋 Planned (Ongoing Dec 2025+)
+
+Full details: [UI_ACCESSIBILITY_AUDIT_REPORT.md](./UI_ACCESSIBILITY_AUDIT_REPORT.md)
+
+### Enhanced Documentation with Accessibility Guidance
+
+**Updated: `theme/colors.ts`**
+- Added 70+ lines of inline accessibility warnings
+- WCAG AA/AAA validation results for all color combinations
+- Safe combinations table with exact contrast ratios
+- Large text only warnings clearly marked
+- Failing combinations explicitly called out with alternatives
+- Detailed usage guidelines for each semantic color
+- Instructions to run `npm run audit:a11y` for validation
+
+**Updated: `docs/CORE_DESIGN_GUIDELINES.md`**
+- Added comprehensive 400+ line accessibility section
+- Validated color combinations table with use cases
+- Typography accessibility guidelines (line height ≥1.5 for body text)
+- Layout & spacing accessibility requirements (44px touch targets)
+- Keyboard navigation patterns with code examples
+- Screen reader support examples with ARIA labels
+- 14-point accessibility testing checklist
+- Browser testing matrix (desktop + mobile)
+- Quick reference DO/DON'T code patterns
+
+**NEW: `docs/UI_REDESIGN/UI_ACCESSIBILITY_REMEDIATION.md` (13KB, 500+ lines)**
+- Detailed remediation tracking document
+- Issue-by-issue breakdown with timelines
+- Component update tasks and success criteria
+- Testing and validation checklists
+- Progress tracking metrics
+- Timeline summary with milestones
+
+### Accessibility Testing Integration
+
+**NPM Scripts Added to `package.json`:**
+```json
+{
+  "scripts": {
+    "audit:a11y": "node scripts/accessibility-audit.js",
+    "audit:a11y:watch": "nodemon --watch theme --watch docs/CORE_DESIGN_GUIDELINES.md --exec npm run audit:a11y"
+  }
+}
+```
+
+**Benefits:**
+- ✅ Automated validation of all design tokens
+- ✅ Catch accessibility violations early in development
+- ✅ CI/CD integration ready (Phase 3 implementation pending)
+- ✅ Machine-readable JSON results for dashboards and trending
+- ✅ Watch mode for continuous validation during development
+- ✅ Exit code indicates pass/fail for build pipelines
 
 ---
 

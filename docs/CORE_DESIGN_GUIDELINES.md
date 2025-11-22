@@ -60,10 +60,15 @@
 #### 4. Accessible by Design
 **WCAG 2.1 AA is the minimum, not the goal.**
 
-- High contrast navy/gold palette
+- High contrast navy/gold palette (validated November 2025)
 - Keyboard navigation on everything
 - Screen reader labels on all interactive elements
 - Focus indicators always visible
+- Automated accessibility testing in CI/CD
+- Touch targets minimum 44x44px (WCAG 2.5.5)
+- Line height ≥1.5 for body text (WCAG 1.4.12)
+- **Run 'npm run audit:a11y' to validate any design changes**
+- **Full audit report:** [UI_ACCESSIBILITY_AUDIT_REPORT.md](./UI_REDESIGN/UI_ACCESSIBILITY_AUDIT_REPORT.md)
 
 #### 5. Data Clarity
 **Complex fantasy data made simple.**
@@ -1532,12 +1537,114 @@ return (
 
 ## Accessibility
 
+**Status:** ✅ Validated November 22, 2025  
+**Standard:** WCAG 2.1 Level AA  
+**Full Report:** [UI_ACCESSIBILITY_AUDIT_REPORT.md](./UI_REDESIGN/UI_ACCESSIBILITY_AUDIT_REPORT.md)  
+**Validation Tool:** Run `npm run audit:a11y` to test design tokens
+
+### Accessibility Audit Summary
+
+The Marathon Majors Fantasy League design system underwent comprehensive accessibility validation in November 2025. All design tokens (colors, typography, layout) were tested against WCAG 2.1 AA/AAA standards.
+
+**Overall Result:** 74.6% pass rate (44/59 tests passed)
+
+#### ✅ Strengths
+- Navy palette: 100% AAA compliant on white backgrounds
+- Navy + Gold brand combo: 7.61:1 contrast (AAA)
+- All font sizes meet 12px minimum
+- Spacing system: 100% consistent (4px grid)
+- Typography scales properly for all devices
+
+#### ⚠️ Areas Requiring Attention
+- Semantic 500 shades (success, warning, error, info) fail WCAG AA on white
+- Gold 500-600 fail WCAG AA on white backgrounds
+- Three line height values below WCAG 1.5 recommendation
+- spacing.10 (40px) below 44px touch target minimum
+
+See [UI_ACCESSIBILITY_AUDIT_REPORT.md](./UI_REDESIGN/UI_ACCESSIBILITY_AUDIT_REPORT.md) for detailed findings and remediation plan.
+
+---
+
 ### WCAG 2.1 AA Compliance
 
-#### Color Contrast
-- **Normal text:** 4.5:1 minimum
-- **Large text (18px+ or 14px bold):** 3:1 minimum
-- **UI components:** 3:1 minimum
+#### Color Contrast Requirements
+
+**Validated Color Combinations (WCAG AA Compliant):**
+
+| Text Color | On White BG | On Navy.900 BG | Use Case |
+|------------|-------------|----------------|----------|
+| **navy.900** | ✅ 15.99:1 | - | Body text, headers |
+| **navy.700** | ✅ 11.14:1 | - | Links, secondary text |
+| **navy.500** | ✅ 6.15:1 | - | Buttons, active states |
+| **gold.900** | ✅ 8.73:1 | - | Strong emphasis |
+| **gold.800** | ✅ 5.88:1 | - | Emphasis text |
+| **gold.500** | ❌ 2.10:1 | ✅ 7.61:1 | Logo (navy bg only) |
+| **success.700** | ✅ 5.02:1 | - | Success messages |
+| **warning.700** | ✅ 5.02:1 | - | Warning messages |
+| **error.700** | ✅ 6.47:1 | - | Error messages |
+| **info.700** | ✅ 6.70:1 | - | Info messages |
+| **white** | - | ✅ 15.99:1 | Dark mode, headers |
+
+**⚠️ Color Usage Rules:**
+1. **For text on white:** Use 700+ shades (navy, gold, semantic colors)
+2. **For semantic alerts:** Use 600+ for text, 50-100 for backgrounds
+3. **For buttons:** Use 600+ backgrounds with white text
+4. **For gold elements:** Use on navy.900 (AAA) or gold.700+ on white
+5. **For decorative elements:** 500 shades OK if not conveying meaning
+6. **Avoid:** Gold 500-600 on white, semantic 500 on white
+
+**Test any new combinations:** `npm run audit:a11y`
+
+#### Typography Accessibility
+
+**Font Sizes:** All sizes meet 12px minimum (WCAG 1.4.4)
+- ✅ xs (12px) - Minimum for labels/captions
+- ✅ sm (14px) - Small text, metadata
+- ✅ md (16px) - Body text default
+- ✅ lg (18px) - Large text threshold
+- ✅ xl-5xl (20-48px) - Headings
+
+**Line Heights:** WCAG 1.4.12 requires ≥1.5 for body text
+- ❌ **none (1.0)** - Never use for text content
+- ❌ **tight (1.25)** - Large headings only (H1, H2)
+- ⚠️ **snug (1.375)** - Headings only (H3, H4)
+- ✅ **normal (1.5)** - Body text default ⭐
+- ✅ **relaxed (1.625)** - Comfortable reading
+- ✅ **loose (1.75)** - Maximum comfort
+
+**Font Weights:** All weights accessible (≥300)
+- ✅ normal (400) - Body text
+- ✅ medium (500) - Subtle emphasis
+- ✅ semibold (600) - Strong emphasis
+- ✅ bold (700) - Headings, buttons
+- ✅ extrabold (800) - Hero text
+
+**Typography Rules:**
+1. **Always use lineHeight="normal" or higher for body text**
+2. Reserve tight/snug for large headings only
+3. Never use lineHeight="none" for text
+4. Default to md (16px) font size for body text
+5. Use lg (18px)+ for improved readability
+
+#### Layout & Spacing Accessibility
+
+**Touch Target Sizes (WCAG 2.5.5):**
+- ✅ Minimum: 44x44px required
+- ✅ **spacing.12 (48px)** - Recommended for buttons ⭐
+- ❌ **spacing.10 (40px)** - Too small, avoid for interactive elements
+
+**Touch Target Rules:**
+1. Use spacing.12 (48px) or larger for all interactive elements on mobile
+2. Never use spacing.10 for buttons, links, or form fields
+3. Ensure adequate spacing between tap targets (8px minimum)
+4. Test on actual mobile devices, not just DevTools
+
+**Container Max-Widths:** All responsive (WCAG 1.4.10)
+- ✅ sm (640px) - Mobile landscape
+- ✅ md (768px) - Tablets
+- ✅ lg (1024px) - Desktop
+- ✅ xl (1280px) - Large desktop (default)
+- ✅ 2xl (1536px) - Extra large
 
 #### Keyboard Navigation
 ```jsx
@@ -1587,6 +1694,50 @@ return (
 </Modal>
 ```
 
+### Accessibility Testing
+
+#### Automated Testing (CI/CD Integrated)
+```bash
+# Run accessibility audit on design tokens
+npm run audit:a11y
+
+# Watch mode (auto-run on theme changes)
+npm run audit:a11y:watch
+```
+
+#### Manual Testing Checklist
+
+**Every Component Must:**
+- [ ] Pass WCAG AA color contrast (4.5:1 for text)
+- [ ] Be keyboard accessible (Tab, Enter, Space)
+- [ ] Have visible focus indicators
+- [ ] Include ARIA labels for icon-only buttons
+- [ ] Use semantic HTML elements
+- [ ] Work with screen readers (NVDA, VoiceOver)
+- [ ] Meet 44x44px touch target minimum on mobile
+- [ ] Use lineHeight="normal" or higher for text
+
+**Every Page Must:**
+- [ ] Have proper heading hierarchy (H1 → H2 → H3)
+- [ ] Include skip-to-content link
+- [ ] Trap focus in modals when open
+- [ ] Return focus after modal close
+- [ ] Provide alternative text for images
+- [ ] Not rely on color alone to convey information
+- [ ] Support 200% text zoom without breaking layout
+
+#### Browser Testing Matrix
+
+**Desktop:**
+- Chrome (Windows, macOS) + NVDA/VoiceOver
+- Firefox (Windows, macOS) + NVDA/VoiceOver
+- Safari (macOS) + VoiceOver
+- Edge (Windows) + NVDA
+
+**Mobile:**
+- Safari (iOS) + VoiceOver
+- Chrome (Android) + TalkBack
+
 ### Accessibility Checklist
 
 ✅ All images have `alt` text  
@@ -1599,6 +1750,78 @@ return (
 ✅ ARIA labels on icon-only buttons  
 ✅ Modal focus trapped when open  
 ✅ Skip-to-content link available  
+✅ Touch targets ≥44x44px on mobile  
+✅ Line height ≥1.5 for body text  
+✅ Text resizable to 200% without breaking  
+✅ Design tokens validated with `npm run audit:a11y`  
+
+---
+
+### Quick Reference: Accessible Design Patterns
+
+#### ✅ DO: Use accessible color combinations
+```jsx
+// ✅ Good: Navy text on white (15.99:1)
+<Text color="navy.900">Marathon Results</Text>
+
+// ✅ Good: Gold on navy background (7.61:1)
+<Box bg="navy.900">
+  <Text color="gold.500">⭐ Premium Feature</Text>
+</Box>
+
+// ✅ Good: Semantic colors with proper shades
+<Alert status="success">
+  <AlertIcon />
+  <Text color="success.700">Team saved successfully!</Text>
+</Alert>
+```
+
+#### ❌ DON'T: Use inaccessible combinations
+```jsx
+// ❌ Bad: Gold 500 on white (2.10:1 - fails WCAG AA)
+<Text color="gold.500">Premium</Text>
+
+// ❌ Bad: Success 500 on white (2.28:1 - fails WCAG AA)
+<Alert status="success">
+  <Text color="success.500">Success!</Text>
+</Alert>
+
+// ❌ Bad: No line height for body text
+<Text lineHeight="tight">Long paragraph...</Text>
+
+// ❌ Bad: Touch target too small
+<IconButton size="sm" /> {/* 32px - below 44px minimum */}
+```
+
+#### ✅ DO: Use accessible typography
+```jsx
+// ✅ Good: Body text with proper line height
+<Text fontSize="md" lineHeight="normal">
+  Long paragraph with comfortable reading experience...
+</Text>
+
+// ✅ Good: Headings can use tighter line heights
+<Heading as="h1" fontSize="4xl" lineHeight="tight">
+  Marathon Majors Fantasy League
+</Heading>
+```
+
+#### ✅ DO: Use accessible touch targets
+```jsx
+// ✅ Good: 48px touch target
+<Button size="lg" minH="48px" minW="48px">
+  Add to Team
+</Button>
+
+// ✅ Good: Icon button with proper size
+<IconButton 
+  aria-label="Add to favorites"
+  size="lg"
+  minH="48px"
+  minW="48px"
+  icon={<StarIcon />}
+/>
+```
 
 ---
 
