@@ -162,15 +162,46 @@ export const colors = {
  * - Use for informational messages, tips
  * - Example: <Alert status="info">Draft starts at 7pm ET</Alert>
  * 
- * Contrast Validation Results (WCAG 2.1 AA)
- * See docs/UI_COLOR_CONTRAST_VALIDATION.md for full report
+ * ============================================================================
+ * ACCESSIBILITY VALIDATION (WCAG 2.1 AA/AAA)
+ * ============================================================================
  * 
- * Summary:
- * - Navy 900 on white: 13.5:1 ✅ AAA
- * - Navy 500 on white: 6.8:1 ✅ AAA
- * - White on navy 900: 13.5:1 ✅ AAA
- * - Gold 500 on navy 900: 8.2:1 ✅ AAA
- * - Gold 600 on white: 4.9:1 ✅ AA (large text)
- * - Gold 700 on white: 6.1:1 ✅ AAA
- * - All semantic colors (success, warning, error, info) meet WCAG AA for their use cases
- */
+ * Comprehensive audit performed: November 22, 2025
+ * Full report: docs/UI_REDESIGN/UI_ACCESSIBILITY_AUDIT_REPORT.md
+ * 
+ * ✅ SAFE COMBINATIONS (WCAG AA Compliant):
+ * 
+ * Text on White Background:
+ * - Navy 900-500: 15.99:1 to 6.15:1 (AAA to AA) ✅
+ * - Gold 900-800: 8.73:1 to 5.88:1 (AAA to AA) ✅
+ * - Success 700: 5.02:1 (AA) ✅
+ * - Warning 700: 5.02:1 (AA) ✅
+ * - Error 700-600: 6.47:1 to 4.83:1 (AA) ✅
+ * - Info 700-600: 6.70:1 to 5.17:1 (AA) ✅
+ * 
+ * Text on Navy 900 Background:
+ * - White: 15.99:1 (AAA) ✅
+ * - Gold 500-400: 7.61:1 to 10.71:1 (AAA) ✅
+ * 
+ * ⚠️ USE WITH CAUTION (Large Text Only - 18pt+):
+ * - Navy 400 on white: 3.29:1 (disabled states only)
+ * - Gold 700 on white: 4.06:1 (large headings only)
+ * - Success 600 on white: 3.30:1 (button backgrounds with white text)
+ * - Warning 600 on white: 3.19:1 (button backgrounds with white text)
+ * - Error 500 on white: 3.76:1 (button backgrounds with white text)
+ * - Info 500 on white: 3.68:1 (button backgrounds with white text)
+ * 
+ * ❌ FAILS WCAG AA (Avoid These Combinations):
+ * - Gold 600 on white: 2.88:1 ❌ Use gold.700+ instead
+ * - Gold 500 on white: 2.10:1 ❌ Use ONLY on navy.900 background
+ * - Success 500 on white: 2.28:1 ❌ Use success.700 for text
+ * - Warning 500 on white: 2.15:1 ❌ Use warning.700 for text
+ * 
+ * USAGE GUIDELINES:
+ * 1. For text on white: Use 700+ shades of any color
+ * 2. For semantic alerts: Use 600+ shades for text, 50-100 for backgrounds
+ * 3. For buttons: Use 600+ shades for backgrounds, white for text
+ * 4. For gold elements: Use on navy.900 background (AAA) or use gold.700+ on white
+ * 5. For decorative elements (stars, badges): 500 shades acceptable if not conveying meaning
+ * 
+ * Run 'npm run audit:a11y' to validate any new color combinations
