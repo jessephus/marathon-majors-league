@@ -14,6 +14,10 @@ export enum FeatureFlag {
   AGGRESSIVE_CODE_SPLITTING = 'aggressive_code_splitting',
   PREFETCH_ON_HOVER = 'prefetch_on_hover',
   
+  // UI Redesign Features (Phase 3: Navigation)
+  CHAKRA_HEADER = 'chakra_header',
+  CHAKRA_BOTTOM_NAV = 'chakra_bottom_nav',
+  
   // Experimental Features
   EXPERIMENTAL_BUNDLE_ANALYSIS = 'experimental_bundle_analysis',
 }
@@ -57,6 +61,18 @@ const featureFlagRegistry: FeatureFlagRegistry = {
     description: 'Prefetch dynamic chunks on hover/focus for better perceived performance',
     rolloutPercentage: 100,
     environment: ['production', 'preview'],
+  },
+  [FeatureFlag.CHAKRA_HEADER]: {
+    enabled: true,
+    description: 'Replace legacy header with new Chakra UI StickyHeader component (Phase 3)',
+    rolloutPercentage: 10, // Start with 10% gradual rollout
+    environment: ['development', 'production', 'preview'],
+  },
+  [FeatureFlag.CHAKRA_BOTTOM_NAV]: {
+    enabled: true,
+    description: 'Replace legacy mobile navigation with new Chakra UI BottomNav component (Phase 3)',
+    rolloutPercentage: 10, // Start with 10% gradual rollout
+    environment: ['development', 'production', 'preview'],
   },
   [FeatureFlag.EXPERIMENTAL_BUNDLE_ANALYSIS]: {
     enabled: false,
