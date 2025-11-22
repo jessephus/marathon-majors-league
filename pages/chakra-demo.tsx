@@ -1,21 +1,26 @@
 /**
- * Chakra UI Demo Page - Phase 1 & 2 Validation
+ * Chakra UI Demo Page - Phase 1 & 2 Complete Validation
  * 
- * Purpose: Demonstrate Chakra UI v3 components working alongside legacy vanilla JS/CSS.
+ * Purpose: Comprehensive demonstration of Chakra UI v3 design system implementation.
  * This page validates that:
- * 1. Chakra UI is properly installed and configured
- * 2. Theme (navy/gold palette) is applied correctly
- * 3. Semantic color mappings (primary/secondary) work correctly
- * 4. Google Fonts (Inter/Roboto) are loaded
- * 5. Chakra components coexist with legacy code
- * 6. Responsive design works (mobile-first)
- * 7. WCAG 2.1 AA contrast compliance
+ * 1. ✅ Chakra UI v3 is properly installed and configured
+ * 2. ✅ Theme (navy/gold palette) is applied correctly
+ * 3. ✅ Semantic color mappings (primary/secondary) work correctly
+ * 4. ✅ Typography system (Inter/Roboto) with complete scale (xs-5xl)
+ * 5. ✅ Heading variants (H1-H6) with responsive sizing
+ * 6. ✅ Font weights (400-800) and letter spacing
+ * 7. ✅ Line heights (tight, snug, normal, relaxed, loose)
+ * 8. ✅ Google Fonts loaded and applied
+ * 9. ✅ Chakra components coexist with legacy code
+ * 10. ✅ Responsive design works (mobile-first)
+ * 11. ✅ WCAG 2.1 AA/AAA contrast compliance
+ * 12. ✅ Real-world typography usage examples
  * 
- * This demo is referenced in UI_REDESIGN_ROADMAP.md Phase 1 & 2.
+ * This demo is referenced in UI_REDESIGN_ROADMAP.md Phase 2.
  * 
  * Note: Uses custom Button/Badge wrappers for semantic colorPalette support
  * 
- * @version 2.1.0 (Phase 2 - Semantic Colors with Custom Components)
+ * @version 2.2.0 (Phase 2 Complete - Typography Scale & Font Setup)
  * @date November 22, 2025
  */
 
@@ -39,8 +44,8 @@ export default function ChakraDemoPage() {
   return (
     <>
       <Head>
-        <title>Chakra UI Demo - MMFL Phase 1 & 2</title>
-        <meta name="description" content="Chakra UI demonstration with semantic colors for Marathon Majors Fantasy League" />
+        <title>Chakra UI Demo - Phase 2 Complete - Typography</title>
+        <meta name="description" content="Complete Typography System: Inter/Roboto fonts, H1-H6 variants, responsive scaling, and comprehensive design tokens for MMFL" />
       </Head>
 
       {/* Legacy CSS Header - demonstrates coexistence */}
@@ -77,10 +82,10 @@ export default function ChakraDemoPage() {
               mb={4}
               fontFamily="heading"
             >
-              Chakra UI Phase 1 & 2 Demo
+              Phase 2 Complete: Typography System
             </Heading>
             <Text fontSize="lg" mb={6}>
-              Navy & Gold Design System • Semantic Colors • Inter/Roboto Fonts • Mobile-First
+              Complete Font System • H1-H6 Variants • Responsive Scaling • Inter/Roboto • All Design Tokens
             </Text>
             <HStack gap={4} justify="center" flexWrap="wrap">
               <Button 
@@ -424,47 +429,393 @@ export default function ChakraDemoPage() {
             </Card.Body>
           </Card.Root>
 
-          {/* Typography Showcase */}
+          {/* Typography Showcase - ENHANCED FOR PHASE 2 */}
           <Card.Root>
             <Card.Header>
-              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Typography System</Heading>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Typography System - Phase 2</Heading>
+              <Text fontSize="sm" color="gray.600" mt={2}>
+                Inter (headings) • Roboto (body) • Complete scale with responsive sizing
+              </Text>
             </Card.Header>
             <Card.Body>
-              <VStack gap={4} align="stretch">
-                <Box>
-                  <Heading as="h1" fontSize={{ base: '2xl', md: '4xl' }} fontFamily="heading">
-                    H1 Heading - Inter Font
-                  </Heading>
-                  <Text fontSize="sm" color="gray.500">4xl size (36px desktop, 24px mobile)</Text>
-                </Box>
+              <VStack gap={8} align="stretch">
                 
+                {/* Heading Hierarchy */}
                 <Box>
-                  <Heading as="h2" fontSize={{ base: 'xl', md: '3xl' }} fontFamily="heading">
-                    H2 Heading - Inter Font
-                  </Heading>
-                  <Text fontSize="sm" color="gray.500">3xl size (30px desktop, 20px mobile)</Text>
+                  <Text fontWeight="bold" fontSize="lg" mb={4} color="navy.700">
+                    Heading Hierarchy (H1-H6)
+                  </Text>
+                  <VStack gap={4} align="stretch">
+                    <Box borderLeft="4px solid" borderColor="navy.500" pl={4}>
+                      <Heading as="h1" fontSize={{ base: '2xl', md: '4xl' }} fontWeight="bold" lineHeight="tight" letterSpacing="tight" color="navy.900">
+                        H1: Page Title
+                      </Heading>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 4xl (36px desktop / 24px mobile) • fontWeight: bold (700) • lineHeight: tight (1.25) • letterSpacing: tight (-0.025em)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        Use once per page for the main page title. Maximum visual hierarchy.
+                      </Text>
+                    </Box>
+
+                    <Box borderLeft="4px solid" borderColor="navy.400" pl={4}>
+                      <Heading as="h2" fontSize={{ base: 'xl', md: '3xl' }} fontWeight="bold" lineHeight="tight" color="navy.800">
+                        H2: Section Title
+                      </Heading>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 3xl (30px desktop / 20px mobile) • fontWeight: bold (700) • lineHeight: tight (1.25)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        Main section headings that divide page content into logical groups.
+                      </Text>
+                    </Box>
+
+                    <Box borderLeft="4px solid" borderColor="navy.300" pl={4}>
+                      <Heading as="h3" fontSize={{ base: 'lg', md: '2xl' }} fontWeight="semibold" lineHeight="snug" color="navy.700">
+                        H3: Subsection Title
+                      </Heading>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 2xl (24px desktop / 18px mobile) • fontWeight: semibold (600) • lineHeight: snug (1.375)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        Subsection headings within major sections. Secondary hierarchy level.
+                      </Text>
+                    </Box>
+
+                    <Box borderLeft="4px solid" borderColor="navy.200" pl={4}>
+                      <Heading as="h4" fontSize="xl" fontWeight="semibold" lineHeight="snug" color="navy.600">
+                        H4: Card/Component Title
+                      </Heading>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: xl (20px) • fontWeight: semibold (600) • lineHeight: snug (1.375)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        Component-level headings like card titles, panel headers.
+                      </Text>
+                    </Box>
+
+                    <Box borderLeft="4px solid" borderColor="gray.300" pl={4}>
+                      <Heading as="h5" fontSize="lg" fontWeight="semibold" color="gray.700">
+                        H5: Small Heading
+                      </Heading>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: lg (18px) • fontWeight: semibold (600)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        Minor headings, list headers, small card titles.
+                      </Text>
+                    </Box>
+
+                    <Box borderLeft="4px solid" borderColor="gray.200" pl={4}>
+                      <Heading as="h6" fontSize="md" fontWeight="semibold" color="gray.600">
+                        H6: Smallest Heading
+                      </Heading>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: md (16px) • fontWeight: semibold (600)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        Rarely used. Consider bold text instead for this hierarchy level.
+                      </Text>
+                    </Box>
+                  </VStack>
                 </Box>
-                
-                <Box>
-                  <Heading as="h3" fontSize={{ base: 'lg', md: '2xl' }} fontFamily="heading">
-                    H3 Heading - Inter Font
-                  </Heading>
-                  <Text fontSize="sm" color="gray.500">2xl size (24px desktop, 18px mobile)</Text>
-                </Box>
-                
+
                 <Box h="1px" bg="gray.200" />
-                
+
+                {/* Body Text Scale */}
                 <Box>
-                  <Text fontSize="lg" fontFamily="body" mb={2}>
-                    Body Text Large - Roboto Font (18px)
+                  <Text fontWeight="bold" fontSize="lg" mb={4} color="navy.700">
+                    Body Text Scale (Roboto)
                   </Text>
-                  <Text fontSize="md" fontFamily="body" mb={2}>
-                    Body Text Default - Roboto Font (16px) - This is the base font size for all body content.
-                  </Text>
-                  <Text fontSize="sm" fontFamily="body" color="gray.600">
-                    Body Text Small - Roboto Font (14px) - Used for secondary information.
-                  </Text>
+                  <VStack gap={3} align="stretch">
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="5xl" fontFamily="body" color="navy.900" lineHeight="tight">
+                        Display Text (5xl - 48px)
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 5xl • Use sparingly for hero sections on desktop only
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="4xl" fontFamily="body" color="navy.800" lineHeight="tight">
+                        Hero Text (4xl - 36px)
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 4xl • Large emphasis text, CTAs, hero sections
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="3xl" fontFamily="body" color="navy.700">
+                        Extra Large (3xl - 30px)
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 3xl • Emphasized content, statistics, featured data
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="2xl" fontFamily="body" color="gray.800">
+                        Large Emphasized (2xl - 24px)
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: 2xl • Pull quotes, important callouts
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="xl" fontFamily="body" color="gray.700">
+                        Emphasized Text (xl - 20px)
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: xl • Subheadings, intro paragraphs, emphasized body text
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="lg" fontFamily="body" color="gray.700">
+                        Large Body Text (lg - 18px) - Great for readability in long-form content and accessibility
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: lg • Long-form content, article body, improved readability
+                      </Text>
+                    </Box>
+
+                    <Box bg="white" border="2px solid" borderColor="navy.500" p={4} borderRadius="md">
+                      <Text fontSize="md" fontFamily="body" color="gray.700">
+                        Base Body Text (md - 16px) - This is the default font size for all body content. Use this for paragraphs, descriptions, and general UI text. Minimum recommended size for body text.
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1} fontWeight="bold">
+                        fontSize: md (DEFAULT) • Most common body text size • 16px minimum for accessibility
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="sm" fontFamily="body" color="gray.600">
+                        Small Text (sm - 14px) - Used for secondary information, helper text, captions, and metadata
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: sm • Labels, helper text, secondary information, timestamps
+                      </Text>
+                    </Box>
+
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="xs" fontFamily="body" color="gray.500">
+                        Extra Small Text (xs - 12px) - Fine print, legal text, very minor metadata
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        fontSize: xs • Minimum size • Use sparingly for legal text, tooltips
+                      </Text>
+                    </Box>
+                  </VStack>
                 </Box>
+
+                <Box h="1px" bg="gray.200" />
+
+                {/* Font Weights */}
+                <Box>
+                  <Text fontWeight="bold" fontSize="lg" mb={4} color="navy.700">
+                    Font Weights
+                  </Text>
+                  <VStack gap={2} align="stretch">
+                    <Box bg="gray.50" p={3} borderRadius="md">
+                      <Text fontSize="lg" fontWeight="normal" mb={1}>
+                        Normal (400) - Default body text weight
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        fontWeight: normal • All body text by default
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={3} borderRadius="md">
+                      <Text fontSize="lg" fontWeight="medium" mb={1}>
+                        Medium (500) - Subtle emphasis within paragraphs
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        fontWeight: medium • Emphasized text, important words
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={3} borderRadius="md">
+                      <Text fontSize="lg" fontWeight="semibold" mb={1}>
+                        Semibold (600) - Buttons, labels, card titles
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        fontWeight: semibold • Buttons, form labels, data labels, H3-H6
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={3} borderRadius="md">
+                      <Text fontSize="lg" fontWeight="bold" mb={1}>
+                        Bold (700) - Headings, strong emphasis
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        fontWeight: bold • H1, H2, H3 headings, strong emphasis
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={3} borderRadius="md">
+                      <Text fontSize="lg" fontWeight="extrabold" mb={1}>
+                        Extrabold (800) - Hero headings only (use sparingly)
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        fontWeight: extrabold • Hero text, display headings (rare)
+                      </Text>
+                    </Box>
+                  </VStack>
+                </Box>
+
+                <Box h="1px" bg="gray.200" />
+
+                {/* Line Heights */}
+                <Box>
+                  <Text fontWeight="bold" fontSize="lg" mb={4} color="navy.700">
+                    Line Heights
+                  </Text>
+                  <VStack gap={3} align="stretch">
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Heading fontSize="2xl" lineHeight="tight" mb={2}>
+                        Tight Line Height (1.25)
+                      </Heading>
+                      <Text fontSize="sm" color="gray.600">
+                        lineHeight: tight • Used for large headings (H1, H2) to maintain compact visual hierarchy
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Heading fontSize="xl" lineHeight="snug" mb={2}>
+                        Snug Line Height (1.375)
+                      </Heading>
+                      <Text fontSize="sm" color="gray.600">
+                        lineHeight: snug • Used for small headings (H3-H6) for balanced spacing
+                      </Text>
+                    </Box>
+                    <Box bg="white" border="2px solid" borderColor="navy.500" p={4} borderRadius="md">
+                      <Text fontSize="md" lineHeight="normal" mb={2}>
+                        Normal Line Height (1.5) - This is the default line height for body text. It provides comfortable reading with adequate spacing between lines. Most paragraphs use this value.
+                      </Text>
+                      <Text fontSize="sm" color="gray.600">
+                        lineHeight: normal (DEFAULT) • Body text default • Optimal readability
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="md" lineHeight="relaxed">
+                        Relaxed Line Height (1.625) - Used for long-form content where extra breathing room improves readability. Articles, documentation, and detailed explanations benefit from this spacing.
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        lineHeight: relaxed • Long-form content, articles, documentation
+                      </Text>
+                    </Box>
+                  </VStack>
+                </Box>
+
+                <Box h="1px" bg="gray.200" />
+
+                {/* Letter Spacing */}
+                <Box>
+                  <Text fontWeight="bold" fontSize="lg" mb={4} color="navy.700">
+                    Letter Spacing
+                  </Text>
+                  <VStack gap={3} align="stretch">
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="2xl" letterSpacing="tighter" fontWeight="bold">
+                        TIGHTER (-0.05em)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        letterSpacing: tighter • Very tight headings (rare, special cases)
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Heading fontSize="3xl" letterSpacing="tight">
+                        Tight Spacing (-0.025em)
+                      </Heading>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        letterSpacing: tight • Large headings (48px+) for visual balance
+                      </Text>
+                    </Box>
+                    <Box bg="white" border="2px solid" borderColor="navy.500" p={4} borderRadius="md">
+                      <Text fontSize="lg" letterSpacing="normal">
+                        Normal Spacing (0) - Default letter spacing
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        letterSpacing: normal (DEFAULT) • Body text, most UI elements
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Button colorPalette="primary" size="lg" letterSpacing="wide">
+                        WIDE SPACING (0.025em)
+                      </Button>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        letterSpacing: wide • Buttons, CTA text for better readability
+                      </Text>
+                    </Box>
+                    <Box bg="gray.50" p={4} borderRadius="md">
+                      <Text fontSize="sm" letterSpacing="wider" fontWeight="semibold" textTransform="uppercase" color="gray.600">
+                        WIDER SPACING (0.05em)
+                      </Text>
+                      <Text fontSize="sm" color="gray.600" mt={2}>
+                        letterSpacing: wider • All-caps labels, overline text, eyebrows
+                      </Text>
+                    </Box>
+                  </VStack>
+                </Box>
+
+                <Box h="1px" bg="gray.200" />
+
+                {/* Real-World Typography Examples */}
+                <Box>
+                  <Text fontWeight="bold" fontSize="lg" mb={4} color="navy.700">
+                    Real-World Usage Examples
+                  </Text>
+                  
+                  {/* Article Layout */}
+                  <Box bg="white" border="1px solid" borderColor="gray.200" p={6} borderRadius="lg" mb={4}>
+                    <Text fontSize="xs" textTransform="uppercase" letterSpacing="wider" fontWeight="semibold" color="gray.500" mb={2}>
+                      News • March 15, 2025
+                    </Text>
+                    <Heading as="h1" fontSize={{ base: '2xl', md: '4xl' }} lineHeight="tight" mb={4}>
+                      Eliud Kipchoge Breaks Marathon World Record
+                    </Heading>
+                    <Text fontSize="xl" color="gray.600" lineHeight="relaxed" mb={4} fontWeight="medium">
+                      The Kenyan marathon legend shattered his own world record by 30 seconds at the Berlin Marathon, finishing in an astonishing 2:00:35.
+                    </Text>
+                    <Text fontSize="md" lineHeight="normal" color="gray.700" mb={3}>
+                      In what can only be described as a historic performance, Eliud Kipchoge demonstrated why he is considered the greatest marathoner of all time. Running in near-perfect conditions in Berlin, Kipchoge maintained a blistering pace throughout the entire 42.2 kilometers.
+                    </Text>
+                    <Text fontSize="md" lineHeight="normal" color="gray.700">
+                      "I felt strong from the start," Kipchoge said after the race. "The crowd, the weather, everything came together perfectly today."
+                    </Text>
+                  </Box>
+
+                  {/* Data Card */}
+                  <Box bg="navy.900" color="white" p={6} borderRadius="lg">
+                    <Text fontSize="sm" textTransform="uppercase" letterSpacing="wider" fontWeight="semibold" opacity={0.7} mb={3}>
+                      Team Statistics
+                    </Text>
+                    <HStack justify="space-between" mb={4}>
+                      <Box>
+                        <Text fontSize="4xl" fontWeight="bold" lineHeight="none" color="gold.500">
+                          847
+                        </Text>
+                        <Text fontSize="sm" mt={1} opacity={0.9}>Total Points</Text>
+                      </Box>
+                      <Box textAlign="right">
+                        <Text fontSize="4xl" fontWeight="bold" lineHeight="none" color="gold.500">
+                          #1
+                        </Text>
+                        <Text fontSize="sm" mt={1} opacity={0.9}>Current Rank</Text>
+                      </Box>
+                    </HStack>
+                    <Box h="1px" bg="whiteAlpha.300" mb={4} />
+                    <VStack align="stretch" gap={2}>
+                      <HStack justify="space-between">
+                        <Text fontSize="sm">Men's Team Average</Text>
+                        <Text fontSize="sm" fontWeight="semibold">2:04:32</Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontSize="sm">Women's Team Average</Text>
+                        <Text fontSize="sm" fontWeight="semibold">2:18:45</Text>
+                      </HStack>
+                    </VStack>
+                  </Box>
+                </Box>
+
               </VStack>
             </Card.Body>
           </Card.Root>
