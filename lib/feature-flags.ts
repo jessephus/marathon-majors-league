@@ -64,15 +64,15 @@ const featureFlagRegistry: FeatureFlagRegistry = {
   },
   [FeatureFlag.CHAKRA_HEADER]: {
     enabled: true,
-    description: 'Replace legacy header with new Chakra UI StickyHeader component (Phase 3)',
-    rolloutPercentage: 10, // Start with 10% gradual rollout
-    environment: ['development', 'production', 'preview'],
+    description: 'Replace legacy header with new Chakra UI StickyHeader component (includes MobileMenuDrawer on mobile)',
+    rolloutPercentage: 100, // 100% in development, 0% in production (via environment restriction)
+    environment: ['development', 'preview'], // Only enabled in dev/preview, disabled in production
   },
   [FeatureFlag.CHAKRA_BOTTOM_NAV]: {
     enabled: true,
     description: 'Replace legacy mobile navigation with new Chakra UI BottomNav component (Phase 3)',
-    rolloutPercentage: 10, // Start with 10% gradual rollout
-    environment: ['development', 'production', 'preview'],
+    rolloutPercentage: 100, // 100% in development, 0% in production (via environment restriction)
+    environment: ['development', 'preview'], // Only enabled in dev/preview, disabled in production
   },
   [FeatureFlag.EXPERIMENTAL_BUNDLE_ANALYSIS]: {
     enabled: false,
