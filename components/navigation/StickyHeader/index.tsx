@@ -43,6 +43,7 @@ import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/chakra/Button';
 import { NavLink } from './NavLink';
 import { MobileMenuDrawer } from '../MobileMenuDrawer';
+import { getTeamHref } from '@/lib/navigation-utils';
 
 /**
  * Navigation item configuration
@@ -51,34 +52,38 @@ export interface NavItem {
   label: string;
   href: string;
   matchPaths?: string[]; // Additional paths that should mark this nav item as active
+  isDynamic?: boolean; // Whether href should be computed dynamically
 }
 
 /**
- * Default navigation items for desktop header
- * Following the specification from UI_PHASE2_NAVIGATION_SPEC.md
+ * Get default navigation items (with dynamic team link)
+ * Called as a function to ensure team href is evaluated at render time
  */
-const DEFAULT_NAV_ITEMS: NavItem[] = [
-  {
-    label: 'Home',
-    href: '/',
-    matchPaths: [],
-  },
-  {
-    label: 'My Team',
-    href: '/team',
-    matchPaths: ['/team/[session]'], // Match team session pages
-  },
-  {
-    label: 'Standings',
-    href: '/leaderboard',
-    matchPaths: [],
-  },
-  {
-    label: 'Athletes',
-    href: '/athletes',
-    matchPaths: [],
-  },
-];
+function getDefaultNavItems(): NavItem[] {
+  return [
+    {
+      label: 'Home',
+      href: '/',
+      matchPaths: [],
+    },
+    {
+      label: 'My Team',
+      href: getTeamHref(), // Dynamic based on session
+      matchPaths: ['/team/[session]'], // Match team session pages
+      isDynamic: true,
+    },
+    {
+      label: 'Standings',
+      href: '/leaderboard',
+      matchPaths: [],
+    },
+    {
+      label: 'Athletes',
+      href: '/athletes',
+      matchPaths: [],
+    },
+  ];
+}
 
 export interface StickyHeaderProps {
   /**
@@ -139,9 +144,10 @@ function isNavItemActive(
  * 
  * Responsive header with desktop navigation and mobile menu button.
  * Automatically adds shadow when page is scrolled.
+ * Team link dynamically adapts based on active session.
  */
 export function StickyHeader({
-  navItems = DEFAULT_NAV_ITEMS,
+  navItems,
   showNotifications = true,
   onMenuOpen,
   className,
@@ -149,6 +155,21 @@ export function StickyHeader({
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Use default items if not provided, recomputing on each render for dynamic hrefs
+  const computedNavItems = navItems || getDefaultNavItems();
+  
+  // Re-evaluate dynamic hrefs when router changes (for session updates)
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    // Listen for session updates to re-render with new team href
+    const handleSessionUpdate = () => {
+      forceUpdate(prev => prev + 1);
+    };
+    
+    window.addEventListener('sessionsUpdated', handleSessionUpdate);
+    return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
+  }, []);
   
   // Track scroll position to add shadow with smooth transition
   useEffect(() => {
@@ -243,17 +264,19 @@ export function StickyHeader({
         role="navigation"
         aria-label="Main navigation"
       >
-        {navItems.map((item) => {
+        {computedNavItems.map((item) => {
+          // Recompute dynamic hrefs at render time
+          const href = item.isDynamic ? getTeamHref() : item.href;
           const isActive = isNavItemActive(
             router.pathname,
-            item.href,
+            href,
             item.matchPaths
           );
           
           return (
             <NavLink
-              key={item.href}
-              href={item.href}
+              key={item.label}
+              href={href}
               isActive={isActive}
             >
               {item.label}

@@ -55,6 +55,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/chakra/Button';
+import { getTeamHref } from '@/lib/navigation-utils';
 
 /**
  * Navigation item configuration
@@ -64,38 +65,41 @@ export interface MenuItem {
   label: string;
   href: string;
   description?: string;
+  isDynamic?: boolean; // Whether href should be computed dynamically
 }
 
 /**
- * Default navigation items for mobile menu
- * Includes primary navigation + secondary actions
+ * Get default navigation items (with dynamic team link)
  */
-const DEFAULT_MENU_ITEMS: MenuItem[] = [
-  {
-    icon: HomeIcon,
-    label: 'Home',
-    href: '/',
-    description: 'Dashboard and overview',
-  },
-  {
-    icon: UsersIcon,
-    label: 'My Team',
-    href: '/team',
-    description: 'Manage your roster',
-  },
-  {
-    icon: TrophyIcon,
-    label: 'Standings',
-    href: '/leaderboard',
-    description: 'League rankings',
-  },
-  {
-    icon: UsersIcon,
-    label: 'Athletes',
-    href: '/athletes',
-    description: 'Browse runners',
-  },
-];
+function getDefaultMenuItems(): MenuItem[] {
+  return [
+    {
+      icon: HomeIcon,
+      label: 'Home',
+      href: '/',
+      description: 'Dashboard and overview',
+    },
+    {
+      icon: UsersIcon,
+      label: 'My Team',
+      href: getTeamHref(), // Dynamic based on session
+      description: 'Manage your roster',
+      isDynamic: true,
+    },
+    {
+      icon: TrophyIcon,
+      label: 'Standings',
+      href: '/leaderboard',
+      description: 'League rankings',
+    },
+    {
+      icon: UsersIcon,
+      label: 'Athletes',
+      href: '/athletes',
+      description: 'Browse runners',
+    },
+  ];
+}
 
 /**
  * Secondary action items (Help, Commissioner)
@@ -169,17 +173,33 @@ function isMenuItemActive(currentPath: string, itemHref: string): boolean {
  * 
  * Slide-out navigation drawer for mobile devices.
  * Automatically closes when user navigates to a new route.
+ * Team link dynamically adapts based on active session.
  */
 export function MobileMenuDrawer({
   isOpen,
   onClose,
-  menuItems = DEFAULT_MENU_ITEMS,
+  menuItems,
   secondaryItems = SECONDARY_ITEMS,
   showLogout = true,
   onLogout,
 }: MobileMenuDrawerProps) {
   const router = useRouter();
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Use default items if not provided, recomputing on each render for dynamic hrefs
+  const computedMenuItems = menuItems || getDefaultMenuItems();
+  
+  // Re-evaluate dynamic hrefs when router changes (for session updates)
+  const [, forceUpdate] = useState(0);
+  useEffect(() => {
+    // Listen for session updates to re-render with new team href
+    const handleSessionUpdate = () => {
+      forceUpdate(prev => prev + 1);
+    };
+    
+    window.addEventListener('sessionsUpdated', handleSessionUpdate);
+    return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
+  }, []);
 
   // Track animation state for smooth transitions
   useEffect(() => {
@@ -313,12 +333,14 @@ export function MobileMenuDrawer({
         <Box px={4} py={6} flex={1}>
           <VStack gap={2} align="stretch">
             {/* Primary Navigation Items with stagger effect */}
-            {menuItems.map((item, index) => {
+            {computedMenuItems.map((item, index) => {
               const Icon = item.icon;
-              const isActive = isMenuItemActive(router.pathname, item.href);
+              // Recompute dynamic hrefs at render time
+              const href = item.isDynamic ? getTeamHref() : item.href;
+              const isActive = isMenuItemActive(router.pathname, href);
 
               return (
-                <Link key={item.href} href={item.href} passHref legacyBehavior>
+                <Link key={item.label} href={href} passHref legacyBehavior>
                   <Box
                     as="a"
                     display="flex"
