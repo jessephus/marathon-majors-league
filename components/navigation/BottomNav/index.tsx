@@ -141,6 +141,8 @@ export function BottomNav({ items, className }: BottomNavProps) {
   const [, forceUpdate] = useState(0);
   useEffect(() => {
     // Listen for session updates to re-render with new team href
+    if (typeof window === 'undefined') return;
+    
     const handleSessionUpdate = () => {
       forceUpdate(prev => prev + 1);
     };

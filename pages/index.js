@@ -45,6 +45,14 @@ export default function Home({ serverSessionType, hasURLSession }) {
       // Check if there's a session token in the URL
       const urlParams = new URLSearchParams(window.location.search);
       const sessionToken = urlParams.get('session');
+      const action = urlParams.get('action');
+      
+      // Handle action parameter (e.g., ?action=create-team from navigation)
+      if (action === 'create-team') {
+        setIsTeamModalOpen(true);
+        // Clean up URL without reloading
+        window.history.replaceState({}, '', '/');
+      }
       
       if (sessionToken) {
         // URL session will be handled by initSSRLandingPage() in the Script tag

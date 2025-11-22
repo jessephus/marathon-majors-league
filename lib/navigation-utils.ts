@@ -16,14 +16,14 @@ import { getTeamSession, getCommissionerSession } from './session-manager';
  * 
  * Logic:
  * - If team session exists and is valid: /team/{sessionToken}
- * - Otherwise: /team (will show signup/creation modal on that page)
+ * - Otherwise: /?action=create-team (triggers team creation modal on home page)
  * 
  * @returns {string} The href to use for team navigation
  */
 export function getTeamHref(): string {
   // Client-side only (session manager uses localStorage)
   if (typeof window === 'undefined') {
-    return '/team';
+    return '/?action=create-team';
   }
   
   try {
@@ -36,8 +36,9 @@ export function getTeamHref(): string {
     console.error('[Navigation Utils] Error getting team session:', error);
   }
   
-  // Default to /team for signup/creation
-  return '/team';
+  // Default to home with create-team action to trigger modal
+  return '/?action=create-team';
+}
 }
 
 /**
