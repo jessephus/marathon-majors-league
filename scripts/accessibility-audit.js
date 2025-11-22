@@ -403,14 +403,22 @@ touchTargetTests.forEach(test => {
 // Test spacing consistency
 console.log('\nSpacing Consistency Tests:');
 const spacingValues = Object.entries(spacing).map(([name, value]) => {
-  const px = value === '0' || value === '1px' ? parseFloat(value) : parseFloat(value) * 16;
+  let px;
+  if (value === '0') {
+    px = 0;
+  } else if (value === '1px') {
+    px = 1;
+  } else {
+    // Convert rem to px (1rem = 16px base)
+    px = parseFloat(value) * 16;
+  }
   return { name, value, px };
 });
 
 // Check if spacing follows 4px grid (with exceptions for px, 0, 0.5, 1)
 const gridInconsistencies = spacingValues.filter(s => {
   if (['px', '0', '0.5', '1'].includes(s.name)) return false;
-  return s.px % 4 !== 0;
+  return s.px % 4 !== 0 && !isNaN(s.px);
 });
 
 results.summary.totalTests++;
