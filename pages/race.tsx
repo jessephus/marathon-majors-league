@@ -325,10 +325,8 @@ export default function RacePage({ raceId }: RacePageProps) {
 
           {/* Call to Action */}
           <div className="race-cta">
-            <Link href="/">
-              <a className="btn btn-primary btn-lg">
-                Create Your Fantasy Team
-              </a>
+            <Link href="/" className="btn btn-primary btn-lg">
+              Create Your Fantasy Team
             </Link>
           </div>
         </div>

@@ -30,7 +30,7 @@
 
 import { Flex, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { HomeIcon, UsersIcon, TrophyIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, UsersIcon, TrophyIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { BottomNavItem } from './BottomNavItem';
 
 /**
@@ -61,7 +61,7 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     matchPaths: ['/team/[session]'], // Match team session pages
   },
   {
-    icon: MapPinIcon,
+    icon: CalendarIcon,
     label: 'Race',
     href: '/race',
     matchPaths: [],
