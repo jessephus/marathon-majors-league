@@ -624,6 +624,181 @@ const showWarning = () => {
 };
 ```
 
+### 8. Layout Primitive Patterns
+
+#### Container Usage
+```tsx
+// Standard page container (1280px max-width)
+<Container maxW="container.xl" px={4} py={8}>
+  <VStack align="stretch" spacing={6}>
+    <Heading>Page Title</Heading>
+    <Text>Content goes here...</Text>
+  </VStack>
+</Container>
+
+// Narrow content (forms, articles)
+<Container maxW="container.md" px={4} py={8}>
+  <FormLayout />
+</Container>
+
+// Full-width section with constrained content
+<Box bg="navy.900" color="white" py={16}>
+  <Container maxW="container.xl" px={4}>
+    <Heading size="2xl">Hero Section</Heading>
+  </Container>
+</Box>
+```
+
+#### VStack for Vertical Lists
+```tsx
+// Standard vertical list (16px gaps)
+<VStack align="stretch" spacing={4}>
+  <Card>Team 1</Card>
+  <Card>Team 2</Card>
+  <Card>Team 3</Card>
+</VStack>
+
+// Compact list (8px gaps)
+<VStack align="stretch" spacing={2}>
+  <ListItem />
+  <ListItem />
+  <ListItem />
+</VStack>
+
+// Comfortable list (24px gaps)
+<VStack align="stretch" spacing={6}>
+  <Section />
+  <Section />
+</VStack>
+```
+
+#### HStack for Button Groups
+```tsx
+// Standard button group (12px gaps)
+<HStack spacing={3}>
+  <Button colorScheme="primary">Save</Button>
+  <Button variant="outline">Cancel</Button>
+  <Button variant="ghost">Skip</Button>
+</HStack>
+
+// Icon toolbar (8px gaps)
+<HStack spacing={2}>
+  <IconButton icon={<EditIcon />} aria-label="Edit" />
+  <IconButton icon={<DeleteIcon />} aria-label="Delete" />
+  <IconButton icon={<ShareIcon />} aria-label="Share" />
+</HStack>
+```
+
+#### SimpleGrid for Card Grids
+```tsx
+// Responsive athlete grid: 1 col mobile → 4 cols desktop
+<SimpleGrid 
+  columns={{ base: 1, sm: 2, md: 3, lg: 4 }}
+  spacing={{ base: 4, md: 6 }}
+>
+  {athletes.map(athlete => (
+    <AthleteCard key={athlete.id} athlete={athlete} />
+  ))}
+</SimpleGrid>
+
+// Dashboard stats grid
+<SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+  <StatCard label="Teams" value="3" />
+  <StatCard label="Points" value="2,451" />
+  <StatCard label="Rank" value="#12" />
+  <StatCard label="Budget" value="$30K" />
+</SimpleGrid>
+```
+
+#### Grid for Custom Layouts
+```tsx
+// 2/3 - 1/3 sidebar layout
+<Grid 
+  templateColumns={{ base: '1fr', lg: '2fr 1fr' }}
+  gap={{ base: 6, lg: 8 }}
+>
+  <GridItem>
+    <MainContent />
+  </GridItem>
+  <GridItem>
+    <Sidebar />
+  </GridItem>
+</Grid>
+
+// 12-column grid system
+<Grid templateColumns="repeat(12, 1fr)" gap={6}>
+  <GridItem colSpan={{ base: 12, md: 8 }}>
+    <Article />
+  </GridItem>
+  <GridItem colSpan={{ base: 12, md: 4 }}>
+    <RelatedLinks />
+  </GridItem>
+</Grid>
+```
+
+#### Flex for Headers and Alignment
+```tsx
+// Header with logo and actions
+<Flex 
+  as="header"
+  justify="space-between" 
+  align="center"
+  px={4} 
+  py={3}
+  bg="navy.900"
+  color="white"
+>
+  <HStack spacing={3}>
+    <Image src="/logo.svg" h="32px" />
+    <Heading size="md">MMFL</Heading>
+  </HStack>
+  
+  <HStack spacing={4}>
+    <Link>Help</Link>
+    <Button size="sm">Logout</Button>
+  </HStack>
+</Flex>
+
+// Centered content
+<Flex justify="center" align="center" minH="100vh">
+  <Box textAlign="center">
+    <Heading>Loading...</Heading>
+    <Spinner size="xl" mt={4} />
+  </Box>
+</Flex>
+```
+
+#### Responsive Stack Pattern
+```tsx
+// Vertical mobile → Horizontal desktop
+<Stack 
+  direction={{ base: 'column', md: 'row' }}
+  spacing={{ base: 4, md: 6 }}
+  justify="space-between"
+  align={{ base: 'stretch', md: 'center' }}
+>
+  <Heading size="lg">Dashboard</Heading>
+  <HStack spacing={3}>
+    <Button>Create Team</Button>
+    <Button variant="outline">Settings</Button>
+  </HStack>
+</Stack>
+```
+
+#### Spacing Scale Reference
+```tsx
+// Use consistent 4px-based spacing:
+spacing={1}  // 4px  - Tight lists
+spacing={2}  // 8px  - Compact spacing ⭐ Common
+spacing={3}  // 12px - Button groups
+spacing={4}  // 16px - Default spacing ⭐ Most common
+spacing={6}  // 24px - Card padding ⭐ Common
+spacing={8}  // 32px - Section spacing
+spacing={12} // 48px - Major sections
+```
+
+**See full layout guide:** [UI_LAYOUT_PRIMITIVES.md](../../docs/UI_REDESIGN/UI_LAYOUT_PRIMITIVES.md)
+
 ---
 
 ## Theme Configuration

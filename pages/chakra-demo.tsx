@@ -1171,22 +1171,180 @@ export default function ChakraDemoPage() {
             </Card.Body>
           </Card.Root>
 
+          {/* NEW: Layout Primitives Demos */}
+          <Card.Root>
+            <Card.Header>
+              <Heading fontSize={{ base: 'xl', md: '2xl' }}>Layout Primitives</Heading>
+              <Text fontSize="sm" color="gray.600" mt={2}>
+                Stack, Grid, Flex, and Container components for consistent layouts
+              </Text>
+            </Card.Header>
+            <Card.Body>
+              <VStack gap={8} align="stretch">
+                
+                {/* VStack Demo */}
+                <Box>
+                  <Heading fontSize="lg" mb={3}>VStack (Vertical Stack)</Heading>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    Vertical layout with consistent spacing between items
+                  </Text>
+                  <VStack gap={4} align="stretch">
+                    <Box p={4} bg="navy.50" borderRadius="md">
+                      <Text>Item 1 - spacing={4} = 16px gap</Text>
+                    </Box>
+                    <Box p={4} bg="navy.50" borderRadius="md">
+                      <Text>Item 2 - spacing={4} = 16px gap</Text>
+                    </Box>
+                    <Box p={4} bg="navy.50" borderRadius="md">
+                      <Text>Item 3 - spacing={4} = 16px gap</Text>
+                    </Box>
+                  </VStack>
+                </Box>
+
+                {/* HStack Demo */}
+                <Box>
+                  <Heading fontSize="lg" mb={3}>HStack (Horizontal Stack)</Heading>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    Horizontal layout for button groups and toolbars
+                  </Text>
+                  <HStack gap={3}>
+                    <Button colorPalette="primary">Save</Button>
+                    <Button variant="outline" colorPalette="primary">Cancel</Button>
+                    <Button variant="ghost" colorPalette="primary">Skip</Button>
+                  </HStack>
+                </Box>
+
+                {/* Grid Demo */}
+                <Box>
+                  <Heading fontSize="lg" mb={3}>SimpleGrid (Responsive Grid)</Heading>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    Auto-responsive: 1 col mobile → 2 cols tablet → 3 cols desktop
+                  </Text>
+                  <Grid 
+                    templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} 
+                    gap={4}
+                  >
+                    {[1, 2, 3, 4, 5, 6].map((num) => (
+                      <Box 
+                        key={num}
+                        p={6} 
+                        bg="navy.50" 
+                        borderRadius="md" 
+                        textAlign="center"
+                      >
+                        <Heading size="lg" color="navy.600">Card {num}</Heading>
+                        <Text fontSize="sm" color="gray.600" mt={2}>
+                          Responsive grid item
+                        </Text>
+                      </Box>
+                    ))}
+                  </Grid>
+                </Box>
+
+                {/* Flex Demo */}
+                <Box>
+                  <Heading fontSize="lg" mb={3}>Flex Layout</Heading>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    Flexible box layout with justify and align options
+                  </Text>
+                  <VStack gap={3} align="stretch">
+                    {/* Space-between */}
+                    <Box 
+                      display="flex" 
+                      justifyContent="space-between" 
+                      alignItems="center"
+                      p={4} 
+                      bg="navy.50" 
+                      borderRadius="md"
+                    >
+                      <Text fontWeight="semibold">Dashboard</Text>
+                      <Button size="sm" colorPalette="primary">Settings</Button>
+                    </Box>
+                    
+                    {/* Center aligned */}
+                    <Box 
+                      display="flex" 
+                      justifyContent="center" 
+                      alignItems="center"
+                      p={4} 
+                      bg="navy.50" 
+                      borderRadius="md"
+                      h="100px"
+                    >
+                      <Text fontWeight="semibold">Centered Content</Text>
+                    </Box>
+
+                    {/* Space-around */}
+                    <Box 
+                      display="flex" 
+                      justifyContent="space-around" 
+                      alignItems="center"
+                      p={4} 
+                      bg="navy.50" 
+                      borderRadius="md"
+                    >
+                      <Badge colorPalette="primary">Badge 1</Badge>
+                      <Badge colorPalette="secondary">Badge 2</Badge>
+                      <Badge colorPalette="success">Badge 3</Badge>
+                    </Box>
+                  </VStack>
+                </Box>
+
+                {/* Responsive Stack Demo */}
+                <Box>
+                  <Heading fontSize="lg" mb={3}>Responsive Stack</Heading>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    Vertical on mobile → Horizontal on desktop (resize to see)
+                  </Text>
+                  <Stack 
+                    direction={{ base: 'column', md: 'row' }}
+                    gap={{ base: 4, md: 6 }}
+                    justify="space-between"
+                  >
+                    <Box flex="1" p={4} bg="navy.50" borderRadius="md">
+                      <Heading size="md" mb={2}>Main Content</Heading>
+                      <Text fontSize="sm" color="gray.600">
+                        This content takes up available space
+                      </Text>
+                    </Box>
+                    <Box 
+                      w={{ base: 'full', md: '250px' }}
+                      p={4} 
+                      bg="gold.50" 
+                      borderRadius="md"
+                    >
+                      <Heading size="md" mb={2}>Sidebar</Heading>
+                      <Text fontSize="sm" color="gray.600">
+                        Fixed width on desktop
+                      </Text>
+                    </Box>
+                  </Stack>
+                </Box>
+
+              </VStack>
+            </Card.Body>
+          </Card.Root>
+
           {/* Accessibility Info */}
           <Box bg="success.50" borderLeft="4px solid" borderColor="success.500" p={4} borderRadius="md">
             <Heading fontSize="lg" color="success.700" mb={2}>
-              ✅ Phase 2 Complete: Design Tokens Implemented
+              ✅ Phase 2 Complete: Design Tokens + Layout Primitives
             </Heading>
             <Text color="success.800" mb={2}>
-              All design tokens from CORE_DESIGN_GUIDELINES.md are now implemented:
+              All design tokens and layout primitives from CORE_DESIGN_GUIDELINES.md are now implemented:
             </Text>
             <Text color="success.800" fontSize="sm">
               • Colors (navy/gold + semantics) • Typography (Inter/Roboto) • Spacing (4px base unit) 
               • Shadows (elevation) • Transitions (durations + easing) • Z-Index (layering) 
-              • Border Radius • Container Sizes • Breakpoints (mobile-first)
+              • Border Radius • Container Sizes • Breakpoints (mobile-first) • Layout Primitives (Stack/Grid/Flex/Container)
             </Text>
             <Box h="1px" bg="success.200" my={3} />
             <Text color="success.800" fontSize="sm">
               <strong>WCAG 2.1 AA Compliant:</strong> Navy 900 on white (13.5:1 ✅ AAA) • Gold 500 on navy 900 (8.2:1 ✅ AAA)
+            </Text>
+            <Box h="1px" bg="success.200" my={3} />
+            <Text color="success.800" fontSize="sm" fontWeight="semibold">
+              📚 Documentation: See docs/UI_LAYOUT_PRIMITIVES.md for complete usage guide
             </Text>
           </Box>
 
