@@ -30,7 +30,7 @@
 
 import { Flex, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { HomeIcon, UsersIcon, TrophyIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, UsersIcon, TrophyIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { BottomNavItem } from './BottomNavItem';
 
 /**
@@ -45,7 +45,7 @@ interface NavItem {
 
 /**
  * Default navigation items for the bottom toolbar
- * Following the 4-item specification from UI_PHASE2_NAVIGATION_SPEC.md
+ * Updated to include Race (5 items) - Phase 3 enhancement
  */
 const DEFAULT_NAV_ITEMS: NavItem[] = [
   {
@@ -59,6 +59,12 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
     label: 'Team',
     href: '/team',
     matchPaths: ['/team/[session]'], // Match team session pages
+  },
+  {
+    icon: MapPinIcon,
+    label: 'Race',
+    href: '/race',
+    matchPaths: [],
   },
   {
     icon: TrophyIcon,
