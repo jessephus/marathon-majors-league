@@ -51,6 +51,7 @@
     "@chakra-ui/react": "^3.29.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@heroicons/react": "^2.2.0",
     "@neondatabase/serverless": "^1.0.2",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.3",

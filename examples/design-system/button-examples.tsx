@@ -1,7 +1,7 @@
 /**
  * Button Component Examples - Marathon Majors Fantasy League
  * 
- * Complete collection of button patterns using Chakra UI v3.
+ * Complete collection of button patterns using Chakra UI v3 and Heroicons.
  * All examples are copy-paste ready and follow MMFL design guidelines.
  * 
  * Related Docs:
@@ -12,25 +12,14 @@
 
 import { Button, IconButton, ButtonGroup, HStack, VStack, Box, Text } from '@chakra-ui/react';
 import { useState } from 'react';
-
-/**
- * Note: Icon examples use text placeholders.
- * In production, use:
- * - lucide-react: npm install lucide-react
- * - react-icons: npm install react-icons
- * - Custom SVG icons from your design system
- * 
- * Example with lucide-react:
- * import { Plus, Edit, Trash2, Download, Search, Settings } from 'lucide-react';
- */
-
-// Icon placeholder components (replace with actual icon library)
-const AddIcon = () => <span>+</span>;
-const EditIcon = () => <span>✎</span>;
-const DeleteIcon = () => <span>×</span>;
-const DownloadIcon = () => <span>↓</span>;
-const SearchIcon = () => <span>🔍</span>;
-const SettingsIcon = () => <span>⚙</span>;
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  ArrowDownTrayIcon,
+  MagnifyingGlassIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
 
 // =============================================================================
 // PRIMARY BUTTONS
@@ -56,12 +45,11 @@ export function PrimaryButton() {
  * Primary Button with Icon
  * 
  * Usage: Actions that benefit from visual reinforcement
- * Note: Replace placeholder icon with actual icon library (lucide-react, react-icons, etc.)
  */
 export function PrimaryButtonWithIcon() {
   return (
     <Button colorPalette="primary" size="lg" display="flex" gap={2}>
-      <AddIcon />
+      <PlusIcon style={{ width: '20px', height: '20px' }} />
       <span>Add Athlete</span>
     </Button>
   );
@@ -148,7 +136,7 @@ export function GoldButton() {
       gap={2}
     >
       <span>Upgrade to Pro</span>
-      <DownloadIcon />
+      <ArrowDownTrayIcon style={{ width: '20px', height: '20px' }} />
     </Button>
   );
 }
@@ -173,7 +161,7 @@ export function DestructiveButton() {
       display="flex"
       gap={2}
     >
-      <DeleteIcon />
+      <TrashIcon style={{ width: '20px', height: '20px' }} />
       <span>Delete Team</span>
     </Button>
   );
@@ -214,7 +202,7 @@ export function IconButtons() {
         variant="outline"
         colorPalette="primary"
       >
-        <EditIcon />
+        <PencilIcon style={{ width: '20px', height: '20px' }} />
       </IconButton>
       
       <IconButton 
@@ -222,7 +210,7 @@ export function IconButtons() {
         variant="ghost"
         colorPalette="error"
       >
-        <DeleteIcon />
+        <TrashIcon style={{ width: '20px', height: '20px' }} />
       </IconButton>
       
       <IconButton 
@@ -230,7 +218,7 @@ export function IconButtons() {
         variant="ghost"
         colorPalette="primary"
       >
-        <SettingsIcon />
+        <Cog6ToothIcon style={{ width: '20px', height: '20px' }} />
       </IconButton>
     </HStack>
   );
@@ -255,7 +243,7 @@ export function FloatingActionButton() {
       shadow="lg"
       zIndex="sticky"
     >
-      <AddIcon />
+      <PlusIcon style={{ width: '24px', height: '24px' }} />
     </IconButton>
   );
 }
@@ -361,7 +349,7 @@ export function ResponsiveButton() {
       display="flex"
       gap={2}
     >
-      <AddIcon />
+      <PlusIcon style={{ width: '20px', height: '20px' }} />
       <Box as="span" display={{ base: 'none', sm: 'inline' }}>
         Add Athlete
       </Box>
@@ -472,7 +460,7 @@ export function CardActionButtons() {
         variant="ghost"
         colorPalette="primary"
       >
-        <EditIcon />
+        <PencilIcon style={{ width: '20px', height: '20px' }} />
       </IconButton>
       <IconButton 
         aria-label="Remove athlete"
@@ -480,7 +468,7 @@ export function CardActionButtons() {
         variant="ghost"
         colorPalette="error"
       >
-        <DeleteIcon />
+        <TrashIcon style={{ width: '16px', height: '16px' }} />
       </IconButton>
       <Button size="sm" colorPalette="primary">
         View Stats
@@ -532,19 +520,20 @@ export function SocialShareButtons() {
  * - Provide loading states for async operations
  * - Use appropriate color contrast (WCAG AA minimum)
  * - Make touch targets at least 44x44px
- * - Use proper icon libraries (lucide-react, react-icons) in production
+ * - Use @heroicons/react for consistent icon styling
  * 
  * ❌ DON'T:
  * - Use buttons for navigation (use Link component)
  * - Disable buttons without explanation
  * - Use only icons without labels (unless tooltip provided)
  * - Create custom buttons when Chakra has the pattern
- * - Use emoji for production icons (use SVG icon libraries)
+ * - Use emoji for production icons
  * 
- * Icon Libraries:
- * - lucide-react: npm install lucide-react
- * - react-icons: npm install react-icons
- * - Custom SVG icons from design system
+ * Icon Library:
+ * This project uses @heroicons/react
+ * - Outline icons: from '@heroicons/react/24/outline'
+ * - Solid icons: from '@heroicons/react/24/solid'
+ * - Mini icons (20px): from '@heroicons/react/20/solid'
  */
 
 // =============================================================================
