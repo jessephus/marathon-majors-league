@@ -7,6 +7,7 @@ import TeamCreationModal from '../components/TeamCreationModal'
 import CommissionerTOTPModal from '../components/CommissionerTOTPModal'
 import Footer from '../components/Footer'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
+import { getCurrentGameId } from '../lib/session-manager'
 
 export async function getServerSideProps(context) {
   const { req, query } = context;
@@ -32,10 +33,15 @@ export default function Home({ serverSessionType, hasURLSession }) {
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCommissionerModalOpen, setIsCommissionerModalOpen] = useState(false);
+  const [gameId, setGameId] = useState('default');
   
   // Client-side session detection (after hydration)
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Get current game ID
+      const currentGameId = getCurrentGameId();
+      setGameId(currentGameId);
+      
       // Check if there's a session token in the URL
       const urlParams = new URLSearchParams(window.location.search);
       const sessionToken = urlParams.get('session');
@@ -247,6 +253,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
         <TeamCreationModal 
           isOpen={isTeamModalOpen}
           onClose={() => setIsTeamModalOpen(false)}
+          gameId={gameId}
         />
         <CommissionerTOTPModal 
           isOpen={isCommissionerModalOpen}
