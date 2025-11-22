@@ -1,0 +1,449 @@
+/**
+ * MobileMenuDrawer Component
+ * 
+ * Slide-out drawer for mobile navigation (<768px only).
+ * 
+ * Features:
+ * - Slides in from right side with smooth animation
+ * - Contains all navigation options (Home, Team, Standings, Athletes, Help, Commissioner, Logout)
+ * - Automatically closes when user navigates to a new route
+ * - Navy background matching brand palette
+ * - WCAG 2.1 AA accessible with keyboard navigation
+ * - Mobile-only (hidden on desktop ≥768px where items are in header)
+ * - Touch-optimized targets (48x48px minimum)
+ * 
+ * Implementation:
+ * - Uses custom overlay + animated drawer (position: fixed)
+ * - Integrates with Next.js router for route change detection
+ * - Uses Heroicons for consistent iconography
+ * - Follows navy/gold brand palette
+ * 
+ * Part of Phase 3: Core Navigation Implementation (Week 13-14)
+ * Parent Issue: #122 - Core Navigation Implementation
+ * GitHub Issue: [Mobile Menu Drawer]
+ * 
+ * References:
+ * - Spec: docs/UI_REDESIGN/UI_PHASE2_NAVIGATION_SPEC.md
+ * - Roadmap: docs/UI_REDESIGN_ROADMAP.md (Phase 3, Week 13-14)
+ * - Design: docs/CORE_DESIGN_GUIDELINES.md (Navigation System)
+ */
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Separator,
+  Image,
+  Heading,
+  IconButton,
+  Portal,
+} from '@chakra-ui/react';
+import {
+  HomeIcon,
+  UsersIcon,
+  TrophyIcon,
+  QuestionMarkCircleIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import { Button } from '@/components/chakra/Button';
+
+/**
+ * Navigation item configuration
+ */
+export interface MenuItem {
+  icon: React.ComponentType<{ style?: React.CSSProperties }>;
+  label: string;
+  href: string;
+  description?: string;
+}
+
+/**
+ * Default navigation items for mobile menu
+ * Includes primary navigation + secondary actions
+ */
+const DEFAULT_MENU_ITEMS: MenuItem[] = [
+  {
+    icon: HomeIcon,
+    label: 'Home',
+    href: '/',
+    description: 'Dashboard and overview',
+  },
+  {
+    icon: UsersIcon,
+    label: 'My Team',
+    href: '/team',
+    description: 'Manage your roster',
+  },
+  {
+    icon: TrophyIcon,
+    label: 'Standings',
+    href: '/leaderboard',
+    description: 'League rankings',
+  },
+  {
+    icon: UsersIcon,
+    label: 'Athletes',
+    href: '/athletes',
+    description: 'Browse runners',
+  },
+];
+
+/**
+ * Secondary action items (Help, Commissioner)
+ */
+const SECONDARY_ITEMS: MenuItem[] = [
+  {
+    icon: QuestionMarkCircleIcon,
+    label: 'Help',
+    href: '/help',
+    description: 'Get assistance',
+  },
+  {
+    icon: Cog6ToothIcon,
+    label: 'Commissioner',
+    href: '/commissioner',
+    description: 'Admin tools',
+  },
+];
+
+export interface MobileMenuDrawerProps {
+  /**
+   * Whether the drawer is open
+   */
+  isOpen: boolean;
+
+  /**
+   * Callback when drawer should close
+   */
+  onClose: () => void;
+
+  /**
+   * Custom menu items (optional)
+   */
+  menuItems?: MenuItem[];
+
+  /**
+   * Custom secondary items (optional)
+   */
+  secondaryItems?: MenuItem[];
+
+  /**
+   * Show logout button (optional, defaults to true)
+   */
+  showLogout?: boolean;
+
+  /**
+   * Callback when logout is clicked
+   */
+  onLogout?: () => void;
+}
+
+/**
+ * Check if a menu item matches the current route
+ */
+function isMenuItemActive(currentPath: string, itemHref: string): boolean {
+  // Exact match
+  if (currentPath === itemHref) {
+    return true;
+  }
+
+  // Prefix match for nested routes (except home)
+  if (itemHref !== '/' && currentPath.startsWith(itemHref)) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * MobileMenuDrawer Component
+ * 
+ * Slide-out navigation drawer for mobile devices.
+ * Automatically closes when user navigates to a new route.
+ */
+export function MobileMenuDrawer({
+  isOpen,
+  onClose,
+  menuItems = DEFAULT_MENU_ITEMS,
+  secondaryItems = SECONDARY_ITEMS,
+  showLogout = true,
+  onLogout,
+}: MobileMenuDrawerProps) {
+  const router = useRouter();
+
+  // Close drawer when route changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      onClose();
+    };
+
+    router.events.on('routeChangeStart', handleRouteChange);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router, onClose]);
+
+  // Handle escape key
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <Portal>
+      {/* Overlay */}
+      <Box
+        position="fixed"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        bg="blackAlpha.600"
+        zIndex={1400}
+        onClick={onClose}
+        animation="fadeIn 0.2s ease-out"
+        css={{
+          '@keyframes fadeIn': {
+            from: { opacity: 0 },
+            to: { opacity: 1 },
+          },
+        }}
+      />
+
+      {/* Drawer */}
+      <Box
+        position="fixed"
+        top={0}
+        right={0}
+        bottom={0}
+        width={{ base: '280px', sm: '320px' }}
+        bg="navy.900"
+        color="white"
+        zIndex={1401}
+        overflowY="auto"
+        animation="slideIn 0.3s ease-out"
+        css={{
+          '@keyframes slideIn': {
+            from: { transform: 'translateX(100%)' },
+            to: { transform: 'translateX(0)' },
+          },
+        }}
+        display="flex"
+        flexDirection="column"
+      >
+        {/* Header */}
+        <Box
+          px={6}
+          py={6}
+          borderBottomWidth="1px"
+          borderBottomColor="whiteAlpha.200"
+          position="relative"
+        >
+          <IconButton
+            aria-label="Close menu"
+            variant="ghost"
+            size="sm"
+            color="white"
+            _hover={{ bg: 'whiteAlpha.200' }}
+            _active={{ bg: 'whiteAlpha.300' }}
+            position="absolute"
+            top={4}
+            right={4}
+            onClick={onClose}
+          >
+            <XMarkIcon style={{ width: '20px', height: '20px' }} />
+          </IconButton>
+
+          <HStack gap={3}>
+            <Image
+              src="/images/MMFL-logo.png"
+              alt="MMFL Logo"
+              width="40px"
+              height="40px"
+              objectFit="contain"
+            />
+            <VStack align="start" gap={0}>
+              <Heading size="md" lineHeight={1.2} fontWeight="bold">
+                Marathon Majors
+              </Heading>
+              <Text fontSize="sm" opacity={0.8} lineHeight={1.2}>
+                Fantasy League
+              </Text>
+            </VStack>
+          </HStack>
+        </Box>
+
+        {/* Body */}
+        <Box px={4} py={6} flex={1}>
+          <VStack gap={2} align="stretch">
+            {/* Primary Navigation Items */}
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = isMenuItemActive(router.pathname, item.href);
+
+              return (
+                <Link key={item.href} href={item.href} passHref legacyBehavior>
+                  <Box
+                    as="a"
+                    display="flex"
+                    alignItems="center"
+                    gap={3}
+                    px={4}
+                    py={3}
+                    borderRadius="md"
+                    bg={isActive ? 'whiteAlpha.200' : 'transparent'}
+                    color={isActive ? 'gold.400' : 'white'}
+                    fontWeight={isActive ? 'semibold' : 'medium'}
+                    transition="all 0.2s ease-out"
+                    _hover={{
+                      bg: 'whiteAlpha.100',
+                      transform: 'translateX(4px)',
+                    }}
+                    _active={{
+                      bg: 'whiteAlpha.300',
+                    }}
+                    cursor="pointer"
+                    minH="48px"
+                  >
+                    <Icon
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <VStack align="start" gap={0} flex={1}>
+                      <Text fontSize="md" lineHeight={1.3}>
+                        {item.label}
+                      </Text>
+                      {item.description && (
+                        <Text
+                          fontSize="xs"
+                          opacity={0.7}
+                          lineHeight={1.2}
+                          color={isActive ? 'gold.300' : 'whiteAlpha.700'}
+                        >
+                          {item.description}
+                        </Text>
+                      )}
+                    </VStack>
+                  </Box>
+                </Link>
+              );
+            })}
+
+            {/* Separator */}
+            <Separator my={2} borderColor="whiteAlpha.200" />
+
+            {/* Secondary Items (Help, Commissioner) */}
+            {secondaryItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = isMenuItemActive(router.pathname, item.href);
+
+              return (
+                <Link key={item.href} href={item.href} passHref legacyBehavior>
+                  <Box
+                    as="a"
+                    display="flex"
+                    alignItems="center"
+                    gap={3}
+                    px={4}
+                    py={3}
+                    borderRadius="md"
+                    bg={isActive ? 'whiteAlpha.200' : 'transparent'}
+                    color={isActive ? 'gold.400' : 'white'}
+                    fontWeight={isActive ? 'semibold' : 'medium'}
+                    transition="all 0.2s ease-out"
+                    _hover={{
+                      bg: 'whiteAlpha.100',
+                      transform: 'translateX(4px)',
+                    }}
+                    _active={{
+                      bg: 'whiteAlpha.300',
+                    }}
+                    cursor="pointer"
+                    minH="48px"
+                  >
+                    <Icon
+                      style={{
+                        width: '24px',
+                        height: '24px',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <VStack align="start" gap={0} flex={1}>
+                      <Text fontSize="md" lineHeight={1.3}>
+                        {item.label}
+                      </Text>
+                      {item.description && (
+                        <Text
+                          fontSize="xs"
+                          opacity={0.7}
+                          lineHeight={1.2}
+                          color={isActive ? 'gold.300' : 'whiteAlpha.700'}
+                        >
+                          {item.description}
+                        </Text>
+                      )}
+                    </VStack>
+                  </Box>
+                </Link>
+              );
+            })}
+
+            {/* Logout Button */}
+            {showLogout && (
+              <>
+                <Separator my={2} borderColor="whiteAlpha.200" />
+                <Button
+                  colorPalette="error"
+                  variant="ghost"
+                  size="lg"
+                  justifyContent="flex-start"
+                  px={4}
+                  gap={3}
+                  minH="48px"
+                  color="white"
+                  _hover={{ bg: 'whiteAlpha.100' }}
+                  _active={{ bg: 'whiteAlpha.200' }}
+                  onClick={onLogout || (() => router.push('/api/session/logout'))}
+                >
+                  <ArrowRightOnRectangleIcon
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Text fontSize="md" fontWeight="medium">
+                    Logout
+                  </Text>
+                </Button>
+              </>
+            )}
+          </VStack>
+        </Box>
+      </Box>
+    </Portal>
+  );
+}

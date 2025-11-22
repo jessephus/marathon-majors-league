@@ -9,6 +9,7 @@
  * - Desktop navigation links in center (hidden on mobile)
  * - User actions on right (Help, Logout buttons)
  * - Mobile menu button (hamburger, shown on <768px)
+ * - Integrated MobileMenuDrawer that slides out on mobile
  * - Scroll shadow that appears when page scrolls
  * - Route-aware active states (gold underline)
  * - WCAG 2.1 AA accessible
@@ -22,6 +23,7 @@
  * - Responsive heights: 60px (mobile), 72px (tablet), 80px (desktop)
  * - Fixed positioning ensures full-width across viewport without scrollbar gaps
  * - Content below header should have top padding equal to header height
+ * - MobileMenuDrawer auto-closes on route change
  * 
  * Part of Phase 3: Core Navigation Implementation (Week 13-14)
  * Parent Issue: #122 - Core Navigation Implementation
@@ -40,6 +42,7 @@ import { useState, useEffect } from 'react';
 import { Bars3Icon, BellIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/chakra/Button';
 import { NavLink } from './NavLink';
+import { MobileMenuDrawer } from '../MobileMenuDrawer';
 
 /**
  * Navigation item configuration
@@ -145,6 +148,7 @@ export function StickyHeader({
 }: StickyHeaderProps) {
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Track scroll position to add shadow
   useEffect(() => {
@@ -322,11 +326,20 @@ export function StickyHeader({
           _active={{ bg: 'whiteAlpha.300' }}
           transition="background-color 0.15s"
           display={{ base: 'flex', md: 'none' }}
-          onClick={onMenuOpen}
+          onClick={() => {
+            setIsMobileMenuOpen(true);
+            onMenuOpen?.();
+          }}
         >
           <Bars3Icon style={{ width: '24px', height: '24px' }} />
         </Box>
       </HStack>
+
+      {/* Mobile Menu Drawer */}
+      <MobileMenuDrawer
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+      />
     </Flex>
   );
 }
