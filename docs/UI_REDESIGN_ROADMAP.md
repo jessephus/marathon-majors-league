@@ -279,9 +279,12 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 
 ---
 
-## Phase 3: Core Navigation (4 weeks)
+## Phase 3: Core Navigation (4 weeks) ✅
 
 **Goal:** Replace existing navigation with sticky header + bottom toolbar
+
+**Status:** ✅ Complete  
+**Completion Date:** November 22, 2025
 
 ### Week 11-12: Mobile Bottom Toolbar ✅
 
@@ -331,30 +334,42 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 **GitHub Sub-Issue:** [#122 - Mobile Bottom Toolbar](https://github.com/jessephus/marathon-majors-league/issues/122)  
 **Documentation:** `docs/UI_REDESIGN/UI_PHASE3_BOTTOMNAV_IMPLEMENTATION.md`
 
-### Week 13-14: Sticky Header
+### Week 13-14: Sticky Header ✅
+
+**Status:** ✅ Complete  
+**Completion Date:** November 22, 2025
 
 #### Tasks
-- [ ] Design header component (`<StickyHeader>`)
+- [x] Design header component (`<StickyHeader>`)
   - Navy background (#161C4F)
   - Logo + wordmark on left
   - Desktop nav links in center
   - User actions on right
-- [ ] Implement sticky positioning
+- [x] Implement sticky positioning
   - `position: sticky` + `top: 0`
-  - z-index management
+  - z-index management (999)
   - Shadow on scroll
-- [ ] Add responsive behavior
-  - Full nav on desktop
-  - Logo + hamburger on mobile
-- [ ] Test header/footer spacing (no content overlap)
+- [x] Add responsive behavior
+  - Full nav on desktop (≥768px)
+  - Logo + hamburger on mobile (<768px)
+  - Responsive heights (60px/72px/80px)
+- [x] Test header/footer spacing (no content overlap)
+- [x] Route-aware active states (gold underline)
+- [x] WCAG 2.1 AA accessibility compliance
+- [x] Keyboard navigation support
 
 #### Deliverables
-- ✅ `<StickyHeader>` component
+- ✅ `<StickyHeader>` component (`components/navigation/StickyHeader/index.tsx`)
+- ✅ `<NavLink>` sub-component (`components/navigation/StickyHeader/NavLink.tsx`)
 - ✅ Responsive desktop/mobile layouts
-- ✅ Proper z-index layering
-- ✅ Feature flag: `chakra_header`
+- ✅ Proper z-index layering (999)
+- ✅ Scroll shadow effect (after 10px scroll)
+- ✅ Component documentation (`components/navigation/StickyHeader/README.md`)
+- ✅ Test page (`pages/test-sticky-header.tsx`)
+- ✅ Implementation documentation (`docs/UI_REDESIGN/UI_PHASE3_STICKYHEADER_IMPLEMENTATION.md`)
 
-**GitHub Sub-Issue:** [#122 - Sticky Header](https://github.com/jessephus/marathon-majors-league/issues/122)
+**GitHub Sub-Issue:** [#122 - Sticky Header](https://github.com/jessephus/marathon-majors-league/issues/122)  
+**Documentation:** `docs/UI_REDESIGN/UI_PHASE3_STICKYHEADER_IMPLEMENTATION.md`
 
 ---
 
