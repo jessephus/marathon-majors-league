@@ -19,6 +19,8 @@
 4. [Typography](#typography)
 5. [Spacing & Layout](#spacing--layout)
 6. [Component Library (Chakra UI)](#component-library-chakra-ui)
+   - [Icon System](#icon-system)
+   - [Button Components](#button-components)
 7. [Navigation System](#navigation-system)
 8. [Motion & Interaction](#motion--interaction)
 9. [Responsive Design](#responsive-design)
@@ -770,6 +772,132 @@ container: {
 
 ## Component Library (Chakra UI)
 
+### Icon System
+
+**Standard Icon Library:** Heroicons (@heroicons/react)
+
+#### Why Heroicons?
+- **Tailwind-designed:** Professional, consistent design system
+- **Three variants:** Outline, solid, and mini (20px) versions
+- **MIT Licensed:** Free for commercial use
+- **React-optimized:** Tree-shakeable, performant SVG components
+- **Extensive library:** 200+ icons covering all common UI needs
+
+#### Installation
+
+```bash
+npm install @heroicons/react
+```
+
+#### Usage Patterns
+
+**Outline Icons (24x24) - Primary Use**
+```jsx
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+
+<Button display="flex" gap={2}>
+  <PlusIcon style={{ width: '20px', height: '20px' }} />
+  <span>Add Athlete</span>
+</Button>
+```
+
+**Solid Icons (24x24) - Emphasis**
+```jsx
+import { StarIcon, HeartIcon } from '@heroicons/react/24/solid';
+
+<Badge display="flex" gap={1} alignItems="center">
+  <StarIcon style={{ width: '16px', height: '16px' }} />
+  <span>Featured</span>
+</Badge>
+```
+
+**Mini Icons (20x20) - Compact UI**
+```jsx
+import { CheckIcon } from '@heroicons/react/20/solid';
+
+<Button size="sm" display="flex" gap={1}>
+  <CheckIcon style={{ width: '16px', height: '16px' }} />
+  <span>Done</span>
+</Button>
+```
+
+#### Icon Sizing Guidelines
+
+| Size | Usage | Example Components |
+|------|-------|-------------------|
+| **16px** | Dense tables, inline text, compact buttons | Table actions, inline indicators |
+| **20px** | Standard buttons, form fields, cards | Primary buttons, input icons |
+| **24px** | Large buttons, navigation, headers | Hero CTAs, main navigation |
+| **32px+** | Hero sections, empty states | Large action buttons, placeholders |
+
+#### Icon Button Patterns
+
+```jsx
+// Standard icon button
+<IconButton aria-label="Edit team" variant="outline">
+  <PencilIcon style={{ width: '20px', height: '20px' }} />
+</IconButton>
+
+// Icon with tooltip
+<Tooltip label="Delete athlete">
+  <IconButton aria-label="Delete athlete" colorPalette="error" variant="ghost">
+    <TrashIcon style={{ width: '20px', height: '20px' }} />
+  </IconButton>
+</Tooltip>
+
+// Floating action button
+<IconButton 
+  aria-label="Add athlete"
+  colorPalette="primary"
+  size="lg"
+  borderRadius="full"
+  position="fixed"
+  bottom={20}
+  right={4}
+  shadow="lg"
+>
+  <PlusIcon style={{ width: '24px', height: '24px' }} />
+</IconButton>
+```
+
+#### Common Icons Reference
+
+**Navigation:**
+- `HomeIcon`, `UsersIcon`, `TrophyIcon`, `Cog6ToothIcon`
+
+**Actions:**
+- `PlusIcon`, `PencilIcon`, `TrashIcon`, `ArrowDownTrayIcon`
+- `MagnifyingGlassIcon`, `FunnelIcon`, `ArrowPathIcon`
+
+**Status:**
+- `CheckCircleIcon`, `XCircleIcon`, `ExclamationTriangleIcon`
+- `InformationCircleIcon`, `ClockIcon`
+
+**Chevrons/Arrows:**
+- `ChevronRightIcon`, `ChevronDownIcon`, `ArrowRightIcon`
+
+**Media:**
+- `PlayIcon`, `PauseIcon`, `StopIcon`, `ShareIcon`
+
+**Documentation:**
+- [Heroicons Gallery](https://heroicons.com/)
+- [All Available Icons](https://heroicons.com/)
+
+#### Anti-Patterns
+
+❌ **Don't:**
+- Use emoji for icons (accessibility issues, inconsistent rendering)
+- Mix multiple icon libraries (creates visual inconsistency)
+- Use icons without labels for primary actions
+- Create custom SVG icons when Heroicons has a suitable option
+
+✅ **Do:**
+- Use outline icons for most UI elements
+- Use solid icons sparingly for emphasis
+- Always include `aria-label` on icon-only buttons
+- Size icons consistently within component types
+- Use Heroicons' semantic naming conventions
+
 ### Button Components
 
 #### Primary Button (Navy)
@@ -800,15 +928,19 @@ container: {
 
 #### Gold Accent Button
 ```jsx
+import { StarIcon } from '@heroicons/react/24/solid';
+
 <Button 
   bg="gold.500"
   color="navy.900"
   fontWeight="bold"
   _hover={{ bg: 'gold.600' }}
   _active={{ bg: 'gold.700' }}
-  leftIcon={<StarIcon />}
+  display="flex"
+  gap={2}
 >
-  Upgrade to Pro
+  <StarIcon style={{ width: '20px', height: '20px' }} />
+  <span>Upgrade to Pro</span>
 </Button>
 ```
 
@@ -940,6 +1072,8 @@ container: {
 
 #### Bottom Toolbar
 ```jsx
+import { HomeIcon, UsersIcon, TrophyIcon, UserIcon } from '@heroicons/react/24/outline';
+
 <Flex 
   as="nav"
   position="fixed"
@@ -957,28 +1091,28 @@ container: {
   display={{ base: 'flex', md: 'none' }}  // Mobile only
 >
   <VStack spacing={0} flex={1} as="button">
-    <Icon as={HomeIcon} boxSize={5} color="navy.500" />
+    <HomeIcon style={{ width: '20px', height: '20px', color: 'var(--chakra-colors-navy-500)' }} />
     <Text fontSize="xs" color="navy.500" fontWeight="semibold">
       Home
     </Text>
   </VStack>
   
   <VStack spacing={0} flex={1} as="button">
-    <Icon as={TeamIcon} boxSize={5} color="gray.400" />
+    <UsersIcon style={{ width: '20px', height: '20px', color: 'var(--chakra-colors-gray-400)' }} />
     <Text fontSize="xs" color="gray.400">
       Team
     </Text>
   </VStack>
   
   <VStack spacing={0} flex={1} as="button">
-    <Icon as={TrophyIcon} boxSize={5} color="gray.400" />
+    <TrophyIcon style={{ width: '20px', height: '20px', color: 'var(--chakra-colors-gray-400)' }} />
     <Text fontSize="xs" color="gray.400">
       Standings
     </Text>
   </VStack>
   
   <VStack spacing={0} flex={1} as="button">
-    <Icon as={UserIcon} boxSize={5} color="gray.400" />
+    <UserIcon style={{ width: '20px', height: '20px', color: 'var(--chakra-colors-gray-400)' }} />
     <Text fontSize="xs" color="gray.400">
       Athletes
     </Text>

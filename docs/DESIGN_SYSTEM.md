@@ -38,6 +38,7 @@ Our design system is guided by five core principles:
 
 - **UI Framework:** Chakra UI v3
 - **React Framework:** Next.js 15
+- **Icon Library:** Heroicons (@heroicons/react v2.2.0)
 - **Typography:** Inter (headings), Roboto (body)
 - **Color Palette:** Navy (#161C4F) and Gold (#D4AF37)
 - **Spacing System:** 4px base unit
@@ -203,6 +204,53 @@ p={12}  // 48px - Section gaps
 ```
 
 **Full Layout Guide:** See [UI_LAYOUT_PRIMITIVES.md](UI_REDESIGN/UI_LAYOUT_PRIMITIVES.md) for layout patterns.
+
+### Icons
+
+#### Icon Library
+
+The project uses **Heroicons** (@heroicons/react) for all icon needs.
+
+```bash
+# Already installed
+npm install @heroicons/react
+```
+
+#### Basic Usage
+
+```tsx
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+
+// In a button
+<Button display="flex" gap={2}>
+  <PlusIcon style={{ width: '20px', height: '20px' }} />
+  <span>Add Athlete</span>
+</Button>
+
+// Icon button
+<IconButton aria-label="Edit">
+  <PencilIcon style={{ width: '20px', height: '20px' }} />
+</IconButton>
+```
+
+#### Icon Variants
+
+| Variant | Import Path | Usage |
+|---------|-------------|-------|
+| **Outline** | `@heroicons/react/24/outline` | Primary UI elements (recommended) |
+| **Solid** | `@heroicons/react/24/solid` | Emphasis, filled states |
+| **Mini** | `@heroicons/react/20/solid` | Compact layouts (20px) |
+
+#### Sizing Guidelines
+
+| Size | Use Case | Examples |
+|------|----------|----------|
+| 16px | Inline text, dense tables | Table actions, status indicators |
+| 20px | Standard UI | Buttons, form inputs, cards |
+| 24px | Emphasized actions | Navigation, headers, CTAs |
+| 32px+ | Hero sections | Landing pages, empty states |
+
+**Complete Icon Guide:** See [Icon System section in CORE_DESIGN_GUIDELINES.md](CORE_DESIGN_GUIDELINES.md#icon-system) for detailed patterns and best practices.
 
 ### Shadows & Elevation
 
