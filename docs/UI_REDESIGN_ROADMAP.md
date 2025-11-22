@@ -345,15 +345,16 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
   - Logo + wordmark on left
   - Desktop nav links in center
   - User actions on right
-- [x] Implement sticky positioning
-  - `position: sticky` + `top: 0`
+- [x] Implement fixed positioning (changed from sticky to resolve scrollbar gaps)
+  - `position: fixed` + `top: 0`  + `left: 0` + `right: 0`
   - z-index management (999)
   - Shadow on scroll
+  - Content padding required (60px/72px/80px top padding)
 - [x] Add responsive behavior
   - Full nav on desktop (≥768px)
   - Logo + hamburger on mobile (<768px)
   - Responsive heights (60px/72px/80px)
-- [x] Test header/footer spacing (no content overlap)
+- [x] Test header/footer spacing (no content overlap with padding)
 - [x] Route-aware active states (gold underline)
 - [x] WCAG 2.1 AA accessibility compliance
 - [x] Keyboard navigation support

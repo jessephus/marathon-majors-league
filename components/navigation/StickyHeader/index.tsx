@@ -1,10 +1,10 @@
 /**
- * StickyHeader Component
+ * StickyHeader Component (Fixed Positioning)
  * 
- * Responsive sticky header for Marathon Majors Fantasy League.
+ * Responsive fixed header for Marathon Majors Fantasy League.
  * 
  * Features:
- * - Sticky positioning at top of viewport (z-index: 999)
+ * - Fixed positioning at top of viewport (z-index: 999)
  * - Logo + wordmark on left (responsive sizing)
  * - Desktop navigation links in center (hidden on mobile)
  * - User actions on right (Help, Logout buttons)
@@ -20,6 +20,8 @@
  * - Follows Chakra UI v3 design system
  * - Respects navy/gold brand palette
  * - Responsive heights: 60px (mobile), 72px (tablet), 80px (desktop)
+ * - Fixed positioning ensures full-width across viewport without scrollbar gaps
+ * - Content below header should have top padding equal to header height
  * 
  * Part of Phase 3: Core Navigation Implementation (Week 13-14)
  * Parent Issue: #122 - Core Navigation Implementation
@@ -162,8 +164,10 @@ export function StickyHeader({
   return (
     <Flex
       as="header"
-      position="sticky"
+      position="fixed"
       top={0}
+      left={0}
+      right={0}
       zIndex={999}
       bg="navy.900"
       color="white"
@@ -175,7 +179,6 @@ export function StickyHeader({
       shadow={scrolled ? 'lg' : 'none'}
       height={{ base: '60px', md: '72px', lg: '80px' }}
       borderRadius={0}
-      width="100%"
       className={className}
       role="banner"
       aria-label="Site header"

@@ -196,7 +196,7 @@ navy: {
 ```
 
 **Usage Examples:**
-- **900:** App background, sticky header background
+- **900:** App background, fixed header background
 - **800:** Card backgrounds (dark sections)
 - **700:** Pressed button states
 - **600:** Button hover states
@@ -1036,13 +1036,15 @@ import { StarIcon } from '@heroicons/react/24/solid';
 
 ### Navigation Components
 
-#### Sticky Header
+#### Fixed Header (Top Navigation)
 ```jsx
 <Flex 
   as="header"
-  position="sticky"
+  position="fixed"
   top={0}
-  zIndex={10}
+  left={0}
+  right={0}
+  zIndex={999}
   bg="navy.900"
   color="white"
   px={4}
@@ -1073,6 +1075,11 @@ import { StarIcon } from '@heroicons/react/24/solid';
     colorScheme="whiteAlpha"
   />
 </Flex>
+
+{/* Content must have top padding to prevent overlap */}
+<Box pt={{ base: '60px', md: '72px', lg: '80px' }}>
+  {/* Page content here */}
+</Box>
 ```
 
 #### Bottom Toolbar
@@ -1262,8 +1269,10 @@ function NavItem({ icon, label, href, isActive }) {
 ```jsx
 <Flex 
   as="header"
-  position="sticky"
+  position="fixed"
   top={0}
+  left={0}
+  right={0}
   zIndex={999}
   bg="navy.900"
   color="white"

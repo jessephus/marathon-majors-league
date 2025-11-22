@@ -9,11 +9,11 @@
 
 ## Overview
 
-The `StickyHeader` component provides a responsive sticky header for Marathon Majors Fantasy League. It displays logo + wordmark, navigation links (desktop), and user actions, with automatic scroll shadow and route-aware active states.
+The `StickyHeader` component provides a responsive fixed header for Marathon Majors Fantasy League. It displays logo + wordmark, navigation links (desktop), and user actions, with automatic scroll shadow and route-aware active states.
 
 ### Key Features
 
-- **Sticky Positioning:** Fixed at top of viewport (z-index: 999)
+- **Fixed Positioning:** Fixed at top of viewport (z-index: 999)
 - **Scroll Shadow:** Automatically appears when page scrolls (> 10px)
 - **Responsive Heights:** 60px (mobile), 72px (tablet), 80px (desktop)
 - **Route-Aware:** Highlights active navigation item with gold underline
@@ -31,22 +31,29 @@ The `StickyHeader` component provides a responsive sticky header for Marathon Ma
 
 ```tsx
 import { StickyHeader } from '@/components/navigation/StickyHeader';
+import { Box } from '@chakra-ui/react';
 
 export default function MyApp({ Component, pageProps }) {
   return (
     <>
       <StickyHeader />
-      <Component {...pageProps} />
+      {/* Add top padding to prevent content from being hidden under fixed header */}
+      <Box pt={{ base: '60px', md: '72px', lg: '80px' }}>
+        <Component {...pageProps} />
+      </Box>
     </>
   );
 }
 ```
+
+**⚠️ Important:** When using a fixed header, content below must have top padding equal to the header height to prevent overlap.
 
 ### With Mobile Menu Handler
 
 ```tsx
 import { StickyHeader } from '@/components/navigation/StickyHeader';
 import { useDisclosure } from '@chakra-ui/react';
+import { Box } from '@chakra-ui/react';
 
 export default function Layout({ children }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -56,7 +63,9 @@ export default function Layout({ children }) {
       <StickyHeader onMenuOpen={onOpen} />
       {/* Mobile menu drawer implementation */}
       <MobileMenu isOpen={isOpen} onClose={onClose} />
-      {children}
+      <Box pt={{ base: '60px', md: '72px', lg: '80px' }}>
+        {children}
+      </Box>
     </>
   );
 }
@@ -396,7 +405,7 @@ Potential improvements for future phases:
 ## Version History
 
 - **v1.0.0** (November 22, 2025) - Initial implementation
-  - Responsive sticky header with desktop/mobile variants
+  - Responsive fixed header with desktop/mobile variants
   - Logo + wordmark integration
   - Navigation links with active states
   - User action buttons

@@ -61,11 +61,11 @@ export default function TestStickyHeaderPage() {
   
   return (
     <>
-      {/* StickyHeader Component - Outside any container */}
+      {/* Fixed Header Component */}
       <StickyHeader onMenuOpen={handleMenuOpen} />
       
-      {/* Test Content */}
-      <Box minHeight="100vh" bg="gray.50">
+      {/* Test Content - Add top padding to account for fixed header */}
+      <Box minHeight="100vh" bg="gray.50" pt={{ base: '60px', md: '72px', lg: '80px' }}>
         <Container maxW="container.xl" py={8}>
           <VStack align="stretch" gap={8}>
             {/* Header */}
