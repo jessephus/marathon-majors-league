@@ -11,6 +11,9 @@
  * - WCAG 2.1 AA accessible with keyboard navigation
  * - Mobile-only (hidden on desktop ≥768px where items are in header)
  * - Touch-optimized targets (48x48px minimum)
+ * - Enhanced microinteractions and polish
+ * - Stagger animation for menu items
+ * - Smooth fade-in overlay
  * 
  * Implementation:
  * - Uses custom overlay + animated drawer (position: fixed)
@@ -18,7 +21,7 @@
  * - Uses Heroicons for consistent iconography
  * - Follows navy/gold brand palette
  * 
- * Part of Phase 3: Core Navigation Implementation (Week 13-14)
+ * Part of Phase 3: Core Navigation Implementation (Week 13-14 + Polish)
  * Parent Issue: #122 - Core Navigation Implementation
  * GitHub Issue: [Mobile Menu Drawer]
  * 
@@ -28,7 +31,7 @@
  * - Design: docs/CORE_DESIGN_GUIDELINES.md (Navigation System)
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -176,6 +179,17 @@ export function MobileMenuDrawer({
   onLogout,
 }: MobileMenuDrawerProps) {
   const router = useRouter();
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Track animation state for smooth transitions
+  useEffect(() => {
+    if (isOpen) {
+      setIsAnimating(true);
+    } else {
+      const timer = setTimeout(() => setIsAnimating(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   // Close drawer when route changes
   useEffect(() => {
@@ -207,11 +221,11 @@ export function MobileMenuDrawer({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen && !isAnimating) return null;
 
   return (
     <Portal>
-      {/* Overlay */}
+      {/* Overlay with smooth fade animation */}
       <Box
         position="fixed"
         top={0}
@@ -221,16 +235,16 @@ export function MobileMenuDrawer({
         bg="blackAlpha.600"
         zIndex={1400}
         onClick={onClose}
-        animation="fadeIn 0.2s ease-out"
+        opacity={isOpen ? 1 : 0}
+        transition="opacity 0.25s cubic-bezier(0, 0, 0.2, 1)"
         css={{
-          '@keyframes fadeIn': {
-            from: { opacity: 0 },
-            to: { opacity: 1 },
-          },
+          '@media (prefers-reduced-motion: reduce)': {
+            transition: 'none',
+          }
         }}
       />
 
-      {/* Drawer */}
+      {/* Drawer with enhanced slide animation */}
       <Box
         position="fixed"
         top={0}
@@ -241,15 +255,17 @@ export function MobileMenuDrawer({
         color="white"
         zIndex={1401}
         overflowY="auto"
-        animation="slideIn 0.3s ease-out"
-        css={{
-          '@keyframes slideIn': {
-            from: { transform: 'translateX(100%)' },
-            to: { transform: 'translateX(0)' },
-          },
-        }}
+        transform={isOpen ? 'translateX(0)' : 'translateX(100%)'}
+        transition="transform 0.3s cubic-bezier(0, 0, 0.2, 1)"
         display="flex"
         flexDirection="column"
+        boxShadow="xl"
+        css={{
+          '@media (prefers-reduced-motion: reduce)': {
+            transition: 'none',
+            transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          }
+        }}
       >
         {/* Header */}
         <Box
@@ -293,11 +309,11 @@ export function MobileMenuDrawer({
           </HStack>
         </Box>
 
-        {/* Body */}
+        {/* Body with stagger animation for menu items */}
         <Box px={4} py={6} flex={1}>
           <VStack gap={2} align="stretch">
-            {/* Primary Navigation Items */}
-            {menuItems.map((item) => {
+            {/* Primary Navigation Items with stagger effect */}
+            {menuItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = isMenuItemActive(router.pathname, item.href);
 
@@ -314,16 +330,30 @@ export function MobileMenuDrawer({
                     bg={isActive ? 'whiteAlpha.200' : 'transparent'}
                     color={isActive ? 'gold.400' : 'white'}
                     fontWeight={isActive ? 'semibold' : 'medium'}
-                    transition="all 0.2s ease-out"
+                    // Enhanced transitions with stagger
+                    transition="all 0.2s cubic-bezier(0, 0, 0.2, 1)"
+                    transitionDelay={isOpen ? `${index * 0.05}s` : '0s'}
+                    opacity={isOpen ? 1 : 0}
+                    transform={isOpen ? 'translateX(0)' : 'translateX(20px)'}
                     _hover={{
                       bg: 'whiteAlpha.100',
                       transform: 'translateX(4px)',
+                      color: isActive ? 'gold.300' : 'whiteAlpha.900',
                     }}
                     _active={{
                       bg: 'whiteAlpha.300',
+                      transform: 'scale(0.98)',
                     }}
                     cursor="pointer"
                     minH="48px"
+                    css={{
+                      '@media (prefers-reduced-motion: reduce)': {
+                        transition: 'background-color 0.2s',
+                        transitionDelay: '0s',
+                        transform: 'none !important',
+                        opacity: 1,
+                      }
+                    }}
                   >
                     <Icon
                       style={{
@@ -355,10 +385,11 @@ export function MobileMenuDrawer({
             {/* Separator */}
             <Separator my={2} borderColor="whiteAlpha.200" />
 
-            {/* Secondary Items (Help, Commissioner) */}
-            {secondaryItems.map((item) => {
+            {/* Secondary Items (Help, Commissioner) with stagger */}
+            {secondaryItems.map((item, index) => {
               const Icon = item.icon;
               const isActive = isMenuItemActive(router.pathname, item.href);
+              const staggerIndex = menuItems.length + index;
 
               return (
                 <Link key={item.href} href={item.href} passHref legacyBehavior>
@@ -373,16 +404,29 @@ export function MobileMenuDrawer({
                     bg={isActive ? 'whiteAlpha.200' : 'transparent'}
                     color={isActive ? 'gold.400' : 'white'}
                     fontWeight={isActive ? 'semibold' : 'medium'}
-                    transition="all 0.2s ease-out"
+                    transition="all 0.2s cubic-bezier(0, 0, 0.2, 1)"
+                    transitionDelay={isOpen ? `${staggerIndex * 0.05}s` : '0s'}
+                    opacity={isOpen ? 1 : 0}
+                    transform={isOpen ? 'translateX(0)' : 'translateX(20px)'}
                     _hover={{
                       bg: 'whiteAlpha.100',
                       transform: 'translateX(4px)',
+                      color: isActive ? 'gold.300' : 'whiteAlpha.900',
                     }}
                     _active={{
                       bg: 'whiteAlpha.300',
+                      transform: 'scale(0.98)',
                     }}
                     cursor="pointer"
                     minH="48px"
+                    css={{
+                      '@media (prefers-reduced-motion: reduce)': {
+                        transition: 'background-color 0.2s',
+                        transitionDelay: '0s',
+                        transform: 'none !important',
+                        opacity: 1,
+                      }
+                    }}
                   >
                     <Icon
                       style={{

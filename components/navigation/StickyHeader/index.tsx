@@ -150,12 +150,20 @@ export function StickyHeader({
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Track scroll position to add shadow
+  // Track scroll position to add shadow with smooth transition
   useEffect(() => {
+    let ticking = false;
+    
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const isScrolled = window.scrollY > 10;
+          if (isScrolled !== scrolled) {
+            setScrolled(isScrolled);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     
@@ -179,13 +187,20 @@ export function StickyHeader({
       py={{ base: 3, md: 4 }}
       align="center"
       justify="space-between"
-      transition="box-shadow 0.2s ease-out"
+      // Enhanced shadow transition with easing
+      transition="box-shadow 0.25s cubic-bezier(0, 0, 0.2, 1)"
       shadow={scrolled ? 'lg' : 'none'}
       height={{ base: '60px', md: '72px', lg: '80px' }}
       borderRadius={0}
       className={className}
       role="banner"
       aria-label="Site header"
+      // Respect user's motion preferences
+      css={{
+        '@media (prefers-reduced-motion: reduce)': {
+          transition: 'none',
+        }
+      }}
     >
       {/* Left: Logo + Wordmark */}
       <HStack gap={{ base: 2, md: 3 }} flex={{ base: '0 0 auto', lg: 1 }}>
