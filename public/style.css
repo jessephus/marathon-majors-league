@@ -5306,8 +5306,21 @@ footer .btn {
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   margin-bottom: 16px;
   position: sticky;
-  top: 0;
+  top: 60px; /* Mobile: stick below 60px nav header */
   z-index: 100;
+}
+
+/* Adjust team header sticky position for larger screens */
+@media (min-width: 768px) {
+  .team-header-orange {
+    top: 72px; /* Tablet: stick below 72px nav header */
+  }
+}
+
+@media (min-width: 1024px) {
+  .team-header-orange {
+    top: 80px; /* Desktop: stick below 80px nav header */
+  }
 }
 
 .team-avatar-wrapper {
