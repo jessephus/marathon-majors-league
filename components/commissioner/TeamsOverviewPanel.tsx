@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, cacheUtils } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
 import { Button } from '@/components/chakra';
@@ -236,6 +236,9 @@ export default function TeamsOverviewPanel() {
         throw new Error(`Failed to ${action} team`);
       }
 
+      // Clear API cache to ensure fresh data on reload
+      cacheUtils.clearCacheByPattern('/api/salary-cap-draft');
+
       // Reload teams list
       await loadTeams();
     } catch (err) {
@@ -274,6 +277,9 @@ export default function TeamsOverviewPanel() {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to delete team');
       }
+
+      // Clear API cache to ensure fresh data on reload
+      cacheUtils.clearCacheByPattern('/api/salary-cap-draft');
 
       // Reload teams list
       await loadTeams();
