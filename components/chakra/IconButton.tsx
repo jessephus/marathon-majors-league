@@ -1,42 +1,40 @@
 /**
- * Custom Button Component with Semantic Color Support
+ * Custom IconButton Component with Semantic Color Support
  * 
- * Wraps Chakra UI Button to provide clean semantic color palette support.
+ * Icon-only button variant with proper accessibility features.
  * Uses explicit color tokens to ensure colors render correctly in Chakra v3.
  * 
  * Features:
  * - 8 color palettes (primary, secondary, navy, gold, success, warning, error, info)
  * - 3 variants (solid, outline, ghost)
  * - 5 sizes (xs, sm, md, lg, xl)
- * - Loading states with spinner
- * - Accessible by default (WCAG 2.1 AA compliant)
- * - Smooth interactions with transform/shadow effects
+ * - Accessible by default (requires aria-label)
+ * - Circular or square shape options
+ * - WCAG 2.5.5 compliant touch targets (44x44px minimum)
  * 
- * @version 2.0.0 (Phase 4: Complete Button Variants)
+ * @version 1.0.0 (Phase 4: Icon Button Implementation)
  * @date November 23, 2025
  */
 
-import { Button as ChakraButton, ButtonProps, Spinner } from '@chakra-ui/react';
+import { IconButton as ChakraIconButton, IconButtonProps } from '@chakra-ui/react';
 import { forwardRef } from 'react';
 
-export interface SemanticButtonProps extends Omit<ButtonProps, 'colorPalette'> {
+export interface SemanticIconButtonProps extends Omit<IconButtonProps, 'colorPalette'> {
   colorPalette?: 'primary' | 'secondary' | 'navy' | 'gold' | 'success' | 'warning' | 'error' | 'info';
   variant?: 'solid' | 'outline' | 'ghost';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  isLoading?: boolean;
-  loadingText?: string;
-  leftIcon?: React.ReactElement;
-  rightIcon?: React.ReactElement;
+  isRound?: boolean;
+  'aria-label': string; // Required for accessibility
 }
 
-// Color configuration with WCAG 2.1 AA compliant colors
+// Color configuration matching Button component
 const colorConfig = {
   primary: {
     solid: { 
       bg: 'primary.500', 
       color: 'white', 
-      _hover: { bg: 'primary.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'primary.700', transform: 'translateY(0)' },
+      _hover: { bg: 'primary.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'primary.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(74, 95, 157, 0.3)' },
     },
     outline: { 
@@ -57,8 +55,8 @@ const colorConfig = {
     solid: { 
       bg: 'secondary.500', 
       color: 'navy.900', 
-      _hover: { bg: 'secondary.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'secondary.700', transform: 'translateY(0)' },
+      _hover: { bg: 'secondary.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'secondary.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(212, 175, 55, 0.3)' },
     },
     outline: { 
@@ -79,8 +77,8 @@ const colorConfig = {
     solid: { 
       bg: 'navy.500', 
       color: 'white', 
-      _hover: { bg: 'navy.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'navy.700', transform: 'translateY(0)' },
+      _hover: { bg: 'navy.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'navy.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(74, 95, 157, 0.3)' },
     },
     outline: { 
@@ -101,8 +99,8 @@ const colorConfig = {
     solid: { 
       bg: 'gold.500', 
       color: 'navy.900', 
-      _hover: { bg: 'gold.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'gold.700', transform: 'translateY(0)' },
+      _hover: { bg: 'gold.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'gold.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(212, 175, 55, 0.3)' },
     },
     outline: { 
@@ -121,10 +119,10 @@ const colorConfig = {
   },
   success: {
     solid: { 
-      bg: 'success.600', // WCAG AA compliant (4.54:1 contrast)
+      bg: 'success.600', 
       color: 'white', 
-      _hover: { bg: 'success.700', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'success.800', transform: 'translateY(0)' },
+      _hover: { bg: 'success.700', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'success.800', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.3)' },
     },
     outline: { 
@@ -145,8 +143,8 @@ const colorConfig = {
     solid: { 
       bg: 'warning.500', 
       color: 'white', 
-      _hover: { bg: 'warning.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'warning.700', transform: 'translateY(0)' },
+      _hover: { bg: 'warning.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'warning.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(245, 158, 11, 0.3)' },
     },
     outline: { 
@@ -167,8 +165,8 @@ const colorConfig = {
     solid: { 
       bg: 'error.500', 
       color: 'white', 
-      _hover: { bg: 'error.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'error.700', transform: 'translateY(0)' },
+      _hover: { bg: 'error.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'error.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(239, 68, 68, 0.3)' },
     },
     outline: { 
@@ -189,8 +187,8 @@ const colorConfig = {
     solid: { 
       bg: 'info.500', 
       color: 'white', 
-      _hover: { bg: 'info.600', transform: 'translateY(-2px)', shadow: 'md' },
-      _active: { bg: 'info.700', transform: 'translateY(0)' },
+      _hover: { bg: 'info.600', transform: 'scale(1.05)', shadow: 'md' },
+      _active: { bg: 'info.700', transform: 'scale(0.95)' },
       _focus: { boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.3)' },
     },
     outline: { 
@@ -209,11 +207,9 @@ const colorConfig = {
   },
 };
 
-// Base styles applied to all buttons
+// Base styles
 const baseStyles = {
   fontWeight: 'semibold',
-  letterSpacing: 'wide',
-  borderRadius: 'md',
   transition: 'all 0.2s cubic-bezier(0, 0, 0.2, 1)',
   _disabled: {
     opacity: 0.6,
@@ -225,47 +221,52 @@ const baseStyles = {
   },
 };
 
-// Size configurations matching WCAG 2.5.5 (44x44px minimum touch targets)
+// Size configurations with WCAG 2.5.5 compliant touch targets
 const sizeConfig = {
   xs: { 
-    fontSize: 'xs', 
-    px: 3, 
-    minH: '32px',  // Small buttons for desktop-only use
+    fontSize: 'xs',
+    w: '32px',
+    h: '32px',
+    minW: '32px',
+    minH: '32px',
   },
   sm: { 
-    fontSize: 'sm', 
-    px: 4, 
-    minH: '40px',  // Small buttons, below mobile touch target minimum
+    fontSize: 'sm',
+    w: '40px',
+    h: '40px',
+    minW: '40px',
+    minH: '40px',
   },
   md: { 
-    fontSize: 'md', 
-    px: 6, 
-    minH: '44px',  // Default, meets WCAG minimum
+    fontSize: 'md',
+    w: '44px',  // WCAG minimum
+    h: '44px',
+    minW: '44px',
+    minH: '44px',
   },
   lg: { 
-    fontSize: 'lg', 
-    px: 8, 
-    minH: '48px',  // Recommended for mobile
+    fontSize: 'lg',
+    w: '48px',  // Recommended for mobile
+    h: '48px',
+    minW: '48px',
+    minH: '48px',
   },
   xl: { 
-    fontSize: 'xl', 
-    px: 10, 
-    minH: '56px',  // Large CTAs
+    fontSize: 'xl',
+    w: '56px',
+    h: '56px',
+    minW: '56px',
+    minH: '56px',
   },
 };
 
-export const Button = forwardRef<HTMLButtonElement, SemanticButtonProps>(
+export const IconButton = forwardRef<HTMLButtonElement, SemanticIconButtonProps>(
   (
     { 
       colorPalette = 'primary', 
       variant = 'solid', 
       size = 'md',
-      isLoading = false,
-      loadingText,
-      leftIcon,
-      rightIcon,
-      children,
-      disabled,
+      isRound = false,
       ...props 
     }, 
     ref
@@ -274,27 +275,17 @@ export const Button = forwardRef<HTMLButtonElement, SemanticButtonProps>(
     const sizeProps = sizeConfig[size] || sizeConfig.md;
     
     return (
-      <ChakraButton 
+      <ChakraIconButton 
         ref={ref}
         variant={variant}
-        disabled={disabled || isLoading}
+        borderRadius={isRound ? 'full' : 'md'}
         {...baseStyles}
         {...colorProps}
         {...sizeProps}
         {...props}
-      >
-        {isLoading && (
-          <Spinner 
-            size={size === 'xs' || size === 'sm' ? 'xs' : 'sm'}
-            mr={loadingText || children ? 2 : 0}
-          />
-        )}
-        {leftIcon && !isLoading && <span style={{ marginRight: '0.5rem' }}>{leftIcon}</span>}
-        {isLoading && loadingText ? loadingText : children}
-        {rightIcon && !isLoading && <span style={{ marginLeft: '0.5rem' }}>{rightIcon}</span>}
-      </ChakraButton>
+      />
     );
   }
 );
 
-Button.displayName = 'Button';
+IconButton.displayName = 'IconButton';
