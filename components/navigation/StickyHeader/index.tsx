@@ -273,7 +273,7 @@ export function StickyHeader({
           <Heading 
             size="lg"
             lineHeight={1}
-            fontWeight="extrabold"
+            fontWeight={800}
             display={{ base: 'block', sm: 'none' }}
             letterSpacing="tight"
           >
@@ -283,14 +283,14 @@ export function StickyHeader({
           {/* Desktop: Show full wordmark */}
           <Box display={{ base: 'none', sm: 'block' }}>
             <Heading 
-              size={{ base: 'sm', md: 'md' }} 
+              size={{ sm: 'sm', md: 'md' }} 
               lineHeight={1.2}
               fontWeight="bold"
             >
               Marathon Majors
             </Heading>
             <Text 
-              fontSize={{ base: 'xs', md: 'sm' }} 
+              fontSize={{ sm: 'xs', md: 'sm' }} 
               opacity={0.8}
               lineHeight={1.2}
             >
