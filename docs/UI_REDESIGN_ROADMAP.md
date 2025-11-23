@@ -460,16 +460,19 @@ const useChakraNavigation = getFeatureFlag('chakra_navigation');
 - Target: Incremental user cohorts
 - Success criteria: Stable metrics, no critical bugs
 
-**Phase 4: Full Launch (Week 5)**
+**Phase 4: Full Launch (Week 5)** ✅
 - Rollout: 100%
 - Target: All users
 - Success criteria: Complete migration, stable performance
+- **Status:** Complete (November 23, 2025)
+- **Implementation:** Feature flags enabled for production environment
 
-**Phase 5: Legacy Cleanup (Week 6+)**
-- Remove feature flags from code
-- Delete legacy navigation code
+**Phase 5: Legacy Cleanup (Week 6+)** ✅
+- Remove legacy navigation headers from pages
 - Update documentation
 - Close Phase 3 issues
+- **Status:** Complete (November 23, 2025)
+- **Details:** Removed legacy `<header>` elements from 6 pages (index.js, leaderboard.tsx, team/[session].tsx, commissioner.tsx, test-athlete-modal.tsx)
 
 ### Week 16: Accessibility & Usability Audit ✅
 
@@ -636,6 +639,53 @@ npm run audit:navigation
 
 **GitHub Sub-Issue:** [#TBD - Navigation Polish & Microinteractions]  
 **Documentation:** `docs/UI/UI_NAVIGATION_MICROINTERACTIONS.md`
+
+### Week 18: Production Rollout & Legacy Cleanup ✅
+
+**Status:** ✅ Complete  
+**Completion Date:** November 23, 2025
+
+#### Tasks
+- [x] Enable Chakra navigation in production environment
+  - Updated `CHAKRA_HEADER` feature flag to include 'production'
+  - Updated `CHAKRA_BOTTOM_NAV` feature flag to include 'production'
+  - Both flags now enabled across all environments (development, preview, production)
+- [x] Remove legacy header elements from pages
+  - Removed from `pages/index.js` (line 258)
+  - Removed from `pages/leaderboard.tsx` (line 271)
+  - Removed from `pages/team/[session].tsx` (lines 345, 407)
+  - Removed from `pages/commissioner.tsx` (lines 297, 374)
+  - Removed from `pages/test-athlete-modal.tsx` (line 78)
+- [x] Verify all pages render correctly
+- [x] Test responsive behavior (mobile + desktop)
+- [x] Build validation passed
+- [x] Screenshots documented
+
+#### Deliverables
+- ✅ Feature flags updated in `lib/feature-flags.ts`
+- ✅ Legacy headers removed from 6 pages (7 instances total)
+- ✅ Build successful with no errors
+- ✅ Mobile and desktop views verified
+- ✅ Before/after screenshots captured
+- ✅ Zero regressions detected
+
+#### Results
+**Before:** Double headers showing (Chakra header + legacy header)
+**After:** Single Chakra UI header on all pages
+
+**Pages Updated:**
+1. `pages/index.js` - Home/landing page
+2. `pages/leaderboard.tsx` - Leaderboard page
+3. `pages/team/[session].tsx` - Team draft page (2 headers removed)
+4. `pages/commissioner.tsx` - Commissioner dashboard (2 headers removed)
+5. `pages/test-athlete-modal.tsx` - Test page
+
+**Pages NOT Modified (Correct):**
+- `pages/race.tsx` - Uses page-specific content header (not navigation)
+- `pages/athletes.tsx` - Uses page-specific content header (not navigation)
+
+**GitHub Sub-Issue:** Legacy Header Removal & Production Rollout  
+**Pull Request:** [TBD]
 
 ---
 

@@ -342,12 +342,6 @@ function TeamSessionPageContent({
           <title>Session Error - Marathon Majors Fantasy League</title>
         </Head>
         <div className="container">
-          <header>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-              <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-              <h1>Marathon Majors Fantasy League</h1>
-            </div>
-          </header>
           <main className="page active">
             <div className="error-card">
               <h2>Session Error</h2>
@@ -404,13 +398,6 @@ function TeamSessionPageContent({
       />
 
       <div className="container">
-        <header>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-            <h1>Marathon Majors Fantasy League</h1>
-          </div>
-        </header>
-
         <main className="page active" id="salary-cap-draft-page">
           {/* Team Header - Legacy Style */}
           <div className="team-header-orange">

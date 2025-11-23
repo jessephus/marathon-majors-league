@@ -255,13 +255,6 @@ export default function Home({ serverSessionType, hasURLSession }) {
           <div className="loading-spinner">Loading your experience...</div>
         </div>
         
-        <header>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-            <h1>Marathon Majors Fantasy League</h1>
-          </div>
-        </header>
-        
         <main id="app">
           {/* Landing Page with new WelcomeCard component */}
           <div id="landing-page" className="page active">

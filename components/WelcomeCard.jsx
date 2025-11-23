@@ -137,13 +137,17 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
           console.log('[WelcomeCard] Total salary:', totalSalary);
           console.log('[WelcomeCard] isComplete:', myTeam.isComplete);
           
+          const fetchedTeamName = data.session.displayName || data.session.teamName;
           setTeamData({
-            teamName: data.session.displayName || data.session.teamName,
+            teamName: fetchedTeamName,
             gameId: data.session.gameId || 'default',
             rosterCount: roster.length,
             totalSalary: totalSalary,
             isDraftComplete: myTeam.isComplete || false, // Use database flag instead of roster.length === 6
           });
+          
+          // Update the teamName state so it displays correctly
+          setTeamName(fetchedTeamName);
         }
       }
     } catch (error) {
@@ -401,7 +405,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
             >
-              {teamData?.isDraftComplete ? 'View My Team →' : 'Continue Building Team →'}
+              {teamData?.isDraftComplete ? 'View My Team →' : 'Continue →'}
             </button>
           </div>
         </>

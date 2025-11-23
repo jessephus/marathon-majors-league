@@ -90,7 +90,12 @@ export default function AthleteSelectionModal({
   }, [isOpen, isDetailModalOpen, onClose]);
 
   // Helper function to convert time string to seconds for sorting
-  const convertTimeToSeconds = (timeStr: string): number => {
+  const convertTimeToSeconds = (timeStr: string | null | undefined): number => {
+    // Handle null/undefined values - sort to end
+    if (!timeStr) {
+      return 999999;
+    }
+    
     const parts = timeStr.split(':');
     if (parts.length === 3) {
       const hours = parseInt(parts[0]);

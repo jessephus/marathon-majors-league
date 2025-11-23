@@ -294,13 +294,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
         </Head>
 
         <div className="container">
-          <header>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-              <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-              <h1>Marathon Majors Fantasy League</h1>
-            </div>
-          </header>
-
           <main className="page active">
             <div className="modal" style={{ display: 'flex' }}>
               <div className="modal-overlay" onClick={() => router.push('/')}></div>
@@ -371,13 +364,6 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
       </Head>
 
       <div className="container">
-        <header>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-            <h1>Marathon Majors Fantasy League</h1>
-          </div>
-        </header>
-
         <main className="page active" id="commissioner-page">
           <h2>Commissioner Dashboard</h2>
 
