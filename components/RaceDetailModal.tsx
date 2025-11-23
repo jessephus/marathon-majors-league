@@ -423,57 +423,6 @@ export default function RaceDetailModal({ raceId, onClose }: RaceDetailModalProp
           margin-top: 10px;
         }
 
-        .athlete-card {
-          display: flex;
-          gap: 12px;
-          padding: 12px;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          background: #fafafa;
-          transition: all 0.2s;
-        }
-
-        .athlete-card:hover {
-          border-color: #007bff;
-          background: #f0f8ff;
-        }
-
-        .athlete-photo {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          object-fit: cover;
-          flex-shrink: 0;
-        }
-
-        .athlete-info {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .athlete-name {
-          font-weight: 600;
-          font-size: 14px;
-          margin-bottom: 5px;
-          color: #333;
-        }
-
-        .athlete-details {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          font-size: 12px;
-          color: #666;
-        }
-
-        .athlete-details span {
-          white-space: nowrap;
-        }
-
-        .athlete-country {
-          font-weight: 600;
-        }
-
         @media (max-width: 768px) {
           .race-detail-modal {
             max-width: 100%;

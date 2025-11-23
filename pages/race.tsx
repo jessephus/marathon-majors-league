@@ -433,45 +433,6 @@ export default function RacePage({ raceId }: RacePageProps) {
           gap: 15px;
         }
 
-        .athlete-card {
-          display: flex;
-          gap: 12px;
-          padding: 12px;
-          background: #f9f9f9;
-          border-radius: 8px;
-          transition: background 0.2s;
-        }
-
-        .athlete-card:hover {
-          background: #f0f0f0;
-        }
-
-        .athlete-photo {
-          width: 60px;
-          height: 60px;
-          border-radius: 50%;
-          object-fit: cover;
-          flex-shrink: 0;
-        }
-
-        .athlete-info {
-          flex: 1;
-        }
-
-        .athlete-name {
-          font-weight: 600;
-          color: #333;
-          margin-bottom: 5px;
-        }
-
-        .athlete-details {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-          font-size: 13px;
-          color: #666;
-        }
-
         .race-cta {
           text-align: center;
           padding: 40px 0 20px;
