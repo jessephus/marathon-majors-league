@@ -161,6 +161,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
           variant="ghost"
           colorPalette="navy"
           size="sm"
+          borderRadius="full"
         >
           &times;
         </IconButton>

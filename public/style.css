@@ -1959,7 +1959,7 @@ footer .btn {
 }
 
 .tab-button.active {
-    color: var(--primary-blue);
+    color: white;
     border-bottom-color: var(--primary-blue);
 }
 
