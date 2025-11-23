@@ -894,22 +894,43 @@ export async function createRace(raceData) {
 }
 
 export async function updateRace(id, updates) {
+  // Accept both snake_case (from API) and camelCase (internal) field names
   const { 
     name, 
     date, 
     location, 
     distance, 
     eventType, 
-    worldAthleticsEventId, 
+    event_type,
+    worldAthleticsEventId,
+    world_athletics_event_id,
     description, 
     isActive,
+    is_active,
     lockTime,
+    lock_time,
     logoUrl,
+    logo_url,
     backgroundImageUrl,
+    background_image_url,
     primaryColor,
+    primary_color,
     secondaryColor,
-    accentColor
+    secondary_color,
+    accentColor,
+    accent_color
   } = updates;
+  
+  // Normalize to prefer snake_case (API format) if both exist
+  const normalizedEventType = event_type !== undefined ? event_type : eventType;
+  const normalizedWorldAthleticsEventId = world_athletics_event_id !== undefined ? world_athletics_event_id : worldAthleticsEventId;
+  const normalizedIsActive = is_active !== undefined ? is_active : isActive;
+  const normalizedLockTime = lock_time !== undefined ? lock_time : lockTime;
+  const normalizedLogoUrl = logo_url !== undefined ? logo_url : logoUrl;
+  const normalizedBackgroundImageUrl = background_image_url !== undefined ? background_image_url : backgroundImageUrl;
+  const normalizedPrimaryColor = primary_color !== undefined ? primary_color : primaryColor;
+  const normalizedSecondaryColor = secondary_color !== undefined ? secondary_color : secondaryColor;
+  const normalizedAccentColor = accent_color !== undefined ? accent_color : accentColor;
   
   // Execute update one field at a time using tagged templates
   if (name !== undefined) {
@@ -924,35 +945,35 @@ export async function updateRace(id, updates) {
   if (distance !== undefined) {
     await sql`UPDATE races SET distance = ${distance}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (eventType !== undefined) {
-    await sql`UPDATE races SET event_type = ${eventType}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedEventType !== undefined) {
+    await sql`UPDATE races SET event_type = ${normalizedEventType}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (worldAthleticsEventId !== undefined) {
-    await sql`UPDATE races SET world_athletics_event_id = ${worldAthleticsEventId}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedWorldAthleticsEventId !== undefined) {
+    await sql`UPDATE races SET world_athletics_event_id = ${normalizedWorldAthleticsEventId}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
   if (description !== undefined) {
     await sql`UPDATE races SET description = ${description}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (isActive !== undefined) {
-    await sql`UPDATE races SET is_active = ${isActive}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedIsActive !== undefined) {
+    await sql`UPDATE races SET is_active = ${normalizedIsActive}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (lockTime !== undefined) {
-    await sql`UPDATE races SET lock_time = ${lockTime}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedLockTime !== undefined) {
+    await sql`UPDATE races SET lock_time = ${normalizedLockTime}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (logoUrl !== undefined) {
-    await sql`UPDATE races SET logo_url = ${logoUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedLogoUrl !== undefined) {
+    await sql`UPDATE races SET logo_url = ${normalizedLogoUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (backgroundImageUrl !== undefined) {
-    await sql`UPDATE races SET background_image_url = ${backgroundImageUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedBackgroundImageUrl !== undefined) {
+    await sql`UPDATE races SET background_image_url = ${normalizedBackgroundImageUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (primaryColor !== undefined) {
-    await sql`UPDATE races SET primary_color = ${primaryColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedPrimaryColor !== undefined) {
+    await sql`UPDATE races SET primary_color = ${normalizedPrimaryColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (secondaryColor !== undefined) {
-    await sql`UPDATE races SET secondary_color = ${secondaryColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedSecondaryColor !== undefined) {
+    await sql`UPDATE races SET secondary_color = ${normalizedSecondaryColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
-  if (accentColor !== undefined) {
-    await sql`UPDATE races SET accent_color = ${accentColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
+  if (normalizedAccentColor !== undefined) {
+    await sql`UPDATE races SET accent_color = ${normalizedAccentColor}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id}`;
   }
   
   return await getRaceById(id);
