@@ -197,6 +197,26 @@ export function MobileMenuDrawer({
   // Use default items if not provided, recomputing on each render for dynamic hrefs
   const computedMenuItems = menuItems || getDefaultMenuItems();
   
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/session/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.ok) {
+        // Close drawer and redirect to home page
+        onClose();
+        router.push('/');
+      } else {
+        console.error('Logout failed:', await response.json());
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+  
   // Re-evaluate dynamic hrefs when router changes (for session updates)
   const [, forceUpdate] = useState(0);
   useEffect(() => {
@@ -502,7 +522,7 @@ export function MobileMenuDrawer({
                   color="white"
                   _hover={{ bg: 'whiteAlpha.100' }}
                   _active={{ bg: 'whiteAlpha.200' }}
-                  onClick={onLogout || (() => router.push('/api/session/logout'))}
+                  onClick={onLogout || handleLogout}
                 >
                   <ArrowRightOnRectangleIcon
                     style={{
