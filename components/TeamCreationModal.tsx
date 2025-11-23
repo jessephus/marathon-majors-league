@@ -11,7 +11,14 @@
  */
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Button, IconButton } from '@/components/chakra';
+import { 
+  Button, 
+  IconButton, 
+  Input, 
+  FormControl, 
+  FormLabel, 
+  FormHelperText 
+} from '@/components/chakra';
 
 interface TeamCreationModalProps {
   isOpen: boolean;
@@ -118,31 +125,35 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
         <h2>Create Your Team</h2>
         <p>Enter your team name to get started:</p>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="team-name">Team Name</label>
-            <input
-              type="text"
+          <FormControl isRequired style={{ marginBottom: '24px' }}>
+            <FormLabel htmlFor="team-name">Team Name</FormLabel>
+            <Input
               id="team-name"
+              type="text"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
               placeholder="e.g., The Fast Finishers"
-              required
               maxLength={50}
-              disabled={isSubmitting}
+              isDisabled={isSubmitting}
+              variant="outline"
+              size="md"
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="team-owner">Your Name (optional)</label>
-            <input
-              type="text"
+          </FormControl>
+          <FormControl style={{ marginBottom: '24px' }}>
+            <FormLabel htmlFor="team-owner">Your Name (optional)</FormLabel>
+            <Input
               id="team-owner"
+              type="text"
               value={ownerName}
               onChange={(e) => setOwnerName(e.target.value)}
               placeholder="e.g., John Smith"
               maxLength={50}
-              disabled={isSubmitting}
+              isDisabled={isSubmitting}
+              variant="outline"
+              size="md"
             />
-          </div>
+            <FormHelperText>This will be displayed on the leaderboard</FormHelperText>
+          </FormControl>
           <div className="form-actions">
             <Button
               type="button"

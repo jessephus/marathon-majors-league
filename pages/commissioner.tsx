@@ -18,7 +18,7 @@ import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
 import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
-import { Button, StatsCard } from '@/components/chakra';
+import { Button, StatsCard, Input, FormControl, FormLabel, FormErrorMessage } from '@/components/chakra';
 
 // Dynamic imports for commissioner panels with performance tracking and feature flags
 // Using webpack magic comments to force separate chunks
@@ -303,11 +303,11 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
                 <p>Enter your TOTP code to access commissioner tools:</p>
                 
                 <form onSubmit={handleTOTPLogin}>
-                  <div className="form-group">
-                    <label htmlFor="totp-code">TOTP Code</label>
-                    <input
-                      type="text"
+                  <FormControl isRequired isInvalid={!!error} style={{ marginBottom: '24px' }}>
+                    <FormLabel htmlFor="totp-code">TOTP Code</FormLabel>
+                    <Input
                       id="totp-code"
+                      type="text"
                       placeholder="000000"
                       value={totpCode}
                       onChange={(e) => {
@@ -316,17 +316,15 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
                         setTotpCode(value);
                       }}
                       maxLength={6}
-                      pattern="[0-9]{6}"
-                      required
+                      inputMode="numeric"
+                      autoComplete="off"
                       autoFocus
+                      isDisabled={loading}
+                      variant="outline"
+                      size="md"
                     />
-                  </div>
-
-                  {error && (
-                    <div className="error-message" style={{ color: 'red', marginBottom: '1rem' }}>
-                      {error}
-                    </div>
-                  )}
+                    {error && <FormErrorMessage>{error}</FormErrorMessage>}
+                  </FormControl>
                   
                   <div className="form-actions">
                     <Button

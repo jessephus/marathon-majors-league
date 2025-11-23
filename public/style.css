@@ -78,6 +78,8 @@ footer .footer-copyright {
     color: #999;
 }
 
+/* DEPRECATED: Legacy game switcher styles - migrated to Chakra UI Select (Phase 4 Forms) */
+/* TODO: Remove after verifying all forms use Chakra components */
 footer .game-switcher {
     display: none; /* Hidden by default, only shown for commissioners */
     align-items: center;
@@ -191,6 +193,9 @@ footer .btn {
 }
 
 /* Form Groups */
+/* DEPRECATED: Legacy form styles - migrated to Chakra UI form components (Phase 4 Forms) */
+/* TODO: Remove after verifying all forms use Chakra components */
+/* Used in: TeamCreationModal, CommissionerTOTPModal (both now use Chakra) */
 .form-group {
     margin-bottom: 20px;
     text-align: left;
