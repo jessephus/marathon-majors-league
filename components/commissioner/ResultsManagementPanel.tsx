@@ -11,7 +11,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
-import { Button } from '@/components/chakra';
+import { Button, Input, Select } from '@/components/chakra';
 
 interface AthleteResult {
   athleteId: number;
@@ -549,25 +549,18 @@ export default function ResultsManagementPanel() {
           <label htmlFor="split-select" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
             Show Split:
           </label>
-          <select
+          <Select
             id="split-select"
-            className="form-select"
             value={selectedSplit}
             onChange={(e) => setSelectedSplit(e.target.value)}
-            style={{
-              padding: '0.5rem',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              fontSize: '0.9rem',
-              minWidth: '180px'
-            }}
-          >
-            {splitOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            options={splitOptions.map(option => ({
+              value: option.value,
+              label: option.label
+            }))}
+            variant="outline"
+            size="sm"
+            style={{ minWidth: '180px' }}
+          />
         </div>
       </div>
 
@@ -593,23 +586,19 @@ export default function ResultsManagementPanel() {
               {newRow && (
                 <tr style={{ borderBottom: '1px solid #eee', backgroundColor: '#f0f9ff' }}>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <input
+                    <Input
                       type="number"
                       placeholder="Pos"
                       value={newRow.position || ''}
                       onChange={(e) => setNewRow({ ...newRow, position: parseInt(e.target.value) || 0 })}
-                      style={{
-                        width: '60px',
-                        padding: '0.25rem',
-                        textAlign: 'center',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px'
-                      }}
+                      variant="outline"
+                      size="sm"
+                      style={{ width: '60px', textAlign: 'center' }}
                     />
                   </td>
                   <td style={{ padding: '0.5rem' }}>
-                    <select
-                      value={newRow.athleteId}
+                    <Select
+                      value={newRow.athleteId.toString()}
                       onChange={(e) => {
                         const athleteId = parseInt(e.target.value);
                         const athlete = allAthletes.find(a => a.id === athleteId);
@@ -623,37 +612,27 @@ export default function ResultsManagementPanel() {
                           });
                         }
                       }}
-                      style={{
-                        width: '100%',
-                        padding: '0.25rem',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px'
-                      }}
-                    >
-                      {allAthletes
+                      options={allAthletes
                         .filter(a => !results.find(r => r.athleteId === a.id))
-                        .map(athlete => (
-                          <option key={athlete.id} value={athlete.id}>
-                            {athlete.name}
-                          </option>
-                        ))}
-                    </select>
+                        .map(athlete => ({
+                          value: athlete.id.toString(),
+                          label: athlete.name
+                        }))}
+                      variant="outline"
+                      size="sm"
+                    />
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>{newRow.country}</td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>{newRow.gender}</td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <input
+                    <Input
                       type="text"
                       placeholder="H:MM:SS"
                       value={newRow.time}
                       onChange={(e) => setNewRow({ ...newRow, time: e.target.value })}
-                      style={{
-                        width: '100%',
-                        padding: '0.25rem',
-                        textAlign: 'center',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px'
-                      }}
+                      variant="outline"
+                      size="sm"
+                      style={{ textAlign: 'center' }}
                     />
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
@@ -688,23 +667,14 @@ export default function ResultsManagementPanel() {
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.country}</td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.gender}</td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <input
+                    <Input
                       type="text"
                       placeholder="H:MM:SS"
                       value={editedTimes[result.athleteId] ?? getSplitValue(result)}
                       onChange={(e) => handleTimeChange(result.athleteId, e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0',
-                        border: 'none',
-                        borderRadius: '0',
-                        background: 'transparent',
-                        fontFamily: 'inherit',
-                        fontSize: 'inherit',
-                        color: 'inherit',
-                        outline: 'none',
-                        textAlign: 'center'
-                      }}
+                      variant="flushed"
+                      size="sm"
+                      style={{ textAlign: 'center' }}
                     />
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
