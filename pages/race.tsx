@@ -196,7 +196,7 @@ export default function RacePage({ raceId }: RacePageProps) {
         <meta name="description" content={race.description || `${race.name} - ${race.location}`} />
       </Head>
 
-      <Box minHeight="100vh" bg="gray.50">
+      <Box minHeight="100vh" bg="gray.50" position="relative" zIndex={1}>
         {/* Hero Section */}
         <RaceHero
           raceName={race.name}
@@ -260,18 +260,7 @@ export default function RacePage({ raceId }: RacePageProps) {
               </Card>
             )}
 
-            {/* Call to Action */}
-            <Box textAlign="center" py={8}>
-              <Link href="/" passHref legacyBehavior>
-                <Button
-                  as="a"
-                  colorPalette="navy"
-                  size="lg"
-                >
-                  Create Your Fantasy Team
-                </Button>
-              </Link>
-            </Box>
+
           </VStack>
         </Container>
 

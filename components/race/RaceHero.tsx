@@ -79,18 +79,19 @@ export function RaceHero({
       minHeight={{ base: '300px', md: '400px', lg: '500px' }}
       overflow="hidden"
     >
-      {/* Background Image */}
+      {/* Background Image - Fixed position for parallax effect */}
       {backgroundImageUrl && (
         <Box
-          position="absolute"
+          position="fixed"
           top={0}
           left={0}
-          right={0}
-          bottom={0}
+          width="100vw"
+          height="100vh"
           backgroundImage={`url(${backgroundImageUrl})`}
           backgroundSize="cover"
           backgroundPosition="center"
           backgroundRepeat="no-repeat"
+          zIndex={0}
           _after={{
             content: '""',
             position: 'absolute',
@@ -103,23 +104,24 @@ export function RaceHero({
         />
       )}
 
-      {/* Fallback gradient if no background image */}
+      {/* Fallback gradient if no background image - Fixed position */}
       {!backgroundImageUrl && (
         <Box
-          position="absolute"
+          position="fixed"
           top={0}
           left={0}
-          right={0}
-          bottom={0}
+          width="100vw"
+          height="100vh"
           bgGradient="linear(to-br, navy.900, navy.700)"
+          zIndex={0}
         />
       )}
 
-      {/* Content */}
+      {/* Content - Positioned above fixed background */}
       <Container
         maxW="container.xl"
         position="relative"
-        zIndex={1}
+        zIndex={2}
         height="100%"
         display="flex"
         alignItems="center"
@@ -190,14 +192,14 @@ export function RaceHero({
         </VStack>
       </Container>
 
-      {/* Fade effect at bottom */}
+      {/* Enhanced fade effect at bottom - transitions to page background color */}
       <Box
         position="absolute"
         bottom={0}
         left={0}
         right={0}
-        height="60px"
-        bgGradient="linear(to-b, transparent, white)"
+        height="100px"
+        background="linear-gradient(to bottom, transparent 0%, rgba(247, 250, 252, 0.5) 50%, rgba(247, 250, 252, 1) 100%)"
         pointerEvents="none"
       />
     </Box>
