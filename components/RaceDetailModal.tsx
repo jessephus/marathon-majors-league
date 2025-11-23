@@ -3,10 +3,13 @@
  * 
  * Modal component that displays race details, athletes, and information
  * Used in commissioner dashboard for quick race viewing
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { IconButton } from '@/components/chakra';
 
 interface Race {
   id: number;
@@ -91,7 +94,16 @@ export default function RaceDetailModal({ raceId, onClose }: RaceDetailModalProp
       <div className="modal-content race-detail-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Race Details</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+          <IconButton
+            className="close-btn"
+            onClick={onClose}
+            aria-label="Close race detail modal"
+            variant="ghost"
+            colorPalette="navy"
+            size="sm"
+          >
+            ×
+          </IconButton>
         </div>
 
         <div className="modal-body">

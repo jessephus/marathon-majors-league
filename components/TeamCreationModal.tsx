@@ -6,9 +6,12 @@
  * 
  * Migrated from: pages/index.js (getLegacyPagesHTML)
  * Handler migrated from: public/app-bridge.js (handleTeamCreation)
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import { useState, useEffect, FormEvent } from 'react';
+import { Button, IconButton } from '@/components/chakra';
 
 interface TeamCreationModalProps {
   isOpen: boolean;
@@ -102,7 +105,16 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
     <div className="modal" style={{ display: 'flex' }}>
       <div className="modal-overlay" onClick={handleClose}></div>
       <div className="modal-content">
-        <button className="modal-close" onClick={handleClose}>&times;</button>
+        <IconButton
+          className="modal-close"
+          onClick={handleClose}
+          aria-label="Close modal"
+          variant="ghost"
+          colorPalette="navy"
+          size="sm"
+        >
+          &times;
+        </IconButton>
         <h2>Create Your Team</h2>
         <p>Enter your team name to get started:</p>
         <form onSubmit={handleSubmit}>
@@ -132,21 +144,25 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
             />
           </div>
           <div className="form-actions">
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary"
+              variant="outline"
+              colorPalette="navy"
               onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              variant="solid"
+              colorPalette="primary"
               disabled={isSubmitting}
+              isLoading={isSubmitting}
+              loadingText="Creating..."
             >
               {isSubmitting ? 'Creating...' : 'Create Team & Start Drafting'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
