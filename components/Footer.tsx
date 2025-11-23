@@ -1,6 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/router';
 import { useGameState, useSessionState, useCommissionerState } from '@/lib/state-provider';
+import { Button } from '@/components/chakra';
 
 // Extend Window interface for app.js globals
 declare global {
@@ -221,29 +222,31 @@ export default function Footer({
     // 1. Home button (always show except in minimal mode)
     if (mode !== 'minimal') {
       buttons.push(
-        <button 
+        <Button
           key="home"
-          id="home-button" 
-          className="btn btn-secondary"
+          id="home-button"
+          variant="outline"
+          colorPalette="navy"
           onClick={() => router.push('/')}
         >
           Home
-        </button>
+        </Button>
       );
     }
 
     // 2. Copy URL button (only show when in team session)
     if (isTeamSession && mode === 'team') {
       buttons.push(
-        <button 
+        <Button
           key="copy-url"
-          id="copy-url-button" 
-          className="btn btn-secondary"
+          id="copy-url-button"
+          variant="outline"
+          colorPalette="navy"
           onClick={handleCopyURL}
           title="Copy your unique team URL"
         >
           📋 Copy URL
-        </button>
+        </Button>
       );
     }
 
@@ -270,14 +273,15 @@ export default function Footer({
       };
 
       buttons.push(
-        <button 
+        <Button
           key="commissioner-mode"
-          id="commissioner-mode" 
-          className="btn btn-secondary"
+          id="commissioner-mode"
+          variant="outline"
+          colorPalette="navy"
           onClick={handleCommissionerModeClick}
         >
           Commissioner Mode
-        </button>
+        </Button>
       );
     }
 
@@ -287,14 +291,15 @@ export default function Footer({
     // 5. Logout button (show when commissioner OR in team session)
     if (isCommissioner || isTeamSession) {
       buttons.push(
-        <button 
+        <Button
           key="logout"
-          id="logout-button" 
-          className="btn btn-secondary"
+          id="logout-button"
+          variant="outline"
+          colorPalette="navy"
           onClick={handleLogout}
         >
           Logout
-        </button>
+        </Button>
       );
     }
 

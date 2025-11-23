@@ -285,8 +285,8 @@ function LeaderboardPageContent({
               onClick={() => setActiveTab('fantasy')}
               aria-selected={activeTab === 'fantasy'}
               role="tab"
-              variant={activeTab === 'fantasy' ? 'solid' : 'ghost'}
-              colorPalette="navy"
+              variant={activeTab === 'fantasy' ? 'solid' : 'outline'}
+              colorPalette={activeTab === 'fantasy' ? 'gold' : 'navy'}
               size="md"
             >
               Fantasy Standings
@@ -296,8 +296,8 @@ function LeaderboardPageContent({
               onClick={() => setActiveTab('race')}
               aria-selected={activeTab === 'race'}
               role="tab"
-              variant={activeTab === 'race' ? 'solid' : 'ghost'}
-              colorPalette="navy"
+              variant={activeTab === 'race' ? 'solid' : 'outline'}
+              colorPalette={activeTab === 'race' ? 'gold' : 'navy'}
               size="md"
             >
               Race Results

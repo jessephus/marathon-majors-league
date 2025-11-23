@@ -505,6 +505,8 @@ function TeamSessionPageContent({
                             variant="ghost"
                             colorPalette="error"
                             size="sm"
+                            borderRadius="full"
+                            color="white"
                           >
                             ×
                           </IconButton>

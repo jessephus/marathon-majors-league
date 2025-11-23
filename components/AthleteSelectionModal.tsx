@@ -339,6 +339,7 @@ export default function AthleteSelectionModal({
                     variant="solid"
                     colorPalette={isInCurrentSlot ? 'success' : 'primary'}
                     size="sm"
+                    borderRadius="full"
                   >
                     {isInCurrentSlot ? '✓' : '+'}
                   </IconButton>
