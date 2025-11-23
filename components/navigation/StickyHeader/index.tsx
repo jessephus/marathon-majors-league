@@ -170,6 +170,32 @@ export function StickyHeader({
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/session/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.ok) {
+        // Clear client-side sessions (localStorage)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('marathon_fantasy_team');
+          localStorage.removeItem('marathon_fantasy_commissioner');
+          // Dispatch event to notify other components
+          window.dispatchEvent(new Event('sessionsUpdated'));
+        }
+        // Redirect to home page after successful logout
+        router.push('/');
+      } else {
+        console.error('Logout failed:', await response.json());
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+  
   // Initialize with truly static defaults to prevent hydration mismatch
   // IMPORTANT: Do NOT call getDefaultNavItems() here - it uses dynamic logic
   const [computedNavItems, setComputedNavItems] = useState<NavItem[]>(() => {
@@ -394,6 +420,7 @@ export function StickyHeader({
           borderColor="gold.500"
           color="gold.400"
           _hover={{ bg: 'whiteAlpha.200' }}
+          onClick={handleLogout}
         >
           Logout
         </Button>
