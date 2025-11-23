@@ -264,26 +264,39 @@ export function StickyHeader({
           objectFit="contain"
         />
         
-        {/* Wordmark - Hidden on very small screens */}
+        {/* Wordmark - "MMFL" on smallest mobile, full text on larger screens */}
         <VStack 
           align="start" 
-          gap={0} 
-          display={{ base: 'none', sm: 'flex' }}
+          gap={0}
         >
+          {/* Mobile: Show "MMFL" abbreviation - Large and bold */}
           <Heading 
-            size={{ base: 'sm', md: 'md' }} 
-            lineHeight={1.2}
-            fontWeight="bold"
+            size="lg"
+            lineHeight={1}
+            fontWeight="extrabold"
+            display={{ base: 'block', sm: 'none' }}
+            letterSpacing="tight"
           >
-            Marathon Majors
+            MMFL
           </Heading>
-          <Text 
-            fontSize={{ base: 'xs', md: 'sm' }} 
-            opacity={0.8}
-            lineHeight={1.2}
-          >
-            Fantasy League
-          </Text>
+          
+          {/* Desktop: Show full wordmark */}
+          <Box display={{ base: 'none', sm: 'block' }}>
+            <Heading 
+              size={{ sm: 'sm', md: 'md' }} 
+              lineHeight={1.2}
+              fontWeight="bold"
+            >
+              Marathon Majors
+            </Heading>
+            <Text 
+              fontSize={{ sm: 'xs', md: 'sm' }} 
+              opacity={0.8}
+              lineHeight={1.2}
+            >
+              Fantasy League
+            </Text>
+          </Box>
         </VStack>
       </HStack>
       
