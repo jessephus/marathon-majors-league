@@ -11,13 +11,14 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
+import { SimpleGrid } from '@chakra-ui/react';
 import { AppStateProvider, useCommissionerState, useGameState } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
 import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
-import { Button } from '@/components/chakra';
+import { Button, StatsCard } from '@/components/chakra';
 
 // Dynamic imports for commissioner panels with performance tracking and feature flags
 // Using webpack magic comments to force separate chunks
@@ -385,53 +386,49 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
             <div className="commissioner-dashboard">
               <div className="dashboard-section">
                 <h3>Game Statistics</h3>
-                <div className="stats-grid-three">
-                  <div className="stat-card">
-                    <div className="stat-label">Game ID</div>
-                    <div className="stat-value" style={{ fontSize: '1rem' }}>{gameState.gameId}</div>
-                    {rosterLockTime && (
-                      <div className="stat-sublabel">
-                        Lock: {new Date(rosterLockTime).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          timeZoneName: 'short'
-                        })}
-                      </div>
-                    )}
-                  </div>
-                  <div 
-                    className="stat-card stat-card-clickable"
+                <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                  <StatsCard
+                    label="Game ID"
+                    value={gameState.gameId}
+                    type="custom"
+                    size="md"
+                    colorPalette="navy"
+                    description={rosterLockTime ? `Lock: ${new Date(rosterLockTime).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZoneName: 'short'
+                    })}` : undefined}
+                  />
+                  <StatsCard
+                    label="Teams"
+                    value={teamCount}
+                    type="number"
+                    size="md"
+                    colorPalette="info"
                     onClick={() => setActivePanel('teams')}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setActivePanel('teams')}
-                  >
-                    <div className="stat-label">Teams</div>
-                    <div className="stat-value">{teamCount}</div>
-                  </div>
-                  <div 
-                    className="stat-card stat-card-clickable"
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <StatsCard
+                    label="Confirmed Athletes"
+                    value={confirmedAthletesCount}
+                    type="number"
+                    size="md"
+                    colorPalette="success"
                     onClick={() => setActivePanel('athletes')}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setActivePanel('athletes')}
-                  >
-                    <div className="stat-label">Confirmed Athletes</div>
-                    <div className="stat-value">{confirmedAthletesCount}</div>
-                  </div>
-                  <div 
-                    className="stat-card stat-card-clickable"
+                    style={{ cursor: 'pointer' }}
+                  />
+                  <StatsCard
+                    label="Results Status"
+                    value={resultsStatus}
+                    type="custom"
+                    size="md"
+                    colorPalette="warning"
                     onClick={() => setActivePanel('results')}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === 'Enter' && setActivePanel('results')}
-                  >
-                    <div className="stat-label">Results Status</div>
-                    <div className="stat-value" style={{ fontSize: '1rem' }}>{resultsStatus}</div>
-                  </div>
-                </div>
+                    style={{ cursor: 'pointer' }}
+                  />
+                </SimpleGrid>
               </div>
 
               <div className="dashboard-section">

@@ -8,8 +8,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Box, Heading, SimpleGrid, VStack } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
-import { IconButton } from '@/components/chakra';
+import { IconButton, AthleteCard } from '@/components/chakra';
 
 interface Race {
   id: number;
@@ -182,81 +183,69 @@ export default function RaceDetailModal({ raceId, onClose }: RaceDetailModalProp
 
               {/* Confirmed Athletes */}
               {race.athletes && (race.athletes.men.length > 0 || race.athletes.women.length > 0) && (
-                <div className="race-section">
-                  <h3>Confirmed Athletes</h3>
+                <Box className="race-section" mt={6}>
+                  <Heading as="h3" size="md" mb={4} color="navy.800">
+                    Confirmed Athletes
+                  </Heading>
                   
                   {/* Men */}
                   {race.athletes.men.length > 0 && (
-                    <div className="athletes-category">
-                      <h4>Men ({race.athletes.men.length})</h4>
-                      <div className="athletes-grid">
+                    <VStack align="stretch" gap={4} mb={6}>
+                      <Heading as="h4" size="sm" color="navy.700">
+                        Men ({race.athletes.men.length})
+                      </Heading>
+                      <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                         {race.athletes.men.map((athlete) => (
-                          <div key={athlete.id} className="athlete-card">
-                            {athlete.headshotUrl && (
-                              <img 
-                                src={athlete.headshotUrl} 
-                                alt={athlete.name}
-                                className="athlete-photo"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <div className="athlete-info">
-                              <div className="athlete-name">{athlete.name}</div>
-                              <div className="athlete-details">
-                                <span className="athlete-country">{athlete.country}</span>
-                                {athlete.pb && <span className="athlete-pb">PB: {athlete.pb}</span>}
-                                {athlete.marathonRank && (
-                                  <span className="athlete-rank">Rank: #{athlete.marathonRank}</span>
-                                )}
-                                {athlete.bibNumber && (
-                                  <span className="athlete-bib">Bib: {athlete.bibNumber}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                          <AthleteCard
+                            key={athlete.id}
+                            athlete={{
+                              id: athlete.id,
+                              name: athlete.name,
+                              country: athlete.country,
+                              gender: 'M',
+                              pb: athlete.pb,
+                              rank: athlete.marathonRank || null,
+                              salary: null,
+                              photoUrl: athlete.headshotUrl || null,
+                            }}
+                            variant="compact"
+                            showPrice={false}
+                            showStats={true}
+                          />
                         ))}
-                      </div>
-                    </div>
+                      </SimpleGrid>
+                    </VStack>
                   )}
 
                   {/* Women */}
                   {race.athletes.women.length > 0 && (
-                    <div className="athletes-category">
-                      <h4>Women ({race.athletes.women.length})</h4>
-                      <div className="athletes-grid">
+                    <VStack align="stretch" gap={4}>
+                      <Heading as="h4" size="sm" color="navy.700">
+                        Women ({race.athletes.women.length})
+                      </Heading>
+                      <SimpleGrid columns={{ base: 1, md: 2 }} gap={3}>
                         {race.athletes.women.map((athlete) => (
-                          <div key={athlete.id} className="athlete-card">
-                            {athlete.headshotUrl && (
-                              <img 
-                                src={athlete.headshotUrl} 
-                                alt={athlete.name}
-                                className="athlete-photo"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <div className="athlete-info">
-                              <div className="athlete-name">{athlete.name}</div>
-                              <div className="athlete-details">
-                                <span className="athlete-country">{athlete.country}</span>
-                                {athlete.pb && <span className="athlete-pb">PB: {athlete.pb}</span>}
-                                {athlete.marathonRank && (
-                                  <span className="athlete-rank">Rank: #{athlete.marathonRank}</span>
-                                )}
-                                {athlete.bibNumber && (
-                                  <span className="athlete-bib">Bib: {athlete.bibNumber}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                          <AthleteCard
+                            key={athlete.id}
+                            athlete={{
+                              id: athlete.id,
+                              name: athlete.name,
+                              country: athlete.country,
+                              gender: 'F',
+                              pb: athlete.pb,
+                              rank: athlete.marathonRank || null,
+                              salary: null,
+                              photoUrl: athlete.headshotUrl || null,
+                            }}
+                            variant="compact"
+                            showPrice={false}
+                            showStats={true}
+                          />
                         ))}
-                      </div>
-                    </div>
+                      </SimpleGrid>
+                    </VStack>
                   )}
-                </div>
+                </Box>
               )}
             </>
           )}

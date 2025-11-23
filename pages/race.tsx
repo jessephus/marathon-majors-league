@@ -13,7 +13,9 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
+import { Box, Heading, SimpleGrid, VStack } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
+import { AthleteCard } from '@/components/chakra';
 import Footer from '@/components/Footer';
 
 interface Race {
@@ -246,81 +248,69 @@ export default function RacePage({ raceId }: RacePageProps) {
 
           {/* Confirmed Athletes */}
           {race.athletes && (race.athletes.men.length > 0 || race.athletes.women.length > 0) && (
-            <div className="race-section">
-              <h2>Confirmed Athletes</h2>
+            <Box className="race-section">
+              <Heading as="h2" size="xl" mb={6} color="navy.800">
+                Confirmed Athletes
+              </Heading>
               
               {/* Men */}
               {race.athletes.men.length > 0 && (
-                <div className="athletes-category">
-                  <h3>Men ({race.athletes.men.length})</h3>
-                  <div className="athletes-grid">
+                <VStack align="stretch" gap={6} mb={8}>
+                  <Heading as="h3" size="lg" color="navy.700">
+                    Men ({race.athletes.men.length})
+                  </Heading>
+                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
                     {race.athletes.men.map((athlete) => (
-                      <div key={athlete.id} className="athlete-card">
-                        {athlete.headshotUrl && (
-                          <img 
-                            src={athlete.headshotUrl} 
-                            alt={athlete.name}
-                            className="athlete-photo"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div className="athlete-info">
-                          <div className="athlete-name">{athlete.name}</div>
-                          <div className="athlete-details">
-                            <span className="athlete-country">{athlete.country}</span>
-                            {athlete.pb && <span className="athlete-pb">PB: {athlete.pb}</span>}
-                            {athlete.marathonRank && (
-                              <span className="athlete-rank">Rank: #{athlete.marathonRank}</span>
-                            )}
-                            {athlete.bibNumber && (
-                              <span className="athlete-bib">Bib: {athlete.bibNumber}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                      <AthleteCard
+                        key={athlete.id}
+                        athlete={{
+                          id: athlete.id,
+                          name: athlete.name,
+                          country: athlete.country,
+                          gender: 'M',
+                          pb: athlete.pb,
+                          rank: athlete.marathonRank || null,
+                          salary: null,
+                          photoUrl: athlete.headshotUrl || null,
+                        }}
+                        variant="standard"
+                        showPrice={false}
+                        showStats={true}
+                      />
                     ))}
-                  </div>
-                </div>
+                  </SimpleGrid>
+                </VStack>
               )}
 
               {/* Women */}
               {race.athletes.women.length > 0 && (
-                <div className="athletes-category">
-                  <h3>Women ({race.athletes.women.length})</h3>
-                  <div className="athletes-grid">
+                <VStack align="stretch" gap={6}>
+                  <Heading as="h3" size="lg" color="navy.700">
+                    Women ({race.athletes.women.length})
+                  </Heading>
+                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
                     {race.athletes.women.map((athlete) => (
-                      <div key={athlete.id} className="athlete-card">
-                        {athlete.headshotUrl && (
-                          <img 
-                            src={athlete.headshotUrl} 
-                            alt={athlete.name}
-                            className="athlete-photo"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <div className="athlete-info">
-                          <div className="athlete-name">{athlete.name}</div>
-                          <div className="athlete-details">
-                            <span className="athlete-country">{athlete.country}</span>
-                            {athlete.pb && <span className="athlete-pb">PB: {athlete.pb}</span>}
-                            {athlete.marathonRank && (
-                              <span className="athlete-rank">Rank: #{athlete.marathonRank}</span>
-                            )}
-                            {athlete.bibNumber && (
-                              <span className="athlete-bib">Bib: {athlete.bibNumber}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                      <AthleteCard
+                        key={athlete.id}
+                        athlete={{
+                          id: athlete.id,
+                          name: athlete.name,
+                          country: athlete.country,
+                          gender: 'F',
+                          pb: athlete.pb,
+                          rank: athlete.marathonRank || null,
+                          salary: null,
+                          photoUrl: athlete.headshotUrl || null,
+                        }}
+                        variant="standard"
+                        showPrice={false}
+                        showStats={true}
+                      />
                     ))}
-                  </div>
-                </div>
+                  </SimpleGrid>
+                </VStack>
               )}
-            </div>
+            </Box>
           )}
 
           {/* Call to Action */}
