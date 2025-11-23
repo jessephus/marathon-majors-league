@@ -3,12 +3,15 @@
  * 
  * Panel for managing race results and finalization.
  * Integrates with state events and API client.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
+import { Button } from '@/components/chakra';
 
 interface AthleteResult {
   athleteId: number;
@@ -510,30 +513,36 @@ export default function ResultsManagementPanel() {
 
       <div className="panel-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div className="panel-actions" style={{ display: 'flex', gap: '0.5rem' }}>
-          <button 
-            className="btn btn-success" 
+          <Button
+            variant="solid"
+            colorPalette="success"
             onClick={handleAddResult}
             disabled={saving || gameState.resultsFinalized}
             title="Add a new result for an athlete"
+            size="sm"
           >
             ➕ Add Result
-          </button>
-          <button 
-            className="btn btn-warning" 
+          </Button>
+          <Button
+            variant="solid"
+            colorPalette="warning"
             onClick={handleFinalizeResults}
             disabled={saving || gameState.resultsFinalized}
             title="Lock results - cannot be undone"
+            size="sm"
           >
             {gameState.resultsFinalized ? 'Results Finalized' : '🔒 Finalize Results'}
-          </button>
-          <button 
-            className="btn btn-danger" 
+          </Button>
+          <Button
+            variant="solid"
+            colorPalette="error"
             onClick={handleResetResults}
             disabled={saving || gameState.resultsFinalized || results.length === 0}
             title="Delete all results"
+            size="sm"
           >
             🔄 Reset Results
-          </button>
+          </Button>
         </div>
 
         <div className="split-selector" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -648,29 +657,25 @@ export default function ResultsManagementPanel() {
                     />
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-sm btn-success"
+                    <Button
+                      variant="solid"
+                      colorPalette="success"
                       onClick={handleSaveNewResult}
                       disabled={saving}
-                      style={{ 
-                        marginRight: '0.5rem',
-                        fontSize: '0.7rem',
-                        padding: '0.2rem 0.4rem'
-                      }}
+                      size="xs"
+                      style={{ marginRight: '0.5rem' }}
                     >
                       Save
-                    </button>
-                    <button 
-                      className="btn btn-sm btn-secondary"
+                    </Button>
+                    <Button
+                      variant="outline"
+                      colorPalette="navy"
                       onClick={handleCancelNewResult}
                       disabled={saving}
-                      style={{
-                        fontSize: '0.7rem',
-                        padding: '0.2rem 0.4rem'
-                      }}
+                      size="xs"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               )}
@@ -703,32 +708,26 @@ export default function ResultsManagementPanel() {
                     />
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                    <button 
-                      className="btn btn-sm btn-primary"
+                    <Button
+                      variant="solid"
+                      colorPalette="primary"
                       onClick={() => handleSaveResult(result.athleteId)}
                       disabled={saving || !editedTimes.hasOwnProperty(result.athleteId)}
                       title={editedTimes.hasOwnProperty(result.athleteId) ? 'Save changes' : 'No unsaved changes'}
-                      style={{ 
-                        marginRight: '0.5rem',
-                        fontSize: '0.7rem',
-                        padding: '0.2rem 0.4rem',
-                        opacity: editedTimes.hasOwnProperty(result.athleteId) ? 1 : 0.5,
-                        cursor: editedTimes.hasOwnProperty(result.athleteId) ? 'pointer' : 'not-allowed'
-                      }}
+                      size="xs"
+                      style={{ marginRight: '0.5rem' }}
                     >
                       {editedTimes.hasOwnProperty(result.athleteId) ? '💾 Save' : '🔒 Save'}
-                    </button>
-                    <button 
-                      className="btn btn-sm btn-danger"
+                    </Button>
+                    <Button
+                      variant="solid"
+                      colorPalette="error"
                       onClick={() => handleDeleteResult(result.athleteId)}
                       disabled={saving}
-                      style={{
-                        fontSize: '0.7rem',
-                        padding: '0.2rem 0.4rem'
-                      }}
+                      size="xs"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

@@ -4,6 +4,8 @@
  * Modal for selecting athletes to add to roster slots.
  * Filters by gender, shows salary, and prevents duplicates.
  * Matches legacy vanilla JS implementation styling.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -11,6 +13,7 @@ import { canAffordAthlete, isAthleteInRoster } from '@/lib/budget-utils';
 import { getRunnerSvg } from '@/lib/ui-helpers';
 import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
+import { Button, IconButton } from '@/components/chakra';
 
 // Dynamic import AthleteModal with performance tracking
 const AthleteModal = dynamicImport(
@@ -199,9 +202,16 @@ export default function AthleteSelectionModal({
       <div className={`selection-modal ${!isClosing ? 'active' : ''}`} id="athlete-selection-modal" style={{ zIndex: 10001 }}>
         {/* Modal Header */}
         <div className="modal-header">
-          <button className="modal-back-btn" onClick={handleClose} aria-label="Back">
+          <IconButton
+            className="modal-back-btn"
+            onClick={handleClose}
+            aria-label="Back"
+            variant="ghost"
+            colorPalette="navy"
+            size="sm"
+          >
             <span className="back-arrow">←</span>
-          </button>
+          </IconButton>
           <h3 id="selection-modal-title">
             Select {gender === 'men' ? 'Male' : 'Female'} Athlete ({slotId})
           </h3>
@@ -209,24 +219,33 @@ export default function AthleteSelectionModal({
 
         {/* Sort Tabs */}
         <div className="modal-sort-tabs">
-          <button
+          <Button
             className={`sort-tab ${sortBy === 'salary' ? 'active' : ''}`}
             onClick={() => setSortBy('salary')}
+            variant={sortBy === 'salary' ? 'solid' : 'ghost'}
+            colorPalette="navy"
+            size="sm"
           >
             Salary
-          </button>
-          <button
+          </Button>
+          <Button
             className={`sort-tab ${sortBy === 'pb' ? 'active' : ''}`}
             onClick={() => setSortBy('pb')}
+            variant={sortBy === 'pb' ? 'solid' : 'ghost'}
+            colorPalette="navy"
+            size="sm"
           >
             PB
-          </button>
-          <button
+          </Button>
+          <Button
             className={`sort-tab ${sortBy === 'rank' ? 'active' : ''}`}
             onClick={() => setSortBy('rank')}
+            variant={sortBy === 'rank' ? 'solid' : 'ghost'}
+            colorPalette="navy"
+            size="sm"
           >
             Rank
-          </button>
+          </Button>
         </div>
 
         {/* Filter Options */}
@@ -309,16 +328,21 @@ export default function AthleteSelectionModal({
                   </div>
 
                   {/* Add Button */}
-                  <button 
+                  <IconButton
                     className="modal-add-btn" 
                     disabled={!canSelect}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSelectAthlete(athlete);
                     }}
+                    aria-label={isInCurrentSlot ? 'Selected' : 'Add athlete'}
+                    variant="solid"
+                    colorPalette={isInCurrentSlot ? 'success' : 'primary'}
+                    size="sm"
+                    borderRadius="full"
                   >
                     {isInCurrentSlot ? '✓' : '+'}
-                  </button>
+                  </IconButton>
                 </div>
               );
             })

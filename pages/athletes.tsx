@@ -5,6 +5,8 @@
  * Features filtering, sorting, and detailed athlete information.
  * 
  * Based on AthleteSelectionModal component but adapted for standalone page use.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -13,6 +15,7 @@ import { GetServerSideProps } from 'next';
 import { getRunnerSvg } from '@/lib/ui-helpers';
 import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
+import { Button } from '@/components/chakra';
 
 // Dynamic import AthleteModal
 const AthleteModal = dynamicImport(
@@ -167,40 +170,32 @@ export default function AthletesPage({ athletes }: AthletesPageProps) {
           marginBottom: '16px',
           borderBottom: '2px solid #e5e7eb'
         }}>
-          <button
+          <Button
             onClick={() => setGender('men')}
+            variant={gender === 'men' ? 'solid' : 'ghost'}
+            colorPalette="navy"
+            size="md"
             style={{
-              padding: '12px 24px',
-              fontSize: '16px',
-              fontWeight: '600',
-              border: 'none',
-              background: 'transparent',
-              color: gender === 'men' ? '#161C4F' : '#6b7280',
               borderBottom: gender === 'men' ? '3px solid #161C4F' : '3px solid transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
+              borderRadius: '0',
               marginBottom: '-2px'
             }}
           >
             Men ({athletes.men.length})
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setGender('women')}
+            variant={gender === 'women' ? 'solid' : 'ghost'}
+            colorPalette="navy"
+            size="md"
             style={{
-              padding: '12px 24px',
-              fontSize: '16px',
-              fontWeight: '600',
-              border: 'none',
-              background: 'transparent',
-              color: gender === 'women' ? '#161C4F' : '#6b7280',
               borderBottom: gender === 'women' ? '3px solid #161C4F' : '3px solid transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
+              borderRadius: '0',
               marginBottom: '-2px'
             }}
           >
             Women ({athletes.women.length})
-          </button>
+          </Button>
         </div>
 
         {/* Search and Filters */}
@@ -242,54 +237,30 @@ export default function AthletesPage({ athletes }: AthletesPageProps) {
             }}>
               Sort by:
             </span>
-            <button
+            <Button
               onClick={() => setSortBy('salary')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                border: sortBy === 'salary' ? '2px solid #161C4F' : '1px solid #d1d5db',
-                backgroundColor: sortBy === 'salary' ? '#161C4F' : 'white',
-                color: sortBy === 'salary' ? 'white' : '#374151',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              variant={sortBy === 'salary' ? 'solid' : 'outline'}
+              colorPalette="navy"
+              size="sm"
             >
               Salary
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setSortBy('pb')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                border: sortBy === 'pb' ? '2px solid #161C4F' : '1px solid #d1d5db',
-                backgroundColor: sortBy === 'pb' ? '#161C4F' : 'white',
-                color: sortBy === 'pb' ? 'white' : '#374151',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              variant={sortBy === 'pb' ? 'solid' : 'outline'}
+              colorPalette="navy"
+              size="sm"
             >
               Personal Best
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => setSortBy('rank')}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                fontWeight: '500',
-                border: sortBy === 'rank' ? '2px solid #161C4F' : '1px solid #d1d5db',
-                backgroundColor: sortBy === 'rank' ? '#161C4F' : 'white',
-                color: sortBy === 'rank' ? 'white' : '#374151',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
+              variant={sortBy === 'rank' ? 'solid' : 'outline'}
+              colorPalette="navy"
+              size="sm"
             >
               World Rank
-            </button>
+            </Button>
           </div>
 
           {/* Filter Checkbox */}

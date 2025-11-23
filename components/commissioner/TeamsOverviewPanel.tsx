@@ -3,12 +3,15 @@
  * 
  * Panel for viewing and managing all teams in the game.
  * Integrates with state events and API client.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
+import { Button } from '@/components/chakra';
 
 interface Athlete {
   id: number;
@@ -335,20 +338,16 @@ export default function TeamsOverviewPanel() {
                       <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
                         {team.sessionToken?.substring(0, 8) || 'N/A'}
                       </span>
-                      <button
+                      <Button
                         onClick={() => handleCopyPlayerLink(team.sessionToken)}
-                        className="btn btn-sm btn-secondary"
-                        style={{
-                          padding: '0.25rem 0.5rem',
-                          fontSize: '11px',
-                          minWidth: 'auto',
-                          whiteSpace: 'nowrap'
-                        }}
+                        variant="outline"
+                        colorPalette="navy"
+                        size="xs"
                         title="Copy player link"
                         disabled={!team.sessionToken}
                       >
                         {copySuccess === team.sessionToken ? '✓ Copied' : '📋 Copy Link'}
-                      </button>
+                      </Button>
                     </div>
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
@@ -373,56 +372,42 @@ export default function TeamsOverviewPanel() {
                   </td>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center', alignItems: 'center' }}>
-                      <button 
-                        className="btn btn-sm btn-secondary"
+                      <Button
+                        variant="outline"
+                        colorPalette="navy"
+                        size="xs"
                         onClick={() => handleViewTeam(team.sessionToken)}
-                        style={{ padding: '0.25rem 0.5rem', fontSize: '11px', whiteSpace: 'nowrap' }}
                         disabled={!team.sessionToken}
                       >
                         View
-                      </button>
+                      </Button>
                       {team.isActive ? (
-                        <button 
-                          className="btn btn-sm"
+                        <Button
+                          variant="solid"
+                          colorPalette="warning"
+                          size="xs"
                           onClick={() => handleSuspendTeam(team.sessionToken, team.teamName, team.isActive)}
-                          style={{ 
-                            fontSize: '11px',
-                            padding: '0.25rem 0.5rem',
-                            backgroundColor: '#ffc107',
-                            color: '#000',
-                            border: '1px solid #ffc107',
-                            whiteSpace: 'nowrap'
-                          }}
                         >
                           Suspend
-                        </button>
+                        </Button>
                       ) : (
-                        <button 
-                          className="btn btn-sm"
+                        <Button
+                          variant="solid"
+                          colorPalette="success"
+                          size="xs"
                           onClick={() => handleSuspendTeam(team.sessionToken, team.teamName, team.isActive)}
-                          style={{ 
-                            fontSize: '11px',
-                            padding: '0.25rem 0.5rem',
-                            backgroundColor: '#28a745',
-                            color: '#fff',
-                            border: '1px solid #28a745',
-                            whiteSpace: 'nowrap'
-                          }}
                         >
                           Reactivate
-                        </button>
+                        </Button>
                       )}
-                      <button 
-                        className="btn btn-sm btn-danger"
+                      <Button
+                        variant="solid"
+                        colorPalette="error"
+                        size="xs"
                         onClick={() => handleHardDeleteTeam(team.sessionToken, team.teamName)}
-                        style={{ 
-                          fontSize: '11px',
-                          padding: '0.25rem 0.5rem',
-                          whiteSpace: 'nowrap'
-                        }}
                       >
                         Delete
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

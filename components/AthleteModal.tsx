@@ -4,12 +4,15 @@
  * Reusable modal for displaying detailed athlete information.
  * Uses React Portal to render at document root level.
  * Phase 1: Placeholder component structure.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { athleteApi } from '@/lib/api-client';
 import { Athlete } from '@/lib/state-provider';
+import { Button, IconButton } from '@/components/chakra';
 
 interface AthleteModalProps {
   athlete: Athlete | null;
@@ -151,9 +154,16 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
           transition: 'transform 0.4s ease-in-out'
         }}
       >
-        <button className="modal-close" onClick={handleClose}>
+        <IconButton
+          className="modal-close"
+          onClick={handleClose}
+          aria-label="Close athlete modal"
+          variant="ghost"
+          colorPalette="navy"
+          size="sm"
+        >
           &times;
-        </button>
+        </IconButton>
 
         {loading ? (
           <div className="loading-state">
@@ -224,38 +234,53 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
             <div className="tabs-container">
               <div className="tabs-nav">
                 {showScoring && scoringData ? (
-                  <button
+                  <Button
                     className={`tab-button ${activeTab === 'scoring' ? 'active' : ''}`}
                     onClick={() => setActiveTab('scoring')}
+                    variant={activeTab === 'scoring' ? 'solid' : 'ghost'}
+                    colorPalette="navy"
+                    size="sm"
                   >
                     Scoring Breakdown
-                  </button>
+                  </Button>
                 ) : (
                   <>
-                    <button
+                    <Button
                       className={`tab-button ${activeTab === 'bio' ? 'active' : ''}`}
                       onClick={() => setActiveTab('bio')}
+                      variant={activeTab === 'bio' ? 'solid' : 'ghost'}
+                      colorPalette="navy"
+                      size="sm"
                     >
                       Overview
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className={`tab-button ${activeTab === 'raceLog' ? 'active' : ''}`}
                       onClick={() => setActiveTab('raceLog')}
+                      variant={activeTab === 'raceLog' ? 'solid' : 'ghost'}
+                      colorPalette="navy"
+                      size="sm"
                     >
                       Race Log
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className={`tab-button ${activeTab === 'progression' ? 'active' : ''}`}
                       onClick={() => setActiveTab('progression')}
+                      variant={activeTab === 'progression' ? 'solid' : 'ghost'}
+                      colorPalette="navy"
+                      size="sm"
                     >
                       Progression
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       className={`tab-button ${activeTab === 'news' ? 'active' : ''}`}
                       onClick={() => setActiveTab('news')}
+                      variant={activeTab === 'news' ? 'solid' : 'ghost'}
+                      colorPalette="navy"
+                      size="sm"
                     >
                       News
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>

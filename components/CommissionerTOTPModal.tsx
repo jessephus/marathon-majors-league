@@ -6,9 +6,12 @@
  * 
  * Migrated from: pages/index.js (getLegacyPagesHTML)
  * Handler migrated from: public/app-bridge.js (handleCommissionerTOTPLogin)
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import { useState, useEffect, FormEvent } from 'react';
+import { Button, IconButton } from '@/components/chakra';
 
 interface CommissionerTOTPModalProps {
   isOpen: boolean;
@@ -101,7 +104,16 @@ export default function CommissionerTOTPModal({ isOpen, onClose, gameId = 'defau
     <div className="modal" style={{ display: 'flex' }}>
       <div className="modal-overlay" onClick={handleClose}></div>
       <div className="modal-content">
-        <button className="modal-close" onClick={handleClose}>&times;</button>
+        <IconButton
+          className="modal-close"
+          onClick={handleClose}
+          aria-label="Close modal"
+          variant="ghost"
+          colorPalette="navy"
+          size="sm"
+        >
+          &times;
+        </IconButton>
         <h2>Commissioner Login</h2>
         <p>Enter your 6-digit TOTP code from your authenticator app:</p>
         <form onSubmit={handleSubmit}>
@@ -123,21 +135,25 @@ export default function CommissionerTOTPModal({ isOpen, onClose, gameId = 'defau
             />
           </div>
           <div className="form-actions">
-            <button
+            <Button
               type="button"
-              className="btn btn-secondary"
+              variant="outline"
+              colorPalette="navy"
               onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn btn-primary"
+              variant="solid"
+              colorPalette="primary"
               disabled={isSubmitting || totpCode.length !== 6}
+              isLoading={isSubmitting}
+              loadingText="Verifying..."
             >
               {isSubmitting ? 'Verifying...' : 'Login'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

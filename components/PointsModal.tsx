@@ -4,9 +4,12 @@
  * Displays detailed points breakdown for an athlete.
  * Lazy-loads scoring details only on open.
  * Replaces showPointsBreakdownModal() from app.js
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React from 'react';
+import { Button } from '@/components/chakra';
 
 interface PointsBreakdown {
   placement?: {
@@ -248,23 +251,16 @@ export default function PointsModal({
         </div>
 
         {/* Close Button */}
-        <button
+        <Button
           onClick={onClose}
-          style={{
-            marginTop: '15px',
-            width: '100%',
-            padding: '10px',
-            background: 'var(--dark-gray)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            fontSize: '1em',
-          }}
+          variant="solid"
+          colorPalette="navy"
+          size="lg"
+          style={{ marginTop: '15px', width: '100%' }}
           aria-label="Close points breakdown modal"
         >
           Close
-        </button>
+        </Button>
       </div>
     </div>
   );

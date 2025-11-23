@@ -3,12 +3,15 @@
  * 
  * Panel for managing athletes in the database.
  * Integrates with state events and API client.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
+import { Button } from '@/components/chakra';
 
 interface Athlete {
   id: number;
@@ -472,25 +475,15 @@ export default function AthleteManagementPanel() {
 
       {/* Top Controls */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <button 
-          className="btn btn-primary" 
+        <Button
+          variant="solid"
+          colorPalette="primary"
           onClick={() => setShowAddModal(true)}
           disabled={saving}
-          style={{
-            backgroundColor: '#2C39A2',
-            color: 'white',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '4px',
-            border: 'none',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-          }}
+          size="md"
         >
           ADD NEW ATHLETE
-        </button>
+        </Button>
       </div>
 
       {/* Filter Checkboxes and Controls */}
@@ -663,33 +656,25 @@ export default function AthleteManagementPanel() {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                      <button 
-                        className="btn btn-sm btn-primary"
+                      <Button
+                        variant="solid"
+                        colorPalette="primary"
                         onClick={() => handleSaveAthlete(athlete.id)}
                         disabled={!editedRows.has(athlete.id) || saving}
                         title={editedRows.has(athlete.id) ? 'Save changes' : 'No unsaved changes'}
-                        style={{
-                          fontSize: '0.7rem',
-                          padding: '0.2rem 0.4rem',
-                          margin: '0',
-                          opacity: editedRows.has(athlete.id) ? 1 : 0.5,
-                          cursor: (editedRows.has(athlete.id) && !saving) ? 'pointer' : 'not-allowed',
-                        }}
+                        size="xs"
                       >
                         {editedRows.has(athlete.id) ? '💾 Save' : '🔒 Save'}
-                      </button>
-                      <button 
-                        className="btn btn-sm btn-secondary"
+                      </Button>
+                      <Button
+                        variant="outline"
+                        colorPalette="navy"
                         onClick={() => handleSyncAthlete(athlete.id)}
                         disabled={saving}
-                        style={{
-                          fontSize: '0.7rem',
-                          padding: '0.2rem 0.4rem',
-                          margin: '0',
-                        }}
+                        size="xs"
                       >
                         Sync
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -804,12 +789,24 @@ function AthleteFormModal({ title, athlete, onSave, onCancel, saving }: AthleteF
             />
           </div>
           <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            <Button 
+              type="button" 
+              variant="outline"
+              colorPalette="navy"
+              onClick={onCancel}
+            >
               Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            </Button>
+            <Button 
+              type="submit" 
+              variant="solid"
+              colorPalette="primary"
+              disabled={saving}
+              isLoading={saving}
+              loadingText="Saving..."
+            >
               {saving ? 'Saving...' : 'Save'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

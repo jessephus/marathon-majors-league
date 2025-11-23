@@ -3,6 +3,8 @@
  * 
  * Team drafting and roster management with salary cap system.
  * SSR: Fetches athlete pool, team roster, game state with roster lock.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -18,6 +20,7 @@ import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import { isRosterLocked, formatLockTime, getTimeUntilLock, DEFAULT_BUDGET } from '@/lib/budget-utils';
+import { Button, IconButton } from '@/components/chakra';
 
 interface Athlete {
   id: number;
@@ -349,12 +352,13 @@ function TeamSessionPageContent({
             <div className="error-card">
               <h2>Session Error</h2>
               <p>Invalid or expired session</p>
-              <button 
-                className="btn btn-primary"
+              <Button
+                variant="solid"
+                colorPalette="primary"
                 onClick={() => router.push('/')}
               >
                 Return to Home
-              </button>
+              </Button>
             </div>
           </main>
         </div>
@@ -491,15 +495,21 @@ function TeamSessionPageContent({
                           ${(athlete.salary || 5000).toLocaleString()}
                         </div>
                         {isRosterEditable && (
-                          <button 
+                          <IconButton
                             className="slot-remove-btn-legacy"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRemoveAthlete(slot.slotId);
                             }}
+                            aria-label="Remove athlete"
+                            variant="ghost"
+                            colorPalette="error"
+                            size="sm"
+                            borderRadius="full"
+                            color="white"
                           >
                             ×
-                          </button>
+                          </IconButton>
                         )}
                       </>
                     ) : (
@@ -515,30 +525,39 @@ function TeamSessionPageContent({
           <div className="draft-submit-container">
             {/* Show Edit button when roster is submitted but not locked */}
             {hasSubmittedRoster && !isEditingRoster && !isRosterLocked_computed ? (
-              <button 
-                className="btn btn-secondary btn-large" 
+              <Button
+                variant="outline"
+                colorPalette="navy"
+                size="lg"
                 onClick={handleEnterEditMode}
                 disabled={loadingFullAthletes}
+                isLoading={loadingFullAthletes}
+                loadingText="Loading athletes..."
+                style={{ width: '100%' }}
               >
                 {loadingFullAthletes ? 'Loading athletes...' : 'Edit Roster'}
-              </button>
+              </Button>
             ) : (
-              <button 
-                className="btn btn-primary btn-large" 
+              <Button
+                variant="solid"
+                colorPalette="primary"
+                size="lg"
                 disabled={!allFilledSlots || isRosterLocked_computed}
                 onClick={handleSubmitRoster}
+                style={{ width: '100%' }}
               >
                 {isRosterLocked_computed ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
-              </button>
+              </Button>
             )}
             
-            <button 
-              className="btn btn-secondary"
-              style={{ marginTop: '12px' }}
+            <Button
+              variant="outline"
+              colorPalette="navy"
+              style={{ marginTop: '12px', width: '100%' }}
               onClick={() => router.push('/leaderboard')}
             >
               View Leaderboard
-            </button>
+            </Button>
           </div>
 
           <div className="session-info" style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#666' }}>

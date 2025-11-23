@@ -3,6 +3,8 @@
  * 
  * Administrative dashboard for game management with dynamic panel loading.
  * Implements modularization with state event integration.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useEffect, useState } from 'react';
@@ -15,6 +17,7 @@ import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
 import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
+import { Button } from '@/components/chakra';
 
 // Dynamic imports for commissioner panels with performance tracking and feature flags
 // Using webpack magic comments to force separate chunks
@@ -332,20 +335,24 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
                   )}
                   
                   <div className="form-actions">
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary"
+                    <Button
+                      type="button"
+                      variant="outline"
+                      colorPalette="navy"
                       onClick={() => router.push('/')}
                     >
                       Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary"
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="solid"
+                      colorPalette="primary"
                       disabled={loading}
+                      isLoading={loading}
+                      loadingText="Verifying..."
                     >
                       {loading ? 'Verifying...' : 'Login'}
-                    </button>
+                    </Button>
                   </div>
                 </form>
               </div>
@@ -377,12 +384,13 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
           {/* Panel Navigation */}
           {activePanel !== 'dashboard' && (
             <div style={{ marginBottom: '1rem' }}>
-              <button 
-                className="btn btn-secondary"
+              <Button
+                variant="outline"
+                colorPalette="navy"
                 onClick={() => setActivePanel('dashboard')}
               >
                 ← Back to Dashboard
-              </button>
+              </Button>
             </div>
           )}
 
@@ -443,55 +451,62 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
               <div className="dashboard-section">
                 <h3>Game Management</h3>
                 <div className="button-group">
-                  <button 
-                    className="btn btn-primary"
+                  <Button
+                    variant="solid"
+                    colorPalette="primary"
                     onClick={() => setActivePanel('results')}
                   >
                     📊 Manage Results
-                  </button>
-                  <button 
-                    className="btn btn-primary"
+                  </Button>
+                  <Button
+                    variant="solid"
+                    colorPalette="primary"
                     onClick={() => setActivePanel('teams')}
                   >
                     👥 View Teams
-                  </button>
-                  <button 
-                    className="btn btn-primary"
+                  </Button>
+                  <Button
+                    variant="solid"
+                    colorPalette="primary"
                     onClick={() => setActivePanel('athletes')}
                   >
                     🏃 Manage Athletes
-                  </button>
-                  <button 
-                    className="btn btn-primary"
+                  </Button>
+                  <Button
+                    variant="solid"
+                    colorPalette="primary"
                     onClick={() => setActivePanel('races')}
                   >
                     🏁 Manage Races
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               <div className="dashboard-section">
                 <h3>Administrative Actions</h3>
                 <div className="button-group">
-                  <button 
-                    className="btn btn-secondary"
+                  <Button
+                    variant="outline"
+                    colorPalette="navy"
                     onClick={handleShowPerformanceDashboard}
                     title="View dynamic import performance metrics"
                   >
                     📊 Performance Dashboard
-                  </button>
-                  <button 
-                    className="btn btn-warning"
+                  </Button>
+                  <Button
+                    variant="solid"
+                    colorPalette="warning"
                     onClick={handleResetGame}
                   >
                     🔄 Reset Game
-                  </button>
-                  <button 
-                    className="btn btn-secondary"
+                  </Button>
+                  <Button
+                    variant="outline"
+                    colorPalette="navy"
                     onClick={handleLoadDemoData}
                   >
                     📥 Load Demo Data
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

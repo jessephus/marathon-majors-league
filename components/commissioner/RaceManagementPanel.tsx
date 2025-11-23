@@ -7,11 +7,14 @@
  * - Edit existing races (name, date, location, description)
  * - Delete races
  * - Manage athlete confirmations for each race
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import RaceDetailModal from '@/components/RaceDetailModal';
+import { Button, IconButton } from '@/components/chakra';
 
 interface Race {
   id: number;
@@ -274,9 +277,14 @@ export default function RaceManagementPanel() {
     <div className="race-management-panel">
       <div className="panel-header">
         <h2>Race Management</h2>
-        <button onClick={handleCreateRace} className="btn btn-primary">
+        <Button 
+          onClick={handleCreateRace} 
+          variant="solid"
+          colorPalette="primary"
+          size="md"
+        >
           Add New Race
-        </button>
+        </Button>
       </div>
 
       {error && (
@@ -297,7 +305,16 @@ export default function RaceManagementPanel() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingRace ? 'Edit Race' : 'Create New Race'}</h3>
-              <button className="close-btn" onClick={() => setShowForm(false)}>×</button>
+              <IconButton 
+                className="close-btn" 
+                onClick={() => setShowForm(false)}
+                aria-label="Close modal"
+                variant="ghost"
+                colorPalette="navy"
+                size="sm"
+              >
+                ×
+              </IconButton>
             </div>
             <form onSubmit={handleSubmitForm}>
               <div className="form-group">
@@ -472,12 +489,21 @@ export default function RaceManagementPanel() {
               </div>
 
               <div className="form-actions">
-                <button type="button" onClick={() => setShowForm(false)} className="btn btn-secondary">
+                <Button 
+                  type="button" 
+                  onClick={() => setShowForm(false)} 
+                  variant="outline"
+                  colorPalette="navy"
+                >
                   Cancel
-                </button>
-                <button type="submit" className="btn btn-primary">
+                </Button>
+                <Button 
+                  type="submit" 
+                  variant="solid"
+                  colorPalette="primary"
+                >
                   {editingRace ? 'Update Race' : 'Create Race'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -490,7 +516,16 @@ export default function RaceManagementPanel() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Confirmed Athletes for {selectedRace.name}</h3>
-              <button className="close-btn" onClick={() => setShowAthleteModal(false)}>×</button>
+              <IconButton 
+                className="close-btn" 
+                onClick={() => setShowAthleteModal(false)}
+                aria-label="Close modal"
+                variant="ghost"
+                colorPalette="navy"
+                size="sm"
+              >
+                ×
+              </IconButton>
             </div>
             <div className="athletes-list">
               {confirmedAthletes.length === 0 ? (
@@ -507,9 +542,13 @@ export default function RaceManagementPanel() {
               )}
             </div>
             <div className="form-actions">
-              <button onClick={() => setShowAthleteModal(false)} className="btn btn-secondary">
+              <Button 
+                onClick={() => setShowAthleteModal(false)} 
+                variant="outline"
+                colorPalette="navy"
+              >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -542,17 +581,20 @@ export default function RaceManagementPanel() {
               {races.map((race) => (
                 <tr key={race.id}>
                   <td>
-                    <button 
+                    <Button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleViewRaceDetails(race.id);
                       }}
-                      className="race-name-link"
+                      variant="ghost"
+                      colorPalette="primary"
+                      size="sm"
                       title="View race details"
+                      style={{ padding: 0, minHeight: 'auto', fontWeight: '600' }}
                     >
                       {race.name}
-                    </button>
+                    </Button>
                     {race.description && (
                       <div className="race-description">{race.description.substring(0, 100)}...</div>
                     )}
@@ -565,17 +607,33 @@ export default function RaceManagementPanel() {
                     </span>
                   </td>
                   <td>
-                    <button onClick={() => handleViewAthletes(race)} className="btn btn-link">
+                    <Button 
+                      onClick={() => handleViewAthletes(race)} 
+                      variant="ghost"
+                      colorPalette="primary"
+                      size="sm"
+                    >
                       View Athletes
-                    </button>
+                    </Button>
                   </td>
                   <td className="actions-cell">
-                    <button onClick={() => handleEditRace(race)} className="btn btn-sm btn-secondary">
+                    <Button 
+                      onClick={() => handleEditRace(race)} 
+                      variant="outline"
+                      colorPalette="navy"
+                      size="xs"
+                      style={{ marginRight: '0.5rem' }}
+                    >
                       Edit
-                    </button>
-                    <button onClick={() => handleDeleteRace(race)} className="btn btn-sm btn-danger">
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeleteRace(race)} 
+                      variant="solid"
+                      colorPalette="error"
+                      size="xs"
+                    >
                       Delete
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}

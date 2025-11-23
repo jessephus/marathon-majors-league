@@ -6,6 +6,8 @@
  * Replace manual DOM manipulation with declarative components.
  * Cache invalidation integrated with state manager events.
  * Accessibility refinements for sticky header.
+ * 
+ * UI Migration: Migrated to Chakra UI buttons (Phase 4)
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -19,6 +21,7 @@ import ResultsTable from '@/components/ResultsTable';
 import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
+import { Button } from '@/components/chakra';
 
 // Dynamic import AthleteModal with performance tracking
 const AthleteModal = dynamicImport(
@@ -277,35 +280,43 @@ function LeaderboardPageContent({
 
           {/* Tab Navigation */}
           <div className="leaderboard-tabs">
-            <button
+            <Button
               className={`leaderboard-tab ${activeTab === 'fantasy' ? 'active' : ''}`}
               onClick={() => setActiveTab('fantasy')}
               aria-selected={activeTab === 'fantasy'}
               role="tab"
+              variant={activeTab === 'fantasy' ? 'solid' : 'outline'}
+              colorPalette={activeTab === 'fantasy' ? 'gold' : 'navy'}
+              size="md"
             >
               Fantasy Standings
-            </button>
-            <button
+            </Button>
+            <Button
               className={`leaderboard-tab ${activeTab === 'race' ? 'active' : ''}`}
               onClick={() => setActiveTab('race')}
               aria-selected={activeTab === 'race'}
               role="tab"
+              variant={activeTab === 'race' ? 'solid' : 'outline'}
+              colorPalette={activeTab === 'race' ? 'gold' : 'navy'}
+              size="md"
             >
               Race Results
-            </button>
+            </Button>
           </div>
 
           {/* Error State */}
           {error && (
             <div className="error-state" style={{ color: 'red', padding: '1rem', marginTop: '1rem' }}>
               {error}
-              <button 
-                onClick={fetchData} 
-                className="btn btn-secondary" 
+              <Button
+                onClick={fetchData}
+                variant="outline"
+                colorPalette="navy"
+                size="md"
                 style={{ marginLeft: '1rem' }}
               >
                 Try Again
-              </button>
+              </Button>
             </div>
           )}
 
