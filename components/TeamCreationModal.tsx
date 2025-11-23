@@ -172,7 +172,7 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
               isLoading={isSubmitting}
               loadingText="Creating..."
             >
-              {isSubmitting ? 'Creating...' : 'Create Team & Start Drafting'}
+              {isSubmitting ? 'Creating...' : 'Create Team'}
             </Button>
           </div>
         </form>

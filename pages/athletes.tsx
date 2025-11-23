@@ -58,15 +58,16 @@ export default function AthletesPage({ athletes }: AthletesPageProps) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Helper function to convert time string to seconds for sorting
-  const convertTimeToSeconds = (timeStr: string): number => {
+  const convertTimeToSeconds = (timeStr: string | null | undefined): number => {
+    if (!timeStr) return Infinity; // Sort null/undefined times to the end
     const parts = timeStr.split(':');
     if (parts.length === 3) {
       const hours = parseInt(parts[0]);
       const minutes = parseInt(parts[1]);
-      const seconds = parseFloat(parts[2]);
+      const seconds = parseInt(parts[2]);
       return hours * 3600 + minutes * 60 + seconds;
     }
-    return 999999;
+    return Infinity; // Invalid format goes to the end
   };
 
   // Get athletes for current gender
