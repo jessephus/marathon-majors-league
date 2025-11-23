@@ -75,16 +75,6 @@ function AthleteModalTestContent() {
       </Head>
 
       <div className="container">
-        <header>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '50px', height: '50px' }} />
-            <h1>AthleteModal Component Test</h1>
-          </div>
-          <p style={{ fontSize: '0.9rem', color: '#666', textAlign: 'center' }}>
-            Click any athlete card to test the modal functionality
-          </p>
-        </header>
-
         <main className="page active">
           {loading ? (
             <div className="loading-state">
