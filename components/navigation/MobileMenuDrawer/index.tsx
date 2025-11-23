@@ -206,6 +206,13 @@ export function MobileMenuDrawer({
       });
       
       if (response.ok) {
+        // Clear client-side sessions (localStorage)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('marathon_fantasy_team');
+          localStorage.removeItem('marathon_fantasy_commissioner');
+          // Dispatch event to notify other components
+          window.dispatchEvent(new Event('sessionsUpdated'));
+        }
         // Close drawer and redirect to home page
         onClose();
         router.push('/');
