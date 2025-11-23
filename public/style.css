@@ -63,8 +63,10 @@ footer {
 
 footer .footer-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 8px;
+    justify-content: center;
     align-items: center;
     margin-bottom: 16px;
 }
@@ -108,8 +110,6 @@ footer .btn {
 
 @media (min-width: 768px) {
     footer .footer-actions {
-        flex-direction: row;
-        justify-content: center;
         gap: 12px;
     }
 }

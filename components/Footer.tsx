@@ -227,6 +227,8 @@ export default function Footer({
           id="home-button"
           variant="outline"
           colorPalette="navy"
+          size="sm"
+          minW="100px"
           onClick={() => router.push('/')}
         >
           Home
@@ -242,6 +244,8 @@ export default function Footer({
           id="copy-url-button"
           variant="outline"
           colorPalette="navy"
+          size="sm"
+          minW="100px"
           onClick={handleCopyURL}
           title="Copy your unique team URL"
         >
@@ -278,6 +282,8 @@ export default function Footer({
           id="commissioner-mode"
           variant="outline"
           colorPalette="navy"
+          size="sm"
+          minW="140px"
           onClick={handleCommissionerModeClick}
         >
           Commissioner Mode
@@ -296,6 +302,8 @@ export default function Footer({
           id="logout-button"
           variant="outline"
           colorPalette="navy"
+          size="sm"
+          minW="100px"
           onClick={handleLogout}
         >
           Logout
