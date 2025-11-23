@@ -7,7 +7,7 @@
 
 import { Badge as ChakraBadge, BadgeProps } from '@chakra-ui/react';
 
-interface SemanticBadgeProps extends Omit<BadgeProps, 'colorPalette'> {
+export interface SemanticBadgeProps extends Omit<BadgeProps, 'colorPalette'> {
   colorPalette?: 'primary' | 'secondary' | 'navy' | 'gold' | 'success' | 'warning' | 'error' | 'info';
 }
 

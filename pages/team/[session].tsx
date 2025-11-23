@@ -12,6 +12,7 @@ import Head from 'next/head';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
+import { Box, VStack, Heading, Text } from '@chakra-ui/react';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient, createServerApiClient, salaryCapDraftApi } from '@/lib/api-client';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
@@ -20,7 +21,7 @@ import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import { isRosterLocked, formatLockTime, getTimeUntilLock, DEFAULT_BUDGET } from '@/lib/budget-utils';
-import { Button, IconButton } from '@/components/chakra';
+import { Button, IconButton, Card, CardBody } from '@/components/chakra';
 
 interface Athlete {
   id: number;
@@ -341,21 +342,28 @@ function TeamSessionPageContent({
         <Head>
           <title>Session Error - Marathon Majors Fantasy League</title>
         </Head>
-        <div className="container">
-          <main className="page active">
-            <div className="error-card">
-              <h2>Session Error</h2>
-              <p>Invalid or expired session</p>
-              <Button
-                variant="solid"
-                colorPalette="primary"
-                onClick={() => router.push('/')}
-              >
-                Return to Home
-              </Button>
-            </div>
-          </main>
-        </div>
+        <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center" p={4}>
+          <Card variant="elevated" size="lg" maxW="500px" w="full">
+            <CardBody>
+              <VStack align="stretch" gap={6} textAlign="center">
+                <Heading as="h2" size="xl" color="error.600">
+                  Session Error
+                </Heading>
+                <Text fontSize="lg" color="gray.600">
+                  Invalid or expired session
+                </Text>
+                <Button
+                  variant="solid"
+                  colorPalette="primary"
+                  size="lg"
+                  onClick={() => router.push('/')}
+                >
+                  Return to Home
+                </Button>
+              </VStack>
+            </CardBody>
+          </Card>
+        </Box>
       </>
     );
   }
@@ -508,9 +516,15 @@ function TeamSessionPageContent({
             })}
           </div>
 
-          {/* Submit Container */}
-          <div className="draft-submit-container">
-            {/* Show Edit button when roster is submitted but not locked */}
+          {/* Action Buttons Container - Responsive Layout */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '12px', 
+            width: '100%', 
+            marginTop: '1rem' 
+          }}>
+            {/* Submit/Edit Button */}
             {hasSubmittedRoster && !isEditingRoster && !isRosterLocked_computed ? (
               <Button
                 variant="outline"
@@ -536,15 +550,17 @@ function TeamSessionPageContent({
                 {isRosterLocked_computed ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
               </Button>
             )}
-            
-            <Button
-              variant="outline"
-              colorPalette="navy"
-              style={{ marginTop: '12px', width: '100%' }}
-              onClick={() => router.push('/leaderboard')}
-            >
-              View Leaderboard
-            </Button>
+
+            {/* Secondary Buttons - Side-by-side on desktop, stacked on mobile */}
+            <div className="team-action-buttons">
+              <Button
+                variant="outline"
+                colorPalette="navy"
+                onClick={() => router.push('/leaderboard')}
+              >
+                View Leaderboard
+              </Button>
+            </div>
           </div>
 
           <div className="session-info" style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#666' }}>

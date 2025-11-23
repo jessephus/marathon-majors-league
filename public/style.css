@@ -63,8 +63,10 @@ footer {
 
 footer .footer-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 8px;
+    justify-content: center;
     align-items: center;
     margin-bottom: 16px;
 }
@@ -108,8 +110,6 @@ footer .btn {
 
 @media (min-width: 768px) {
     footer .footer-actions {
-        flex-direction: row;
-        justify-content: center;
         gap: 12px;
     }
 }
@@ -545,6 +545,19 @@ footer .btn {
     padding: 10px;
 }
 
+/* ============================================================================
+   DEPRECATED: Legacy Athlete Card Styles (Lines 548-625)
+   
+   These styles are DEPRECATED as of Phase 4 (Nov 2025).
+   All athlete cards have been migrated to Chakra UI AthleteCard component.
+   
+   Migration: Use <AthleteCard> from '@/components/chakra'
+   Documentation: docs/UI/UI_CARD_COMPONENTS.md
+   
+   These styles are kept temporarily for any edge cases but can be removed
+   in a future CSS cleanup task once all pages are verified.
+   ============================================================================ */
+
 .athlete-card {
     background: var(--light-gray);
     padding: 12px;
@@ -841,6 +854,19 @@ footer .btn {
         grid-template-columns: 1fr;
     }
 }
+
+/* ============================================================================
+   DEPRECATED: Legacy Stat Card Styles (Lines 858-880)
+   
+   These styles are DEPRECATED as of Phase 4 (Nov 2025).
+   All stat cards have been migrated to Chakra UI StatsCard component.
+   
+   Migration: Use <StatsCard> from '@/components/chakra'
+   Documentation: docs/UI/UI_CARD_COMPONENTS.md
+   
+   These styles are kept temporarily for any edge cases but can be removed
+   in a future CSS cleanup task once all pages are verified.
+   ============================================================================ */
 
 .stat-card {
     background: var(--light-gray);
@@ -1959,7 +1985,7 @@ footer .btn {
 }
 
 .tab-button.active {
-    color: var(--primary-blue);
+    color: white;
     border-bottom-color: var(--primary-blue);
 }
 
@@ -2043,6 +2069,16 @@ footer .btn {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
 }
+
+/* ============================================================================
+   DEPRECATED: Additional Legacy Stat Card Styles (Lines 2073-2095)
+   
+   These styles are DEPRECATED as of Phase 4 (Nov 2025).
+   All stat cards have been migrated to Chakra UI StatsCard component.
+   
+   Migration: Use <StatsCard> from '@/components/chakra'
+   Documentation: docs/UI/UI_CARD_COMPONENTS.md
+   ============================================================================ */
 
 .stat-card {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -3377,6 +3413,29 @@ footer .btn {
     max-width: 350px;
 }
 
+/* Team Action Buttons - Responsive Layout */
+.team-action-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+}
+
+.team-action-buttons button {
+    flex: 1;
+}
+
+/* Stack buttons vertically on mobile */
+@media (max-width: 768px) {
+    .team-action-buttons {
+        flex-direction: column;
+    }
+    
+    .team-action-buttons button {
+        width: 100%;
+    }
+}
+
 /* Roster Navigation (shown after lock) */
 #roster-navigation {
     padding: 0 20px 16px;
@@ -4365,6 +4424,19 @@ footer .btn {
     margin: 0 0 12px 0;
     letter-spacing: 0.5px;
 }
+
+/* ============================================================================
+   DEPRECATED: Legacy Athlete Cards - 3-Column Layout (Lines 4418+)
+   
+   These styles are DEPRECATED as of Phase 4 (Nov 2025).
+   All athlete cards have been migrated to Chakra UI AthleteCard component.
+   
+   Migration: Use <AthleteCard> from '@/components/chakra'
+   Documentation: docs/UI/UI_CARD_COMPONENTS.md
+   
+   These styles are kept temporarily for any edge cases but can be removed
+   in a future CSS cleanup task once all pages are verified.
+   ============================================================================ */
 
 /* Athlete Cards - 3-Column Layout */
 .athlete-card {

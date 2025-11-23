@@ -5,14 +5,15 @@
  * Uses React Portal to render at document root level.
  * Phase 1: Placeholder component structure.
  * 
- * UI Migration: Migrated to Chakra UI buttons (Phase 4)
+ * UI Migration: Migrated to Chakra UI buttons and cards (Phase 4)
  */
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { SimpleGrid } from '@chakra-ui/react';
 import { athleteApi } from '@/lib/api-client';
 import { Athlete } from '@/lib/state-provider';
-import { Button, IconButton } from '@/components/chakra';
+import { Button, IconButton, StatsCard } from '@/components/chakra';
 
 interface AthleteModalProps {
   athlete: Athlete | null;
@@ -154,18 +155,19 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
           transition: 'transform 0.4s ease-in-out'
         }}
       >
-        <IconButton
-          className="modal-close"
-          onClick={handleClose}
-          aria-label="Close athlete modal"
-          variant="ghost"
-          colorPalette="navy"
-          size="sm"
-        >
-          &times;
-        </IconButton>
-
-        {loading ? (
+            <IconButton
+              className="modal-close"
+              onClick={handleClose}
+              aria-label="Close athlete modal"
+              variant="ghost"
+              colorPalette="navy"
+              size="sm"
+              borderRadius="full"
+              bg="transparent"
+              _hover={{ bg: 'gray.100', color: 'black' }}
+            >
+              &times;
+            </IconButton>        {loading ? (
           <div className="loading-state">
             <p>Loading athlete details...</p>
           </div>
@@ -293,28 +295,37 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                   {/* Key Statistics */}
                   <div className="content-section">
                     <h3 className="section-heading">Key Statistics</h3>
-                    <div className="stats-grid">
-                      <div className="stat-card">
-                        <div className="stat-card-label">Personal Best</div>
-                        <div className="stat-card-value">{athlete.pb || 'N/A'}</div>
-                      </div>
-                      <div className="stat-card">
-                        <div className="stat-card-label">Season Best</div>
-                        <div className="stat-card-value">{athlete.seasonBest || 'N/A'}</div>
-                      </div>
-                      <div className="stat-card">
-                        <div className="stat-card-label">Marathon Rank</div>
-                        <div className="stat-card-value">
-                          {athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A'}
-                        </div>
-                      </div>
-                      <div className="stat-card highlighted">
-                        <div className="stat-card-label">Overall Rank</div>
-                        <div className="stat-card-value">
-                          {athlete.overallRank ? `#${athlete.overallRank}` : 'N/A'}
-                        </div>
-                      </div>
-                    </div>
+                    <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
+                      <StatsCard
+                        label="Personal Best"
+                        value={athlete.pb || 'N/A'}
+                        type="custom"
+                        size="sm"
+                        colorPalette="navy"
+                      />
+                      <StatsCard
+                        label="Season Best"
+                        value={athlete.seasonBest || 'N/A'}
+                        type="custom"
+                        size="sm"
+                        colorPalette="info"
+                      />
+                      <StatsCard
+                        label="Marathon Rank"
+                        value={athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A'}
+                        type="custom"
+                        size="sm"
+                        colorPalette="success"
+                      />
+                      <StatsCard
+                        label="Overall Rank"
+                        value={athlete.overallRank ? `#${athlete.overallRank}` : 'N/A'}
+                        type="custom"
+                        size="sm"
+                        colorPalette="gold"
+                        variant="elevated"
+                      />
+                    </SimpleGrid>
                   </div>
 
                   {/* Profile Information */}
