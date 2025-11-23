@@ -273,7 +273,7 @@ export function StickyHeader({
           <Heading 
             size="lg"
             lineHeight={1}
-            fontWeight={800}
+            fontWeight="extrabold"
             display={{ base: 'block', sm: 'none' }}
             letterSpacing="tight"
           >
