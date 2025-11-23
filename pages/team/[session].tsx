@@ -536,11 +536,14 @@ function TeamSessionPageContent({
                 {isRosterLocked_computed ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
               </Button>
             )}
-            
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginTop: '1rem' }}>
             <Button
               variant="outline"
               colorPalette="navy"
-              style={{ marginTop: '12px', width: '100%' }}
+              style={{ width: '100%' }}
               onClick={() => router.push('/leaderboard')}
             >
               View Leaderboard

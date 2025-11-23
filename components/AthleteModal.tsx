@@ -155,19 +155,19 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
           transition: 'transform 0.4s ease-in-out'
         }}
       >
-        <IconButton
-          className="modal-close"
-          onClick={handleClose}
-          aria-label="Close athlete modal"
-          variant="ghost"
-          colorPalette="navy"
-          size="sm"
-          borderRadius="full"
-        >
-          &times;
-        </IconButton>
-
-        {loading ? (
+            <IconButton
+              className="modal-close"
+              onClick={handleClose}
+              aria-label="Close athlete modal"
+              variant="ghost"
+              colorPalette="navy"
+              size="sm"
+              borderRadius="full"
+              bg="transparent"
+              _hover={{ bg: 'gray.100' }}
+            >
+              &times;
+            </IconButton>        {loading ? (
           <div className="loading-state">
             <p>Loading athlete details...</p>
           </div>
