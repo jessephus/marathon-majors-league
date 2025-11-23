@@ -3413,6 +3413,29 @@ footer .btn {
     max-width: 350px;
 }
 
+/* Team Action Buttons - Responsive Layout */
+.team-action-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+}
+
+.team-action-buttons button {
+    flex: 1;
+}
+
+/* Stack buttons vertically on mobile */
+@media (max-width: 768px) {
+    .team-action-buttons {
+        flex-direction: column;
+    }
+    
+    .team-action-buttons button {
+        width: 100%;
+    }
+}
+
 /* Roster Navigation (shown after lock) */
 #roster-navigation {
     padding: 0 20px 16px;

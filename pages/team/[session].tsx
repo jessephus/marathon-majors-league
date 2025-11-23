@@ -516,9 +516,15 @@ function TeamSessionPageContent({
             })}
           </div>
 
-          {/* Submit Container */}
-          <div className="draft-submit-container">
-            {/* Show Edit button when roster is submitted but not locked */}
+          {/* Action Buttons Container - Responsive Layout */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '12px', 
+            width: '100%', 
+            marginTop: '1rem' 
+          }}>
+            {/* Submit/Edit Button */}
             {hasSubmittedRoster && !isEditingRoster && !isRosterLocked_computed ? (
               <Button
                 variant="outline"
@@ -544,18 +550,17 @@ function TeamSessionPageContent({
                 {isRosterLocked_computed ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
               </Button>
             )}
-          </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginTop: '1rem' }}>
-            <Button
-              variant="outline"
-              colorPalette="navy"
-              style={{ width: '100%' }}
-              onClick={() => router.push('/leaderboard')}
-            >
-              View Leaderboard
-            </Button>
+            {/* Secondary Buttons - Side-by-side on desktop, stacked on mobile */}
+            <div className="team-action-buttons">
+              <Button
+                variant="outline"
+                colorPalette="navy"
+                onClick={() => router.push('/leaderboard')}
+              >
+                View Leaderboard
+              </Button>
+            </div>
           </div>
 
           <div className="session-info" style={{ marginTop: '2rem', fontSize: '0.875rem', color: '#666' }}>

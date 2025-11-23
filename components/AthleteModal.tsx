@@ -164,7 +164,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
               size="sm"
               borderRadius="full"
               bg="transparent"
-              _hover={{ bg: 'gray.100' }}
+              _hover={{ bg: 'gray.100', color: 'black' }}
             >
               &times;
             </IconButton>        {loading ? (
