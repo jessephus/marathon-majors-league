@@ -91,7 +91,7 @@ export default async function handler(req, res) {
       }
       
       // Check if confirmedOnly parameter is set (defaults to true for game pages)
-      const confirmedOnly = req.query.confirmedOnly !== 'false';
+      const confirmedOnly = req.query.confirmedOnly === 'true';
       
       // Check if requesting a specific athlete by ID
       const athleteId = req.query.id ? parseInt(req.query.id, 10) : null;
