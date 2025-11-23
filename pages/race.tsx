@@ -171,16 +171,23 @@ export default function RacePage({ raceId }: RacePageProps) {
     );
   }
 
-  // Combine all athletes for compact display
+  // Combine all athletes for compact display with gender info
   const allAthletes = [
-    ...(race.athletes?.men || []),
-    ...(race.athletes?.women || [])
-  ].map(athlete => ({
-    id: athlete.id,
-    name: athlete.name,
-    headshotUrl: athlete.headshotUrl,
-    country: athlete.country,
-  }));
+    ...(race.athletes?.men || []).map(athlete => ({
+      id: athlete.id,
+      name: athlete.name,
+      headshotUrl: athlete.headshotUrl,
+      country: athlete.country,
+      gender: 'M' as const,
+    })),
+    ...(race.athletes?.women || []).map(athlete => ({
+      id: athlete.id,
+      name: athlete.name,
+      headshotUrl: athlete.headshotUrl,
+      country: athlete.country,
+      gender: 'F' as const,
+    }))
+  ];
 
   return (
     <>
@@ -209,7 +216,6 @@ export default function RacePage({ raceId }: RacePageProps) {
                 <CardBody>
                   <CompactAthleteList
                     athletes={allAthletes}
-                    maxDisplay={12}
                     title="Confirmed Athletes"
                     showViewAll={false}
                   />
