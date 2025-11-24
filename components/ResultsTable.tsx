@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { Select, SelectOption } from '@/components/chakra';
 
 interface AthleteResult {
   athlete_id: number;
@@ -39,6 +40,16 @@ interface ResultsTableProps {
 export default function ResultsTable({ results, onAthleteClick }: ResultsTableProps) {
   const [selectedGender, setSelectedGender] = useState<'men' | 'women'>('men');
   const [selectedSplit, setSelectedSplit] = useState<string>('finish');
+
+  const splitOptions: SelectOption[] = [
+    { value: 'finish', label: 'Finish Time' },
+    { value: '5k', label: '5K Split' },
+    { value: '10k', label: '10K Split' },
+    { value: 'half', label: 'Half Marathon' },
+    { value: '30k', label: '30K Split' },
+    { value: '35k', label: '35K Split' },
+    { value: '40k', label: '40K Split' }
+  ];
 
   // Helper functions
   const roundTimeToSecond = (timeStr: string | undefined): string => {
@@ -192,20 +203,15 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
         </div>
 
         {/* Split Selector */}
-        <select
+        <Select
           id="split-select"
+          options={splitOptions}
           value={selectedSplit}
           onChange={(e) => setSelectedSplit(e.target.value)}
-          style={{ padding: '0.5rem', borderRadius: '5px', border: '1px solid #ccc' }}
-        >
-          <option value="finish">Finish Time</option>
-          <option value="5k">5K Split</option>
-          <option value="10k">10K Split</option>
-          <option value="half">Half Marathon</option>
-          <option value="30k">30K Split</option>
-          <option value="35k">35K Split</option>
-          <option value="40k">40K Split</option>
-        </select>
+          variant="outline"
+          size="md"
+          style={{ maxWidth: '200px' }}
+        />
       </div>
 
       {/* Results Header */}

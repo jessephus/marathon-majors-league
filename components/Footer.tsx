@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouter } from 'next/router';
 import { useGameState, useSessionState, useCommissionerState } from '@/lib/state-provider';
-import { Button } from '@/components/chakra';
+import { Button, Select, SelectOption } from '@/components/chakra';
 
 // Extend Window interface for app.js globals
 declare global {
@@ -100,6 +100,12 @@ export default function Footer({
       }
     }
   };
+
+  const gameOptions: SelectOption[] = [
+    { value: 'default', label: 'Default Game' },
+    { value: 'NY2025', label: 'NY 2025' },
+    { value: 'demo-game', label: 'Demo Game' }
+  ];
 
   const handleCopyURL = () => {
     const currentURL = window.location.href;
@@ -322,18 +328,17 @@ export default function Footer({
         {/* Game switcher shows ONLY when commissioner session is active */}
         {/* Guard with isMounted to prevent hydration mismatch */}
         {isMounted && commissionerState.isCommissioner && (
-          <div className={`game-switcher visible`}>
-            <label htmlFor="game-select">Game: </label>
-            <select 
-              id="game-select" 
-              className="game-select"
+          <div className={`game-switcher visible`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label htmlFor="game-select" style={{ fontSize: '14px', color: '#374151' }}>Game: </label>
+            <Select
+              id="game-select"
+              options={gameOptions}
               value={gameState.gameId || 'default'}
               onChange={handleGameSwitcherChange}
-            >
-              <option value="default">Default Game</option>
-              <option value="NY2025">NY 2025</option>
-              <option value="demo-game">Demo Game</option>
-            </select>
+              variant="outline"
+              size="sm"
+              style={{ minWidth: '150px' }}
+            />
           </div>
         )}
       </div>

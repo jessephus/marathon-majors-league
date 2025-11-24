@@ -11,7 +11,13 @@
  */
 
 import { useState, useEffect, FormEvent } from 'react';
-import { Button, IconButton } from '@/components/chakra';
+import { 
+  Button, 
+  IconButton, 
+  Input, 
+  FormControl, 
+  FormLabel 
+} from '@/components/chakra';
 
 interface CommissionerTOTPModalProps {
   isOpen: boolean;
@@ -117,23 +123,23 @@ export default function CommissionerTOTPModal({ isOpen, onClose, gameId = 'defau
         <h2>Commissioner Login</h2>
         <p>Enter your 6-digit TOTP code from your authenticator app:</p>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="totp-code">TOTP Code</label>
-            <input
-              type="text"
+          <FormControl isRequired style={{ marginBottom: '24px' }}>
+            <FormLabel htmlFor="totp-code">TOTP Code</FormLabel>
+            <Input
               id="totp-code"
+              type="text"
               value={totpCode}
               onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="000000"
               inputMode="numeric"
-              pattern="[0-9]{6}"
               maxLength={6}
-              required
               autoComplete="off"
-              disabled={isSubmitting}
+              isDisabled={isSubmitting}
               autoFocus
+              variant="outline"
+              size="md"
             />
-          </div>
+          </FormControl>
           <div className="form-actions">
             <Button
               type="button"
