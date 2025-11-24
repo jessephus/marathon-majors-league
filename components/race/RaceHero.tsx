@@ -151,11 +151,11 @@ export function RaceHero({
               <Image
                 src={logoUrl}
                 alt={`${raceName} logo`}
-                boxSize={{ base: '80px', md: '100px', lg: '120px' }}
+                boxSize={{ base: '50px', md: '70px', lg: '90px' }}
                 objectFit="contain"
                 flexShrink={0}
                 bg="white"
-                borderRadius="lg"
+                borderRadius="xl"
                 p={2}
                 shadow="lg"
               />

@@ -135,16 +135,37 @@ export default function RaceManagementPanel() {
 
   const handleEditRace = (race: Race) => {
     setEditingRace(race);
+    
+    // Format date for input type="date" (expects YYYY-MM-DD)
+    let formattedDate = race.date;
+    if (race.date) {
+      // If date is a timestamp or Date object, extract YYYY-MM-DD
+      const dateObj = new Date(race.date);
+      if (!isNaN(dateObj.getTime())) {
+        formattedDate = dateObj.toISOString().split('T')[0];
+      }
+    }
+    
+    // Format lockTime for input type="datetime-local" (expects YYYY-MM-DDTHH:MM)
+    let formattedLockTime = '';
+    if (race.lockTime) {
+      const lockTimeObj = new Date(race.lockTime);
+      if (!isNaN(lockTimeObj.getTime())) {
+        // datetime-local expects format: YYYY-MM-DDTHH:MM
+        formattedLockTime = lockTimeObj.toISOString().slice(0, 16);
+      }
+    }
+    
     setFormData({
       name: race.name,
-      date: race.date,
+      date: formattedDate,
       location: race.location,
       distance: race.distance,
       eventType: race.eventType,
       worldAthleticsEventId: race.worldAthleticsEventId || '',
       description: race.description || '',
       isActive: race.isActive,
-      lockTime: race.lockTime || '',
+      lockTime: formattedLockTime,
       logoUrl: race.logoUrl || '',
       backgroundImageUrl: race.backgroundImageUrl || '',
       primaryColor: race.primaryColor || '',
@@ -177,9 +198,11 @@ export default function RaceManagementPanel() {
         accentColor: formData.accentColor || null
       };
 
+      console.log('Submitting race update:', { id: editingRace?.id, payload });
+
       if (editingRace) {
         // Update existing race
-        await apiClient.races.update(editingRace.id, {
+        const result = await apiClient.races.update(editingRace.id, {
           name: payload.name,
           date: payload.date,
           location: payload.location,
@@ -195,10 +218,23 @@ export default function RaceManagementPanel() {
           secondary_color: payload.secondaryColor,
           accent_color: payload.accentColor
         });
+        console.log('Race update result:', result);
+        
+        // CRITICAL: Clear sessionStorage cache to force fresh data fetch
+        // The API client caches GET responses in sessionStorage
+        if (typeof window !== 'undefined') {
+          try {
+            window.sessionStorage.removeItem('__api_cache_v1__');
+            console.log('Cache cleared - next fetch will be fresh from database');
+          } catch (e) {
+            console.warn('Failed to clear cache:', e);
+          }
+        }
+        
         setSuccessMessage(`Race "${formData.name}" updated successfully`);
       } else {
         // Create new race
-        await apiClient.races.create({
+        const result = await apiClient.races.create({
           name: payload.name,
           date: payload.date,
           location: payload.location,
@@ -213,12 +249,15 @@ export default function RaceManagementPanel() {
           secondary_color: payload.secondaryColor,
           accent_color: payload.accentColor
         });
+        console.log('Race create result:', result);
         setSuccessMessage(`Race "${formData.name}" created successfully`);
       }
 
       setShowForm(false);
-      loadRaces();
+      // Await loadRaces to ensure we have the latest data before closing form
+      await loadRaces();
     } catch (err: any) {
+      console.error('Error saving race:', err);
       setError(err.message || 'Failed to save race');
     }
   };
