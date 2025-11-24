@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
-import { Button } from '@/components/chakra';
+import { Button, Input, Select, Checkbox, FormControl, FormLabel } from '@/components/chakra';
 
 interface Athlete {
   id: number;
@@ -488,65 +488,57 @@ export default function AthleteManagementPanel() {
 
       {/* Filter Checkboxes and Controls */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={showOnlyConfirmed}
-            onChange={(e) => setShowOnlyConfirmed(e.target.checked)}
-            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-          />
-          <span style={{ fontSize: '14px' }}>Show only confirmed for NYC Marathon</span>
-        </label>
+        <Checkbox
+          checked={showOnlyConfirmed}
+          onChange={(e) => setShowOnlyConfirmed(e.target.checked)}
+          colorPalette="navy"
+          size="md"
+        >
+          Show only confirmed for NYC Marathon
+        </Checkbox>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={showOnlyMissingWAID}
-            onChange={(e) => setShowOnlyMissingWAID(e.target.checked)}
-            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-          />
-          <span style={{ fontSize: '14px' }}>Show only missing World Athletics ID</span>
-        </label>
+        <Checkbox
+          checked={showOnlyMissingWAID}
+          onChange={(e) => setShowOnlyMissingWAID(e.target.checked)}
+          colorPalette="navy"
+          size="md"
+        >
+          Show only missing World Athletics ID
+        </Checkbox>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label style={{ fontSize: '14px', fontWeight: '500' }}>Gender:</label>
-          <select 
+          <Select
             value={filter}
             onChange={(e) => setFilter(e.target.value as 'all' | 'men' | 'women')}
-            style={{
-              padding: '0.5rem',
-              borderRadius: '4px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="all">All</option>
-            <option value="men">Men</option>
-            <option value="women">Women</option>
-          </select>
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'men', label: 'Men' },
+              { value: 'women', label: 'Women' }
+            ]}
+            variant="outline"
+            size="sm"
+            style={{ minWidth: '120px' }}
+          />
         </div>
       </div>
 
       {/* Sort By Control */}
       <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <label style={{ fontSize: '14px', fontWeight: '500' }}>Sort by:</label>
-        <select 
+        <Select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'id' | 'name' | 'pb' | 'rank')}
-          style={{
-            padding: '0.5rem',
-            borderRadius: '4px',
-            border: '1px solid #ddd',
-            fontSize: '14px',
-            cursor: 'pointer',
-          }}
-        >
-          <option value="id">ID</option>
-          <option value="name">Name</option>
-          <option value="pb">Personal Best</option>
-          <option value="rank">Marathon Rank</option>
-        </select>
+          options={[
+            { value: 'id', label: 'ID' },
+            { value: 'name', label: 'Name' },
+            { value: 'pb', label: 'Personal Best' },
+            { value: 'rank', label: 'Marathon Rank' }
+          ]}
+          variant="outline"
+          size="sm"
+          style={{ minWidth: '160px' }}
+        />
       </div>
 
       <div className="athletes-count" style={{ marginBottom: '1rem', fontSize: '14px', color: '#666' }}>
@@ -738,56 +730,73 @@ function AthleteFormModal({ title, athlete, onSave, onCancel, saving }: AthleteF
       <div className="modal-content">
         <h3>{title}</h3>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Name *</label>
-            <input
+          <FormControl isRequired style={{ marginBottom: '20px' }}>
+            <FormLabel htmlFor="name">Name</FormLabel>
+            <Input
+              id="name"
               type="text"
               value={formData.name || ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
+              variant="outline"
+              size="md"
             />
-          </div>
-          <div className="form-group">
-            <label>Country *</label>
-            <input
+          </FormControl>
+
+          <FormControl isRequired style={{ marginBottom: '20px' }}>
+            <FormLabel htmlFor="country">Country</FormLabel>
+            <Input
+              id="country"
               type="text"
               maxLength={3}
               placeholder="USA"
               value={formData.country || ''}
               onChange={(e) => setFormData({ ...formData, country: e.target.value.toUpperCase() })}
-              required
+              variant="outline"
+              size="md"
             />
-          </div>
-          <div className="form-group">
-            <label>Gender *</label>
-            <select
+          </FormControl>
+
+          <FormControl isRequired style={{ marginBottom: '20px' }}>
+            <FormLabel htmlFor="gender">Gender</FormLabel>
+            <Select
+              id="gender"
               value={formData.gender || ''}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-              required
-            >
-              <option value="">Select gender</option>
-              <option value="men">Men</option>
-              <option value="women">Women</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Personal Best *</label>
-            <input
+              options={[
+                { value: '', label: 'Select gender' },
+                { value: 'men', label: 'Men' },
+                { value: 'women', label: 'Women' }
+              ]}
+              variant="outline"
+              size="md"
+            />
+          </FormControl>
+
+          <FormControl isRequired style={{ marginBottom: '20px' }}>
+            <FormLabel htmlFor="pb">Personal Best</FormLabel>
+            <Input
+              id="pb"
               type="text"
               placeholder="HH:MM:SS"
               value={formData.pb || ''}
               onChange={(e) => setFormData({ ...formData, pb: e.target.value })}
-              required
+              variant="outline"
+              size="md"
             />
-          </div>
-          <div className="form-group">
-            <label>World Athletics ID</label>
-            <input
+          </FormControl>
+
+          <FormControl style={{ marginBottom: '20px' }}>
+            <FormLabel htmlFor="worldAthleticsId">World Athletics ID</FormLabel>
+            <Input
+              id="worldAthleticsId"
               type="text"
               value={formData.worldAthleticsId || ''}
               onChange={(e) => setFormData({ ...formData, worldAthleticsId: e.target.value })}
+              variant="outline"
+              size="md"
             />
-          </div>
+          </FormControl>
+
           <div className="form-actions">
             <Button 
               type="button" 
