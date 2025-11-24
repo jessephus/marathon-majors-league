@@ -378,6 +378,55 @@ export const cacheUtils = {
     res.setHeader('CDN-Cache-Control', `max-age=${config.sMaxAge}`);
     res.setHeader('Vary', 'Accept-Encoding');
   },
+
+  /**
+   * Clear all cached responses
+   * Usage: Call after operations that modify data (POST, PUT, DELETE)
+   */
+  clearCache(): void {
+    if (!isBrowser()) {
+      return;
+    }
+
+    responseCache.clear();
+    
+    try {
+      window.sessionStorage.removeItem(CACHE_STORAGE_KEY);
+    } catch (error) {
+      console.warn('[API Cache] Failed to clear sessionStorage:', error);
+    }
+  },
+
+  /**
+   * Clear cache entries matching a pattern
+   * @param pattern - String to match in cache keys (e.g., '/api/salary-cap-draft')
+   */
+  clearCacheByPattern(pattern: string): void {
+    if (!isBrowser()) {
+      return;
+    }
+
+    const keysToDelete: string[] = [];
+    
+    responseCache.forEach((_, key) => {
+      if (key.includes(pattern)) {
+        keysToDelete.push(key);
+      }
+    });
+
+    keysToDelete.forEach(key => responseCache.delete(key));
+
+    // Update sessionStorage
+    try {
+      const serializable: Record<string, CachedResponse<any>> = {};
+      responseCache.forEach((value, key) => {
+        serializable[key] = value;
+      });
+      window.sessionStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify(serializable));
+    } catch (error) {
+      console.warn('[API Cache] Failed to update sessionStorage after pattern clear:', error);
+    }
+  },
 };
 
 // Athlete API

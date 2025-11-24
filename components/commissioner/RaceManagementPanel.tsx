@@ -14,7 +14,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import RaceDetailModal from '@/components/RaceDetailModal';
-import { Button, IconButton } from '@/components/chakra';
+import { Button, IconButton, Input, Textarea, Checkbox, FormControl, FormLabel, FormHelperText } from '@/components/chakra';
 
 interface Race {
   id: number;
@@ -317,176 +317,198 @@ export default function RaceManagementPanel() {
               </IconButton>
             </div>
             <form onSubmit={handleSubmitForm}>
-              <div className="form-group">
-                <label htmlFor="name">Race Name *</label>
-                <input
+              <FormControl isRequired style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="name">Race Name</FormLabel>
+                <Input
                   id="name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
                   placeholder="e.g., NYC Marathon"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="date">Date *</label>
-                <input
+              <FormControl isRequired style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="date">Date</FormLabel>
+                <Input
                   id="date"
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="location">Location *</label>
-                <input
+              <FormControl isRequired style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="location">Location</FormLabel>
+                <Input
                   id="location"
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  required
                   placeholder="e.g., New York City, USA"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="distance">Distance</label>
-                <input
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="distance">Distance</FormLabel>
+                <Input
                   id="distance"
                   type="text"
                   value={formData.distance}
                   onChange={(e) => setFormData({ ...formData, distance: e.target.value })}
                   placeholder="Marathon (42.195 km)"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="eventType">Event Type</label>
-                <input
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="eventType">Event Type</FormLabel>
+                <Input
                   id="eventType"
                   type="text"
                   value={formData.eventType}
                   onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
                   placeholder="Marathon Majors"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="worldAthleticsEventId">World Athletics Event ID</label>
-                <input
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="worldAthleticsEventId">World Athletics Event ID</FormLabel>
+                <Input
                   id="worldAthleticsEventId"
                   type="text"
                   value={formData.worldAthleticsEventId}
                   onChange={(e) => setFormData({ ...formData, worldAthleticsEventId: e.target.value })}
                   placeholder="Optional"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="description">Description / News</label>
-                <textarea
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="description">Description / News</FormLabel>
+                <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
                   placeholder="Add race details, news, or updates..."
+                  variant="outline"
+                  size="md"
+                  rows={4}
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="lockTime">Roster Lock Time</label>
-                <input
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="lockTime">Roster Lock Time</FormLabel>
+                <Input
                   id="lockTime"
                   type="datetime-local"
                   value={formData.lockTime}
                   onChange={(e) => setFormData({ ...formData, lockTime: e.target.value })}
-                  placeholder="When rosters lock (e.g., race start time)"
+                  variant="outline"
+                  size="md"
                 />
-                <small style={{ color: '#666', fontSize: '12px' }}>
+                <FormHelperText>
                   Optional: When should rosters lock for this race?
-                </small>
-              </div>
+                </FormHelperText>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="logoUrl">Logo URL</label>
-                <input
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="logoUrl">Logo URL</FormLabel>
+                <Input
                   id="logoUrl"
                   type="url"
                   value={formData.logoUrl}
                   onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
                   placeholder="https://example.com/race-logo.png"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label htmlFor="backgroundImageUrl">Background Image URL</label>
-                <input
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="backgroundImageUrl">Background Image URL</FormLabel>
+                <Input
                   id="backgroundImageUrl"
                   type="url"
                   value={formData.backgroundImageUrl}
                   onChange={(e) => setFormData({ ...formData, backgroundImageUrl: e.target.value })}
                   placeholder="https://example.com/race-background.jpg"
+                  variant="outline"
+                  size="md"
                 />
-              </div>
+              </FormControl>
 
-              <div className="form-group">
-                <label>Theme Colors</label>
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel>Theme Colors</FormLabel>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <div style={{ flex: 1 }}>
-                    <label htmlFor="primaryColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                    <FormLabel htmlFor="primaryColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
                       Primary
-                    </label>
-                    <input
+                    </FormLabel>
+                    <Input
                       id="primaryColor"
                       type="color"
                       value={formData.primaryColor || '#007bff'}
                       onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
-                      style={{ width: '100%', height: '40px' }}
+                      variant="outline"
+                      size="md"
+                      style={{ height: '40px' }}
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label htmlFor="secondaryColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                    <FormLabel htmlFor="secondaryColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
                       Secondary
-                    </label>
-                    <input
+                    </FormLabel>
+                    <Input
                       id="secondaryColor"
                       type="color"
                       value={formData.secondaryColor || '#6c757d'}
                       onChange={(e) => setFormData({ ...formData, secondaryColor: e.target.value })}
-                      style={{ width: '100%', height: '40px' }}
+                      variant="outline"
+                      size="md"
+                      style={{ height: '40px' }}
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label htmlFor="accentColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
+                    <FormLabel htmlFor="accentColor" style={{ fontSize: '12px', marginBottom: '4px' }}>
                       Accent
-                    </label>
-                    <input
+                    </FormLabel>
+                    <Input
                       id="accentColor"
                       type="color"
                       value={formData.accentColor || '#ffc107'}
                       onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
-                      style={{ width: '100%', height: '40px' }}
+                      variant="outline"
+                      size="md"
+                      style={{ height: '40px' }}
                     />
                   </div>
                 </div>
-                <small style={{ color: '#666', fontSize: '12px', display: 'block', marginTop: '4px' }}>
+                <FormHelperText>
                   Colors for race detail page styling
-                </small>
-              </div>
+                </FormHelperText>
+              </FormControl>
 
-              <div className="form-group checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  />
+              <FormControl style={{ marginBottom: '20px' }}>
+                <Checkbox
+                  checked={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                  colorPalette="navy"
+                  size="md"
+                >
                   Active Race
-                </label>
-              </div>
+                </Checkbox>
+              </FormControl>
 
               <div className="form-actions">
                 <Button 

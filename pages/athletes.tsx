@@ -15,7 +15,7 @@ import { GetServerSideProps } from 'next';
 import { getRunnerSvg } from '@/lib/ui-helpers';
 import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
-import { Button } from '@/components/chakra';
+import { Button, Input, Checkbox } from '@/components/chakra';
 
 // Dynamic import AthleteModal
 const AthleteModal = dynamicImport(
@@ -58,15 +58,16 @@ export default function AthletesPage({ athletes }: AthletesPageProps) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Helper function to convert time string to seconds for sorting
-  const convertTimeToSeconds = (timeStr: string): number => {
+  const convertTimeToSeconds = (timeStr: string | null | undefined): number => {
+    if (!timeStr) return Infinity; // Sort null/undefined times to the end
     const parts = timeStr.split(':');
     if (parts.length === 3) {
       const hours = parseInt(parts[0]);
       const minutes = parseInt(parts[1]);
-      const seconds = parseFloat(parts[2]);
+      const seconds = parseInt(parts[2]);
       return hours * 3600 + minutes * 60 + seconds;
     }
-    return 999999;
+    return Infinity; // Invalid format goes to the end
   };
 
   // Get athletes for current gender
@@ -210,21 +211,13 @@ export default function AthletesPage({ athletes }: AthletesPageProps) {
           border: '1px solid #e5e7eb'
         }}>
           {/* Search Bar */}
-          <input
+          <Input
             type="text"
             placeholder="Search by name or country..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              padding: '10px 16px',
-              fontSize: '16px',
-              border: '1px solid #d1d5db',
-              borderRadius: '6px',
-              outline: 'none',
-              transition: 'border-color 0.2s',
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#161C4F'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            variant="outline"
+            size="md"
           />
 
           {/* Sort Tabs */}
@@ -264,26 +257,14 @@ export default function AthletesPage({ athletes }: AthletesPageProps) {
           </div>
 
           {/* Filter Checkbox */}
-          <label style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            color: '#374151'
-          }}>
-            <input
-              type="checkbox"
-              checked={showConfirmedOnly}
-              onChange={(e) => setShowConfirmedOnly(e.target.checked)}
-              style={{ 
-                width: '16px', 
-                height: '16px',
-                cursor: 'pointer'
-              }}
-            />
-            <span>Show only confirmed for NYC Marathon</span>
-          </label>
+          <Checkbox
+            checked={showConfirmedOnly}
+            onChange={(e) => setShowConfirmedOnly(e.target.checked)}
+            colorPalette="navy"
+            size="md"
+          >
+            Show only confirmed for NYC Marathon
+          </Checkbox>
         </div>
 
         {/* Results Count */}
