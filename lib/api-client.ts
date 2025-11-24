@@ -115,6 +115,28 @@ function persistCache(): void {
   }
 }
 
+/**
+ * Clear all cached responses (both in-memory and sessionStorage)
+ * Call this after mutations (create/update/delete) to ensure fresh data is fetched
+ */
+export function clearCache(): void {
+  if (!isBrowser()) {
+    return;
+  }
+
+  try {
+    // Clear in-memory cache
+    responseCache.clear();
+    
+    // Clear sessionStorage persistence
+    window.sessionStorage.removeItem(CACHE_STORAGE_KEY);
+    
+    console.log('[API Cache] Cache cleared - next requests will fetch fresh data');
+  } catch (error) {
+    console.warn('[API Cache] Failed to clear cache:', error);
+  }
+}
+
 function getCacheType(url: string): CacheType {
   if (url.includes('/api/athletes')) return 'athletes';
   if (url.includes('/api/results')) return 'results';

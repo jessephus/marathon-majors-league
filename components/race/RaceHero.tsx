@@ -79,14 +79,14 @@ export function RaceHero({
       minHeight={{ base: '250px', md: '300px', lg: '400px' }}
       overflow="hidden"
     >
-      {/* Background Image - Fixed position for parallax effect */}
+      {/* Background Image - Fixed position with responsive height */}
       {backgroundImageUrl && (
         <Box
           position="fixed"
           top={0}
           left={0}
-          width="100%"
-          height="100vh"
+          width="100vw"
+          height={{ base: '250px', md: '300px', lg: '400px' }}
           backgroundImage={`url(${backgroundImageUrl})`}
           backgroundSize="cover"
           backgroundPosition="center"
@@ -104,14 +104,14 @@ export function RaceHero({
         />
       )}
 
-      {/* Fallback gradient if no background image - Fixed position */}
+      {/* Fallback gradient if no background image - Absolute position */}
       {!backgroundImageUrl && (
         <Box
-          position="fixed"
+          position="absolute"
           top={0}
           left={0}
           width="100%"
-          height="100vh"
+          height="100%"
           bgGradient="linear(to-br, navy.900, navy.700)"
           zIndex={0}
         />
@@ -134,7 +134,7 @@ export function RaceHero({
         height="100%"
         display="flex"
         alignItems="center"
-        py={{ base: 8, md: 12, lg: 16 }}
+        py={{ base: 4, md: 6, lg: 8 }}
       >
         <VStack
           align="flex-start"

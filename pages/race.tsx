@@ -230,8 +230,8 @@ export default function RacePage({ raceId }: RacePageProps) {
           minHeight="100vh"
         >
           {/* Main Content */}
-          <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
-            <VStack gap={{ base: 8, md: 12 }} align="stretch">
+          <Container maxW="container.xl" py={{ base: 4, md: 6 }}>
+            <VStack gap={{ base: 6, md: 8 }} align="stretch">
               
               {/* Confirmed Athletes Section */}
               {allAthletes.length > 0 && (

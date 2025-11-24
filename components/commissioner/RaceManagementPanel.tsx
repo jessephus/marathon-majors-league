@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, clearCache } from '@/lib/api-client';
 import RaceDetailModal from '@/components/RaceDetailModal';
 import { Button, IconButton } from '@/components/chakra';
 
@@ -243,16 +243,9 @@ export default function RaceManagementPanel() {
 
       setShowForm(false);
       
-      // CRITICAL: Clear sessionStorage cache RIGHT BEFORE loadRaces()
+      // CRITICAL: Clear both in-memory and sessionStorage cache RIGHT BEFORE loadRaces()
       // This ensures the next fetch will get fresh data from the database
-      if (typeof window !== 'undefined') {
-        try {
-          window.sessionStorage.removeItem('__api_cache_v1__');
-          console.log('Cache cleared - next fetch will be fresh from database');
-        } catch (e) {
-          console.warn('Failed to clear cache:', e);
-        }
-      }
+      clearCache();
       
       // Now fetch fresh data (cache is cleared, so this will hit the API)
       await loadRaces();
@@ -272,15 +265,8 @@ export default function RaceManagementPanel() {
       await apiClient.races.delete(race.id);
       setSuccessMessage(`Race "${race.name}" deleted successfully`);
       
-      // Clear cache before reloading to ensure fresh data
-      if (typeof window !== 'undefined') {
-        try {
-          window.sessionStorage.removeItem('__api_cache_v1__');
-          console.log('Cache cleared after delete - next fetch will be fresh');
-        } catch (e) {
-          console.warn('Failed to clear cache:', e);
-        }
-      }
+      // Clear both in-memory and sessionStorage cache before reloading to ensure fresh data
+      clearCache();
       
       await loadRaces();
     } catch (err: any) {
