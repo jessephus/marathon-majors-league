@@ -4,12 +4,12 @@ Welcome to the Marathon Majors Fantasy League documentation! This guide helps yo
 
 ## 📁 Documentation Organization
 
-Our documentation is organized into **6 main categories** with **33 documentation files** (plus this README = 34 total).
+Our documentation is organized into **6 main categories** with **34 documentation files** (plus this README = 35 total).
 
 **Naming Convention:** All files are prefixed with their category for easy identification:
 - `CORE_*.md` - Essential guides (7 docs - includes new DESIGN_SYSTEM.md)
 - `TECH_*.md` - Technical reference (7 docs)
-- `FEATURE_*.md` - Game features (7 docs)
+- `FEATURE_*.md` - Game features (8 docs)
 - `PROCESS_*.md` - Project history (4 docs)
 - `SETUP_*.md` - Configuration guides (1 doc)
 - `UI_*.md` - UI/UX redesign process (7 docs)
@@ -69,7 +69,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[TECH_STATE_MANAGEMENT.md](TECH_STATE_MANAGEMENT.md)** | Centralized state manager (GameStateManager) | Working with application state |
 | **[TECH_SSR_STRATEGY.md](TECH_SSR_STRATEGY.md)** | Server-side rendering strategy & caching (includes Routing Phase 1) | Understanding SSR patterns |
 
-### 3️⃣ Features (Game Mechanics & Functionality - 7 docs)
+### 3️⃣ Features (Game Mechanics & Functionality - 8 docs)
 
 | Document | Purpose | When to Read |
 |----------|---------|--------------|
@@ -77,6 +77,7 @@ Learn how to join games, rank athletes, and follow live results.
 | **[FEATURE_SALARY_CAP_DRAFT.md](FEATURE_SALARY_CAP_DRAFT.md)** | Daily fantasy-style team building (includes auto-save & roster lock features) | Working on draft features |
 | **[FEATURE_POINTS_SCORING_SYSTEM.md](FEATURE_POINTS_SCORING_SYSTEM.md)** | Complete scoring documentation | Understanding/modifying scoring |
 | **[FEATURE_SYNC_TOP_100.md](FEATURE_SYNC_TOP_100.md)** | World Athletics athlete sync system | Maintaining athlete database |
+| **[FEATURE_BULK_ATHLETE_CONFIRMATION.md](FEATURE_BULK_ATHLETE_CONFIRMATION.md)** | Bulk athlete confirmation tool for commissioners | Bulk confirming athletes from CSV/JSON |
 | **[FEATURE_ACCOUNT_FREE_TEAMS.md](FEATURE_ACCOUNT_FREE_TEAMS.md)** | Anonymous team creation feature | Understanding session system |
 | **[FEATURE_COMMISSIONER_PANELS.md](FEATURE_COMMISSIONER_PANELS.md)** | Commissioner dashboard modularization | Working on admin features |
 | **[FEATURE_DYNAMIC_IMPORTS.md](FEATURE_DYNAMIC_IMPORTS.md)** | Dynamic component loading | Understanding code splitting |

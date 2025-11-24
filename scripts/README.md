@@ -4,6 +4,21 @@ This directory contains scripts for collecting and managing athlete data from Wo
 
 ## 📚 Quick Reference
 
+### Bulk Confirm Athletes (Commissioners)
+```bash
+# Dry run to preview changes (recommended first!)
+node scripts/bulk-confirm-athletes.js --file athletes.csv --race-id 1 --dry-run
+
+# Confirm athletes from CSV file
+node scripts/bulk-confirm-athletes.js --file athletes.csv --race-id 1
+
+# Confirm athletes from JSON file
+node scripts/bulk-confirm-athletes.js --file athletes.json --race-id 1
+
+# Skip World Athletics enrichment (faster)
+node scripts/bulk-confirm-athletes.js --file athletes.csv --race-id 1 --no-enrich
+```
+
 ### Testing the Backfill Script
 ```bash
 # Dry run on 5 athletes (recommended first step!)
@@ -37,6 +52,150 @@ node scripts/enrich-athletes.js
 ---
 
 ## 📜 Scripts Overview
+
+### 0. `bulk-confirm-athletes.js` 🏃 Commissioner Bulk Confirmation Tool
+
+**Purpose**: Allows commissioners to bulk confirm athletes for a race from CSV or JSON files.
+
+**Features**:
+- Parse CSV or JSON files with athlete names
+- Intelligent name matching with fuzzy logic (handles typos and variations)
+- Automatically create new athletes if not found
+- Enrich new athletes with World Athletics data (profile, rankings, PB)
+- Bulk confirm all athletes for a selected race
+- Comprehensive reporting (matched, created, ambiguous, failed)
+- Dry-run mode to preview changes before committing
+- Idempotent - can be safely re-run
+
+**Usage**:
+```bash
+# Dry run first (recommended!)
+node scripts/bulk-confirm-athletes.js \
+  --file scripts/examples/athletes-sample.csv \
+  --race-id 1 \
+  --dry-run
+
+# Confirm athletes from CSV
+node scripts/bulk-confirm-athletes.js \
+  --file athletes.csv \
+  --race-id 1
+
+# Confirm athletes from JSON
+node scripts/bulk-confirm-athletes.js \
+  --file athletes.json \
+  --race-id 1
+
+# Skip World Athletics enrichment (faster, minimal data)
+node scripts/bulk-confirm-athletes.js \
+  --file athletes.csv \
+  --race-id 1 \
+  --no-enrich
+```
+
+**File Formats**:
+
+CSV format (with header):
+```csv
+name,gender,country
+Eliud Kipchoge,men,KEN
+Sifan Hassan,women,NED
+Hellen Obiri,women,KEN
+```
+
+JSON format:
+```json
+[
+  { "name": "Eliud Kipchoge", "gender": "men", "country": "KEN" },
+  { "name": "Sifan Hassan", "gender": "women", "country": "NED" },
+  { "name": "Hellen Obiri", "gender": "women", "country": "KEN" }
+]
+```
+
+**Output Example**:
+```
+╔══════════════════════════════════════════════════════════════╗
+║   Bulk Athlete Confirmation Tool                            ║
+╚══════════════════════════════════════════════════════════════╝
+
+📍 Target Race: New York City Marathon 2025 (2025-11-03)
+📂 Input File: athletes.csv
+
+📖 Loading athletes from file...
+   Found 10 athletes in file
+
+🔍 Matching athletes to database...
+
+  Checking: Eliud Kipchoge (men)
+    ✅ Matched to: Eliud Kipchoge (100.0% similar)
+  Checking: New Runner Name (women)
+    ❌ Not found
+
+================================================================
+📊 MATCHING SUMMARY
+================================================================
+   ✅ Matched:    8
+   ❌ Not Found:  2
+   ⚠️  Ambiguous:  0
+
+================================================================
+🆕 CREATING NEW ATHLETES
+================================================================
+
+  Creating: New Runner Name (women, ETH)
+    🔍 Searching World Athletics...
+    ✅ Found on WA: New Runner Name (95.2% match)
+       ID: 12345678, Country: ETH
+    📊 Fetching profile data...
+    ✅ Enriched with PB: 2:18:34, Rank: 25
+    ✅ Created athlete ID 123
+
+================================================================
+✅ CONFIRMATION SUMMARY
+================================================================
+   ✅ Newly Confirmed: 10
+   ℹ️  Already Confirmed: 0
+   ❌ Errors: 0
+
+================================================================
+🎉 FINAL SUMMARY
+================================================================
+   Total Athletes Processed: 10
+   Successfully Matched: 8
+   Newly Created: 2
+   Ambiguous Matches: 0
+   Failed to Process: 0
+
+✅ Bulk confirmation complete!
+```
+
+**How It Works**:
+
+1. **File Parsing**: Reads CSV or JSON input with athlete names, gender, and optional country
+2. **Name Matching**: Uses Levenshtein distance algorithm to match names with 70%+ similarity
+3. **Disambiguation**: Reports ambiguous matches when multiple similar names exist
+4. **World Athletics Search**: For new athletes, searches WA GraphQL API by name
+5. **Profile Enrichment**: Fetches detailed athlete data (PB, rankings, age, country)
+6. **Database Creation**: Creates new athlete records with enriched data
+7. **Race Confirmation**: Bulk inserts into athlete_races junction table
+8. **Idempotent**: Uses ON CONFLICT DO NOTHING for safe re-runs
+
+**Error Handling**:
+- Validates race exists before starting
+- Reports athletes that couldn't be matched
+- Highlights ambiguous matches for manual review
+- Continues processing even if some athletes fail
+- Provides detailed error messages for debugging
+
+**Best Practices**:
+- Always run with `--dry-run` first to preview changes
+- Use the provided examples in `scripts/examples/` to test
+- Include gender and country in input files for better matching
+- Review ambiguous matches manually before re-running
+- Keep a backup of your input file for reference
+
+**Example Input Files**: See `scripts/examples/athletes-sample.csv` and `scripts/examples/athletes-sample.json`
+
+---
 
 ### 1. `sync_athletes_from_rankings.py` ⭐ Main Sync Script
 

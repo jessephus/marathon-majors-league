@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Bulk Athlete Confirmation Tool** (November 24, 2025)
+  - Commissioner script for bulk confirming athletes from CSV/JSON files
+  - Intelligent name matching with fuzzy logic (Levenshtein distance algorithm)
+  - Automatic creation of new athletes not found in database
+  - World Athletics data enrichment for new athletes (profile, rankings, PB)
+  - Support for both CSV and JSON input formats
+  - Dry-run mode for previewing changes before committing
+  - Comprehensive reporting (matched, created, ambiguous, failed athletes)
+  - Example input files in `scripts/examples/`
+  - Full documentation in `scripts/README.md`
+  - Location: `scripts/bulk-confirm-athletes.js`
+
 - **Race Management System** (November 20, 2025)
   - Complete CRUD operations for race events via `/api/races` endpoint
   - Race Management Panel in commissioner dashboard for managing races
