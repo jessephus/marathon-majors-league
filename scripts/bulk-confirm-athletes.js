@@ -60,6 +60,18 @@ const WA_GRAPHQL_HEADERS = {
 const NAME_SIMILARITY_THRESHOLD = 0.7; // 70% similarity required for match
 const DEFAULT_PERSONAL_BEST = '2:30:00'; // Default PB for athletes without data
 const WA_API_DELAY_MS = 1000; // Delay between WA API requests (rate limiting)
+const WA_HEADSHOT_URL_TEMPLATE = 'https://media.aws.iaaf.org/athletes/{id}.jpg'; // World Athletics media asset URL
+
+/**
+ * Helper function to get next command-line argument with validation
+ */
+function getNextArg(args, i, argName) {
+  if (i + 1 >= args.length) {
+    console.error(`Error: ${argName} requires a value`);
+    process.exit(1);
+  }
+  return args[i + 1];
+}
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -77,19 +89,18 @@ for (let i = 0; i < args.length; i++) {
   switch (arg) {
     case '--file':
     case '-f':
-      if (i + 1 >= args.length) {
-        console.error('Error: --file requires a value');
-        process.exit(1);
-      }
-      options.file = args[++i];
+      options.file = getNextArg(args, i, '--file');
+      i++;
       break;
     case '--race-id':
     case '-r':
-      if (i + 1 >= args.length) {
-        console.error('Error: --race-id requires a value');
+      const raceIdStr = getNextArg(args, i, '--race-id');
+      options.raceId = parseInt(raceIdStr, 10);
+      if (isNaN(options.raceId)) {
+        console.error(`Error: --race-id must be a valid integer, got: ${raceIdStr}`);
         process.exit(1);
       }
-      options.raceId = parseInt(args[++i], 10);
+      i++;
       break;
     case '--dry-run':
       options.dryRun = true;
@@ -354,6 +365,13 @@ async function searchWorldAthletics(name, gender) {
  * Enrich athlete with World Athletics profile data
  */
 async function enrichAthleteProfile(athleteId, gender) {
+  // Validate athleteId is a valid number
+  const athleteIdNum = parseInt(athleteId, 10);
+  if (isNaN(athleteIdNum)) {
+    console.error(`    ⚠️  Invalid athlete ID: ${athleteId}`);
+    return null;
+  }
+
   const query = `
     query GetCompetitor($id: Int!) {
       getSingleCompetitor(id: $id) {
@@ -394,7 +412,7 @@ async function enrichAthleteProfile(athleteId, gender) {
       headers: WA_GRAPHQL_HEADERS,
       body: JSON.stringify({
         query,
-        variables: { id: parseInt(athleteId, 10) }
+        variables: { id: athleteIdNum }
       })
     });
 
@@ -541,7 +559,7 @@ async function createAthlete(sql, input, enrichData) {
     personalBest: enrichData?.personalBest || DEFAULT_PERSONAL_BEST,
     // Note: World Athletics still uses iaaf.org for media assets (legacy domain)
     headshotUrl: enrichData?.worldAthleticsId 
-      ? `https://media.aws.iaaf.org/athletes/${enrichData.worldAthleticsId}.jpg`
+      ? WA_HEADSHOT_URL_TEMPLATE.replace('{id}', enrichData.worldAthleticsId)
       : null,
     worldAthleticsId: enrichData?.worldAthleticsId || null,
     marathonRank: enrichData?.marathonRank || null,
