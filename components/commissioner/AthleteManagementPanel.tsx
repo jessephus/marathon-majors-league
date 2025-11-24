@@ -638,9 +638,6 @@ export default function AthleteManagementPanel() {
           />
         </div>
       </div>
-          style={{ minWidth: '160px' }}
-        />
-      </div>
 
       <div className="athletes-count" style={{ marginBottom: '1rem', fontSize: '14px', color: '#666' }}>
         {filteredAthletes.length} athlete(s) found
