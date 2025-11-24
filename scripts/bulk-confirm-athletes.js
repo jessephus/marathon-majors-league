@@ -56,6 +56,11 @@ const WA_GRAPHQL_HEADERS = {
   'x-amz-user-agent': 'aws-amplify/3.0.2'
 };
 
+// Constants
+const NAME_SIMILARITY_THRESHOLD = 0.7; // 70% similarity required for match
+const DEFAULT_PERSONAL_BEST = '2:30:00'; // Default PB for athletes without data
+const WA_API_DELAY_MS = 1000; // Delay between WA API requests (rate limiting)
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 const options = {
@@ -72,10 +77,18 @@ for (let i = 0; i < args.length; i++) {
   switch (arg) {
     case '--file':
     case '-f':
+      if (i + 1 >= args.length) {
+        console.error('Error: --file requires a value');
+        process.exit(1);
+      }
       options.file = args[++i];
       break;
     case '--race-id':
     case '-r':
+      if (i + 1 >= args.length) {
+        console.error('Error: --race-id requires a value');
+        process.exit(1);
+      }
       options.raceId = parseInt(args[++i], 10);
       break;
     case '--dry-run':
@@ -319,8 +332,8 @@ async function searchWorldAthletics(name, gender) {
       }
     }
 
-    // Only return if similarity is high enough (> 0.7)
-    if (bestScore > 0.7) {
+    // Only return if similarity is high enough
+    if (bestScore > NAME_SIMILARITY_THRESHOLD) {
       return {
         worldAthleticsId: bestMatch.aaAthleteId,
         name: `${bestMatch.givenName} ${bestMatch.familyName}`,
@@ -470,7 +483,7 @@ async function matchAthletes(sql, inputAthletes) {
     const matches = [];
     for (const candidate of candidates) {
       const score = nameSimilarity(input.name, candidate.name);
-      if (score > 0.7) { // 70% similarity threshold
+      if (score > NAME_SIMILARITY_THRESHOLD) {
         matches.push({ athlete: candidate, score });
       }
     }
@@ -525,7 +538,8 @@ async function createAthlete(sql, input, enrichData) {
     name: input.name,
     gender: input.gender,
     country: input.country || enrichData?.country || 'UNK',
-    personalBest: enrichData?.personalBest || '2:30:00',
+    personalBest: enrichData?.personalBest || DEFAULT_PERSONAL_BEST,
+    // Note: World Athletics still uses iaaf.org for media assets (legacy domain)
     headshotUrl: enrichData?.worldAthleticsId 
       ? `https://media.aws.iaaf.org/athletes/${enrichData.worldAthleticsId}.jpg`
       : null,
@@ -669,7 +683,7 @@ async function main() {
             }
 
             // Small delay to be polite to WA API
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, WA_API_DELAY_MS));
           } else {
             console.log(`    ⚠️  Not found on World Athletics`);
           }
