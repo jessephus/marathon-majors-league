@@ -53,6 +53,7 @@ export default function AthleteManagementPanel() {
   const [editingWaId, setEditingWaId] = useState<number | null>(null);
   const [editingWaIdValue, setEditingWaIdValue] = useState('');
   const [sortBy, setSortBy] = useState<'id' | 'name' | 'pb' | 'rank'>('id');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ open: boolean; athlete: any | null }>({ open: false, athlete: null });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // Track if we're already loading to prevent duplicate requests
@@ -213,6 +214,32 @@ export default function AthleteManagementPanel() {
       alert('Athlete updated successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update athlete');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteAthlete(athlete: any) {
+    try {
+      setSaving(true);
+      setError(null);
+
+      await apiClient.athletes.delete(athlete.id);
+      
+      // Close confirmation dialog
+      setDeleteConfirmation({ open: false, athlete: null });
+      
+      // Emit athleteUpdated event - listener will reload athletes
+      console.log('[AthletePanel] Emitting athleteUpdated event (deleted)');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { action: 'deleted', athleteId: athlete.id } 
+        }));
+      }
+      
+      alert(`Successfully deleted athlete: ${athlete.name}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete athlete');
     } finally {
       setSaving(false);
     }
@@ -530,8 +557,33 @@ export default function AthleteManagementPanel() {
         </Button>
       </div>
 
-      {/* Filter Checkboxes and Controls */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+      {/* Search Input - Full Width */}
+      <div style={{ marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Input
+            type="text"
+            placeholder="Search by athlete name or country code..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            variant="outline"
+            size="md"
+            style={{ flex: 1 }}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              colorPalette="primary"
+              onClick={() => setSearchQuery('')}
+              size="md"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Checkboxes */}
+      <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
         <Checkbox
           checked={showOnlyConfirmed}
           onChange={(e) => setShowOnlyConfirmed(e.target.checked)}
@@ -549,7 +601,10 @@ export default function AthleteManagementPanel() {
         >
           Show only missing World Athletics ID
         </Checkbox>
+      </div>
 
+      {/* Gender and Sort Dropdowns - Side by Side */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label style={{ fontSize: '14px', fontWeight: '500' }}>Gender:</label>
           <Select
@@ -565,22 +620,24 @@ export default function AthleteManagementPanel() {
             style={{ minWidth: '120px' }}
           />
         </div>
-      </div>
 
-      {/* Sort By Control */}
-      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <label style={{ fontSize: '14px', fontWeight: '500' }}>Sort by:</label>
-        <Select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as 'id' | 'name' | 'pb' | 'rank')}
-          options={[
-            { value: 'id', label: 'ID' },
-            { value: 'name', label: 'Name' },
-            { value: 'pb', label: 'Personal Best' },
-            { value: 'rank', label: 'Marathon Rank' }
-          ]}
-          variant="outline"
-          size="sm"
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontSize: '14px', fontWeight: '500' }}>Sort by:</label>
+          <Select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'id' | 'name' | 'pb' | 'rank')}
+            options={[
+              { value: 'id', label: 'ID' },
+              { value: 'name', label: 'Name' },
+              { value: 'pb', label: 'Personal Best' },
+              { value: 'rank', label: 'Marathon Rank' }
+            ]}
+            variant="outline"
+            size="sm"
+            style={{ minWidth: '150px' }}
+          />
+        </div>
+      </div>
           style={{ minWidth: '160px' }}
         />
       </div>
@@ -780,6 +837,16 @@ export default function AthleteManagementPanel() {
                       >
                         Sync
                       </Button>
+                      <Button
+                        variant="solid"
+                        colorPalette="error"
+                        onClick={() => setDeleteConfirmation({ open: true, athlete })}
+                        disabled={saving}
+                        title="Delete athlete (use for handling duplicates)"
+                        size="xs"
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -809,6 +876,47 @@ export default function AthleteManagementPanel() {
           onCancel={() => setEditingAthlete(null)}
           saving={saving}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.open && deleteConfirmation.athlete && (
+        <div className="modal" style={{ display: 'flex' }}>
+          <div className="modal-overlay" onClick={() => setDeleteConfirmation({ open: false, athlete: null })}></div>
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <h3 style={{ marginBottom: '1rem', color: '#dc3545' }}>Delete Athlete</h3>
+            <p style={{ marginBottom: '1rem' }}>
+              Are you sure you want to delete <strong>{deleteConfirmation.athlete.name}</strong> ({deleteConfirmation.athlete.country})?
+            </p>
+            <p style={{ marginBottom: '1rem', color: '#dc3545', fontWeight: '600' }}>
+              ⚠️ This action cannot be undone!
+            </p>
+            <p style={{ marginBottom: '1.5rem', fontSize: '14px', color: '#666' }}>
+              All related data (race confirmations, race results, team assignments) will also be deleted.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <Button
+                variant="ghost"
+                colorPalette="navy"
+                onClick={() => setDeleteConfirmation({ open: false, athlete: null })}
+                disabled={saving}
+                size="md"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="solid"
+                colorPalette="error"
+                onClick={() => handleDeleteAthlete(deleteConfirmation.athlete)}
+                disabled={saving}
+                isLoading={saving}
+                loadingText="Deleting..."
+                size="md"
+              >
+                Delete Athlete
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

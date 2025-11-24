@@ -538,6 +538,16 @@ export const athleteApi = {
       method: 'POST',
     });
   },
+
+  /**
+   * Delete an athlete (commissioner only)
+   */
+  async delete(athleteId: number) {
+    return apiRequest('/api/delete-athlete', {
+      method: 'DELETE',
+      body: JSON.stringify({ athleteId }),
+    });
+  },
 };
 
 // Game State API
