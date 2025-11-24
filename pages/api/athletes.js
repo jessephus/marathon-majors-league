@@ -1,6 +1,4 @@
-import { getAllAthletes, seedAthletes, getAthleteProfile } from './db';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { getAllAthletes, getAthleteProfile } from './db';
 import { neon } from '@neondatabase/serverless';
 import { generateETag, checkETag, send304 } from './lib/cache-utils.js';
 
@@ -154,32 +152,7 @@ export default async function handler(req, res) {
       }
       
       // Otherwise, get all athletes from database
-      let athletes = await getAllAthletes(confirmedOnly);
-      
-      // If database is empty, auto-seed it
-      if ((!athletes.men || athletes.men.length === 0) && (!athletes.women || athletes.women.length === 0)) {
-        console.log('Athletes table is empty, auto-seeding from athletes.json');
-        
-        try {
-          // Load athletes.json from the project root
-          const athletesPath = join(process.cwd(), 'athletes.json');
-          const athletesData = JSON.parse(readFileSync(athletesPath, 'utf-8'));
-          
-          // Seed athletes into database
-          await seedAthletes(athletesData);
-          
-          // Get athletes again after seeding
-          athletes = await getAllAthletes(confirmedOnly);
-          console.log('Auto-seeding successful');
-        } catch (seedError) {
-          console.error('Auto-seeding failed:', seedError);
-          // Return error so frontend can fall back to static JSON
-          return res.status(500).json({ 
-            error: 'Database empty and auto-seeding failed',
-            details: seedError.message 
-          });
-        }
-      }
+      const athletes = await getAllAthletes(confirmedOnly);
       
       // Set cache headers for athlete data (stale-while-revalidate strategy)
       // Athletes change infrequently, so long cache with stale-while-revalidate

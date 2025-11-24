@@ -119,7 +119,7 @@ describe('API Endpoints - Post Migration Tests', () => {
   
   describe('GET /api/athletes', () => {
     it('should return athletes grouped by gender', async () => {
-      const { response, data, status } = await apiRequest('/api/athletes');
+      const { response, data, status } = await apiRequest('/api/athletes?confirmedOnly=false');
       
       assert.strictEqual(status, 200, 'Should return 200 OK');
       assert.ok(data.men, 'Should have men athletes');
@@ -146,8 +146,12 @@ describe('API Endpoints - Post Migration Tests', () => {
       assert.strictEqual(status, 200, 'Should return 200 OK');
       assert.ok(data.men, 'Should have men athletes');
       assert.ok(data.women, 'Should have women athletes');
+      // Note: Arrays may be empty if no active races/confirmations exist
+      assert.ok(Array.isArray(data.men), 'Men should be an array');
+      assert.ok(Array.isArray(data.women), 'Women should be an array');
       
       console.log('✅ Confirmed filter working');
+      console.log(`   Confirmed athletes - Men: ${data.men.length}, Women: ${data.women.length}`);
     });
   });
   
