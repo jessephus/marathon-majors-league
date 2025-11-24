@@ -405,11 +405,12 @@ describe('Legacy Feature Regression Tests', () => {
   
   describe('Legacy Frontend Integration', () => {
     it('should serve static assets for backward compatibility', async () => {
-      // Note: app.js and salary-cap-draft.js removed in PR #130 (React/Next.js migration)
+      // Note: app.js, salary-cap-draft.js, and athletes.json removed in migrations
+      // app.js and salary-cap-draft.js removed in PR #130 (React/Next.js migration)
+      // athletes.json removed after database migration (data now served via /api/athletes)
       // Testing remaining legacy static assets
       const legacyAssets = [
-        '/style.css',
-        '/athletes.json'
+        '/style.css'
       ];
       
       for (const file of legacyAssets) {

@@ -94,17 +94,6 @@ describe('Frontend Integration Tests', () => {
       
       console.log('✅ style.css served correctly');
     });
-    
-    it('should serve athletes.json', async () => {
-      const response = await fetch(`${BASE_URL}/athletes.json`);
-      const data = await response.json();
-      
-      assert.strictEqual(response.status, 200, 'Should return 200 OK');
-      assert.ok(data.men, 'Should have men athletes');
-      assert.ok(data.women, 'Should have women athletes');
-      
-      console.log('✅ athletes.json served correctly');
-    });
   });
   
   describe('HTML Structure', () => {
