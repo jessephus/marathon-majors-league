@@ -219,18 +219,6 @@ export default function RaceManagementPanel() {
           accent_color: payload.accentColor
         });
         console.log('Race update result:', result);
-        
-        // CRITICAL: Clear sessionStorage cache to force fresh data fetch
-        // The API client caches GET responses in sessionStorage
-        if (typeof window !== 'undefined') {
-          try {
-            window.sessionStorage.removeItem('__api_cache_v1__');
-            console.log('Cache cleared - next fetch will be fresh from database');
-          } catch (e) {
-            console.warn('Failed to clear cache:', e);
-          }
-        }
-        
         setSuccessMessage(`Race "${formData.name}" updated successfully`);
       } else {
         // Create new race
@@ -254,7 +242,19 @@ export default function RaceManagementPanel() {
       }
 
       setShowForm(false);
-      // Await loadRaces to ensure we have the latest data before closing form
+      
+      // CRITICAL: Clear sessionStorage cache RIGHT BEFORE loadRaces()
+      // This ensures the next fetch will get fresh data from the database
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.removeItem('__api_cache_v1__');
+          console.log('Cache cleared - next fetch will be fresh from database');
+        } catch (e) {
+          console.warn('Failed to clear cache:', e);
+        }
+      }
+      
+      // Now fetch fresh data (cache is cleared, so this will hit the API)
       await loadRaces();
     } catch (err: any) {
       console.error('Error saving race:', err);
@@ -271,7 +271,18 @@ export default function RaceManagementPanel() {
       setError(null);
       await apiClient.races.delete(race.id);
       setSuccessMessage(`Race "${race.name}" deleted successfully`);
-      loadRaces();
+      
+      // Clear cache before reloading to ensure fresh data
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.removeItem('__api_cache_v1__');
+          console.log('Cache cleared after delete - next fetch will be fresh');
+        } catch (e) {
+          console.warn('Failed to clear cache:', e);
+        }
+      }
+      
+      await loadRaces();
     } catch (err: any) {
       setError(err.message || 'Failed to delete race');
     }
