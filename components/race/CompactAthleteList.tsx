@@ -34,6 +34,7 @@ export interface CompactAthleteListProps {
   athletes: CompactAthlete[];
   showViewAll?: boolean;
   onViewAll?: () => void;
+  onAthleteClick?: (athleteId: number) => void;
   title?: string;
 }
 
@@ -45,6 +46,7 @@ export function CompactAthleteList({
   athletes,
   showViewAll = true,
   onViewAll,
+  onAthleteClick,
   title = 'Confirmed Athletes',
 }: CompactAthleteListProps) {
   
@@ -121,7 +123,7 @@ export function CompactAthleteList({
             >
               <Flex gap={{ base: 4, md: 6 }} pb={2}>
                 {menAthletes.map((athlete) => (
-                  <AthleteCard key={athlete.id} athlete={athlete} />
+                  <AthleteCard key={athlete.id} athlete={athlete} onAthleteClick={onAthleteClick} />
                 ))}
               </Flex>
             </Box>
@@ -163,7 +165,7 @@ export function CompactAthleteList({
             >
               <Flex gap={{ base: 4, md: 6 }} pb={2}>
                 {womenAthletes.map((athlete) => (
-                  <AthleteCard key={athlete.id} athlete={athlete} />
+                  <AthleteCard key={athlete.id} athlete={athlete} onAthleteClick={onAthleteClick} />
                 ))}
               </Flex>
             </Box>
@@ -180,21 +182,31 @@ export function CompactAthleteList({
 
 interface AthleteCardProps {
   athlete: CompactAthlete;
+  onAthleteClick?: (athleteId: number) => void;
 }
 
-function AthleteCard({ athlete }: AthleteCardProps) {
-  return (
-    <Link
-      href={`/athlete?id=${athlete.id}`}
-      passHref
-      legacyBehavior
+function AthleteCard({ athlete, onAthleteClick }: AthleteCardProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onAthleteClick) {
+      e.preventDefault();
+      onAthleteClick(athlete.id);
+    }
+  };
+
+  const content = (
+    <Box
+      as={onAthleteClick ? 'button' : undefined}
+      onClick={onAthleteClick ? handleClick : undefined}
+      display="block"
+      textDecoration="none"
+      _hover={{ textDecoration: 'none' }}
+      flexShrink={0}
+      cursor="pointer"
+      bg="transparent"
+      border="none"
+      p={0}
+      width="auto"
     >
-      <ChakraLink
-        display="block"
-        textDecoration="none"
-        _hover={{ textDecoration: 'none' }}
-        flexShrink={0}
-      >
         <VStack
           gap={2}
           align="center"
@@ -251,6 +263,26 @@ function AthleteCard({ athlete }: AthleteCardProps) {
             {athlete.name}
           </Text>
         </VStack>
+    </Box>
+  );
+
+  if (onAthleteClick) {
+    return content;
+  }
+
+  return (
+    <Link
+      href={`/athlete?id=${athlete.id}`}
+      passHref
+      legacyBehavior
+    >
+      <ChakraLink
+        display="block"
+        textDecoration="none"
+        _hover={{ textDecoration: 'none' }}
+        flexShrink={0}
+      >
+        {content}
       </ChakraLink>
     </Link>
   );

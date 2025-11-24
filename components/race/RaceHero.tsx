@@ -76,7 +76,7 @@ export function RaceHero({
     <Box
       position="relative"
       width="100%"
-      minHeight={{ base: '300px', md: '400px', lg: '500px' }}
+      minHeight={{ base: '250px', md: '300px', lg: '400px' }}
       overflow="hidden"
     >
       {/* Background Image - Fixed position for parallax effect */}
@@ -85,7 +85,7 @@ export function RaceHero({
           position="fixed"
           top={0}
           left={0}
-          width="100vw"
+          width="100%"
           height="100vh"
           backgroundImage={`url(${backgroundImageUrl})`}
           backgroundSize="cover"
@@ -110,7 +110,7 @@ export function RaceHero({
           position="fixed"
           top={0}
           left={0}
-          width="100vw"
+          width="100%"
           height="100vh"
           bgGradient="linear(to-br, navy.900, navy.700)"
           zIndex={0}
@@ -118,6 +118,15 @@ export function RaceHero({
       )}
 
       {/* Content - Positioned above fixed background */}
+      <Box
+        position="absolute"
+        bottom={0}
+        left={0}
+        right={0}
+        height="100px"
+        background="linear-gradient(to bottom, transparent 0%, rgba(247, 250, 252, 1) 100%)"
+        pointerEvents="none"
+      />
       <Container
         maxW="container.xl"
         position="relative"
@@ -193,15 +202,6 @@ export function RaceHero({
       </Container>
 
       {/* Enhanced fade effect at bottom - transitions to page background color */}
-      <Box
-        position="absolute"
-        bottom={0}
-        left={0}
-        right={0}
-        height="100px"
-        background="linear-gradient(to bottom, transparent 0%, rgba(247, 250, 252, 0.5) 50%, rgba(247, 250, 252, 1) 100%)"
-        pointerEvents="none"
-      />
     </Box>
   );
 }

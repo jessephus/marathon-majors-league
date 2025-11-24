@@ -21,6 +21,7 @@ import { apiClient } from '@/lib/api-client';
 import { Button, Card, CardBody } from '@/components/chakra';
 import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
+import AthleteModal from '@/components/AthleteModal';
 
 interface Race {
   id: number;
@@ -70,10 +71,26 @@ export default function RacePage({ raceId }: RacePageProps) {
   const [race, setRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     loadRaceDetails();
   }, [raceId]);
+
+  const handleViewAll = () => {
+    router.push('/athletes');
+  };
+
+  const handleAthleteClick = (athleteId: number) => {
+    setSelectedAthleteId(athleteId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAthleteId(null);
+  };
 
   const loadRaceDetails = async () => {
     try {
@@ -196,7 +213,7 @@ export default function RacePage({ raceId }: RacePageProps) {
         <meta name="description" content={race.description || `${race.name} - ${race.location}`} />
       </Head>
 
-      <Box minHeight="100vh" bg="gray.50" position="relative" zIndex={1}>
+      <Box minHeight="100vh" position="relative" zIndex={1}>
         {/* Hero Section */}
         <RaceHero
           raceName={race.name}
@@ -206,66 +223,91 @@ export default function RacePage({ raceId }: RacePageProps) {
           backgroundImageUrl={race.backgroundImageUrl}
         />
 
-        {/* Main Content */}
-        <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
-          <VStack gap={{ base: 8, md: 12 }} align="stretch">
-            
-            {/* Confirmed Athletes Section */}
-            {allAthletes.length > 0 && (
-              <Card variant="elevated" size="lg">
-                <CardBody>
-                  <CompactAthleteList
-                    athletes={allAthletes}
-                    title="Confirmed Athletes"
-                    showViewAll={false}
-                  />
-                </CardBody>
-              </Card>
-            )}
+        {/* Scrolling Overlay - Fades from transparent to solid gray.50 */}
+        <Box
+          position="relative"
+          background="rgba(247, 250, 252, 1)"
+          minHeight="100vh"
+        >
+          {/* Main Content */}
+          <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
+            <VStack gap={{ base: 8, md: 12 }} align="stretch">
+              
+              {/* Confirmed Athletes Section */}
+              {allAthletes.length > 0 && (
+                <Card variant="filled" size="lg">
+                  <CardBody>
+                    <CompactAthleteList
+                      athletes={allAthletes}
+                      title="Confirmed Athletes"
+                      showViewAll={true}
+                      onViewAll={handleViewAll}
+                      onAthleteClick={handleAthleteClick}
+                    />
+                  </CardBody>
+                </Card>
+              )}
 
-            {/* Race News & Updates Section */}
-            <Card variant="elevated" size="lg">
-              <CardBody>
-                <VStack align="stretch" gap={4}>
-                  <Heading as="h3" size="lg" color="navy.800">
-                    Race News & Updates
-                  </Heading>
-                  <Box
-                    py={8}
-                    textAlign="center"
-                    borderRadius="md"
-                    bg="gray.50"
-                  >
-                    <Text color="gray.500" fontSize="lg">
-                      No updates yet.
-                    </Text>
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-
-            {/* Race Details Section */}
-            {race.description && (
-              <Card variant="elevated" size="lg">
+              {/* Race News & Updates Section */}
+              <Card variant="filled" size="lg">
                 <CardBody>
                   <VStack align="stretch" gap={4}>
                     <Heading as="h3" size="lg" color="navy.800">
-                      About the Race
+                      Race News & Updates
                     </Heading>
-                    <Text color="gray.700" lineHeight="tall">
-                      {race.description}
-                    </Text>
+                    <Box
+                      py={8}
+                      textAlign="center"
+                      borderRadius="md"
+                      bg="gray.50"
+                    >
+                      <Text color="gray.500" fontSize="lg">
+                        No updates yet.
+                      </Text>
+                    </Box>
                   </VStack>
                 </CardBody>
               </Card>
-            )}
+
+              {/* Race Details Section */}
+              {race.description && (
+                <Card variant="filled" size="lg">
+                  <CardBody>
+                    <VStack align="stretch" gap={4}>
+                      <Heading as="h3" size="lg" color="navy.800">
+                        About the Race
+                      </Heading>
+                      <Text color="gray.700" lineHeight="tall">
+                        {race.description}
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
 
 
-          </VStack>
-        </Container>
+            </VStack>
+          </Container>
 
-        <Footer />
+          <Footer />
+        </Box>
       </Box>
+
+      {/* Athlete Detail Modal */}
+      {isModalOpen && selectedAthleteId && (() => {
+        // Find the selected athlete from the race data
+        const selectedAthlete = race?.athletes?.men?.find(a => a.id === selectedAthleteId) ||
+                                race?.athletes?.women?.find(a => a.id === selectedAthleteId) ||
+                                null;
+        
+        return (
+          <AthleteModal
+            athlete={selectedAthlete}
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+          />
+        );
+      })()}
     </>
   );
 }
