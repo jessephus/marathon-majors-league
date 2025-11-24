@@ -515,7 +515,7 @@ export const athleteApi = {
    */
   async update(athleteId: number, updates: any) {
     return apiRequest('/api/update-athlete', {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify({ athleteId, ...updates }),
     });
   },

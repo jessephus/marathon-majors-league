@@ -9,6 +9,23 @@
  * 3. Creating new athletes and enriching with World Athletics data if not found
  * 4. Confirming all athletes for the specified race
  * 
+ * TWO-PHASE IMPORT WORKFLOW:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Phase 1: This script creates athlete database entries from CSV/JSON data
+ *   - Attempts World Athletics enrichment (headshots, verified data, rankings)
+ *   - If enrichment fails (athlete not found or low similarity match < 70%):
+ *     → Creates BAREBONES database entry with CSV data only (name, country, gender)
+ *     → Entry uses default values: PB = 2:30:00, no WA ID, no rankings
+ *     → ⚠️ Commissioner must enrich these entries in Phase 2
+ * 
+ * Phase 2: Post-import enrichment (for athletes missing World Athletics IDs)
+ *   - Option A (Manual): Use inline WA ID editor in athlete management panel
+ *   - Option B (Batch):  Run: python scripts/enrich-missing-wa-ids.py
+ * 
+ * ℹ️  The script will clearly log when enrichment fails and an athlete is created
+ *     with barebones data. Check the console output for ⚠️ warnings.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * 
  * Usage:
  *   node scripts/bulk-confirm-athletes.js --file athletes.csv --race-id 1
  *   node scripts/bulk-confirm-athletes.js --file athletes.json --race-id 1
@@ -43,24 +60,24 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { neon } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
+import * as cheerio from 'cheerio';
 
 // Load environment variables
 dotenv.config();
 
 // Configuration
 const DATABASE_URL = process.env.DATABASE_URL;
-const WA_GRAPHQL_URL = 'https://graphql-prod-4746.prod.aws.worldathletics.org/graphql';
-const WA_GRAPHQL_HEADERS = {
-  'Content-Type': 'application/json',
-  'x-api-key': 'da2-fcprvsdozzce5dx2baifenjwpu',
-  'x-amz-user-agent': 'aws-amplify/3.0.2'
-};
+const WA_BASE_URL = 'https://worldathletics.org';
+const WA_SEARCH_URL = 'https://worldathletics.org/athletes/search';
+const WA_HEADSHOT_URL_TEMPLATE = 'https://media.aws.iaaf.org/athletes/{id}.jpg';
 
 // Constants
 const NAME_SIMILARITY_THRESHOLD = 0.7; // 70% similarity required for match
 const DEFAULT_PERSONAL_BEST = '2:30:00'; // Default PB for athletes without data
-const WA_API_DELAY_MS = 1000; // Delay between WA API requests (rate limiting)
-const WA_HEADSHOT_URL_TEMPLATE = 'https://media.aws.iaaf.org/athletes/{id}.jpg'; // World Athletics media asset URL
+const WA_REQUEST_DELAY_MS = 2000; // Delay between WA requests (rate limiting - 2 seconds like Python script)
+const WA_PROFILE_DELAY_MS = 3000; // Delay between profile fetches (3 seconds like Python script)
+const REQUEST_TIMEOUT_MS = 30000; // 30 second timeout for HTTP requests
+const IMAGE_TEST_TIMEOUT_MS = 5000; // 5 second timeout for image accessibility tests
 
 /**
  * Helper function to get next command-line argument with validation
@@ -291,41 +308,152 @@ function loadAthletesFromFile(filePath) {
 }
 
 /**
- * Search World Athletics for athlete by name
+ * Normalize World Athletics ID by removing leading zeros
+ * (matches normalize_wa_id from Python sync script)
+ */
+function normalizeWaId(waId) {
+  if (!waId) return waId;
+  const normalized = String(waId).replace(/^0+/, '');
+  return normalized || '0'; // Keep '0' if the ID is all zeros
+}
+
+/**
+ * Test if an image URL is accessible
+ * (matches test_image_accessible from Python sync script)
+ */
+async function testImageAccessible(url) {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), IMAGE_TEST_TIMEOUT_MS);
+    
+    const response = await fetch(url, {
+      method: 'HEAD',
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeout);
+    return response.ok;
+  } catch (error) {
+    // If HEAD fails, try GET with streaming
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), IMAGE_TEST_TIMEOUT_MS);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeout);
+      return response.ok;
+    } catch (err) {
+      return false;
+    }
+  }
+}
+
+/**
+ * Get placeholder image URL based on gender
+ * (matches get_placeholder_url from Python sync script)
+ */
+function getPlaceholderUrl(gender) {
+  const genderLower = (gender || 'men').toLowerCase();
+  if (genderLower.includes('women') || genderLower.includes('woman')) {
+    return '/images/woman-runner.png';
+  }
+  return '/images/man-runner.png';
+}
+
+/**
+ * Delay execution for rate limiting
+ */
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Search World Athletics for athlete by name using HTML scraping
+ * (replaces broken GraphQL searchWorldAthletes function)
  */
 async function searchWorldAthletics(name, gender) {
-  const query = `
-    query SearchCompetitors($query: String!) {
-      searchCompetitors(query: $query, gender: "${gender === 'women' ? 'f' : 'm'}") {
-        aaAthleteId
-        givenName
-        familyName
-        birthDate
-        country
-        disciplines
-      }
-    }
-  `;
-
+  console.log(`    🔍 Searching World Athletics for: ${name} (${gender})`);
+  
   try {
-    const response = await fetch(WA_GRAPHQL_URL, {
-      method: 'POST',
-      headers: WA_GRAPHQL_HEADERS,
-      body: JSON.stringify({
-        query,
-        variables: { query: name }
-      })
+    // Construct search URL
+    const searchUrl = `${WA_SEARCH_URL}?q=${encodeURIComponent(name)}`;
+    
+    // Add timeout to fetch request
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    
+    const response = await fetch(searchUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MMFL-Bulk-Confirm/1.0)'
+      }
     });
-
+    
+    clearTimeout(timeout);
+    
     if (!response.ok) {
       console.error(`    ⚠️  WA search failed: HTTP ${response.status}`);
       return null;
     }
 
-    const data = await response.json();
-    const results = data.data?.searchCompetitors || [];
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    
+    // Parse search results from HTML
+    // World Athletics search page structure: athlete cards with data attributes
+    const results = [];
+    
+    $('[data-athlete-id]').each((i, elem) => {
+      const $elem = $(elem);
+      const athleteId = $elem.attr('data-athlete-id');
+      const athleteName = $elem.find('.athlete-name').text().trim() || 
+                          $elem.find('h3').text().trim() ||
+                          $elem.text().trim();
+      const athleteCountry = $elem.find('.athlete-country').text().trim() || 
+                            $elem.attr('data-country') || '';
+      
+      if (athleteId && athleteName) {
+        results.push({
+          worldAthleticsId: normalizeWaId(athleteId),
+          name: athleteName,
+          country: athleteCountry,
+          element: $elem.html()
+        });
+      }
+    });
+    
+    // If no structured results found, try alternative parsing
+    if (results.length === 0) {
+      // Look for athlete links in search results
+      $('a[href*="/athletes/"]').each((i, elem) => {
+        const $elem = $(elem);
+        const href = $elem.attr('href');
+        const athleteName = $elem.text().trim();
+        
+        // Extract athlete ID from URL pattern: /athletes/{country}/{name}-{id}
+        const match = href.match(/\/athletes\/[^\/]+\/[^-]+-(\d+)/);
+        if (match && athleteName) {
+          const athleteId = match[1];
+          const countryMatch = href.match(/\/athletes\/([A-Z]{3})\//i);
+          const athleteCountry = countryMatch ? countryMatch[1].toUpperCase() : '';
+          
+          results.push({
+            worldAthleticsId: normalizeWaId(athleteId),
+            name: athleteName,
+            country: athleteCountry,
+            profileUrl: `${WA_BASE_URL}${href}`
+          });
+        }
+      });
+    }
 
     if (results.length === 0) {
+      console.log(`    ⚠️  No results found on World Athletics for: ${name}`);
+      console.log(`    💡 Athlete will be created with barebones data (CSV info only)`);
       return null;
     }
 
@@ -334,8 +462,7 @@ async function searchWorldAthletics(name, gender) {
     let bestScore = 0;
 
     for (const athlete of results) {
-      const fullName = `${athlete.givenName} ${athlete.familyName}`;
-      const score = nameSimilarity(name, fullName);
+      const score = nameSimilarity(name, athlete.name);
       
       if (score > bestScore) {
         bestScore = score;
@@ -345,130 +472,215 @@ async function searchWorldAthletics(name, gender) {
 
     // Only return if similarity is high enough
     if (bestScore > NAME_SIMILARITY_THRESHOLD) {
+      console.log(`    ✓ Found match: ${bestMatch.name} (ID: ${bestMatch.worldAthleticsId}, similarity: ${(bestScore * 100).toFixed(1)}%)`);
+      
+      // Add delay for rate limiting (like Python script)
+      await delay(WA_REQUEST_DELAY_MS);
+      
       return {
-        worldAthleticsId: bestMatch.aaAthleteId,
-        name: `${bestMatch.givenName} ${bestMatch.familyName}`,
-        country: bestMatch.country,
-        dateOfBirth: bestMatch.birthDate,
+        worldAthleticsId: bestMatch.worldAthleticsId,
+        name: bestMatch.name,
+        country: bestMatch.country || 'UNK',
+        profileUrl: bestMatch.profileUrl,
         similarity: bestScore
       };
     }
 
+    // Similarity below threshold - no confident match
+    console.log(`    ⚠️  Best match similarity too low: ${(bestScore * 100).toFixed(1)}% < ${(NAME_SIMILARITY_THRESHOLD * 100).toFixed(0)}% threshold`);
+    console.log(`    💡 Athlete will be created with barebones data (CSV info only)`);
+
+    console.log(`    ⚠️  No match above threshold (${(NAME_SIMILARITY_THRESHOLD * 100)}%)`);
     return null;
   } catch (error) {
-    console.error(`    ⚠️  WA search error: ${error.message}`);
+    if (error.name === 'AbortError') {
+      console.error(`    ❌ WA search timeout after ${REQUEST_TIMEOUT_MS}ms`);
+    } else {
+      console.error(`    ❌ WA search error: ${error.message}`);
+    }
     return null;
   }
 }
 
 /**
- * Enrich athlete with World Athletics profile data
+ * Enrich athlete with World Athletics profile data using HTML scraping
+ * (replaces broken GraphQL enrichAthleteProfile function)
  */
-async function enrichAthleteProfile(athleteId, gender) {
-  // Validate athleteId is a valid number
-  const athleteIdNum = parseInt(athleteId, 10);
-  if (isNaN(athleteIdNum)) {
-    console.error(`    ⚠️  Invalid athlete ID: ${athleteId}`);
-    return null;
-  }
-
-  const query = `
-    query GetCompetitor($id: Int!) {
-      getSingleCompetitor(id: $id) {
-        basicData {
-          firstName
-          lastName
-          birthDate
-        }
-        personalBests {
-          results {
-            discipline
-            mark
-            venue
-            date
-          }
-        }
-        seasonBests {
-          results {
-            discipline
-            mark
-            venue
-            date
-          }
-        }
-        worldRankings {
-          current {
-            eventGroup
-            place
-          }
-        }
-      }
-    }
-  `;
-
+async function enrichAthleteProfile(athleteId, gender, profileUrl) {
+  console.log(`    📄 Fetching profile for athlete ID: ${athleteId}`);
+  
   try {
-    const response = await fetch(WA_GRAPHQL_URL, {
-      method: 'POST',
-      headers: WA_GRAPHQL_HEADERS,
-      body: JSON.stringify({
-        query,
-        variables: { id: athleteIdNum }
-      })
+    const normalizedId = normalizeWaId(athleteId);
+    
+    // Construct profile URL if not provided
+    let url = profileUrl;
+    if (!url) {
+      // We don't have enough info to construct URL without country and name
+      // This will be handled when we have search results
+      console.log(`    ⚠️  No profile URL provided, cannot fetch profile`);
+      return null;
+    }
+    
+    // Add timeout to fetch request
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MMFL-Bulk-Confirm/1.0)'
+      }
     });
-
+    
+    clearTimeout(timeout);
+    
     if (!response.ok) {
+      console.error(`    ⚠️  Profile fetch failed: HTTP ${response.status}`);
       return null;
     }
 
-    const data = await response.json();
-    const competitor = data.data?.getSingleCompetitor;
-
-    if (!competitor) {
-      return null;
-    }
-
-    const enriched = {};
-
-    // Extract personal best for marathon
-    const marathonPB = competitor.personalBests?.results?.find(
-      pb => pb.discipline?.toLowerCase().includes('marathon')
-    );
-    if (marathonPB) {
-      enriched.personalBest = marathonPB.mark;
-    }
-
-    // Extract season best for marathon
-    const marathonSB = competitor.seasonBests?.results?.find(
-      sb => sb.discipline?.toLowerCase().includes('marathon')
-    );
-    if (marathonSB) {
-      enriched.seasonBest = marathonSB.mark;
-    }
-
-    // Extract rankings
-    const rankings = competitor.worldRankings?.current || [];
-    for (const ranking of rankings) {
-      const eventGroup = ranking.eventGroup?.toLowerCase() || '';
-      if (eventGroup.includes('marathon')) {
-        enriched.marathonRank = ranking.place;
-      } else if (eventGroup.includes('road running')) {
-        enriched.roadRunningRank = ranking.place;
-      } else if (eventGroup.includes('overall')) {
-        enriched.overallRank = ranking.place;
+    const html = await response.text();
+    
+    // First try to extract data from __NEXT_DATA__ JSON (like Python script)
+    const jsonMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>([^<]+)<\/script>/);
+    
+    if (jsonMatch) {
+      try {
+        const nextData = JSON.parse(jsonMatch[1]);
+        const competitor = nextData?.props?.pageProps?.competitor;
+        
+        if (competitor) {
+          const enriched = {
+            world_athletics_id: normalizedId,
+            profile_url: url
+          };
+          
+          // Test if World Athletics headshot is accessible
+          const waHeadshotUrl = WA_HEADSHOT_URL_TEMPLATE.replace('{id}', normalizedId);
+          const isHeadshotAccessible = await testImageAccessible(waHeadshotUrl);
+          
+          if (isHeadshotAccessible) {
+            enriched.headshot_url = waHeadshotUrl;
+            console.log(`    ✓ Headshot URL verified`);
+          } else {
+            enriched.headshot_url = getPlaceholderUrl(gender);
+            console.log(`    ⚠️  WA headshot unavailable - using placeholder`);
+          }
+          
+          // Extract world rankings
+          const worldRankings = competitor.worldRankings?.current || [];
+          for (const ranking of worldRankings) {
+            const eventGroup = (ranking.eventGroup || '').toLowerCase();
+            const place = ranking.place;
+            
+            if (place) {
+              if (eventGroup.includes('marathon')) {
+                enriched.marathon_rank = place;
+                console.log(`    ✓ Marathon rank: #${place}`);
+              } else if (eventGroup.includes('road running')) {
+                enriched.road_running_rank = place;
+                console.log(`    ✓ Road Running rank: #${place}`);
+              } else if (eventGroup.includes('overall')) {
+                enriched.overall_rank = place;
+                console.log(`    ✓ Overall rank: #${place}`);
+              }
+            }
+          }
+          
+          // Extract personal bests
+          const personalBests = competitor.personalBests?.results || [];
+          for (const pb of personalBests) {
+            if (pb.discipline === 'Marathon') {
+              enriched.personal_best = pb.mark;
+              console.log(`    ✓ Personal best: ${pb.mark}`);
+              break;
+            }
+          }
+          
+          // Extract season best
+          const seasonBests = competitor.seasonBests?.results || [];
+          for (const sb of seasonBests) {
+            if (sb.discipline === 'Marathon') {
+              enriched.season_best = sb.mark;
+              console.log(`    ✓ Season best: ${sb.mark}`);
+              break;
+            }
+          }
+          
+          // Extract basic info
+          const basicData = competitor.basicData || {};
+          if (basicData.birthDate) {
+            const birthDateStr = basicData.birthDate;
+            try {
+              // Try parsing ISO format first (YYYY-MM-DD)
+              let birthDate = new Date(birthDateStr);
+              
+              // Calculate age
+              if (!isNaN(birthDate.getTime())) {
+                const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                enriched.age = age;
+                enriched.date_of_birth = birthDate.toISOString().split('T')[0];
+                console.log(`    ✓ Age: ${age}`);
+              }
+            } catch (err) {
+              console.log(`    ⚠️  Could not parse birth date: ${birthDateStr}`);
+            }
+          }
+          
+          // Add delay for rate limiting (like Python script - longer for profiles)
+          await delay(WA_PROFILE_DELAY_MS);
+          
+          return enriched;
+        }
+      } catch (jsonError) {
+        console.log(`    ⚠️  Failed to parse __NEXT_DATA__ JSON, trying fallback...`);
+        // Fall through to HTML fallback
       }
     }
-
-    // Calculate age from birth date
-    if (competitor.basicData?.birthDate) {
-      const birthDate = new Date(competitor.basicData.birthDate);
-      const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
-      enriched.age = age;
-      enriched.dateOfBirth = competitor.basicData.birthDate;
+    
+    // Fallback: parse HTML directly (like fetch_profile_fallback in Python script)
+    const $ = cheerio.load(html);
+    const enriched = {
+      world_athletics_id: normalizedId
+    };
+    
+    // Test headshot
+    const waHeadshotUrl = WA_HEADSHOT_URL_TEMPLATE.replace('{id}', normalizedId);
+    const isHeadshotAccessible = await testImageAccessible(waHeadshotUrl);
+    
+    if (isHeadshotAccessible) {
+      enriched.headshot_url = waHeadshotUrl;
+      console.log(`    ✓ Headshot URL verified (fallback)`);
+    } else {
+      enriched.headshot_url = getPlaceholderUrl(gender);
+      console.log(`    ⚠️  WA headshot unavailable - using placeholder (fallback)`);
     }
-
+    
+    // Try to extract rankings from HTML text
+    const htmlText = $.text();
+    const marathonRankMatch = htmlText.match(/#(\d+)\s+(?:Man's|Woman's)\s+marathon/i);
+    if (marathonRankMatch) {
+      enriched.marathon_rank = parseInt(marathonRankMatch[1], 10);
+      console.log(`    ✓ Marathon rank (fallback): #${marathonRankMatch[1]}`);
+    }
+    
+    const roadRankMatch = htmlText.match(/#(\d+)\s+(?:Man's|Woman's)\s+road\s+running/i);
+    if (roadRankMatch) {
+      enriched.road_running_rank = parseInt(roadRankMatch[1], 10);
+      console.log(`    ✓ Road Running rank (fallback): #${roadRankMatch[1]}`);
+    }
+    
+    // Add delay for rate limiting
+    await delay(WA_PROFILE_DELAY_MS);
+    
     return enriched;
+    
   } catch (error) {
-    console.error(`    ⚠️  Profile enrichment error: ${error.message}`);
+    if (error.name === 'AbortError') {
+      console.error(`    ❌ Profile fetch timeout after ${REQUEST_TIMEOUT_MS}ms`);
+    } else {
+      console.error(`    ❌ Profile fetch error: ${error.message}`);
+    }
     return null;
   }
 }
@@ -700,10 +912,13 @@ async function main() {
               console.log(`    ✅ Enriched with PB: ${profileData.personalBest || 'N/A'}, Rank: ${profileData.marathonRank || 'N/A'}`);
             }
 
-            // Small delay to be polite to WA API
-            await new Promise(resolve => setTimeout(resolve, WA_API_DELAY_MS));
+            // Small delay for rate limiting between profile fetches
+            await delay(WA_PROFILE_DELAY_MS);
           } else {
             console.log(`    ⚠️  Not found on World Athletics`);
+            console.log(`    💡 Creating barebones entry - enrich later via:`);
+            console.log(`       1. UI: Inline WA ID editor in athlete management panel`);
+            console.log(`       2. Script: python scripts/enrich-missing-wa-ids.py`);
           }
         }
 

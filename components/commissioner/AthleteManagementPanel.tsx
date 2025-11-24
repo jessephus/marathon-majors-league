@@ -50,6 +50,8 @@ export default function AthleteManagementPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showOnlyConfirmed, setShowOnlyConfirmed] = useState(false);
   const [showOnlyMissingWAID, setShowOnlyMissingWAID] = useState(false);
+  const [editingWaId, setEditingWaId] = useState<number | null>(null);
+  const [editingWaIdValue, setEditingWaIdValue] = useState('');
   const [sortBy, setSortBy] = useState<'id' | 'name' | 'pb' | 'rank'>('id');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
@@ -230,6 +232,48 @@ export default function AthleteManagementPanel() {
     setEditedRows(prev => new Set(prev).add(athleteId));
   }
 
+  // Save World Athletics ID for a specific athlete
+  const handleSaveWaId = async (athleteId: number) => {
+    try {
+      const trimmedId = editingWaIdValue.trim();
+      
+      if (!trimmedId) {
+        setToast({ message: 'World Athletics ID cannot be empty', type: 'error' });
+        return;
+      }
+      
+      // Update via API
+      await apiClient.athletes.update(athleteId, { 
+        worldAthleticsId: trimmedId 
+      });
+      
+      setToast({ 
+        message: 'World Athletics ID updated successfully', 
+        type: 'success' 
+      });
+      
+      // Clear editing state
+      setEditingWaId(null);
+      setEditingWaIdValue('');
+      
+      // Reload athletes to show updated data
+      await loadAthletes();
+    } catch (error: any) {
+      if (error.message?.includes('unique constraint') || 
+          error.message?.includes('duplicate key')) {
+        setToast({ 
+          message: 'This World Athletics ID is already assigned to another athlete', 
+          type: 'error' 
+        });
+      } else {
+        setToast({ 
+          message: `Failed to update: ${error.message}`, 
+          type: 'error' 
+        });
+      }
+    }
+  };
+
   // Save changes for a specific athlete
   async function handleSaveAthlete(athleteId: number) {
     try {
@@ -398,7 +442,7 @@ export default function AthleteManagementPanel() {
       console.log('[AthletePanel] After gender filter:', filtered.length);
     }
 
-    // NYC Marathon confirmed filter
+    // Active race confirmed filter
     if (showOnlyConfirmed) {
       filtered = filtered.filter(a => confirmedAthletes.has(a.id));
       console.log('[AthletePanel] After confirmed filter:', filtered.length);
@@ -494,7 +538,7 @@ export default function AthleteManagementPanel() {
           colorPalette="navy"
           size="md"
         >
-          Show only confirmed for NYC Marathon
+          Show only confirmed for active race
         </Checkbox>
 
         <Checkbox
@@ -571,7 +615,7 @@ export default function AthleteManagementPanel() {
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Rank</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Age</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>WA ID</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>NYC</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Confirmed</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
@@ -595,7 +639,76 @@ export default function AthleteManagementPanel() {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>{athlete.age || '-'}</td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', fontFamily: 'monospace' }}>
-                    {athlete.worldAthleticsId || athlete.world_athletics_id || '-'}
+                    {editingWaId === athlete.id ? (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+                        <input
+                          type="text"
+                          value={editingWaIdValue}
+                          onChange={(e) => setEditingWaIdValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveWaId(athlete.id);
+                            if (e.key === 'Escape') { setEditingWaId(null); setEditingWaIdValue(''); }
+                          }}
+                          placeholder="WA ID"
+                          style={{
+                            width: '100px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '13px',
+                            fontFamily: 'monospace',
+                            border: '1px solid #cbd5e0',
+                            borderRadius: '4px',
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleSaveWaId(athlete.id)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '12px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => { setEditingWaId(null); setEditingWaIdValue(''); }}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '12px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        onClick={() => {
+                          setEditingWaId(athlete.id);
+                          setEditingWaIdValue(athlete.worldAthleticsId || athlete.world_athletics_id || '');
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          display: 'inline-block',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f7fafc'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Click to edit"
+                      >
+                        {athlete.worldAthleticsId || athlete.world_athletics_id || '-'}
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                     {/* Toggle Switch for Confirmation Status */}
