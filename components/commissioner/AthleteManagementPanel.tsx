@@ -52,6 +52,8 @@ export default function AthleteManagementPanel() {
   const [showOnlyMissingWAID, setShowOnlyMissingWAID] = useState(false);
   const [editingWaId, setEditingWaId] = useState<number | null>(null);
   const [editingWaIdValue, setEditingWaIdValue] = useState('');
+  const [editingHeadshot, setEditingHeadshot] = useState<number | null>(null);
+  const [editingHeadshotValue, setEditingHeadshotValue] = useState('');
   const [sortBy, setSortBy] = useState<'id' | 'name' | 'pb' | 'rank'>('id');
   const [deleteConfirmation, setDeleteConfirmation] = useState<{ open: boolean; athlete: any | null }>({ open: false, athlete: null });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -92,7 +94,9 @@ export default function AthleteManagementPanel() {
         return;
       }
       
-      loadAthletes();
+      // Bust cache when reloading after an update (we know data changed!)
+      console.log('[AthletePanel] Data updated, busting cache...');
+      loadAthletes(true);
       loadConfirmedAthletes();
     };
 
@@ -129,20 +133,34 @@ export default function AthleteManagementPanel() {
     } catch (err) {
       console.error('Error loading confirmed athletes:', err);
     }
-  }  async function loadAthletes() {
+  }  async function loadAthletes(bustCache = false) {
     // Prevent concurrent loads
     if (loadingRef.current) {
       console.log('[AthletePanel] Already loading, skipping duplicate request');
       return;
     }
     
-    console.log('[AthletePanel] loadAthletes() called');
+    console.log('[AthletePanel] loadAthletes() called', { bustCache });
     loadingRef.current = true;
     
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.athletes.list({ confirmedOnly: false });
+      const data = await apiClient.athletes.list({ confirmedOnly: false, bustCache });
+      
+      // DIAGNOSTIC: Log raw API response for athlete ID 14335060
+      const rawAthlete14335060 = [...data.men, ...data.women].find(a => 
+        a.name === 'Benson Kipruto' || a.worldAthleticsId === '14335060' || a.world_athletics_id === '14335060'
+      );
+      if (rawAthlete14335060) {
+        console.log('[AthletePanel] RAW API RESPONSE for Benson Kipruto:', {
+          worldAthleticsId: rawAthlete14335060.worldAthleticsId,
+          world_athletics_id: rawAthlete14335060.world_athletics_id,
+          typeof_worldAthleticsId: typeof rawAthlete14335060.worldAthleticsId,
+          typeof_world_athletics_id: typeof rawAthlete14335060.world_athletics_id,
+          full_object: rawAthlete14335060
+        });
+      }
       
       const allAthletes = [...data.men, ...data.women].map(athlete => ({
         ...athlete,
@@ -151,6 +169,15 @@ export default function AthleteManagementPanel() {
         worldAthleticsId: athlete.world_athletics_id || athlete.worldAthleticsId,
         marathon_rank: athlete.marathon_rank || athlete.marathonRank,
       }));
+      
+      // DIAGNOSTIC: Log normalized athlete
+      const normalizedAthlete14335060 = allAthletes.find(a => a.name === 'Benson Kipruto');
+      if (normalizedAthlete14335060) {
+        console.log('[AthletePanel] NORMALIZED athlete Benson Kipruto:', {
+          worldAthleticsId: normalizedAthlete14335060.worldAthleticsId,
+          typeof: typeof normalizedAthlete14335060.worldAthleticsId
+        });
+      }
 
       setAthletes(allAthletes);
       console.log(`[AthletePanel] Loaded ${allAthletes.length} athletes`);
@@ -274,6 +301,17 @@ export default function AthleteManagementPanel() {
         worldAthleticsId: trimmedId 
       });
       
+      // Update only this athlete in the local state (in-place update, no reload)
+      setAthletes(prev => prev.map(athlete => 
+        athlete.id === athleteId 
+          ? {
+              ...athlete,
+              worldAthleticsId: trimmedId,
+              world_athletics_id: trimmedId,
+            }
+          : athlete
+      ));
+      
       setToast({ 
         message: 'World Athletics ID updated successfully', 
         type: 'success' 
@@ -283,8 +321,13 @@ export default function AthleteManagementPanel() {
       setEditingWaId(null);
       setEditingWaIdValue('');
       
-      // Reload athletes to show updated data
-      await loadAthletes();
+      // Emit athleteUpdated event with 'synced' action to skip reload
+      console.log('[AthletePanel] WA ID updated in-place, emitting synced event');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { action: 'synced', athleteId, worldAthleticsId: trimmedId } 
+        }));
+      }
     } catch (error: any) {
       if (error.message?.includes('unique constraint') || 
           error.message?.includes('duplicate key')) {
@@ -298,6 +341,55 @@ export default function AthleteManagementPanel() {
           type: 'error' 
         });
       }
+    }
+  };
+
+  const handleSaveHeadshotUrl = async (athleteId: number) => {
+    try {
+      const trimmedUrl = editingHeadshotValue.trim();
+      
+      if (!trimmedUrl) {
+        setToast({ message: 'Headshot URL cannot be empty', type: 'error' });
+        return;
+      }
+      
+      // Update via API
+      await apiClient.athletes.update(athleteId, { 
+        headshotUrl: trimmedUrl 
+      });
+      
+      // Update only this athlete in the local state (in-place update, no reload)
+      setAthletes(prev => prev.map(athlete => 
+        athlete.id === athleteId 
+          ? {
+              ...athlete,
+              headshotUrl: trimmedUrl,
+              headshot_url: trimmedUrl,
+            }
+          : athlete
+      ));
+      
+      setToast({ 
+        message: 'Headshot URL updated successfully', 
+        type: 'success' 
+      });
+      
+      // Clear editing state
+      setEditingHeadshot(null);
+      setEditingHeadshotValue('');
+      
+      // Emit athleteUpdated event with 'synced' action to skip reload
+      console.log('[AthletePanel] Headshot URL updated in-place, emitting synced event');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { action: 'synced', athleteId, headshotUrl: trimmedUrl } 
+        }));
+      }
+    } catch (error: any) {
+      setToast({ 
+        message: `Failed to update headshot: ${error.message}`, 
+        type: 'error' 
+      });
     }
   };
 
@@ -388,9 +480,15 @@ export default function AthleteManagementPanel() {
               marathon_rank: updatedAthlete.marathonRank,
               age: updatedAthlete.age,
               season_best: updatedAthlete.seasonBest,
+              headshotUrl: updatedAthlete.headshotUrl || updatedAthlete.headshot_url,
+              headshot_url: updatedAthlete.headshotUrl || updatedAthlete.headshot_url,
             }
           : athlete
       ));
+      
+      // Invalidate cache by reloading athletes with bustCache=true
+      // This ensures fresh data loads when user returns to the page
+      await loadAthletes(true);
       
       showToast('Athlete synced successfully!', 'success');
       
@@ -662,6 +760,7 @@ export default function AthleteManagementPanel() {
                 backgroundColor: '#2C39A2',
                 color: 'white',
               }}>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Photo</th>
                 <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Name</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Country</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Gender</th>
@@ -682,6 +781,117 @@ export default function AthleteManagementPanel() {
                     backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9',
                   }}
                 >
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    {editingHeadshot === athlete.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={editingHeadshotValue}
+                          onChange={(e) => setEditingHeadshotValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveHeadshotUrl(athlete.id);
+                            if (e.key === 'Escape') { setEditingHeadshot(null); setEditingHeadshotValue(''); }
+                          }}
+                          placeholder="Image URL"
+                          style={{
+                            width: '200px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '12px',
+                            border: '1px solid #cbd5e0',
+                            borderRadius: '4px',
+                          }}
+                          autoFocus
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleSaveHeadshotUrl(athlete.id)}
+                            disabled={saving}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '12px',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              opacity: saving ? 0.6 : 1,
+                            }}
+                          >
+                            ✓ Save
+                          </button>
+                          <button
+                            onClick={() => { setEditingHeadshot(null); setEditingHeadshotValue(''); }}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '12px',
+                              backgroundColor: '#6c757d',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✗ Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => {
+                          setEditingHeadshot(athlete.id);
+                          setEditingHeadshotValue(athlete.headshotUrl || athlete.headshot_url || '');
+                        }}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          display: 'inline-block',
+                          backgroundColor: '#f0f0f0',
+                          border: '2px solid #ddd',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2C39A2'}
+                        onMouseLeave={(e) => e.currentTarget.style.borderColor = '#ddd'}
+                        title="Click to edit headshot URL"
+                      >
+                        {(athlete.headshotUrl || athlete.headshot_url) ? (
+                          <img
+                            src={athlete.headshotUrl || athlete.headshot_url}
+                            alt={athlete.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const initials = athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                                parent.innerHTML = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #666; font-size: 14px;">${initials}</div>`;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            color: '#666',
+                            fontSize: '14px',
+                          }}>
+                            {athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding: '0.75rem', fontWeight: '500', color: '#2C39A2' }}>{athlete.name}</td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>{athlete.country}</td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', textTransform: 'capitalize' }}>

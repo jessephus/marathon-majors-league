@@ -456,10 +456,12 @@ export const athleteApi = {
   /**
    * Fetch all athletes
    * @param confirmedOnly - If true, only return athletes confirmed for active race (default: false for admin)
+   * @param bustCache - If true, adds timestamp to bypass HTTP cache (for post-update refreshes)
    */
-  async list(params?: { confirmedOnly?: boolean }) {
+  async list(params?: { confirmedOnly?: boolean; bustCache?: boolean }) {
     const confirmedOnly = params?.confirmedOnly ?? false;
-    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}`);
+    const cacheBust = params?.bustCache ? `&_t=${Date.now()}` : '';
+    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}${cacheBust}`);
   },
 
   /**
