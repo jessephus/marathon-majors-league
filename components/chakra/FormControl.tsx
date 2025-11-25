@@ -40,10 +40,10 @@ export const FormControl = forwardRef<HTMLDivElement, FormControlProps>(
           opacity: isDisabled ? 0.6 : 1,
         }}
         role="group"
-        data-invalid={isInvalid || undefined}
-        data-disabled={isDisabled || undefined}
-        data-required={isRequired || undefined}
-        data-readonly={isReadOnly || undefined}
+        data-invalid={isInvalid ? '' : undefined}
+        data-disabled={isDisabled ? '' : undefined}
+        data-required={isRequired ? '' : undefined}
+        data-readonly={isReadOnly ? '' : undefined}
         {...props}
       >
         {children}
