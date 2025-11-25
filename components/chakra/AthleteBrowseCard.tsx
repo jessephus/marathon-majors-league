@@ -548,37 +548,37 @@ AthleteBrowseCard.displayName = 'AthleteBrowseCard';
 export function AthleteBrowseCardSkeleton({ variant = 'default' }: { variant?: 'default' | 'compact' | 'detailed' }) {
   if (variant === 'compact') {
     return (
-      <Box bg="navy.800" borderRadius="lg" p={3} border="1px solid" borderColor="navy.700">
+      <Box bg="white" borderRadius="lg" p={3} border="1px solid" borderColor="gray.200">
         <Flex align="center" gap={3}>
-          <Box w="44px" h="44px" borderRadius="full" bg="navy.700" />
+          <Box w="44px" h="44px" borderRadius="full" bg="gray.200" />
           <VStack align="stretch" flex={1} gap={1}>
-            <Box h="16px" w="120px" bg="navy.700" borderRadius="sm" />
-            <Box h="12px" w="80px" bg="navy.700" borderRadius="sm" />
+            <Box h="16px" w="120px" bg="gray.200" borderRadius="sm" />
+            <Box h="12px" w="80px" bg="gray.200" borderRadius="sm" />
           </VStack>
-          <Box h="24px" w="32px" bg="navy.700" borderRadius="sm" />
+          <Box h="24px" w="32px" bg="gray.200" borderRadius="sm" />
         </Flex>
       </Box>
     );
   }
 
   return (
-    <Box bg="navy.800" borderRadius="xl" p={{ base: 4, md: 5 }} border="1px solid" borderColor="navy.700">
+    <Box bg="white" borderRadius="xl" p={{ base: 4, md: 5 }} border="1px solid" borderColor="gray.200">
       <Flex align="center" gap={4}>
         <VStack align="stretch" flex={1} gap={2}>
           <HStack gap={2}>
-            <Box h="24px" w="24px" bg="navy.700" borderRadius="sm" />
-            <Box h="20px" w="140px" bg="navy.700" borderRadius="sm" />
+            <Box h="24px" w="24px" bg="gray.200" borderRadius="sm" />
+            <Box h="20px" w="140px" bg="gray.200" borderRadius="sm" />
           </HStack>
-          <Box h="14px" w="180px" bg="navy.700" borderRadius="sm" />
-          <Box h="12px" w="80px" bg="navy.700" borderRadius="sm" mt={2} />
-          <Box h="32px" w="50px" bg="navy.700" borderRadius="sm" />
+          <Box h="14px" w="180px" bg="gray.200" borderRadius="sm" />
+          <Box h="12px" w="80px" bg="gray.200" borderRadius="sm" mt={2} />
+          <Box h="32px" w="50px" bg="gray.200" borderRadius="sm" />
         </VStack>
-        <Box w={{ base: '70px', md: '90px' }} h={{ base: '70px', md: '90px' }} borderRadius="full" bg="navy.700" />
+        <Box w={{ base: '70px', md: '90px' }} h={{ base: '70px', md: '90px' }} borderRadius="full" bg="gray.200" />
       </Flex>
-      <Box mt={3} pt={3} borderTop="1px solid" borderColor="navy.700">
+      <Box mt={3} pt={3} borderTop="1px solid" borderColor="gray.200">
         <Flex justify="space-between">
-          <Box h="12px" w="50px" bg="navy.700" borderRadius="sm" />
-          <Box h="14px" w="70px" bg="navy.700" borderRadius="sm" />
+          <Box h="12px" w="50px" bg="gray.200" borderRadius="sm" />
+          <Box h="14px" w="70px" bg="gray.200" borderRadius="sm" />
         </Flex>
       </Box>
     </Box>
