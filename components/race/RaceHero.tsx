@@ -76,7 +76,7 @@ export function RaceHero({
     <Box
       position="relative"
       width="100%"
-      minHeight={{ base: '250px', md: '300px', lg: '400px' }}
+      minHeight={{ base: '180px', md: '220px', lg: '280px' }}
       overflow="hidden"
     >
       {/* Background Image - Fixed position with responsive height */}
@@ -123,7 +123,7 @@ export function RaceHero({
         bottom={0}
         left={0}
         right={0}
-        height="100px"
+        height="60px"
         background="linear-gradient(to bottom, transparent 0%, rgba(247, 250, 252, 1) 100%)"
         pointerEvents="none"
       />
@@ -133,37 +133,39 @@ export function RaceHero({
         zIndex={2}
         height="100%"
         display="flex"
-        alignItems="center"
-        py={{ base: 4, md: 6, lg: 8 }}
+        alignItems="flex-start"
+        pt={{ base: 3, md: 4, lg: 5 }}
+        pb={{ base: 2, md: 3, lg: 4 }}
       >
         <VStack
           align="flex-start"
-          gap={{ base: 4, md: 6 }}
+          gap={{ base: 2, md: 3, lg: 4 }}
           width="100%"
+          px={{ base: 4, md: 6 }}
         >
           {/* Logo and Race Name */}
           <Flex
             align="center"
-            gap={{ base: 4, md: 6 }}
+            gap={{ base: 3, md: 4, lg: 5 }}
             flexWrap={{ base: 'wrap', md: 'nowrap' }}
           >
             {logoUrl && (
               <Image
                 src={logoUrl}
                 alt={`${raceName} logo`}
-                boxSize={{ base: '50px', md: '70px', lg: '90px' }}
+                boxSize={{ base: '40px', md: '60px', lg: '70px' }}
                 objectFit="contain"
                 flexShrink={0}
                 bg="white"
-                borderRadius="xl"
-                p={2}
+                borderRadius="lg"
+                p={1}
                 shadow="lg"
               />
             )}
             
             <Heading
               as="h1"
-              fontSize={{ base: '2xl', md: '4xl', lg: '5xl' }}
+              fontSize={{ base: 'xl', md: '3xl', lg: '4xl' }}
               fontWeight="bold"
               color="white"
               textTransform="uppercase"
@@ -178,19 +180,19 @@ export function RaceHero({
           {/* Date, Time, Location */}
           <VStack
             align="flex-start"
-            gap={2}
-            fontSize={{ base: 'md', md: 'lg', lg: 'xl' }}
+            gap={1}
+            fontSize={{ base: 'sm', md: 'md', lg: 'lg' }}
             color="white"
           >
-            <HStack gap={3}>
-              <CalendarIcon style={{ width: '24px', height: '24px' }} />
+            <HStack gap={2}>
+              <CalendarIcon style={{ width: '20px', height: '20px' }} />
               <Text fontWeight="medium" textShadow="0 1px 2px rgba(0, 0, 0, 0.3)">
                 {displayDate}
               </Text>
               {displayTime && (
                 <>
-                  <Text color="whiteAlpha.700" px={2}>•</Text>
-                  <ClockIcon style={{ width: '24px', height: '24px' }} />
+                  <Text color="whiteAlpha.700" px={1}>•</Text>
+                  <ClockIcon style={{ width: '20px', height: '20px' }} />
                   <Text fontWeight="medium" textShadow="0 1px 2px rgba(0, 0, 0, 0.3)">
                     {displayTime}
                   </Text>

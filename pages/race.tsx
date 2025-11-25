@@ -235,7 +235,7 @@ export default function RacePage({ raceId }: RacePageProps) {
               
               {/* Confirmed Athletes Section */}
               {allAthletes.length > 0 && (
-                <Card variant="filled" size="lg">
+                <Card variant="filled" size="md">
                   <CardBody>
                     <CompactAthleteList
                       athletes={allAthletes}
