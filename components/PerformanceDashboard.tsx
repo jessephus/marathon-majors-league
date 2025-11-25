@@ -14,6 +14,8 @@
 import React, { useState, useEffect } from 'react';
 import { performanceMonitor, PERFORMANCE_BUDGETS } from '@/lib/performance-monitor';
 import { featureFlags, FeatureFlag } from '@/lib/feature-flags';
+import { Button, IconButton } from '@/components/chakra';
+import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 interface PerformanceDashboardProps {
   onClose: () => void;
@@ -72,18 +74,15 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
               </p>
             )}
           </div>
-          <button
+          <IconButton
+            aria-label="Close performance dashboard"
+            size="md"
+            variant="ghost"
+            colorPalette="secondary"
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.5rem',
-              cursor: 'pointer',
-              padding: '0.5rem',
-            }}
           >
-            ×
-          </button>
+            <XMarkIcon style={{ width: '20px', height: '20px' }} />
+          </IconButton>
         </div>
 
         {/* Web Vitals Section */}
@@ -303,7 +302,10 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
 
         {/* Export Button */}
         <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
-          <button
+          <Button
+            colorPalette="navy"
+            size="md"
+            leftIcon={<ArrowDownTrayIcon style={{ width: '18px', height: '18px' }} />}
             onClick={() => {
               const data = {
                 performance: performanceMonitor.exportMetrics(),
@@ -317,19 +319,9 @@ export default function PerformanceDashboard({ onClose }: PerformanceDashboardPr
               a.click();
               URL.revokeObjectURL(url);
             }}
-            style={{
-              background: '#2C39A2',
-              color: 'white',
-              border: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.85rem',
-              fontWeight: 'bold',
-            }}
           >
             Export Metrics (JSON)
-          </button>
+          </Button>
         </div>
 <br></br>
         {/* Help text explaining what's shown */}

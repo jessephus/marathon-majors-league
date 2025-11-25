@@ -11,7 +11,8 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
-import { Button, Input, Select, Checkbox, FormControl, FormLabel } from '@/components/chakra';
+import { Button, IconButton, Input, Select, Checkbox, FormControl, FormLabel } from '@/components/chakra';
+import { CheckIcon, XMarkIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
   id: number;
@@ -802,36 +803,25 @@ export default function AthleteManagementPanel() {
                           autoFocus
                         />
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
+                          <IconButton
+                            aria-label="Save headshot"
+                            size="xs"
+                            colorPalette="success"
+                            variant="solid"
                             onClick={() => handleSaveHeadshotUrl(athlete.id)}
                             disabled={saving}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              fontSize: '12px',
-                              backgroundColor: '#28a745',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: saving ? 'not-allowed' : 'pointer',
-                              opacity: saving ? 0.6 : 1,
-                            }}
                           >
-                            ✓ Save
-                          </button>
-                          <button
+                            <CheckIcon style={{ width: '14px', height: '14px' }} />
+                          </IconButton>
+                          <IconButton
+                            aria-label="Cancel"
+                            size="xs"
+                            colorPalette="secondary"
+                            variant="ghost"
                             onClick={() => { setEditingHeadshot(null); setEditingHeadshotValue(''); }}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              fontSize: '12px',
-                              backgroundColor: '#6c757d',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                            }}
                           >
-                            ✗ Cancel
-                          </button>
+                            <XMarkIcon style={{ width: '14px', height: '14px' }} />
+                          </IconButton>
                         </div>
                       </div>
                     ) : (
@@ -923,34 +913,24 @@ export default function AthleteManagementPanel() {
                           }}
                           autoFocus
                         />
-                        <button
+                        <IconButton
+                          aria-label="Save WA ID"
+                          size="xs"
+                          colorPalette="success"
+                          variant="solid"
                           onClick={() => handleSaveWaId(athlete.id)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '12px',
-                            backgroundColor: '#28a745',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                          }}
                         >
-                          ✓
-                        </button>
-                        <button
+                          <CheckIcon style={{ width: '14px', height: '14px' }} />
+                        </IconButton>
+                        <IconButton
+                          aria-label="Cancel"
+                          size="xs"
+                          colorPalette="error"
+                          variant="ghost"
                           onClick={() => { setEditingWaId(null); setEditingWaIdValue(''); }}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '12px',
-                            backgroundColor: '#dc3545',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                          }}
                         >
-                          ✕
-                        </button>
+                          <XMarkIcon style={{ width: '14px', height: '14px' }} />
+                        </IconButton>
                       </div>
                     ) : (
                       <span

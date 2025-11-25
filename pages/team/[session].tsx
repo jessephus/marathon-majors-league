@@ -22,6 +22,7 @@ import BudgetTracker from '@/components/BudgetTracker';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import { isRosterLocked, formatLockTime, getTimeUntilLock, DEFAULT_BUDGET } from '@/lib/budget-utils';
 import { Button, IconButton, Card, CardBody } from '@/components/chakra';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
   id: number;
@@ -491,19 +492,17 @@ function TeamSessionPageContent({
                         </div>
                         {isRosterEditable && (
                           <IconButton
-                            className="slot-remove-btn-legacy"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRemoveAthlete(slot.slotId);
                             }}
                             aria-label="Remove athlete"
-                            variant="ghost"
+                            variant="solid"
                             colorPalette="error"
                             size="sm"
-                            borderRadius="full"
-                            color="white"
+                            isRound
                           >
-                            ×
+                            <XMarkIcon style={{ width: '16px', height: '16px' }} />
                           </IconButton>
                         )}
                       </>

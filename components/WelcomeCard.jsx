@@ -12,6 +12,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { SessionType } from '../lib/session-utils';
+import { Button } from '@/components/chakra';
+import { ArrowRightIcon, PlusIcon } from '@heroicons/react/24/solid';
 
 // Critical CSS for above-the-fold content (inlined for faster first paint)
 // Matches legacy welcome-card styling from public/style.css
@@ -388,25 +390,22 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
           )}
           
           <div style={criticalStyles.section}>
-            <button 
+            <Button 
               data-session-cta
+              colorPalette="primary"
+              size="md"
+              width="auto"
+              maxWidth="100%"
+              rightIcon={<ArrowRightIcon style={{ width: '16px', height: '16px' }} />}
               onClick={() => {
                 // Navigate to new React-based team session page
                 if (typeof window !== 'undefined' && window.anonymousSession?.token) {
                   router.push(`/team/${window.anonymousSession.token}`);
                 }
               }}
-              style={{
-                ...criticalStyles.button,
-                ...(isHovered ? criticalStyles.buttonHover : {}),
-                fontSize: '1.1rem',
-                padding: '14px 32px'
-              }}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
             >
-              {teamData?.isDraftComplete ? 'View My Team →' : 'Continue →'}
-            </button>
+              {teamData?.isDraftComplete ? 'View My Team' : 'Continue'}
+            </Button>
           </div>
         </>
       );
@@ -426,17 +425,16 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
           <p style={criticalStyles.sectionText}>
             Create your team and draft elite runners - no registration required!
           </p>
-          <button 
+          <Button 
+            colorPalette="primary"
+            size="md"
+            width="auto"
+            maxWidth="100%"
+            leftIcon={<PlusIcon style={{ width: '16px', height: '16px' }} />}
             onClick={onCreateTeam}
-            style={{
-              ...criticalStyles.button,
-              ...(isHovered ? criticalStyles.buttonHover : {})
-            }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
           >
             Create a New Team
-          </button>
+          </Button>
         </div>
       </>
     );

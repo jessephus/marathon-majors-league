@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Select, SelectOption } from '@/components/chakra';
+import { Button, ButtonGroup, Select, SelectOption } from '@/components/chakra';
 
 interface AthleteResult {
   athlete_id: number;
@@ -185,22 +185,22 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
       {/* Filter Controls */}
       <div className="race-results-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
         {/* Gender Toggle */}
-        <div className="gender-toggle" style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
-            className={`gender-toggle-btn ${selectedGender === 'men' ? 'active' : ''}`}
+        <ButtonGroup isAttached size="md">
+          <Button
+            variant={selectedGender === 'men' ? 'solid' : 'outline'}
+            colorPalette={selectedGender === 'men' ? 'navy' : 'secondary'}
             onClick={() => setSelectedGender('men')}
-            data-gender="men"
           >
             Men
-          </button>
-          <button
-            className={`gender-toggle-btn ${selectedGender === 'women' ? 'active' : ''}`}
+          </Button>
+          <Button
+            variant={selectedGender === 'women' ? 'solid' : 'outline'}
+            colorPalette={selectedGender === 'women' ? 'navy' : 'secondary'}
             onClick={() => setSelectedGender('women')}
-            data-gender="women"
           >
             Women
-          </button>
-        </div>
+          </Button>
+        </ButtonGroup>
 
         {/* Split Selector */}
         <Select
