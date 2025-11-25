@@ -213,7 +213,7 @@ export function BottomNavItem({
       
       {/* Label */}
       <Text 
-        fontSize="xs" 
+        fontSize="2xs" 
         lineHeight="1.2"
         whiteSpace="nowrap"
         overflow="hidden"
