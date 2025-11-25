@@ -298,112 +298,92 @@ export default function AthletesBrowsePage() {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
       </Head>
 
-      <Box minH="100vh" bg="navy.900">
-        {/* Header Section */}
+      <Box minH="100vh" bg="white">
+        {/* Header Section - Compact filter controls */}
         <Box 
-          bg="navy.900" 
+          bg="white" 
           borderBottom="1px solid" 
-          borderColor="navy.800"
+          borderColor="gray.200"
           position="sticky"
           top={{ base: '60px', md: '72px' }}
           zIndex={100}
-          pt={{ base: 4, md: 6 }}
-          pb={{ base: 4, md: 5 }}
+          py={{ base: 3, md: 4 }}
         >
           <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
-            {/* Logo and Title */}
-            <Flex align="center" gap={4} mb={{ base: 5, md: 6 }}>
-              <Box
-                w={{ base: '50px', md: '60px' }}
-                h={{ base: '50px', md: '60px' }}
-                borderRadius="lg"
-                bg="navy.800"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                border="2px solid"
-                borderColor="gold.500"
-                flexShrink={0}
-              >
-                <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="bold" color="gold.500">
-                  M
-                </Text>
+            {/* Row 1: Gender Tabs + Search */}
+            <Flex 
+              gap={{ base: 2, md: 4 }} 
+              mb={{ base: 2, md: 3 }}
+              direction={{ base: 'column', sm: 'row' }}
+              align={{ base: 'stretch', sm: 'center' }}
+            >
+              {/* Gender Tabs */}
+              <HStack gap={0} flexShrink={0}>
+                {(['all', 'men', 'women'] as GenderFilter[]).map((gender) => (
+                  <Button
+                    key={gender}
+                    onClick={() => setGenderFilter(gender)}
+                    variant={genderFilter === gender ? 'solid' : 'ghost'}
+                    colorPalette={genderFilter === gender ? 'gold' : 'navy'}
+                    size="sm"
+                    borderRadius="full"
+                    px={{ base: 3, md: 4 }}
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                    fontSize="xs"
+                    _hover={{
+                      bg: genderFilter === gender ? 'gold.600' : 'gray.100',
+                    }}
+                  >
+                    {gender === 'all' ? 'ALL' : gender === 'men' ? 'MALE' : 'FEMALE'}
+                  </Button>
+                ))}
+              </HStack>
+
+              {/* Search Bar */}
+              <Box position="relative" flex={1}>
+                <MagnifyingGlassIcon
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '18px',
+                    height: '18px',
+                    color: '#6B7280',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }}
+                />
+                <Input
+                  placeholder="Search athletes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  pl="40px"
+                  size="sm"
+                  bg="gray.50"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  color="gray.900"
+                  borderRadius="lg"
+                  _placeholder={{ color: 'gray.400' }}
+                  _hover={{ borderColor: 'gray.300' }}
+                  _focus={{ 
+                    borderColor: 'navy.500', 
+                    boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)',
+                    outline: 'none',
+                    bg: 'white',
+                  }}
+                  aria-label="Search athletes by name or country"
+                />
               </Box>
-              <Heading 
-                as="h1" 
-                size={{ base: 'xl', md: '2xl' }}
-                color="white"
-                fontWeight="bold"
-                letterSpacing="wide"
-              >
-                ATHLETES
-              </Heading>
             </Flex>
 
-            {/* Gender Tabs */}
-            <HStack gap={0} mb={{ base: 4, md: 5 }}>
-              {(['all', 'men', 'women'] as GenderFilter[]).map((gender) => (
-                <Button
-                  key={gender}
-                  onClick={() => setGenderFilter(gender)}
-                  variant={genderFilter === gender ? 'solid' : 'ghost'}
-                  colorPalette={genderFilter === gender ? 'gold' : 'navy'}
-                  size="md"
-                  borderRadius="full"
-                  px={{ base: 4, md: 6 }}
-                  fontWeight="bold"
-                  textTransform="uppercase"
-                  letterSpacing="wide"
-                  _hover={{
-                    bg: genderFilter === gender ? 'gold.600' : 'navy.700',
-                  }}
-                >
-                  {gender === 'all' ? 'ALL' : gender === 'men' ? 'MALE' : 'FEMALE'}
-                </Button>
-              ))}
-            </HStack>
-
-            {/* Search Bar */}
-            <Box position="relative" mb={{ base: 3, md: 4 }}>
-              <MagnifyingGlassIcon
-                style={{
-                  position: 'absolute',
-                  left: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: '20px',
-                  height: '20px',
-                  color: '#7A8DBF',
-                  pointerEvents: 'none',
-                  zIndex: 1,
-                }}
-              />
-              <Input
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                pl="48px"
-                size="lg"
-                bg="navy.800"
-                border="1px solid"
-                borderColor="navy.700"
-                color="white"
-                borderRadius="xl"
-                _placeholder={{ color: 'gray.500' }}
-                _hover={{ borderColor: 'navy.600' }}
-                _focus={{ 
-                  borderColor: 'gold.500', 
-                  boxShadow: '0 0 0 1px var(--chakra-colors-gold-500)',
-                  outline: 'none',
-                }}
-                aria-label="Search athletes by name or country"
-              />
-            </Box>
-
-            {/* Filter Dropdowns */}
-            <Flex gap={3} direction={{ base: 'row' }} flexWrap="wrap">
+            {/* Row 2: Country + Sort Dropdowns */}
+            <Flex gap={2}>
               {/* Country Filter */}
-              <Box flex="1" minW="140px">
+              <Box flex="1" minW="100px">
                 <Box position="relative">
                   <select
                     value={countryFilter}
@@ -411,12 +391,12 @@ export default function AthletesBrowsePage() {
                     aria-label="Filter by country"
                     style={{
                       width: '100%',
-                      padding: '12px 40px 12px 16px',
-                      borderRadius: '12px',
-                      border: '1px solid #2A3B5E',
-                      backgroundColor: '#1F2D47',
-                      color: 'white',
-                      fontSize: '16px',
+                      padding: '8px 32px 8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      color: '#374151',
+                      fontSize: '14px',
                       cursor: 'pointer',
                       appearance: 'none',
                       WebkitAppearance: 'none',
@@ -433,12 +413,12 @@ export default function AthletesBrowsePage() {
                   <ChevronDownIcon
                     style={{
                       position: 'absolute',
-                      right: '12px',
+                      right: '8px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '20px',
-                      height: '20px',
-                      color: '#7A8DBF',
+                      width: '16px',
+                      height: '16px',
+                      color: '#6B7280',
                       pointerEvents: 'none',
                     }}
                   />
@@ -446,7 +426,7 @@ export default function AthletesBrowsePage() {
               </Box>
 
               {/* Sort By Filter */}
-              <Box flex="1" minW="140px">
+              <Box flex="1" minW="100px">
                 <Box position="relative">
                   <select
                     value={sortBy}
@@ -454,20 +434,19 @@ export default function AthletesBrowsePage() {
                     aria-label="Sort athletes"
                     style={{
                       width: '100%',
-                      padding: '12px 40px 12px 16px',
-                      borderRadius: '12px',
-                      border: '1px solid #2A3B5E',
-                      backgroundColor: '#1F2D47',
-                      color: 'white',
-                      fontSize: '16px',
+                      padding: '8px 32px 8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #E5E7EB',
+                      backgroundColor: '#F9FAFB',
+                      color: '#374151',
+                      fontSize: '14px',
                       cursor: 'pointer',
                       appearance: 'none',
                       WebkitAppearance: 'none',
                       MozAppearance: 'none',
                     }}
                   >
-                    <option value="fantasyScore">Sort By</option>
-                    <option value="fantasyScore">Fantasy Score</option>
+                    <option value="rank">Sort By</option>
                     <option value="rank">World Rank</option>
                     <option value="pb">Personal Best</option>
                     <option value="salary">Salary</option>
@@ -477,12 +456,12 @@ export default function AthletesBrowsePage() {
                   <ChevronDownIcon
                     style={{
                       position: 'absolute',
-                      right: '12px',
+                      right: '8px',
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      width: '20px',
-                      height: '20px',
-                      color: '#7A8DBF',
+                      width: '16px',
+                      height: '16px',
+                      color: '#6B7280',
                       pointerEvents: 'none',
                     }}
                   />
@@ -496,7 +475,7 @@ export default function AthletesBrowsePage() {
         <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
           {/* Results Count */}
           {!loading && (
-            <Text fontSize="sm" color="gray.400" mb={4}>
+            <Text fontSize="sm" color="gray.600" mb={4}>
               Showing {filteredAthletes.length} athlete{filteredAthletes.length !== 1 ? 's' : ''}
             </Text>
           )}
@@ -513,17 +492,17 @@ export default function AthletesBrowsePage() {
           {/* Error State */}
           {error && (
             <Box
-              bg="error.900"
+              bg="red.50"
               border="1px solid"
-              borderColor="error.700"
+              borderColor="red.200"
               borderRadius="xl"
               p={6}
               textAlign="center"
             >
-              <Text color="error.100" fontWeight="medium" mb={2}>
+              <Text color="red.700" fontWeight="medium" mb={2}>
                 Failed to load athletes
               </Text>
-              <Text color="error.200" fontSize="sm">
+              <Text color="red.600" fontSize="sm">
                 {error}
               </Text>
               <Button
@@ -541,14 +520,14 @@ export default function AthletesBrowsePage() {
           {/* Empty State */}
           {!loading && !error && filteredAthletes.length === 0 && (
             <Box
-              bg="navy.800"
+              bg="gray.50"
               border="1px solid"
-              borderColor="navy.700"
+              borderColor="gray.200"
               borderRadius="xl"
               p={8}
               textAlign="center"
             >
-              <Text color="gray.300" fontSize="lg" mb={2}>
+              <Text color="gray.700" fontSize="lg" mb={2}>
                 No athletes found
               </Text>
               <Text color="gray.500" fontSize="sm">
@@ -582,11 +561,11 @@ export default function AthletesBrowsePage() {
         />
       )}
 
-      {/* Custom styles for select options - uses navy.800 from theme */}
+      {/* Custom styles for select options */}
       <style jsx global>{`
         select option {
-          background-color: var(--chakra-colors-navy-800, #1F2D47);
-          color: white;
+          background-color: white;
+          color: #374151;
           padding: 8px;
         }
       `}</style>

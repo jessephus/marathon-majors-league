@@ -372,40 +372,44 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
       as="button"
       onClick={onClick}
       w="100%"
-      bg="navy.800"
+      bg="white"
       borderRadius="xl"
       p={{ base: 4, md: 5 }}
       position="relative"
       transition="all 0.2s cubic-bezier(0, 0, 0.2, 1)"
       border="1px solid"
-      borderColor={isSelected ? 'gold.500' : 'navy.700'}
+      borderColor={isSelected ? 'gold.500' : 'gray.200'}
       _hover={{
-        borderColor: 'gold.500',
+        borderColor: 'navy.400',
         transform: 'translateY(-2px)',
-        shadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+        shadow: '0 8px 25px rgba(0, 0, 0, 0.1)',
       }}
       _focus={{
         outline: 'none',
-        borderColor: 'gold.500',
-        boxShadow: '0 0 0 3px rgba(212, 175, 55, 0.3)',
+        borderColor: 'navy.500',
+        boxShadow: '0 0 0 3px rgba(22, 28, 79, 0.2)',
       }}
       textAlign="left"
       cursor="pointer"
       overflow="hidden"
       minH={{ base: '120px', md: '140px' }}
     >
-      {/* Background Pattern */}
+      {/* Background Watermark - Winged Shoe */}
       <Box
         position="absolute"
-        right="-20px"
-        bottom="-20px"
-        opacity={0.04}
-        fontSize="150px"
-        color="white"
+        right={{ base: '-30px', md: '-20px' }}
+        bottom={{ base: '-30px', md: '-20px' }}
+        opacity={0.06}
         pointerEvents="none"
         userSelect="none"
       >
-        🏃
+        <Image
+          src="/assets/winged-shoe.png"
+          alt=""
+          w={{ base: '120px', md: '150px' }}
+          h={{ base: '120px', md: '150px' }}
+          objectFit="contain"
+        />
       </Box>
       
       <Flex align="center" gap={{ base: 3, md: 4 }}>
@@ -419,7 +423,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
             <Heading 
               as="h3" 
               size={{ base: 'sm', md: 'md' }}
-              color="white"
+              color="navy.900"
               fontWeight="bold"
               lineClamp={1}
             >
@@ -428,31 +432,25 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
           </HStack>
           
           {/* Stats Row */}
-          <HStack gap={2} color="gray.300" fontSize={{ base: 'xs', md: 'sm' }} flexWrap="wrap">
+          <HStack gap={2} color="gray.600" fontSize={{ base: 'xs', md: 'sm' }} flexWrap="wrap">
             <Text>PB: {athlete.pb}</Text>
-            <Text color="gray.500">|</Text>
+            <Text color="gray.400">|</Text>
             <Text>Age: {athlete.age || '—'}</Text>
-            {athlete.marathonRank && (
-              <>
-                <Text color="gray.500">|</Text>
-                <Text>Rank: #{athlete.marathonRank}</Text>
-              </>
-            )}
           </HStack>
           
-          {/* Fantasy Score Section */}
+          {/* WA Ranking Score Section */}
           <VStack align="flex-start" gap={0} mt={2}>
             <Text 
-              color="gold.500" 
+              color="navy.600" 
               fontSize={{ base: 'xs', md: 'sm' }}
               fontWeight="bold"
               textTransform="uppercase"
               letterSpacing="wider"
             >
-              Fantasy Score
+              WA Score
             </Text>
             <Text 
-              color="white" 
+              color="navy.900" 
               fontSize={{ base: '2xl', md: '3xl' }}
               fontWeight="extrabold"
               lineHeight="1"
@@ -462,7 +460,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
           </VStack>
         </VStack>
         
-        {/* Right: Avatar with Score Badge */}
+        {/* Right: Avatar with Rank Badge */}
         <Box position="relative" flexShrink={0}>
           {/* Athlete Photo */}
           <Box
@@ -472,8 +470,8 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
             overflow="hidden"
             border="3px solid"
             borderColor="gold.500"
-            bg="navy.700"
-            boxShadow="0 4px 15px rgba(0, 0, 0, 0.3)"
+            bg="gray.100"
+            boxShadow="0 4px 15px rgba(0, 0, 0, 0.1)"
           >
             {athlete.headshotUrl && !imageError ? (
               <Image
@@ -485,9 +483,9 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
                 onError={() => setImageError(true)}
               />
             ) : (
-              <Flex w="100%" h="100%" align="center" justify="center" bg="navy.600">
+              <Flex w="100%" h="100%" align="center" justify="center" bg="gray.200">
                 <Text 
-                  color="gold.500" 
+                  color="navy.600" 
                   fontSize={{ base: '2xl', md: '3xl' }}
                   fontWeight="bold"
                 >
@@ -497,7 +495,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
             )}
           </Box>
           
-          {/* Score Badge */}
+          {/* Rank Badge - Shows World Athletics Marathon Rank */}
           <Box
             position="absolute"
             bottom="-5px"
@@ -511,14 +509,14 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
             display="flex"
             alignItems="center"
             justifyContent="center"
-            boxShadow="0 2px 8px rgba(0, 0, 0, 0.4)"
+            boxShadow="0 2px 8px rgba(0, 0, 0, 0.2)"
           >
             <Text 
               color="gold.500" 
-              fontSize={{ base: 'sm', md: 'md' }}
+              fontSize={{ base: 'xs', md: 'sm' }}
               fontWeight="bold"
             >
-              {fantasyScore}
+              {athlete.marathonRank ? `#${athlete.marathonRank}` : '—'}
             </Text>
           </Box>
         </Box>
@@ -526,12 +524,12 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
       
       {/* Salary Display */}
       {athlete.salary && (
-        <Box mt={3} pt={3} borderTop="1px solid" borderColor="navy.700">
+        <Box mt={3} pt={3} borderTop="1px solid" borderColor="gray.200">
           <HStack justify="space-between">
-            <Text color="gray.400" fontSize="xs" textTransform="uppercase" letterSpacing="wide">
+            <Text color="gray.500" fontSize="xs" textTransform="uppercase" letterSpacing="wide">
               Salary
             </Text>
-            <Text color="gold.400" fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>
+            <Text color="navy.700" fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>
               {formatSalary(athlete.salary)}
             </Text>
           </HStack>
