@@ -35,6 +35,8 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
   isInvalid?: boolean;
   isDisabled?: boolean;
   isRequired?: boolean;
+  /** Accessible label for screen readers when no visible label exists */
+  'aria-label'?: string;
 }
 
 // Size configuration (WCAG 2.5.5 compliant - minimum 44px touch targets)

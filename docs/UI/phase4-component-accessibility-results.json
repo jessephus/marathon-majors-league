@@ -1,0 +1,1089 @@
+{
+  "timestamp": "2025-11-25T13:24:06.699Z",
+  "baseUrl": "http://localhost:3000",
+  "phase": "Phase 4: Component Migration",
+  "standard": "WCAG 2.1 Level AA",
+  "summary": {
+    "totalPages": 3,
+    "totalTests": 27,
+    "passed": 17,
+    "failed": 10,
+    "warnings": 3
+  },
+  "pages": [
+    {
+      "name": "Button Components",
+      "violations": 1,
+      "passCount": 34,
+      "issues": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 9,
+          "examples": [
+            {
+              "html": "<button type=\"button\" class=\"chakra-button css-o0vgzd\">Outline</button>",
+              "target": [
+                ".css-o0vgzd"
+              ]
+            },
+            {
+              "html": "<button type=\"button\" class=\"chakra-button css-1fkmdmx\">Ghost</button>",
+              "target": [
+                ".css-1fkmdmx"
+              ]
+            },
+            {
+              "html": "<button type=\"button\" class=\"chakra-button css-sj32hh\">Save Team</button>",
+              "target": [
+                ".css-1iapwb6.chakra-stack > .css-sj32hh.chakra-button[type=\"button\"]"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Card Components",
+      "violations": 1,
+      "passCount": 34,
+      "issues": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 21,
+          "examples": [
+            {
+              "html": "<p class=\"css-1vjsryx\">Disabled</p>",
+              "target": [
+                ".css-1g28de8 > div > .css-1vjsryx"
+              ]
+            },
+            {
+              "html": "<p class=\"css-v0otzr\">Reduced opacity, no interaction</p>",
+              "target": [
+                ".css-1g28de8 > div > .css-v0otzr"
+              ]
+            },
+            {
+              "html": "<p class=\"css-4u4lpv\">$12,500</p>",
+              "target": [
+                ".css-4u4lpv"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Form Components",
+      "violations": 1,
+      "passCount": 39,
+      "issues": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+          "nodeCount": 6,
+          "examples": [
+            {
+              "html": "<span>At least 3 characters required</span>",
+              "target": [
+                "div[data-required=\"true\"][role=\"group\"] > div > span"
+              ]
+            },
+            {
+              "html": "<span>This will be displayed on the leaderboard</span>",
+              "target": [
+                "div[role=\"group\"]:nth-child(2) > div > span"
+              ]
+            },
+            {
+              "html": "<span>We'll never share your email</span>",
+              "target": [
+                "div[role=\"group\"]:nth-child(3) > div > span"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "componentTests": {
+    "buttons": {
+      "total": 54,
+      "withNames": 54,
+      "withoutNames": 0,
+      "disabled": 6,
+      "tests": [
+        {
+          "test": "All buttons have accessible names",
+          "expected": "0 without names",
+          "actual": "0 without names",
+          "passed": true
+        }
+      ]
+    },
+    "cards": {
+      "total": 0,
+      "withHeadings": 0,
+      "interactive": 0,
+      "tests": []
+    },
+    "forms": []
+  },
+  "keyboardNavigation": [
+    {
+      "page": "Button Components",
+      "component": "Button",
+      "tests": [
+        {
+          "test": "Focusable elements present",
+          "expected": "> 0",
+          "actual": 59,
+          "passed": true
+        },
+        {
+          "test": "Tab key focuses element",
+          "expected": "Element receives focus",
+          "actual": {
+            "tag": "A",
+            "role": null,
+            "type": null,
+            "ariaLabel": null,
+            "text": "Home"
+          },
+          "passed": true
+        },
+        {
+          "test": "Focus indicator visible",
+          "expected": "Visible outline or box-shadow",
+          "actual": {
+            "outline": "rgb(32, 32, 32) auto 1px",
+            "outlineWidth": "1px",
+            "outlineOffset": "0.921875px",
+            "boxShadow": "none"
+          },
+          "passed": true
+        },
+        {
+          "test": "Button focusable",
+          "expected": "BUTTON",
+          "actual": "A",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "Card Components",
+      "component": "Card",
+      "tests": [
+        {
+          "test": "Focusable elements present",
+          "expected": "> 0",
+          "actual": 17,
+          "passed": true
+        },
+        {
+          "test": "Tab key focuses element",
+          "expected": "Element receives focus",
+          "actual": {
+            "tag": "A",
+            "role": null,
+            "type": null,
+            "ariaLabel": null,
+            "text": "Home"
+          },
+          "passed": true
+        },
+        {
+          "test": "Focus indicator visible",
+          "expected": "Visible outline or box-shadow",
+          "actual": {
+            "outline": "rgb(32, 32, 32) auto 1px",
+            "outlineWidth": "1px",
+            "outlineOffset": "0.921875px",
+            "boxShadow": "none"
+          },
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "Form Components",
+      "component": "Form",
+      "tests": [
+        {
+          "test": "Focusable elements present",
+          "expected": "> 0",
+          "actual": 59,
+          "passed": true
+        },
+        {
+          "test": "Tab key focuses element",
+          "expected": "Element receives focus",
+          "actual": {
+            "tag": "A",
+            "role": null,
+            "type": null,
+            "ariaLabel": null,
+            "text": "Home"
+          },
+          "passed": true
+        },
+        {
+          "test": "Focus indicator visible",
+          "expected": "Visible outline or box-shadow",
+          "actual": {
+            "outline": "rgb(23, 23, 23) auto 1px",
+            "outlineWidth": "1px",
+            "outlineOffset": "0.96875px",
+            "boxShadow": "none"
+          },
+          "passed": true
+        },
+        {
+          "test": "Form inputs focusable",
+          "expected": "INPUT focused",
+          "actual": "INPUT",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "focusManagement": [
+    {
+      "page": "Button Components",
+      "component": "Button",
+      "tabOrder": 59,
+      "tests": [
+        {
+          "test": "Tab order is logical",
+          "expected": "Top to bottom, left to right",
+          "actual": "No",
+          "passed": false
+        },
+        {
+          "test": "Skip links present (optional)",
+          "expected": ">= 0 (recommended)",
+          "actual": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "Card Components",
+      "component": "Card",
+      "tabOrder": 17,
+      "tests": [
+        {
+          "test": "Tab order is logical",
+          "expected": "Top to bottom, left to right",
+          "actual": "No",
+          "passed": false
+        },
+        {
+          "test": "Skip links present (optional)",
+          "expected": ">= 0 (recommended)",
+          "actual": 0,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "Form Components",
+      "component": "Form",
+      "tabOrder": 59,
+      "tests": [
+        {
+          "test": "Tab order is logical",
+          "expected": "Top to bottom, left to right",
+          "actual": "No",
+          "passed": false
+        },
+        {
+          "test": "Skip links present (optional)",
+          "expected": ">= 0 (recommended)",
+          "actual": 0,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "touchTargets": [
+    {
+      "page": "Button Components",
+      "component": "Button",
+      "total": 54,
+      "passing": 47,
+      "failing": 7,
+      "failingDetails": [
+        {
+          "tag": "A",
+          "type": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "Help",
+          "width": 29,
+          "height": 22,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "A",
+          "type": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "Commissioner",
+          "width": 89,
+          "height": 22,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Logout",
+          "width": 84,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Small",
+          "width": 73,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Small",
+          "width": 73,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Small",
+          "width": 73,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": "Edit small",
+          "text": "",
+          "width": 40,
+          "height": 40,
+          "meetsMinimum": false
+        }
+      ],
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "7 failing, 47 passing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "Button Components (Mobile)",
+      "component": "Button",
+      "total": 53,
+      "passing": 47,
+      "failing": 6,
+      "failingDetails": [
+        {
+          "tag": "BUTTON",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Notifications",
+          "text": "",
+          "width": 36,
+          "height": 36,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Open menu",
+          "text": "",
+          "width": 40,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Small",
+          "width": 73,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Small",
+          "width": 73,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Small",
+          "width": 73,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": "Edit small",
+          "text": "",
+          "width": 40,
+          "height": 40,
+          "meetsMinimum": false
+        }
+      ],
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "6 failing, 47 passing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "Card Components",
+      "component": "Card",
+      "total": 12,
+      "passing": 5,
+      "failing": 7,
+      "failingDetails": [
+        {
+          "tag": "A",
+          "type": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "Help",
+          "width": 29,
+          "height": 22,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "A",
+          "type": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "Commissioner",
+          "width": 89,
+          "height": 22,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Logout",
+          "width": 84,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        }
+      ],
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "7 failing, 5 passing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "Card Components (Mobile)",
+      "component": "Card",
+      "total": 11,
+      "passing": 5,
+      "failing": 6,
+      "failingDetails": [
+        {
+          "tag": "BUTTON",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Notifications",
+          "text": "",
+          "width": 36,
+          "height": 36,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Open menu",
+          "text": "",
+          "width": 40,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Action",
+          "width": 80,
+          "height": 40,
+          "meetsMinimum": false
+        }
+      ],
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "6 failing, 5 passing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "Form Components",
+      "component": "Form",
+      "total": 54,
+      "passing": 28,
+      "failing": 26,
+      "failingDetails": [
+        {
+          "tag": "A",
+          "type": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "Help",
+          "width": 29,
+          "height": 22,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "A",
+          "type": null,
+          "role": null,
+          "ariaLabel": null,
+          "text": "Commissioner",
+          "width": 89,
+          "height": 22,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": "button",
+          "role": null,
+          "ariaLabel": null,
+          "text": "Logout",
+          "width": 84,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Small input example",
+          "text": "",
+          "width": 1136,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "SELECT",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Small select example",
+          "text": "Small select (40px)Sort by Sal",
+          "width": 198,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        }
+      ],
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "26 failing, 28 passing",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "page": "Form Components (Mobile)",
+      "component": "Form",
+      "total": 53,
+      "passing": 28,
+      "failing": 25,
+      "failingDetails": [
+        {
+          "tag": "BUTTON",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Notifications",
+          "text": "",
+          "width": 36,
+          "height": 36,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "BUTTON",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Open menu",
+          "text": "",
+          "width": 40,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Small input example",
+          "text": "",
+          "width": 295,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "SELECT",
+          "type": null,
+          "role": null,
+          "ariaLabel": "Small select example",
+          "text": "Small select (40px)Sort by Sal",
+          "width": 198,
+          "height": 40,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 20,
+          "height": 20,
+          "meetsMinimum": false
+        },
+        {
+          "tag": "INPUT",
+          "type": "checkbox",
+          "role": null,
+          "ariaLabel": null,
+          "text": "",
+          "width": 16,
+          "height": 16,
+          "meetsMinimum": false
+        }
+      ],
+      "tests": [
+        {
+          "test": "All touch targets ≥44x44px",
+          "expected": "0 failing",
+          "actual": "25 failing, 28 passing",
+          "passed": false
+        }
+      ]
+    }
+  ],
+  "colorContrast": [],
+  "ariaAttributes": [
+    {
+      "page": "Button Components",
+      "component": "Button",
+      "ariaElementCount": 20,
+      "semanticHTML": {
+        "hasMain": true,
+        "hasNav": true,
+        "hasHeadings": true,
+        "hasButtons": true,
+        "hasLabels": true,
+        "headingCount": 18,
+        "h1Count": 1
+      },
+      "tests": [
+        {
+          "test": "ARIA attributes present",
+          "expected": "> 0 elements",
+          "actual": 20,
+          "passed": true
+        },
+        {
+          "test": "Heading structure present",
+          "expected": "At least 1 heading",
+          "actual": 18,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "Card Components",
+      "component": "Card",
+      "ariaElementCount": 11,
+      "semanticHTML": {
+        "hasMain": true,
+        "hasNav": true,
+        "hasHeadings": true,
+        "hasButtons": true,
+        "hasLabels": true,
+        "headingCount": 44,
+        "h1Count": 1
+      },
+      "tests": [
+        {
+          "test": "ARIA attributes present",
+          "expected": "> 0 elements",
+          "actual": 11,
+          "passed": true
+        },
+        {
+          "test": "Heading structure present",
+          "expected": "At least 1 heading",
+          "actual": 44,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "page": "Form Components",
+      "component": "Form",
+      "ariaElementCount": 42,
+      "semanticHTML": {
+        "hasMain": true,
+        "hasNav": true,
+        "hasHeadings": true,
+        "hasButtons": true,
+        "hasLabels": true,
+        "headingCount": 10,
+        "h1Count": 1
+      },
+      "tests": [
+        {
+          "test": "ARIA attributes present",
+          "expected": "> 0 elements",
+          "actual": 42,
+          "passed": true
+        },
+        {
+          "test": "Heading structure present",
+          "expected": "At least 1 heading",
+          "actual": 10,
+          "passed": true
+        },
+        {
+          "test": "Form inputs have labels",
+          "expected": "All inputs labeled",
+          "actual": "23/44 accessible",
+          "passed": false
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "page": "Button Components",
+      "severity": "serious",
+      "type": "axe-violation",
+      "id": "color-contrast",
+      "issue": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+      "instances": 9
+    },
+    {
+      "page": "Button Components",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "7 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-height to meet WCAG 2.5.5",
+      "details": {
+        "total": 54,
+        "failing": 7,
+        "passing": 47
+      }
+    },
+    {
+      "page": "Button Components (Mobile)",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "6 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-height to meet WCAG 2.5.5",
+      "details": {
+        "total": 53,
+        "failing": 6,
+        "passing": 47
+      }
+    },
+    {
+      "page": "Card Components",
+      "severity": "serious",
+      "type": "axe-violation",
+      "id": "color-contrast",
+      "issue": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+      "instances": 21
+    },
+    {
+      "page": "Card Components",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "7 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-height to meet WCAG 2.5.5",
+      "details": {
+        "total": 12,
+        "failing": 7,
+        "passing": 5
+      }
+    },
+    {
+      "page": "Card Components (Mobile)",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "6 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-height to meet WCAG 2.5.5",
+      "details": {
+        "total": 11,
+        "failing": 6,
+        "passing": 5
+      }
+    },
+    {
+      "page": "Form Components",
+      "severity": "serious",
+      "type": "axe-violation",
+      "id": "color-contrast",
+      "issue": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=playwright",
+      "instances": 6
+    },
+    {
+      "page": "Form Components",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "26 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-height to meet WCAG 2.5.5",
+      "details": {
+        "total": 54,
+        "failing": 26,
+        "passing": 28
+      }
+    },
+    {
+      "page": "Form Components",
+      "severity": "serious",
+      "type": "form-labels",
+      "issue": "21 form inputs missing accessible labels",
+      "help": "Add label with for attribute or aria-label to all form inputs"
+    },
+    {
+      "page": "Form Components (Mobile)",
+      "severity": "high",
+      "type": "touch-targets",
+      "issue": "25 touch targets smaller than 44x44px",
+      "help": "Increase padding or min-height to meet WCAG 2.5.5",
+      "details": {
+        "total": 53,
+        "failing": 25,
+        "passing": 28
+      }
+    }
+  ]
+}
