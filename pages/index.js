@@ -249,7 +249,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
           justifyContent: 'center' 
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-            <img src="/images/MMFL-logo.png" alt="MMFL Logo" style={{ width: '60px', height: '60px' }} />
+            <img src="/assets/mmfl-logo.png" alt="MMFL Logo" style={{ width: '60px', height: '60px' }} />
             <h1 style={{ color: '#161C4F', margin: 0 }}>Marathon Majors Fantasy League</h1>
           </div>
           <div className="loading-spinner">Loading your experience...</div>

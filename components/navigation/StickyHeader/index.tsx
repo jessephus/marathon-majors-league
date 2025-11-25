@@ -283,7 +283,7 @@ export function StickyHeader({
       {/* Left: Logo + Wordmark */}
       <HStack gap={{ base: 2, md: 3 }} flex={{ base: '0 0 auto', lg: 1 }}>
         <Image 
-          src="/images/MMFL-logo.png" 
+          src="/assets/mmfl-logo.png" 
           alt="MMFL Logo" 
           width="40px"
           height="40px"
