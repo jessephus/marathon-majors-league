@@ -22,6 +22,7 @@ import BudgetTracker from '@/components/BudgetTracker';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import { isRosterLocked, formatLockTime, getTimeUntilLock, DEFAULT_BUDGET } from '@/lib/budget-utils';
 import { Button, IconButton, Card, CardBody } from '@/components/chakra';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
   id: number;
@@ -501,7 +502,7 @@ function TeamSessionPageContent({
                             size="sm"
                             isRound
                           >
-                            <span style={{ fontSize: '16px', fontWeight: 'bold' }}>×</span>
+                            <XMarkIcon style={{ width: '16px', height: '16px' }} />
                           </IconButton>
                         )}
                       </>

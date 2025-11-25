@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { SessionType } from '../lib/session-utils';
 import { Button } from '@/components/chakra';
-import { ArrowRightIcon, PlusIcon, CogIcon } from '@heroicons/react/24/solid';
+import { ArrowRightIcon, PlusIcon } from '@heroicons/react/24/solid';
 
 // Critical CSS for above-the-fold content (inlined for faster first paint)
 // Matches legacy welcome-card styling from public/style.css
