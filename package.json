@@ -47,7 +47,8 @@
     "validate:no-legacy": "node scripts/validate-no-legacy-imports.js",
     "audit:a11y": "node scripts/accessibility-audit.js",
     "audit:a11y:watch": "nodemon --watch theme --watch docs/CORE_DESIGN_GUIDELINES.md --exec npm run audit:a11y",
-    "audit:navigation": "node tests/navigation-accessibility.test.js"
+    "audit:navigation": "node tests/navigation-accessibility.test.js",
+    "audit:phase4": "node tests/phase4-component-accessibility.test.js"
   },
   "dependencies": {
     "@chakra-ui/next-js": "^2.4.2",
