@@ -461,7 +461,8 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
             </Text>
             <Heading 
               as="h3" 
-              size={{ base: '2xs', md: 'xs' }}
+              size="xs"
+              fontSize={{ base: 'sm', md: 'md' }}
               color="navy.900"
               fontWeight="bold"
               overflow="hidden"
