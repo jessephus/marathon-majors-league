@@ -395,6 +395,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               colorPalette="primary"
               size="md"
               width="auto"
+              maxWidth="100%"
               rightIcon={<ArrowRightIcon style={{ width: '16px', height: '16px' }} />}
               onClick={() => {
                 // Navigate to new React-based team session page
@@ -428,6 +429,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
             colorPalette="primary"
             size="md"
             width="auto"
+            maxWidth="100%"
             leftIcon={<PlusIcon style={{ width: '16px', height: '16px' }} />}
             onClick={onCreateTeam}
           >
