@@ -190,7 +190,14 @@ node scripts/calculate-athlete-salaries.js
 node scripts/migrate-add-salaries.js
 ```
 
-Formula:
+#### Algorithm Overview
+
+The salary calculation uses a two-phase approach:
+
+**Phase 1: Raw Score Calculation**
+
+For each athlete, a raw score (0-100) is calculated based on:
+
 ```javascript
 score = (PB_score * 0.4) + 
         (marathon_rank_score * 0.3) + 
@@ -198,17 +205,37 @@ score = (PB_score * 0.4) +
         (overall_rank_score * 0.1) + 
         (season_form_score * 0.05)
 
-salary = MIN_SALARY + 
+rawSalary = MIN_SALARY + 
          (MAX_SALARY - MIN_SALARY) * 
          (score / 100) ** 1.2
 
 // Round to nearest $100
+rawSalary = round(rawSalary / 100) * 100
+```
+
+**Phase 2: Gender Normalization**
+
+After raw salaries are calculated, they are normalized per gender so that both men and women have an average salary centered around $5,000. This prevents situations where one gender's athletes are systematically more expensive than the other (which previously required manual post-processing).
+
+```javascript
+// For each gender group:
+scaleFactor = TARGET_AVERAGE / currentAverage
+normalizedSalary = rawSalary * scaleFactor
+
+// Clamp to min/max bounds and round
+salary = clamp(normalizedSalary, MIN_SALARY, MAX_SALARY)
 salary = round(salary / 100) * 100
 ```
+
+This normalization ensures:
+- Both genders have the same average salary ($5,000)
+- Relative ordering within each gender is preserved
+- Total team cost remains balanced (3 men + 3 women = ~$30,000 target)
 
 **Configuration**:
 - MIN_SALARY: $1,500
 - MAX_SALARY: $14,000
+- TARGET_AVERAGE: $5,000 per athlete
 - Exponent: 1.2 (creates separation between tiers)
 
 ### Client-Side Validation
