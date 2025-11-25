@@ -239,11 +239,9 @@ function TeamSessionPageContent({
       salary: slot.salary || 0
     }));
 
-    // Only auto-save if at least one athlete is selected
-    const hasAthletes = rosterWithSalaries.some(slot => slot.athleteId !== null);
-    if (!hasAthletes) {
-      return;
-    }
+    // ✅ FIX: Allow auto-save for empty rosters (user may want to clear their team)
+    // Previously blocked empty rosters with: if (!hasAthletes) return;
+    // Now auto-save works for all roster states (0-6 athletes)
 
     console.log('[Auto-save] Sending roster:', JSON.stringify(rosterWithSalaries, null, 2));
 

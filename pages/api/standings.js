@@ -27,15 +27,18 @@ async function calculateStandings(gameId) {
   const isFinalized = game.results_finalized || false;
   
   // Get all teams with complete/submitted rosters (using is_complete flag)
+  // 🔒 SECURITY: Only include teams from active sessions (not deleted/suspended)
   const submittedTeams = await sql`
     SELECT DISTINCT 
-      player_code,
-      COUNT(athlete_id) as roster_count,
-      MAX(is_complete::int) as is_complete
-    FROM salary_cap_teams
-    WHERE game_id = ${gameId}
-    GROUP BY player_code
-    HAVING MAX(is_complete::int) = 1
+      sct.player_code,
+      COUNT(sct.athlete_id) as roster_count,
+      MAX(sct.is_complete::int) as is_complete
+    FROM salary_cap_teams sct
+    INNER JOIN anonymous_sessions s ON sct.session_id = s.id
+    WHERE sct.game_id = ${gameId}
+      AND s.is_active = TRUE
+    GROUP BY sct.player_code
+    HAVING MAX(sct.is_complete::int) = 1
   `;
   
   const teamsWithRosters = submittedTeams.map(t => t.player_code);
@@ -88,10 +91,13 @@ async function calculateStandings(gameId) {
   console.log('📊 About to iterate. hasAnyResults:', hasAnyResults, 'playersToShow:', playersToShow);
   
   // 🚀 PERFORMANCE OPTIMIZATION: Fetch all teams in ONE query instead of N queries
+  // 🔒 SECURITY: Only fetch teams from active sessions (not deleted/suspended)
   const allSalaryCapTeams = await sql`
-    SELECT player_code, athlete_id
-    FROM salary_cap_teams
-    WHERE game_id = ${gameId}
+    SELECT sct.player_code, sct.athlete_id
+    FROM salary_cap_teams sct
+    INNER JOIN anonymous_sessions s ON sct.session_id = s.id
+    WHERE sct.game_id = ${gameId}
+      AND s.is_active = TRUE
   `;
   
   const allDraftTeams = await sql`
