@@ -91,6 +91,7 @@ Commissioners can add new athletes, update World Athletics IDs, confirm race par
    - Confirm which athletes are participating in the race
    - Edit World Athletics IDs for accurate data syncing
    - Manage multiple games simultaneously
+   - **Bulk confirm athletes** from CSV/JSON files using the command line tool
 
 
 ## Game Rules & Scoring

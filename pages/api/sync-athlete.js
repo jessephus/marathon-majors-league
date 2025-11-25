@@ -91,6 +91,12 @@ function extractAthleteData(html) {
       console.log(`  ✓ Age: ${age}`);
     }
     
+    // Extract sponsor if available
+    if (basicData.representingCountry) {
+      // Some profiles have sponsor info in the country representation data
+      // This may need adjustment based on actual data structure
+    }
+    
     return enriched;
     
   } catch (error) {
@@ -160,6 +166,27 @@ export default async function handler(req, res) {
 
         console.log('Enriched data extracted:', enriched);
 
+        // Test headshot URL (simple pattern: https://media.aws.iaaf.org/athletes/[WA-ID].jpg)
+        const testHeadshotUrl = `https://media.aws.iaaf.org/athletes/${waId}.jpg`;
+        try {
+          console.log(`Testing headshot URL: ${testHeadshotUrl}`);
+          const headResponse = await fetch(testHeadshotUrl, { 
+            method: 'HEAD',
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            }
+          });
+          
+          if (headResponse.ok) {
+            enriched.headshot_url = testHeadshotUrl;
+            console.log(`  ✓ Headshot URL verified (${headResponse.status})`);
+          } else {
+            console.log(`  ✗ Headshot URL not found (${headResponse.status}), keeping existing`);
+          }
+        } catch (error) {
+          console.log(`  ✗ Headshot URL test failed, keeping existing:`, error.message);
+        }
+
         // Update athlete in database
         if (enriched.personal_best) {
           await sql`UPDATE athletes SET personal_best = ${enriched.personal_best}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
@@ -179,15 +206,19 @@ export default async function handler(req, res) {
         if (enriched.season_best) {
           await sql`UPDATE athletes SET season_best = ${enriched.season_best}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
         }
+        if (enriched.headshot_url) {
+          await sql`UPDATE athletes SET headshot_url = ${enriched.headshot_url}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
+          console.log(`  ✓ Updated headshot URL`);
+        }
         
         // Always update profile URL
         await sql`UPDATE athletes SET world_athletics_profile_url = ${profileUrl}, updated_at = CURRENT_TIMESTAMP WHERE id = ${athleteId}`;
 
-        // Fetch updated athlete data (including world_athletics_id)
+        // Fetch updated athlete data (including world_athletics_id and headshot)
         const result = await sql`
           SELECT 
             id, name, personal_best, marathon_rank, road_running_rank,
-            age, date_of_birth, season_best, updated_at, world_athletics_id
+            age, date_of_birth, season_best, headshot_url, updated_at, world_athletics_id
           FROM athletes
           WHERE id = ${athleteId}
         `;
@@ -207,6 +238,8 @@ export default async function handler(req, res) {
             age: updatedAthlete.age,
             dateOfBirth: updatedAthlete.date_of_birth,
             seasonBest: updatedAthlete.season_best,
+            headshotUrl: updatedAthlete.headshot_url,
+            headshot_url: updatedAthlete.headshot_url,
             updatedAt: updatedAthlete.updated_at,
             world_athletics_id: updatedAthlete.world_athletics_id,
             worldAthleticsId: updatedAthlete.world_athletics_id

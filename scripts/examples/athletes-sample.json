@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Eliud Kipchoge",
+    "gender": "men",
+    "country": "KEN"
+  },
+  {
+    "name": "Kelvin Kiptum",
+    "gender": "men",
+    "country": "KEN"
+  },
+  {
+    "name": "Tamirat Tola",
+    "gender": "men",
+    "country": "ETH"
+  },
+  {
+    "name": "Geoffrey Kamworor",
+    "gender": "men",
+    "country": "KEN"
+  },
+  {
+    "name": "Kenenisa Bekele",
+    "gender": "men",
+    "country": "ETH"
+  },
+  {
+    "name": "Sifan Hassan",
+    "gender": "women",
+    "country": "NED"
+  },
+  {
+    "name": "Hellen Obiri",
+    "gender": "women",
+    "country": "KEN"
+  },
+  {
+    "name": "Tigst Assefa",
+    "gender": "women",
+    "country": "ETH"
+  },
+  {
+    "name": "Brigid Kosgei",
+    "gender": "women",
+    "country": "KEN"
+  },
+  {
+    "name": "Ruth Chepngetich",
+    "gender": "women",
+    "country": "KEN"
+  }
+]

@@ -244,8 +244,10 @@ describe('Next.js Routing and SSR Tests', () => {
       console.log('✅ CSS files served correctly');
     });
     
-    it('should serve JSON data files', async () => {
-      const response = await fetch(`${BASE_URL}/athletes.json`);
+    it('should serve API JSON endpoints', async () => {
+      // Note: athletes.json removed after database migration
+      // Testing API endpoint instead of static JSON file
+      const response = await fetch(`${BASE_URL}/api/athletes`);
       const contentType = response.headers.get('content-type');
       
       assert.strictEqual(response.status, 200, 'Should return 200 OK');
@@ -257,7 +259,7 @@ describe('Next.js Routing and SSR Tests', () => {
       const data = await response.json();
       assert.ok(data.men || data.women, 'Should have athlete data');
       
-      console.log('✅ JSON data files served correctly');
+      console.log('✅ API JSON endpoints served correctly');
     });
     
     it('should serve images', async () => {
