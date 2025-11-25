@@ -7,6 +7,7 @@
  * @date November 23, 2025
  */
 
+import Head from 'next/head';
 import { Box, Container, Heading, Text, VStack, HStack, Grid } from '@chakra-ui/react';
 import { Button, IconButton, ButtonGroup } from '@/components/chakra';
 import { 
@@ -19,7 +20,12 @@ import {
 
 export default function ButtonDemoPage() {
   return (
-    <Box minH="100vh" bg="gray.50" py={12}>
+    <>
+      <Head>
+        <title>Button Components Demo - MMFL</title>
+        <meta name="description" content="Interactive demonstration of all Chakra UI button components" />
+      </Head>
+      <Box minH="100vh" bg="gray.50" py={12}>
       <Container maxW="container.xl">
         <VStack gap={12} align="stretch">
           {/* Header */}
@@ -328,5 +334,6 @@ export default function ButtonDemoPage() {
         </VStack>
       </Container>
     </Box>
+    </>
   );
 }

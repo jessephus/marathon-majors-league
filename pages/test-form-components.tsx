@@ -194,18 +194,18 @@ export default function TestFormComponents() {
                 <Box>
                   <FormLabel>Input Sizes</FormLabel>
                   <Stack gap={3}>
-                    <Input placeholder="Small input (40px)" size="sm" />
-                    <Input placeholder="Medium input (44px - WCAG)" size="md" />
-                    <Input placeholder="Large input (48px)" size="lg" />
+                    <Input placeholder="Small input (40px)" size="sm" aria-label="Small input example" />
+                    <Input placeholder="Medium input (44px - WCAG)" size="md" aria-label="Medium input example" />
+                    <Input placeholder="Large input (48px)" size="lg" aria-label="Large input example" />
                   </Stack>
                 </Box>
 
                 {/* Disabled and ReadOnly states */}
                 <Box>
-                  <FormLabel>Input States</FormLabel>
+                  <FormLabel id="input-states-label">Input States</FormLabel>
                   <Stack gap={3}>
-                    <Input placeholder="Disabled input" isDisabled />
-                    <Input placeholder="Read-only input" value="Cannot edit this" isReadOnly />
+                    <Input placeholder="Disabled input" isDisabled aria-label="Disabled input example" />
+                    <Input placeholder="Read-only input" value="Cannot edit this" isReadOnly aria-label="Read-only input example" />
                   </Stack>
                 </Box>
               </VStack>
@@ -250,16 +250,16 @@ export default function TestFormComponents() {
 
                 {/* Select sizes */}
                 <Box>
-                  <FormLabel>Select Sizes</FormLabel>
+                  <FormLabel id="select-sizes-label">Select Sizes</FormLabel>
                   <Stack gap={3}>
-                    <Select options={sortOptions} placeholder="Small select (40px)" size="sm" />
-                    <Select options={sortOptions} placeholder="Medium select (44px - WCAG)" size="md" />
-                    <Select options={sortOptions} placeholder="Large select (48px)" size="lg" />
+                    <Select options={sortOptions} placeholder="Small select (40px)" size="sm" aria-label="Small select example" />
+                    <Select options={sortOptions} placeholder="Medium select (44px - WCAG)" size="md" aria-label="Medium select example" />
+                    <Select options={sortOptions} placeholder="Large select (48px)" size="lg" aria-label="Large select example" />
                   </Stack>
                 </Box>
 
                 {/* Disabled state */}
-                <Select options={sortOptions} placeholder="Disabled select" isDisabled />
+                <Select options={sortOptions} placeholder="Disabled select" isDisabled aria-label="Disabled select example" />
               </VStack>
             </Box>
 
@@ -300,11 +300,11 @@ export default function TestFormComponents() {
 
                 {/* Textarea sizes */}
                 <Box>
-                  <FormLabel>Textarea Sizes</FormLabel>
+                  <FormLabel id="textarea-sizes-label">Textarea Sizes</FormLabel>
                   <Stack gap={3}>
-                    <Textarea placeholder="Small textarea (80px height)" size="sm" />
-                    <Textarea placeholder="Medium textarea (120px height)" size="md" />
-                    <Textarea placeholder="Large textarea (160px height)" size="lg" />
+                    <Textarea placeholder="Small textarea (80px height)" size="sm" aria-label="Small textarea example" />
+                    <Textarea placeholder="Medium textarea (120px height)" size="md" aria-label="Medium textarea example" />
+                    <Textarea placeholder="Large textarea (160px height)" size="lg" aria-label="Large textarea example" />
                   </Stack>
                 </Box>
               </VStack>
