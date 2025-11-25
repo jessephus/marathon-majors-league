@@ -53,6 +53,7 @@ export interface AthleteBrowseData {
   salary?: number;
   headshotUrl?: string;
   marathonRank?: number;
+  worldAthleticsMarathonRankingScore?: number;
   age?: number;
   sponsor?: string;
   seasonBest?: string;
@@ -228,21 +229,23 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
         cursor="pointer"
         overflow="hidden"
       >
-        {/* Background decoration */}
-        <Box
-          position="absolute"
-          right="-30px"
-          bottom="-30px"
-          opacity={0.03}
-          fontSize="200px"
-          color="white"
-          pointerEvents="none"
-          userSelect="none"
-        >
-          🏃
-        </Box>
-
-        <Flex direction={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 6 }}>
+      {/* Background Watermark - Winged Shoe */}
+      <Box
+        position="absolute"
+        right="-30px"
+        bottom="-30px"
+        opacity={0.10}
+        pointerEvents="none"
+        userSelect="none"
+      >
+        <Image
+          src="/assets/winged-shoe.png"
+          alt=""
+          w="150px"
+          h="150px"
+          objectFit="contain"
+        />
+      </Box>        <Flex direction={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 6 }}>
           {/* Left: Avatar and Name */}
           <Flex align="center" gap={4}>
             <Box
@@ -365,7 +368,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
     );
   }
 
-  // Default variant - balanced design matching mockup
+  // Default variant - compact 3-column horizontal layout
   return (
     <Box
       ref={ref}
@@ -374,7 +377,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
       w="100%"
       bg="white"
       borderRadius="xl"
-      p={{ base: 4, md: 5 }}
+      p={{ base: 3, md: 4 }}
       position="relative"
       transition="all 0.2s cubic-bezier(0, 0, 0.2, 1)"
       border="1px solid"
@@ -392,14 +395,14 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
       textAlign="left"
       cursor="pointer"
       overflow="hidden"
-      minH={{ base: '120px', md: '140px' }}
+      minH={{ base: '64px', md: '70px' }}
     >
       {/* Background Watermark - Winged Shoe */}
       <Box
         position="absolute"
         right={{ base: '-30px', md: '-20px' }}
         bottom={{ base: '-30px', md: '-20px' }}
-        opacity={0.06}
+        opacity={0.10}
         pointerEvents="none"
         userSelect="none"
       >
@@ -412,66 +415,19 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
         />
       </Box>
       
-      <Flex align="center" gap={{ base: 3, md: 4 }}>
-        {/* Left: Info Section */}
-        <VStack align="stretch" flex={1} gap={1}>
-          {/* Name Row with Flag */}
-          <HStack gap={2} align="center">
-            <Text fontSize={{ base: 'lg', md: 'xl' }} aria-label={`Country: ${athlete.country}`}>
-              {getCountryFlag(athlete.country)}
-            </Text>
-            <Heading 
-              as="h3" 
-              size={{ base: 'sm', md: 'md' }}
-              color="navy.900"
-              fontWeight="bold"
-              lineClamp={1}
-            >
-              {athlete.name}
-            </Heading>
-          </HStack>
-          
-          {/* Stats Row */}
-          <HStack gap={2} color="gray.600" fontSize={{ base: 'xs', md: 'sm' }} flexWrap="wrap">
-            <Text>PB: {athlete.pb}</Text>
-            <Text color="gray.400">|</Text>
-            <Text>Age: {athlete.age || '—'}</Text>
-          </HStack>
-          
-          {/* WA Ranking Score Section */}
-          <VStack align="flex-start" gap={0} mt={2}>
-            <Text 
-              color="navy.600" 
-              fontSize={{ base: 'xs', md: 'sm' }}
-              fontWeight="bold"
-              textTransform="uppercase"
-              letterSpacing="wider"
-            >
-              WA Score
-            </Text>
-            <Text 
-              color="navy.900" 
-              fontSize={{ base: '2xl', md: '3xl' }}
-              fontWeight="extrabold"
-              lineHeight="1"
-            >
-              {fantasyScore}
-            </Text>
-          </VStack>
-        </VStack>
-        
-        {/* Right: Avatar with Rank Badge */}
-        <Box position="relative" flexShrink={0}>
-          {/* Athlete Photo */}
+      <Flex align="center" gap={{ base: 2, md: 3 }} justify="space-between">
+        {/* Left: Avatar */}
+        {/* Left Column: Avatar */}
+        <Box flexShrink={0}>
           <Box
-            w={{ base: '70px', md: '90px' }}
-            h={{ base: '70px', md: '90px' }}
+            w={{ base: '48px', md: '52px' }}
+            h={{ base: '48px', md: '52px' }}
             borderRadius="full"
             overflow="hidden"
-            border="3px solid"
+            border="2px solid"
             borderColor="gold.500"
             bg="gray.100"
-            boxShadow="0 4px 15px rgba(0, 0, 0, 0.1)"
+            boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
           >
             {athlete.headshotUrl && !imageError ? (
               <Image
@@ -486,7 +442,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
               <Flex w="100%" h="100%" align="center" justify="center" bg="gray.200">
                 <Text 
                   color="navy.600" 
-                  fontSize={{ base: '2xl', md: '3xl' }}
+                  fontSize={{ base: 'lg', md: 'xl' }}
                   fontWeight="bold"
                 >
                   {athlete.name.charAt(0)}
@@ -494,47 +450,65 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
               </Flex>
             )}
           </Box>
-          
-          {/* Rank Badge - Shows World Athletics Marathon Rank */}
-          <Box
-            position="absolute"
-            bottom="-5px"
-            right="-5px"
-            bg="navy.900"
-            borderRadius="full"
-            border="2px solid"
-            borderColor="gold.500"
-            w={{ base: '36px', md: '44px' }}
-            h={{ base: '36px', md: '44px' }}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            boxShadow="0 2px 8px rgba(0, 0, 0, 0.2)"
-          >
-            <Text 
-              color="gold.500" 
-              fontSize={{ base: 'xs', md: 'sm' }}
+        </Box>
+        
+        {/* Middle Column: Name and Stats - 2 rows stacked */}
+        <Flex flex={1} direction="column" gap={0.5} minW={0} justify="center">
+          {/* Row 1: Name with Flag */}
+          <HStack gap={1.5} align="center">
+            <Text fontSize={{ base: 'sm', md: 'md' }} aria-label={`Country: ${athlete.country}`}>
+              {getCountryFlag(athlete.country)}
+            </Text>
+            <Heading 
+              as="h3" 
+              size={{ base: '2xs', md: 'xs' }}
+              color="navy.900"
               fontWeight="bold"
+              overflow="hidden"
+              textOverflow="ellipsis"
+              whiteSpace="nowrap"
             >
-              {athlete.marathonRank ? `#${athlete.marathonRank}` : '—'}
-            </Text>
-          </Box>
-        </Box>
-      </Flex>
-      
-      {/* Salary Display */}
-      {athlete.salary && (
-        <Box mt={3} pt={3} borderTop="1px solid" borderColor="gray.200">
-          <HStack justify="space-between">
-            <Text color="gray.500" fontSize="xs" textTransform="uppercase" letterSpacing="wide">
-              Salary
-            </Text>
-            <Text color="navy.700" fontWeight="bold" fontSize={{ base: 'sm', md: 'md' }}>
-              {formatSalary(athlete.salary)}
-            </Text>
+              {athlete.name}
+            </Heading>
           </HStack>
-        </Box>
-      )}
+          
+          {/* Row 2: Stats inline */}
+          <HStack gap={2} color="gray.600" fontSize={{ base: '2xs', md: 'xs' }} flexWrap="nowrap">
+            <Text whiteSpace="nowrap">PB: {athlete.pb}</Text>
+            <Text color="gray.400">•</Text>
+            <Text whiteSpace="nowrap">Age: {athlete.age || '—'}</Text>
+            {athlete.salary && (
+              <>
+                <Text color="gray.400">•</Text>
+                <Text whiteSpace="nowrap" fontWeight="semibold" color="navy.700">
+                  {formatSalary(athlete.salary)}
+                </Text>
+              </>
+            )}
+          </HStack>
+        </Flex>
+        
+        {/* Right Column: WA Score */}
+        <Flex direction="column" align="flex-end" justify="center" gap={0} flexShrink={0}>
+          <Text 
+            color="navy.600" 
+            fontSize={{ base: '2xs', md: 'xs' }}
+            fontWeight="bold"
+            textTransform="uppercase"
+            letterSpacing="wide"
+          >
+            WA Score
+          </Text>
+          <Text 
+            color="navy.900" 
+            fontSize={{ base: 'xl', md: '2xl' }}
+            fontWeight="extrabold"
+            lineHeight="1"
+          >
+            {athlete.worldAthleticsMarathonRankingScore || '--'}
+          </Text>
+        </Flex>
+      </Flex>
     </Box>
   );
 });

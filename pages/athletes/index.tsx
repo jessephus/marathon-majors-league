@@ -307,15 +307,14 @@ export default function AthletesBrowsePage() {
           position="sticky"
           top={{ base: '60px', md: '72px' }}
           zIndex={100}
-          py={{ base: 3, md: 4 }}
+          py={{ base: 2, md: 3 }}
         >
           <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
-            {/* Row 1: Gender Tabs + Search */}
+            {/* Single responsive row - wraps search on mobile */}
             <Flex 
-              gap={{ base: 2, md: 4 }} 
-              mb={{ base: 2, md: 3 }}
-              direction={{ base: 'column', sm: 'row' }}
-              align={{ base: 'stretch', sm: 'center' }}
+              gap={2}
+              flexWrap="wrap"
+              align="center"
             >
               {/* Gender Tabs */}
               <HStack gap={0} flexShrink={0}>
@@ -341,49 +340,8 @@ export default function AthletesBrowsePage() {
                 ))}
               </HStack>
 
-              {/* Search Bar */}
-              <Box position="relative" flex={1}>
-                <MagnifyingGlassIcon
-                  style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: '18px',
-                    height: '18px',
-                    color: '#6B7280',
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                  }}
-                />
-                <Input
-                  placeholder="Search athletes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  pl="40px"
-                  size="sm"
-                  bg="gray.50"
-                  border="1px solid"
-                  borderColor="gray.200"
-                  color="gray.900"
-                  borderRadius="lg"
-                  _placeholder={{ color: 'gray.400' }}
-                  _hover={{ borderColor: 'gray.300' }}
-                  _focus={{ 
-                    borderColor: 'navy.500', 
-                    boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)',
-                    outline: 'none',
-                    bg: 'white',
-                  }}
-                  aria-label="Search athletes by name or country"
-                />
-              </Box>
-            </Flex>
-
-            {/* Row 2: Country + Sort Dropdowns */}
-            <Flex gap={2}>
               {/* Country Filter */}
-              <Box flex="1" minW="100px">
+              <Box flex="0 1 150px" minW={{ base: '100px', md: '120px' }}>
                 <Box position="relative">
                   <select
                     value={countryFilter}
@@ -426,7 +384,7 @@ export default function AthletesBrowsePage() {
               </Box>
 
               {/* Sort By Filter */}
-              <Box flex="1" minW="100px">
+              <Box flex="0 1 150px" minW={{ base: '100px', md: '120px' }}>
                 <Box position="relative">
                   <select
                     value={sortBy}
@@ -466,6 +424,44 @@ export default function AthletesBrowsePage() {
                     }}
                   />
                 </Box>
+              </Box>
+
+              {/* Search Bar - Wraps to next row on mobile */}
+              <Box position="relative" flex={{ base: '1 1 100%', md: '1 1 auto' }} minW="200px">
+                <MagnifyingGlassIcon
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '18px',
+                    height: '18px',
+                    color: '#6B7280',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }}
+                />
+                <Input
+                  placeholder="Search athletes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  pl="40px"
+                  size="sm"
+                  bg="gray.50"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  color="gray.900"
+                  borderRadius="lg"
+                  _placeholder={{ color: 'gray.400' }}
+                  _hover={{ borderColor: 'gray.300' }}
+                  _focus={{ 
+                    borderColor: 'navy.500', 
+                    boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)',
+                    outline: 'none',
+                    bg: 'white',
+                  }}
+                  aria-label="Search athletes by name or country"
+                />
               </Box>
             </Flex>
           </Container>

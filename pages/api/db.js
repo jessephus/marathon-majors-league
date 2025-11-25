@@ -30,6 +30,7 @@ export async function getAllAthletes(confirmedOnly = false) {
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
         a.salary,
+        a.world_athletics_marathon_ranking_score as "worldAthleticsMarathonRankingScore",
         COALESCE(
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
@@ -66,6 +67,7 @@ export async function getAllAthletes(confirmedOnly = false) {
         a.date_of_birth as "dateOfBirth",
         a.sponsor,
         a.salary,
+        a.world_athletics_marathon_ranking_score as "worldAthleticsMarathonRankingScore",
         COALESCE(
           (SELECT MIN(arr.finish_time)
            FROM athlete_race_results arr
