@@ -11,6 +11,8 @@ import { AppStateProvider, useGameState, Athlete } from '@/lib/state-provider';
 import { apiClient } from '@/lib/api-client';
 import { dynamicImport, CHUNK_NAMES } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
+import { Button } from '@/components/chakra';
+import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 // Dynamic import AthleteModal with performance tracking
 const AthleteModal = dynamicImport(
@@ -203,12 +205,14 @@ function AthleteModalTestContent() {
         </main>
 
         <footer style={{ marginTop: '2rem', paddingBottom: '2rem' }}>
-          <button 
-            className="btn btn-secondary"
+          <Button 
+            variant="outline"
+            colorPalette="secondary"
+            leftIcon={<ArrowLeftIcon style={{ width: '16px', height: '16px' }} />}
             onClick={() => window.history.back()}
           >
-            ← Back
-          </button>
+            Back
+          </Button>
         </footer>
       </div>
 
