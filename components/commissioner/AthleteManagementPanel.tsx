@@ -839,7 +839,7 @@ export default function AthleteManagementPanel() {
                       <div
                         onClick={() => {
                           setEditingHeadshot(athlete.id);
-                          setEditingHeadshotValue(athlete.headshotUrl || athlete.headshot_url || '');
+                          setEditingHeadshotValue(athlete.headshot_url || '');
                         }}
                         style={{
                           width: '40px',

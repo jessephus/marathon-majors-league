@@ -19,56 +19,66 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'athleteId is required' });
       }
 
-      // Build dynamic update query based on provided fields
-      const updates = [];
-      const values = { athleteId };
+      // Determine which fields to update
+      const updateWaId = worldAthleticsId !== undefined;
+      const updateHeadshot = headshotUrl !== undefined;
       
-      if (worldAthleticsId !== undefined) {
-        // Allow setting to null/empty to remove the ID
-        const waId = worldAthleticsId && worldAthleticsId.trim() !== '' 
-          ? worldAthleticsId.trim() 
-          : null;
-        updates.push('world_athletics_id');
-        values.waId = waId;
-      }
-      
-      if (headshotUrl !== undefined) {
-        // Allow setting to null/empty to remove the URL
-        const url = headshotUrl && headshotUrl.trim() !== '' 
-          ? headshotUrl.trim() 
-          : null;
-        updates.push('headshot_url');
-        values.headshotUrl = url;
-      }
-
-      if (updates.length === 0) {
+      if (!updateWaId && !updateHeadshot) {
         return res.status(400).json({ error: 'No fields to update provided' });
       }
 
-      // Build the UPDATE query dynamically
-      let query = 'UPDATE athletes SET ';
-      const setClauses = [];
+      // Prepare values
+      const waId = updateWaId 
+        ? (worldAthleticsId && worldAthleticsId.trim() !== '' ? worldAthleticsId.trim() : null)
+        : undefined;
       
-      if (values.waId !== undefined) {
-        setClauses.push(`world_athletics_id = ${values.waId === null ? 'NULL' : `'${values.waId}'`}`);
-      }
-      if (values.headshotUrl !== undefined) {
-        setClauses.push(`headshot_url = ${values.headshotUrl === null ? 'NULL' : `'${values.headshotUrl}'`}`);
-      }
-      
-      setClauses.push('updated_at = CURRENT_TIMESTAMP');
-      query += setClauses.join(', ');
-      query += ` WHERE id = ${values.athleteId} RETURNING id, name, world_athletics_id, headshot_url`;
+      const hsUrl = updateHeadshot
+        ? (headshotUrl && headshotUrl.trim() !== '' ? headshotUrl.trim() : null)
+        : undefined;
 
-      const result = await sql([query]);
+      // Execute appropriate update query
+      let result;
+      
+      if (updateWaId && updateHeadshot) {
+        // Update both fields
+        result = await sql`
+          UPDATE athletes
+          SET 
+            world_athletics_id = ${waId},
+            headshot_url = ${hsUrl},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${athleteId}
+          RETURNING id, name, world_athletics_id, headshot_url
+        `;
+      } else if (updateWaId) {
+        // Update only World Athletics ID
+        result = await sql`
+          UPDATE athletes
+          SET 
+            world_athletics_id = ${waId},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${athleteId}
+          RETURNING id, name, world_athletics_id, headshot_url
+        `;
+      } else {
+        // Update only headshot URL
+        result = await sql`
+          UPDATE athletes
+          SET 
+            headshot_url = ${hsUrl},
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${athleteId}
+          RETURNING id, name, world_athletics_id, headshot_url
+        `;
+      }
 
       if (result.length === 0) {
         return res.status(404).json({ error: 'Athlete not found' });
       }
 
       const updateDetails = [];
-      if (values.waId !== undefined) updateDetails.push(`WA_ID = ${values.waId || 'NULL'}`);
-      if (values.headshotUrl !== undefined) updateDetails.push(`Headshot = ${values.headshotUrl || 'NULL'}`);
+      if (updateWaId) updateDetails.push(`WA_ID = ${waId || 'NULL'}`);
+      if (updateHeadshot) updateDetails.push(`Headshot = ${hsUrl || 'NULL'}`);
       
       console.log(`Updated athlete ${result[0].id} (${result[0].name}): ${updateDetails.join(', ')}`);
 
