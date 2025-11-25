@@ -39,10 +39,11 @@ export const FormControl = forwardRef<HTMLDivElement, FormControlProps>(
           marginBottom: '24px',
           opacity: isDisabled ? 0.6 : 1,
         }}
-        aria-invalid={isInvalid}
-        aria-disabled={isDisabled}
-        aria-required={isRequired}
-        aria-readonly={isReadOnly}
+        role="group"
+        data-invalid={isInvalid ? '' : undefined}
+        data-disabled={isDisabled ? '' : undefined}
+        data-required={isRequired ? '' : undefined}
+        data-readonly={isReadOnly ? '' : undefined}
         {...props}
       >
         {children}

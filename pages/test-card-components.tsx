@@ -5,6 +5,7 @@
  * Used for visual verification, accessibility testing, and documentation screenshots.
  */
 
+import Head from 'next/head';
 import { Box, Container, Heading, Text, VStack, SimpleGrid, HStack } from '@chakra-ui/react';
 import {
   Card,
@@ -90,7 +91,12 @@ export default function TestCardComponents() {
   ];
 
   return (
-    <Box bg="gray.50" minH="100vh" py={8}>
+    <>
+      <Head>
+        <title>Card Components Demo - MMFL</title>
+        <meta name="description" content="Interactive demonstration of all Chakra UI card components" />
+      </Head>
+      <Box bg="gray.50" minH="100vh" py={8}>
       <Container maxW="container.xl">
         <VStack align="stretch" gap={12}>
           {/* Header */}
@@ -443,5 +449,6 @@ export default function TestCardComponents() {
         </VStack>
       </Container>
     </Box>
+    </>
   );
 }
