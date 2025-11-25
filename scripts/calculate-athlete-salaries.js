@@ -32,6 +32,9 @@ if (!DATABASE_URL) {
 
 const sql = neon(DATABASE_URL);
 
+// Check for dry-run flag
+const isDryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
+
 // World record references for normalization
 const WORLD_RECORDS = {
   men: convertTimeToSeconds('2:00:35'),    // Kelvin Kiptum
@@ -46,6 +49,11 @@ const SALARY_CONFIG = {
   minSalary: 1500,
   maxSalary: 14000
 };
+
+// Excluded athletes (due to suspensions, etc.)
+const EXCLUDED_ATHLETE_IDS = [
+  '14766298'  // Ruth Chepngetich - PED suspension
+];
 
 /**
  * Convert time string (H:MM:SS) to seconds
@@ -261,18 +269,23 @@ function normalizeSalaries(athletes, targetAverage = SALARY_CONFIG.averageSalary
  * Main function to update all athlete salaries
  */
 async function updateAthleteSalaries() {
+  if (isDryRun) {
+    console.log('🧪 DRY RUN MODE - No database changes will be made\n');
+  }
   console.log('🔄 Calculating athlete salaries...\n');
   
   try {
-    // Get all athletes
+    // Get all athletes (excluding suspended/banned athletes)
     const athletes = await sql`
       SELECT id, name, gender, personal_best, season_best, 
-             marathon_rank, road_running_rank, overall_rank
+             marathon_rank, road_running_rank, overall_rank, world_athletics_id
       FROM athletes
+      WHERE world_athletics_id != ALL(${EXCLUDED_ATHLETE_IDS})
       ORDER BY gender, marathon_rank NULLS LAST
     `;
     
-    console.log(`📊 Found ${athletes.length} athletes\n`);
+    console.log(`📊 Found ${athletes.length} athletes`);
+    console.log(`   (Excluding ${EXCLUDED_ATHLETE_IDS.length} suspended athlete(s))\n`);
     
     // Phase 1: Calculate raw salaries for all athletes
     const rawUpdates = {
@@ -338,17 +351,21 @@ async function updateAthleteSalaries() {
     }
     
     // Update database
-    console.log('💾 Updating database...\n');
-    
-    for (const update of updates) {
-      await sql`
-        UPDATE athletes
-        SET salary = ${update.salary}
-        WHERE id = ${update.id}
-      `;
+    if (isDryRun) {
+      console.log('🧪 DRY RUN: Skipping database updates...\n');
+    } else {
+      console.log('💾 Updating database...\n');
+      
+      for (const update of updates) {
+        await sql`
+          UPDATE athletes
+          SET salary = ${update.salary}
+          WHERE id = ${update.id}
+        `;
+      }
+      
+      console.log('✅ All salaries updated!\n');
     }
-    
-    console.log('✅ All salaries updated!\n');
     
     // Display post-normalization statistics
     console.log('📈 POST-NORMALIZATION SALARY STATISTICS\n');
@@ -428,7 +445,12 @@ async function updateAthleteSalaries() {
     const budgetTotal = budgetTeam.reduce((sum, a) => sum + a.salary, 0);
     console.log(`\n  Budget Team (Bottom 3 each): $${budgetTotal.toLocaleString()}`);
     
-    console.log('\n✅ Salary calculation complete!\n');
+    if (isDryRun) {
+      console.log('\n🧪 Dry run complete! No changes were made to the database.');
+      console.log('   To apply these changes, run: node scripts/calculate-athlete-salaries.js\n');
+    } else {
+      console.log('\n✅ Salary calculation complete!\n');
+    }
     
   } catch (error) {
     console.error('❌ Error:', error);
