@@ -480,7 +480,7 @@ export default function AthleteManagementPanel() {
               marathon_rank: updatedAthlete.marathonRank,
               age: updatedAthlete.age,
               season_best: updatedAthlete.seasonBest,
-              headshot_url: updatedAthlete.headshot_url,
+              headshot_url: updatedAthlete.headshot_url || (updatedAthlete as any).headshotUrl,
             }
           : athlete
       ));
@@ -838,7 +838,7 @@ export default function AthleteManagementPanel() {
                       <div
                         onClick={() => {
                           setEditingHeadshot(athlete.id);
-                          setEditingHeadshotValue(athlete.headshot_url || '');
+                          setEditingHeadshotValue(athlete.headshot_url || (athlete as any).headshotUrl || '');
                         }}
                         style={{
                           width: '40px',
@@ -855,9 +855,9 @@ export default function AthleteManagementPanel() {
                         onMouseLeave={(e) => e.currentTarget.style.borderColor = '#ddd'}
                         title="Click to edit headshot URL"
                       >
-                        {athlete.headshot_url ? (
+                        {(athlete.headshot_url || (athlete as any).headshotUrl) ? (
                           <img
-                            src={athlete.headshot_url}
+                            src={athlete.headshot_url || (athlete as any).headshotUrl}
                             alt={athlete.name}
                             style={{
                               width: '100%',
