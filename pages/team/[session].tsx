@@ -491,19 +491,17 @@ function TeamSessionPageContent({
                         </div>
                         {isRosterEditable && (
                           <IconButton
-                            className="slot-remove-btn-legacy"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRemoveAthlete(slot.slotId);
                             }}
                             aria-label="Remove athlete"
-                            variant="ghost"
+                            variant="solid"
                             colorPalette="error"
                             size="sm"
-                            borderRadius="full"
-                            color="white"
+                            isRound
                           >
-                            ×
+                            <span style={{ fontSize: '16px', fontWeight: 'bold' }}>×</span>
                           </IconButton>
                         )}
                       </>

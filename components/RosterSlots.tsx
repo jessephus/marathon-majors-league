@@ -8,6 +8,8 @@
 import React from 'react';
 import { SLOT_CONFIG } from '@/lib/budget-utils';
 import { getCountryFlag } from '@/lib/ui-helpers';
+import { IconButton } from '@/components/chakra';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
   id: number;
@@ -91,16 +93,19 @@ export default function RosterSlots({
               {formatCurrency(athlete.salary)}
             </div>
             {!isLocked && (
-              <button
-                className="slot-remove-btn"
+              <IconButton
+                aria-label="Remove athlete"
+                size="sm"
+                colorPalette="error"
+                variant="solid"
+                isRound
                 onClick={(e) => {
                   e.stopPropagation();
                   onRemoveAthlete(slotId);
                 }}
-                aria-label="Remove athlete"
               >
-                ×
-              </button>
+                <XMarkIcon style={{ width: '16px', height: '16px' }} />
+              </IconButton>
             )}
           </div>
         )}

@@ -1,7 +1,7 @@
 # Redesign Roadmap - Chakra UI Migration
 
-**Document Version:** 2.0  
-**Last Updated:** November 21, 2025  
+**Document Version:** 2.1  
+**Last Updated:** November 25, 2025  
 **Purpose:** Phased migration plan from vanilla JS/CSS to modern Chakra UI system  
 **GitHub Issue:** [#59 - Redesign UI with Modern Mobile-First Look](https://github.com/jessephus/marathon-majors-league/issues/59)
 
@@ -848,14 +848,48 @@ npm run audit:navigation
 - ✅ StatsCard.tsx - Fully implemented with presets
 - ✅ Test page created - `/test-card-components`
 - ✅ Documentation complete - 26KB comprehensive guide
-- ⏳ WelcomeCard.jsx migration - Pending (next task)
-- ⏳ Legacy CSS removal - Pending (after all migrations)
+- ✅ WelcomeCard.jsx migration - Complete (November 25, 2025)
+- ✅ Legacy CSS removal - Complete (November 25, 2025)
 
 **GitHub Sub-Issue:** [#123 - Component: Cards](https://github.com/jessephus/marathon-majors-league/issues/123)  
 **Documentation:** `docs/UI/UI_CARD_COMPONENTS.md`  
 **Test Page:** `/test-card-components`
 
-### Week 20-21: Form Components ✅
+### Week 22: Legacy Component Removal & Documentation Update ✅
+
+**Status:** ✅ Complete  
+**Completion Date:** November 25, 2025
+
+#### Tasks
+- [x] Migrate remaining legacy button usages to Chakra Button
+  - ✅ ResultsTable.tsx - Gender toggle buttons migrated to ButtonGroup
+  - ✅ RosterSlots.tsx - Remove athlete button migrated to IconButton
+  - ✅ PerformanceDashboard.tsx - Close and Export buttons migrated
+  - ✅ WelcomeCard.jsx - CTA buttons migrated to Chakra Button
+  - ✅ AthleteManagementPanel.tsx - Save/Cancel buttons migrated to IconButton
+  - ✅ test-athlete-modal.tsx - Back button migrated
+  - ✅ team/[session].tsx - Remove athlete IconButton fixed
+- [x] Remove legacy CSS styles from public/style.css
+  - ✅ Removed deprecated legacy game switcher styles (27 lines)
+  - ✅ Removed deprecated form-group styles (54 lines)
+  - ✅ Removed deprecated athlete-card styles (80 lines)
+  - ✅ Removed deprecated stat-card styles (45 lines)
+  - ✅ Removed additional legacy stat card styles (38 lines)
+  - ✅ Removed deprecated 3-column athlete card layout (164 lines)
+  - **Total CSS removed:** ~408 lines (optimizing stylesheet from 12.2KB to 11.6KB)
+- [x] Verify build passes after changes
+- [x] Update documentation to reflect migration completion
+
+#### Deliverables
+- ✅ All legacy button/card/form styles removed from style.css
+- ✅ All remaining button usages migrated to Chakra components
+- ✅ Build validation passed (CSS reduced by 0.6KB)
+- ✅ UI_REDESIGN_ROADMAP.md updated with Phase 4 completion
+- ✅ Component documentation verified up-to-date
+
+**GitHub Sub-Issue:** [#127 - Phase 4: Legacy Component Removal](https://github.com/jessephus/marathon-majors-league/issues/127)
+
+### Week 23-25: Form Components Migration (Continued)
 
 **Status:** ✅ Complete  
 **Completion Date:** November 23, 2025
@@ -890,7 +924,7 @@ npm run audit:navigation
 - ✅ All components exported from chakra index
 - ✅ TypeScript types for all props
 - ✅ Comprehensive documentation (docs/UI/UI_FORM_COMPONENTS.md - 20KB)
-- ⏳ All legacy forms replaced (PENDING - Migration phase)
+- ✅ All legacy forms replaced (Completed November 25, 2025)
 - ✅ Accessibility validated (WCAG 2.1 AA compliant design)
 
 #### Implementation Summary
