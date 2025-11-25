@@ -192,10 +192,10 @@ describe('Performance Benchmark Tests', () => {
     });
     
     it('should load static assets efficiently', async () => {
+      // Note: app.js and athletes.json removed after migrations
+      // Testing remaining static assets
       const assets = [
-        '/app.js',
-        '/style.css',
-        '/athletes.json'
+        '/style.css'
       ];
       
       const timings = {};
@@ -378,15 +378,14 @@ describe('Performance Benchmark Tests', () => {
     it('should handle mixed concurrent requests', async () => {
       const start = Date.now();
       
-      // Mix of different request types (app.js removed in PR #130)
+      // Mix of different request types (app.js and athletes.json removed after migrations)
       const requests = [
         fetch(`${BASE_URL}/`),
         fetch(`${BASE_URL}/api/athletes`),
         fetch(`${BASE_URL}/api/races`),
         fetch(`${BASE_URL}/style.css`),
         fetch(`${BASE_URL}/api/game-state`),
-        fetch(`${BASE_URL}/api/standings`),
-        fetch(`${BASE_URL}/athletes.json`)
+        fetch(`${BASE_URL}/api/standings`)
       ];
       
       const responses = await Promise.all(requests);

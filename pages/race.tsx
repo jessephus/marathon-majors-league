@@ -1,11 +1,14 @@
 /**
  * Race Detail Page
  * 
- * Public page displaying information about a specific race:
- * - Race name, date, location
- * - Description and news updates
- * - List of confirmed athletes
- * - Race details (distance, event type)
+ * Modern race page with hero section featuring:
+ * - Full-width background image with race logo
+ * - Bold race name and date/time
+ * - Compact confirmed athletes display
+ * - Race news & updates section
+ * - Mobile-first responsive design with Chakra UI
+ * 
+ * Follows CORE_DESIGN_GUIDELINES.md navy/gold color scheme
  */
 
 import React, { useEffect, useState } from 'react';
@@ -13,10 +16,12 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
-import { Box, Heading, SimpleGrid, VStack } from '@chakra-ui/react';
+import { Box, Container, Heading, Text, VStack, SimpleGrid } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
-import { AthleteCard } from '@/components/chakra';
+import { Button, Card, CardBody } from '@/components/chakra';
+import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
+import AthleteModal from '@/components/AthleteModal';
 
 interface Race {
   id: number;
@@ -28,6 +33,8 @@ interface Race {
   worldAthleticsEventId?: string;
   description?: string;
   isActive: boolean;
+  logoUrl?: string;
+  backgroundImageUrl?: string;
   athletes?: {
     men: Athlete[];
     women: Athlete[];
@@ -64,10 +71,26 @@ export default function RacePage({ raceId }: RacePageProps) {
   const [race, setRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     loadRaceDetails();
   }, [raceId]);
+
+  const handleViewAll = () => {
+    router.push('/athletes');
+  };
+
+  const handleAthleteClick = (athleteId: number) => {
+    setSelectedAthleteId(athleteId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAthleteId(null);
+  };
 
   const loadRaceDetails = async () => {
     try {
@@ -123,36 +146,17 @@ export default function RacePage({ raceId }: RacePageProps) {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    });
-  };
-
   if (loading) {
     return (
       <>
         <Head>
           <title>Loading Race... | Marathon Majors Fantasy League</title>
         </Head>
-        <div className="race-page">
-          <div className="container">
-            <p>Loading race details...</p>
-          </div>
-        </div>
+        <Box minHeight="100vh" bg="gray.50">
+          <Container maxW="container.xl" py={8}>
+            <Text color="gray.600">Loading race details...</Text>
+          </Container>
+        </Box>
       </>
     );
   }
@@ -163,20 +167,44 @@ export default function RacePage({ raceId }: RacePageProps) {
         <Head>
           <title>Race Not Found | Marathon Majors Fantasy League</title>
         </Head>
-        <div className="race-page">
-          <div className="container">
-            <div className="error-message">
-              <h2>Race Not Found</h2>
-              <p>{error || 'The requested race could not be found.'}</p>
-              <Link href="/" className="btn btn-primary">
-                Return to Home
+        <Box minHeight="100vh" bg="gray.50">
+          <Container maxW="container.xl" py={8}>
+            <VStack gap={4} align="center" py={16}>
+              <Heading as="h2" size="xl" color="error.600">
+                Race Not Found
+              </Heading>
+              <Text color="gray.600">
+                {error || 'The requested race could not be found.'}
+              </Text>
+              <Link href="/" passHref legacyBehavior>
+                <Button as="a" colorPalette="navy" size="lg">
+                  Return to Home
+                </Button>
               </Link>
-            </div>
-          </div>
-        </div>
+            </VStack>
+          </Container>
+        </Box>
       </>
     );
   }
+
+  // Combine all athletes for compact display with gender info
+  const allAthletes = [
+    ...(race.athletes?.men || []).map(athlete => ({
+      id: athlete.id,
+      name: athlete.name,
+      headshotUrl: athlete.headshotUrl,
+      country: athlete.country,
+      gender: 'M' as const,
+    })),
+    ...(race.athletes?.women || []).map(athlete => ({
+      id: athlete.id,
+      name: athlete.name,
+      headshotUrl: athlete.headshotUrl,
+      country: athlete.country,
+      gender: 'F' as const,
+    }))
+  ];
 
   return (
     <>
@@ -185,328 +213,101 @@ export default function RacePage({ raceId }: RacePageProps) {
         <meta name="description" content={race.description || `${race.name} - ${race.location}`} />
       </Head>
 
-      <div className="race-page">
-        <div className="container">
-          {/* Race Header */}
-          <div className="race-header">
-            <div className="race-title">
-              <h1>{race.name}</h1>
-              <div className="race-meta">
-                <span className="race-location">📍 {race.location}</span>
-                <span className="race-date">📅 {formatDate(race.date)}</span>
-                <span className="race-distance">🏃 {race.distance}</span>
-              </div>
-            </div>
-            
-            {race.isActive && (
-              <div className="race-status active">
-                Active Race
-              </div>
-            )}
-          </div>
+      <Box minHeight="100vh" position="relative" zIndex={1}>
+        {/* Hero Section */}
+        <RaceHero
+          raceName={race.name}
+          raceDate={race.date}
+          location={race.location}
+          logoUrl={race.logoUrl}
+          backgroundImageUrl={race.backgroundImageUrl}
+        />
 
-          {/* Race Description / News */}
-          {race.description && (
-            <div className="race-section">
-              <h2>About the Race</h2>
-              <div className="race-description">
-                {race.description.split('\n').map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Race Details */}
-          <div className="race-section">
-            <h2>Race Details</h2>
-            <div className="race-details-grid">
-              <div className="detail-item">
-                <span className="detail-label">Date:</span>
-                <span className="detail-value">{formatDate(race.date)}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Location:</span>
-                <span className="detail-value">{race.location}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Distance:</span>
-                <span className="detail-value">{race.distance}</span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Event Type:</span>
-                <span className="detail-value">{race.eventType}</span>
-              </div>
-              {race.worldAthleticsEventId && (
-                <div className="detail-item">
-                  <span className="detail-label">World Athletics ID:</span>
-                  <span className="detail-value">{race.worldAthleticsEventId}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Confirmed Athletes */}
-          {race.athletes && (race.athletes.men.length > 0 || race.athletes.women.length > 0) && (
-            <Box className="race-section">
-              <Heading as="h2" size="xl" mb={6} color="navy.800">
-                Confirmed Athletes
-              </Heading>
+        {/* Scrolling Overlay - Fades from transparent to solid gray.50 */}
+        <Box
+          position="relative"
+          background="rgba(247, 250, 252, 1)"
+          minHeight="100vh"
+        >
+          {/* Main Content */}
+          <Container maxW="container.xl" py={{ base: 4, md: 6 }}>
+            <VStack gap={{ base: 6, md: 8 }} align="stretch">
               
-              {/* Men */}
-              {race.athletes.men.length > 0 && (
-                <VStack align="stretch" gap={6} mb={8}>
-                  <Heading as="h3" size="lg" color="navy.700">
-                    Men ({race.athletes.men.length})
-                  </Heading>
-                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
-                    {race.athletes.men.map((athlete) => (
-                      <AthleteCard
-                        key={athlete.id}
-                        athlete={{
-                          id: athlete.id,
-                          name: athlete.name,
-                          country: athlete.country,
-                          gender: 'M',
-                          pb: athlete.pb,
-                          rank: athlete.marathonRank || null,
-                          salary: null,
-                          photoUrl: athlete.headshotUrl || null,
-                        }}
-                        variant="standard"
-                        showPrice={false}
-                        showStats={true}
-                      />
-                    ))}
-                  </SimpleGrid>
-                </VStack>
+              {/* Confirmed Athletes Section */}
+              {allAthletes.length > 0 && (
+                <Card variant="filled" size="md">
+                  <CardBody>
+                    <CompactAthleteList
+                      athletes={allAthletes}
+                      title="Confirmed Athletes"
+                      showViewAll={true}
+                      onViewAll={handleViewAll}
+                      onAthleteClick={handleAthleteClick}
+                    />
+                  </CardBody>
+                </Card>
               )}
 
-              {/* Women */}
-              {race.athletes.women.length > 0 && (
-                <VStack align="stretch" gap={6}>
-                  <Heading as="h3" size="lg" color="navy.700">
-                    Women ({race.athletes.women.length})
-                  </Heading>
-                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
-                    {race.athletes.women.map((athlete) => (
-                      <AthleteCard
-                        key={athlete.id}
-                        athlete={{
-                          id: athlete.id,
-                          name: athlete.name,
-                          country: athlete.country,
-                          gender: 'F',
-                          pb: athlete.pb,
-                          rank: athlete.marathonRank || null,
-                          salary: null,
-                          photoUrl: athlete.headshotUrl || null,
-                        }}
-                        variant="standard"
-                        showPrice={false}
-                        showStats={true}
-                      />
-                    ))}
-                  </SimpleGrid>
-                </VStack>
+              {/* Race News & Updates Section */}
+              <Card variant="filled" size="lg">
+                <CardBody>
+                  <VStack align="stretch" gap={4}>
+                    <Heading as="h3" size="lg" color="navy.800">
+                      Race News & Updates
+                    </Heading>
+                    <Box
+                      py={8}
+                      textAlign="center"
+                      borderRadius="md"
+                      bg="gray.50"
+                    >
+                      <Text color="gray.500" fontSize="lg">
+                        No updates yet.
+                      </Text>
+                    </Box>
+                  </VStack>
+                </CardBody>
+              </Card>
+
+              {/* Race Details Section */}
+              {race.description && (
+                <Card variant="filled" size="lg">
+                  <CardBody>
+                    <VStack align="stretch" gap={4}>
+                      <Heading as="h3" size="lg" color="navy.800">
+                        About the Race
+                      </Heading>
+                      <Text color="gray.700" lineHeight="tall">
+                        {race.description}
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
               )}
-            </Box>
-          )}
 
-          {/* Call to Action */}
-          <div className="race-cta">
-            <Link href="/" className="btn btn-primary btn-lg">
-              Create Your Fantasy Team
-            </Link>
-          </div>
-        </div>
 
-        <Footer />
-      </div>
+            </VStack>
+          </Container>
 
-      <style jsx>{`
-        .race-page {
-          min-height: 100vh;
-          background: #f5f5f5;
-          padding: 20px;
-        }
+          <Footer />
+        </Box>
+      </Box>
 
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          background: white;
-          border-radius: 8px;
-          padding: 30px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .race-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 30px;
-          padding-bottom: 20px;
-          border-bottom: 2px solid #eee;
-        }
-
-        .race-title h1 {
-          margin: 0 0 15px 0;
-          font-size: 32px;
-          color: #333;
-        }
-
-        .race-meta {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
-          color: #666;
-          font-size: 16px;
-        }
-
-        .race-status {
-          padding: 8px 16px;
-          border-radius: 20px;
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        .race-status.active {
-          background: #e7f5e7;
-          color: #2d7c2d;
-        }
-
-        .race-section {
-          margin-bottom: 40px;
-        }
-
-        .race-section h2 {
-          font-size: 24px;
-          margin-bottom: 20px;
-          color: #333;
-        }
-
-        .race-description {
-          line-height: 1.6;
-          color: #555;
-        }
-
-        .race-description p {
-          margin-bottom: 15px;
-        }
-
-        .race-details-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 20px;
-        }
-
-        .detail-item {
-          display: flex;
-          flex-direction: column;
-          gap: 5px;
-        }
-
-        .detail-label {
-          font-weight: 600;
-          color: #666;
-          font-size: 14px;
-        }
-
-        .detail-value {
-          color: #333;
-          font-size: 16px;
-        }
-
-        .athletes-category {
-          margin-bottom: 30px;
-        }
-
-        .athletes-category h3 {
-          font-size: 20px;
-          margin-bottom: 15px;
-          color: #333;
-        }
-
-        .athletes-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 15px;
-        }
-
-        .race-cta {
-          text-align: center;
-          padding: 40px 0 20px;
-          border-top: 2px solid #eee;
-        }
-
-        .btn {
-          display: inline-block;
-          padding: 12px 24px;
-          border-radius: 6px;
-          text-decoration: none;
-          font-weight: 600;
-          transition: all 0.2s;
-          cursor: pointer;
-          border: none;
-        }
-
-        .btn-primary {
-          background: #007bff;
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background: #0056b3;
-        }
-
-        .btn-lg {
-          padding: 16px 32px;
-          font-size: 18px;
-        }
-
-        .error-message {
-          text-align: center;
-          padding: 60px 20px;
-        }
-
-        .error-message h2 {
-          color: #c00;
-          margin-bottom: 15px;
-        }
-
-        .error-message p {
-          color: #666;
-          margin-bottom: 25px;
-        }
-
-        @media (max-width: 768px) {
-          .container {
-            padding: 20px;
-          }
-
-          .race-header {
-            flex-direction: column;
-            gap: 15px;
-          }
-
-          .race-title h1 {
-            font-size: 24px;
-          }
-
-          .race-meta {
-            font-size: 14px;
-            gap: 15px;
-          }
-
-          .athletes-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .race-details-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
+      {/* Athlete Detail Modal */}
+      {isModalOpen && selectedAthleteId && (() => {
+        // Find the selected athlete from the race data
+        const selectedAthlete = race?.athletes?.men?.find(a => a.id === selectedAthleteId) ||
+                                race?.athletes?.women?.find(a => a.id === selectedAthleteId) ||
+                                null;
+        
+        return (
+          <AthleteModal
+            athlete={selectedAthlete}
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+          />
+        );
+      })()}
     </>
   );
 }

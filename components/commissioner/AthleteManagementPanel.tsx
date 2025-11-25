@@ -50,7 +50,12 @@ export default function AthleteManagementPanel() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showOnlyConfirmed, setShowOnlyConfirmed] = useState(false);
   const [showOnlyMissingWAID, setShowOnlyMissingWAID] = useState(false);
+  const [editingWaId, setEditingWaId] = useState<number | null>(null);
+  const [editingWaIdValue, setEditingWaIdValue] = useState('');
+  const [editingHeadshot, setEditingHeadshot] = useState<number | null>(null);
+  const [editingHeadshotValue, setEditingHeadshotValue] = useState('');
   const [sortBy, setSortBy] = useState<'id' | 'name' | 'pb' | 'rank'>('id');
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ open: boolean; athlete: any | null }>({ open: false, athlete: null });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   // Track if we're already loading to prevent duplicate requests
@@ -89,7 +94,9 @@ export default function AthleteManagementPanel() {
         return;
       }
       
-      loadAthletes();
+      // Bust cache when reloading after an update (we know data changed!)
+      console.log('[AthletePanel] Data updated, busting cache...');
+      loadAthletes(true);
       loadConfirmedAthletes();
     };
 
@@ -126,20 +133,34 @@ export default function AthleteManagementPanel() {
     } catch (err) {
       console.error('Error loading confirmed athletes:', err);
     }
-  }  async function loadAthletes() {
+  }  async function loadAthletes(bustCache = false) {
     // Prevent concurrent loads
     if (loadingRef.current) {
       console.log('[AthletePanel] Already loading, skipping duplicate request');
       return;
     }
     
-    console.log('[AthletePanel] loadAthletes() called');
+    console.log('[AthletePanel] loadAthletes() called', { bustCache });
     loadingRef.current = true;
     
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.athletes.list({ confirmedOnly: false });
+      const data = await apiClient.athletes.list({ confirmedOnly: false, bustCache });
+      
+      // DIAGNOSTIC: Log raw API response for athlete ID 14335060
+      const rawAthlete14335060 = [...data.men, ...data.women].find(a => 
+        a.name === 'Benson Kipruto' || a.worldAthleticsId === '14335060' || a.world_athletics_id === '14335060'
+      );
+      if (rawAthlete14335060) {
+        console.log('[AthletePanel] RAW API RESPONSE for Benson Kipruto:', {
+          worldAthleticsId: rawAthlete14335060.worldAthleticsId,
+          world_athletics_id: rawAthlete14335060.world_athletics_id,
+          typeof_worldAthleticsId: typeof rawAthlete14335060.worldAthleticsId,
+          typeof_world_athletics_id: typeof rawAthlete14335060.world_athletics_id,
+          full_object: rawAthlete14335060
+        });
+      }
       
       const allAthletes = [...data.men, ...data.women].map(athlete => ({
         ...athlete,
@@ -148,6 +169,15 @@ export default function AthleteManagementPanel() {
         worldAthleticsId: athlete.world_athletics_id || athlete.worldAthleticsId,
         marathon_rank: athlete.marathon_rank || athlete.marathonRank,
       }));
+      
+      // DIAGNOSTIC: Log normalized athlete
+      const normalizedAthlete14335060 = allAthletes.find(a => a.name === 'Benson Kipruto');
+      if (normalizedAthlete14335060) {
+        console.log('[AthletePanel] NORMALIZED athlete Benson Kipruto:', {
+          worldAthleticsId: normalizedAthlete14335060.worldAthleticsId,
+          typeof: typeof normalizedAthlete14335060.worldAthleticsId
+        });
+      }
 
       setAthletes(allAthletes);
       console.log(`[AthletePanel] Loaded ${allAthletes.length} athletes`);
@@ -216,6 +246,32 @@ export default function AthleteManagementPanel() {
     }
   }
 
+  async function handleDeleteAthlete(athlete: any) {
+    try {
+      setSaving(true);
+      setError(null);
+
+      await apiClient.athletes.delete(athlete.id);
+      
+      // Close confirmation dialog
+      setDeleteConfirmation({ open: false, athlete: null });
+      
+      // Emit athleteUpdated event - listener will reload athletes
+      console.log('[AthletePanel] Emitting athleteUpdated event (deleted)');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { action: 'deleted', athleteId: athlete.id } 
+        }));
+      }
+      
+      alert(`Successfully deleted athlete: ${athlete.name}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete athlete');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // Toggle confirmation status locally (doesn't save to DB yet)
   function handleToggleConfirmation(athleteId: number) {
     const currentStatus = pendingConfirmations.get(athleteId) ?? confirmedAthletes.has(athleteId);
@@ -229,6 +285,113 @@ export default function AthleteManagementPanel() {
     
     setEditedRows(prev => new Set(prev).add(athleteId));
   }
+
+  // Save World Athletics ID for a specific athlete
+  const handleSaveWaId = async (athleteId: number) => {
+    try {
+      const trimmedId = editingWaIdValue.trim();
+      
+      if (!trimmedId) {
+        setToast({ message: 'World Athletics ID cannot be empty', type: 'error' });
+        return;
+      }
+      
+      // Update via API
+      await apiClient.athletes.update(athleteId, { 
+        worldAthleticsId: trimmedId 
+      });
+      
+      // Update only this athlete in the local state (in-place update, no reload)
+      setAthletes(prev => prev.map(athlete => 
+        athlete.id === athleteId 
+          ? {
+              ...athlete,
+              worldAthleticsId: trimmedId,
+              world_athletics_id: trimmedId,
+            }
+          : athlete
+      ));
+      
+      setToast({ 
+        message: 'World Athletics ID updated successfully', 
+        type: 'success' 
+      });
+      
+      // Clear editing state
+      setEditingWaId(null);
+      setEditingWaIdValue('');
+      
+      // Emit athleteUpdated event with 'synced' action to skip reload
+      console.log('[AthletePanel] WA ID updated in-place, emitting synced event');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { action: 'synced', athleteId, worldAthleticsId: trimmedId } 
+        }));
+      }
+    } catch (error: any) {
+      if (error.message?.includes('unique constraint') || 
+          error.message?.includes('duplicate key')) {
+        setToast({ 
+          message: 'This World Athletics ID is already assigned to another athlete', 
+          type: 'error' 
+        });
+      } else {
+        setToast({ 
+          message: `Failed to update: ${error.message}`, 
+          type: 'error' 
+        });
+      }
+    }
+  };
+
+  const handleSaveHeadshotUrl = async (athleteId: number) => {
+    try {
+      const trimmedUrl = editingHeadshotValue.trim();
+      
+      if (!trimmedUrl) {
+        setToast({ message: 'Headshot URL cannot be empty', type: 'error' });
+        return;
+      }
+      
+      // Update via API
+      await apiClient.athletes.update(athleteId, { 
+        headshotUrl: trimmedUrl 
+      });
+      
+      // Update only this athlete in the local state (in-place update, no reload)
+      setAthletes(prev => prev.map(athlete => 
+        athlete.id === athleteId 
+          ? {
+              ...athlete,
+              headshotUrl: trimmedUrl,
+              headshot_url: trimmedUrl,
+            }
+          : athlete
+      ));
+      
+      setToast({ 
+        message: 'Headshot URL updated successfully', 
+        type: 'success' 
+      });
+      
+      // Clear editing state
+      setEditingHeadshot(null);
+      setEditingHeadshotValue('');
+      
+      // Emit athleteUpdated event with 'synced' action to skip reload
+      console.log('[AthletePanel] Headshot URL updated in-place, emitting synced event');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('athleteUpdated', { 
+          detail: { action: 'synced', athleteId, headshotUrl: trimmedUrl } 
+        }));
+      }
+    } catch (error: any) {
+      setToast({ 
+        message: `Failed to update headshot: ${error.message}`, 
+        type: 'error' 
+      });
+    }
+  };
 
   // Save changes for a specific athlete
   async function handleSaveAthlete(athleteId: number) {
@@ -317,9 +480,14 @@ export default function AthleteManagementPanel() {
               marathon_rank: updatedAthlete.marathonRank,
               age: updatedAthlete.age,
               season_best: updatedAthlete.seasonBest,
+              headshot_url: updatedAthlete.headshot_url || (updatedAthlete as any).headshotUrl,
             }
           : athlete
       ));
+      
+      // Invalidate cache by reloading athletes with bustCache=true
+      // This ensures fresh data loads when user returns to the page
+      await loadAthletes(true);
       
       showToast('Athlete synced successfully!', 'success');
       
@@ -398,7 +566,7 @@ export default function AthleteManagementPanel() {
       console.log('[AthletePanel] After gender filter:', filtered.length);
     }
 
-    // NYC Marathon confirmed filter
+    // Active race confirmed filter
     if (showOnlyConfirmed) {
       filtered = filtered.filter(a => confirmedAthletes.has(a.id));
       console.log('[AthletePanel] After confirmed filter:', filtered.length);
@@ -486,15 +654,40 @@ export default function AthleteManagementPanel() {
         </Button>
       </div>
 
-      {/* Filter Checkboxes and Controls */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
+      {/* Search Input - Full Width */}
+      <div style={{ marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <Input
+            type="text"
+            placeholder="Search by athlete name or country code..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            variant="outline"
+            size="md"
+            style={{ flex: 1 }}
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              colorPalette="primary"
+              onClick={() => setSearchQuery('')}
+              size="md"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Filter Checkboxes */}
+      <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'center' }}>
         <Checkbox
           checked={showOnlyConfirmed}
           onChange={(e) => setShowOnlyConfirmed(e.target.checked)}
           colorPalette="navy"
           size="md"
         >
-          Show only confirmed for NYC Marathon
+          Show only confirmed for active race
         </Checkbox>
 
         <Checkbox
@@ -505,7 +698,10 @@ export default function AthleteManagementPanel() {
         >
           Show only missing World Athletics ID
         </Checkbox>
+      </div>
 
+      {/* Gender and Sort Dropdowns - Side by Side */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label style={{ fontSize: '14px', fontWeight: '500' }}>Gender:</label>
           <Select
@@ -521,24 +717,23 @@ export default function AthleteManagementPanel() {
             style={{ minWidth: '120px' }}
           />
         </div>
-      </div>
 
-      {/* Sort By Control */}
-      <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <label style={{ fontSize: '14px', fontWeight: '500' }}>Sort by:</label>
-        <Select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as 'id' | 'name' | 'pb' | 'rank')}
-          options={[
-            { value: 'id', label: 'ID' },
-            { value: 'name', label: 'Name' },
-            { value: 'pb', label: 'Personal Best' },
-            { value: 'rank', label: 'Marathon Rank' }
-          ]}
-          variant="outline"
-          size="sm"
-          style={{ minWidth: '160px' }}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ fontSize: '14px', fontWeight: '500' }}>Sort by:</label>
+          <Select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'id' | 'name' | 'pb' | 'rank')}
+            options={[
+              { value: 'id', label: 'ID' },
+              { value: 'name', label: 'Name' },
+              { value: 'pb', label: 'Personal Best' },
+              { value: 'rank', label: 'Marathon Rank' }
+            ]}
+            variant="outline"
+            size="sm"
+            style={{ minWidth: '150px' }}
+          />
+        </div>
       </div>
 
       <div className="athletes-count" style={{ marginBottom: '1rem', fontSize: '14px', color: '#666' }}>
@@ -564,6 +759,7 @@ export default function AthleteManagementPanel() {
                 backgroundColor: '#2C39A2',
                 color: 'white',
               }}>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Photo</th>
                 <th style={{ padding: '0.5rem', textAlign: 'left', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Name</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Country</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Gender</th>
@@ -571,7 +767,7 @@ export default function AthleteManagementPanel() {
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Rank</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Age</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>WA ID</th>
-                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>NYC</th>
+                <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Confirmed</th>
                 <th style={{ padding: '0.5rem', textAlign: 'center', fontWeight: '600', fontSize: '12px', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
@@ -584,6 +780,117 @@ export default function AthleteManagementPanel() {
                     backgroundColor: index % 2 === 0 ? 'white' : '#f9f9f9',
                   }}
                 >
+                  <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                    {editingHeadshot === athlete.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={editingHeadshotValue}
+                          onChange={(e) => setEditingHeadshotValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveHeadshotUrl(athlete.id);
+                            if (e.key === 'Escape') { setEditingHeadshot(null); setEditingHeadshotValue(''); }
+                          }}
+                          placeholder="Image URL"
+                          style={{
+                            width: '200px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '12px',
+                            border: '1px solid #cbd5e0',
+                            borderRadius: '4px',
+                          }}
+                          autoFocus
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleSaveHeadshotUrl(athlete.id)}
+                            disabled={saving}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '12px',
+                              backgroundColor: '#28a745',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: saving ? 'not-allowed' : 'pointer',
+                              opacity: saving ? 0.6 : 1,
+                            }}
+                          >
+                            ✓ Save
+                          </button>
+                          <button
+                            onClick={() => { setEditingHeadshot(null); setEditingHeadshotValue(''); }}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '12px',
+                              backgroundColor: '#6c757d',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            ✗ Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => {
+                          setEditingHeadshot(athlete.id);
+                          setEditingHeadshotValue(athlete.headshot_url || (athlete as any).headshotUrl || '');
+                        }}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          display: 'inline-block',
+                          backgroundColor: '#f0f0f0',
+                          border: '2px solid #ddd',
+                          transition: 'border-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.borderColor = '#2C39A2'}
+                        onMouseLeave={(e) => e.currentTarget.style.borderColor = '#ddd'}
+                        title="Click to edit headshot URL"
+                      >
+                        {(athlete.headshot_url || (athlete as any).headshotUrl) ? (
+                          <img
+                            src={athlete.headshot_url || (athlete as any).headshotUrl}
+                            alt={athlete.name}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const initials = athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                                parent.innerHTML = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #666; font-size: 14px;">${initials}</div>`;
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            color: '#666',
+                            fontSize: '14px',
+                          }}>
+                            {athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ padding: '0.75rem', fontWeight: '500', color: '#2C39A2' }}>{athlete.name}</td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>{athlete.country}</td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', textTransform: 'capitalize' }}>
@@ -595,7 +902,76 @@ export default function AthleteManagementPanel() {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>{athlete.age || '-'}</td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', fontFamily: 'monospace' }}>
-                    {athlete.worldAthleticsId || athlete.world_athletics_id || '-'}
+                    {editingWaId === athlete.id ? (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'center' }}>
+                        <input
+                          type="text"
+                          value={editingWaIdValue}
+                          onChange={(e) => setEditingWaIdValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveWaId(athlete.id);
+                            if (e.key === 'Escape') { setEditingWaId(null); setEditingWaIdValue(''); }
+                          }}
+                          placeholder="WA ID"
+                          style={{
+                            width: '100px',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '13px',
+                            fontFamily: 'monospace',
+                            border: '1px solid #cbd5e0',
+                            borderRadius: '4px',
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleSaveWaId(athlete.id)}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '12px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={() => { setEditingWaId(null); setEditingWaIdValue(''); }}
+                          style={{
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '12px',
+                            backgroundColor: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <span
+                        onClick={() => {
+                          setEditingWaId(athlete.id);
+                          setEditingWaIdValue(athlete.worldAthleticsId || athlete.world_athletics_id || '');
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: '4px',
+                          display: 'inline-block',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f7fafc'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        title="Click to edit"
+                      >
+                        {athlete.worldAthleticsId || athlete.world_athletics_id || '-'}
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                     {/* Toggle Switch for Confirmation Status */}
@@ -667,6 +1043,16 @@ export default function AthleteManagementPanel() {
                       >
                         Sync
                       </Button>
+                      <Button
+                        variant="solid"
+                        colorPalette="error"
+                        onClick={() => setDeleteConfirmation({ open: true, athlete })}
+                        disabled={saving}
+                        title="Delete athlete (use for handling duplicates)"
+                        size="xs"
+                      >
+                        Delete
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -696,6 +1082,47 @@ export default function AthleteManagementPanel() {
           onCancel={() => setEditingAthlete(null)}
           saving={saving}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.open && deleteConfirmation.athlete && (
+        <div className="modal" style={{ display: 'flex' }}>
+          <div className="modal-overlay" onClick={() => setDeleteConfirmation({ open: false, athlete: null })}></div>
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <h3 style={{ marginBottom: '1rem', color: '#dc3545' }}>Delete Athlete</h3>
+            <p style={{ marginBottom: '1rem' }}>
+              Are you sure you want to delete <strong>{deleteConfirmation.athlete.name}</strong> ({deleteConfirmation.athlete.country})?
+            </p>
+            <p style={{ marginBottom: '1rem', color: '#dc3545', fontWeight: '600' }}>
+              ⚠️ This action cannot be undone!
+            </p>
+            <p style={{ marginBottom: '1.5rem', fontSize: '14px', color: '#666' }}>
+              All related data (race confirmations, race results, team assignments) will also be deleted.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <Button
+                variant="ghost"
+                colorPalette="navy"
+                onClick={() => setDeleteConfirmation({ open: false, athlete: null })}
+                disabled={saving}
+                size="md"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="solid"
+                colorPalette="error"
+                onClick={() => handleDeleteAthlete(deleteConfirmation.athlete)}
+                disabled={saving}
+                isLoading={saving}
+                loadingText="Deleting..."
+                size="md"
+              >
+                Delete Athlete
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

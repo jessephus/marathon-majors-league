@@ -115,6 +115,28 @@ function persistCache(): void {
   }
 }
 
+/**
+ * Clear all cached responses (both in-memory and sessionStorage)
+ * Call this after mutations (create/update/delete) to ensure fresh data is fetched
+ */
+export function clearCache(): void {
+  if (!isBrowser()) {
+    return;
+  }
+
+  try {
+    // Clear in-memory cache
+    responseCache.clear();
+    
+    // Clear sessionStorage persistence
+    window.sessionStorage.removeItem(CACHE_STORAGE_KEY);
+    
+    console.log('[API Cache] Cache cleared - next requests will fetch fresh data');
+  } catch (error) {
+    console.warn('[API Cache] Failed to clear cache:', error);
+  }
+}
+
 function getCacheType(url: string): CacheType {
   if (url.includes('/api/athletes')) return 'athletes';
   if (url.includes('/api/results')) return 'results';
@@ -434,10 +456,12 @@ export const athleteApi = {
   /**
    * Fetch all athletes
    * @param confirmedOnly - If true, only return athletes confirmed for active race (default: false for admin)
+   * @param bustCache - If true, adds timestamp to bypass HTTP cache (for post-update refreshes)
    */
-  async list(params?: { confirmedOnly?: boolean }) {
+  async list(params?: { confirmedOnly?: boolean; bustCache?: boolean }) {
     const confirmedOnly = params?.confirmedOnly ?? false;
-    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}`);
+    const cacheBust = params?.bustCache ? `&_t=${Date.now()}` : '';
+    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}${cacheBust}`);
   },
 
   /**
@@ -493,7 +517,7 @@ export const athleteApi = {
    */
   async update(athleteId: number, updates: any) {
     return apiRequest('/api/update-athlete', {
-      method: 'POST',
+      method: 'PUT',
       body: JSON.stringify({ athleteId, ...updates }),
     });
   },
@@ -514,6 +538,16 @@ export const athleteApi = {
   async sync(athleteId: number) {
     return apiRequest(`/api/athletes/${athleteId}/sync`, {
       method: 'POST',
+    });
+  },
+
+  /**
+   * Delete an athlete (commissioner only)
+   */
+  async delete(athleteId: number) {
+    return apiRequest('/api/delete-athlete', {
+      method: 'DELETE',
+      body: JSON.stringify({ athleteId }),
     });
   },
 };

@@ -12,7 +12,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, clearCache } from '@/lib/api-client';
 import RaceDetailModal from '@/components/RaceDetailModal';
 import { Button, IconButton, Input, Textarea, Checkbox, FormControl, FormLabel, FormHelperText } from '@/components/chakra';
 
@@ -135,16 +135,37 @@ export default function RaceManagementPanel() {
 
   const handleEditRace = (race: Race) => {
     setEditingRace(race);
+    
+    // Format date for input type="date" (expects YYYY-MM-DD)
+    let formattedDate = race.date;
+    if (race.date) {
+      // If date is a timestamp or Date object, extract YYYY-MM-DD
+      const dateObj = new Date(race.date);
+      if (!isNaN(dateObj.getTime())) {
+        formattedDate = dateObj.toISOString().split('T')[0];
+      }
+    }
+    
+    // Format lockTime for input type="datetime-local" (expects YYYY-MM-DDTHH:MM)
+    let formattedLockTime = '';
+    if (race.lockTime) {
+      const lockTimeObj = new Date(race.lockTime);
+      if (!isNaN(lockTimeObj.getTime())) {
+        // datetime-local expects format: YYYY-MM-DDTHH:MM
+        formattedLockTime = lockTimeObj.toISOString().slice(0, 16);
+      }
+    }
+    
     setFormData({
       name: race.name,
-      date: race.date,
+      date: formattedDate,
       location: race.location,
       distance: race.distance,
       eventType: race.eventType,
       worldAthleticsEventId: race.worldAthleticsEventId || '',
       description: race.description || '',
       isActive: race.isActive,
-      lockTime: race.lockTime || '',
+      lockTime: formattedLockTime,
       logoUrl: race.logoUrl || '',
       backgroundImageUrl: race.backgroundImageUrl || '',
       primaryColor: race.primaryColor || '',
@@ -177,9 +198,11 @@ export default function RaceManagementPanel() {
         accentColor: formData.accentColor || null
       };
 
+      console.log('Submitting race update:', { id: editingRace?.id, payload });
+
       if (editingRace) {
         // Update existing race
-        await apiClient.races.update(editingRace.id, {
+        const result = await apiClient.races.update(editingRace.id, {
           name: payload.name,
           date: payload.date,
           location: payload.location,
@@ -195,10 +218,11 @@ export default function RaceManagementPanel() {
           secondary_color: payload.secondaryColor,
           accent_color: payload.accentColor
         });
+        console.log('Race update result:', result);
         setSuccessMessage(`Race "${formData.name}" updated successfully`);
       } else {
         // Create new race
-        await apiClient.races.create({
+        const result = await apiClient.races.create({
           name: payload.name,
           date: payload.date,
           location: payload.location,
@@ -213,12 +237,20 @@ export default function RaceManagementPanel() {
           secondary_color: payload.secondaryColor,
           accent_color: payload.accentColor
         });
+        console.log('Race create result:', result);
         setSuccessMessage(`Race "${formData.name}" created successfully`);
       }
 
       setShowForm(false);
-      loadRaces();
+      
+      // CRITICAL: Clear both in-memory and sessionStorage cache RIGHT BEFORE loadRaces()
+      // This ensures the next fetch will get fresh data from the database
+      clearCache();
+      
+      // Now fetch fresh data (cache is cleared, so this will hit the API)
+      await loadRaces();
     } catch (err: any) {
+      console.error('Error saving race:', err);
       setError(err.message || 'Failed to save race');
     }
   };
@@ -232,7 +264,11 @@ export default function RaceManagementPanel() {
       setError(null);
       await apiClient.races.delete(race.id);
       setSuccessMessage(`Race "${race.name}" deleted successfully`);
-      loadRaces();
+      
+      // Clear both in-memory and sessionStorage cache before reloading to ensure fresh data
+      clearCache();
+      
+      await loadRaces();
     } catch (err: any) {
       setError(err.message || 'Failed to delete race');
     }
