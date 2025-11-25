@@ -205,7 +205,7 @@ Opens from right side with full navigation options
 >
   {/* Left: Logo + Wordmark */}
   <HStack spacing={3} flex={1}>
-    <Image src="/images/MMFL-logo.png" h="48px" w="48px" alt="MMFL Logo" />
+    <Image src="/assets/mmfl-logo.png" h="48px" w="48px" alt="MMFL Logo" />
     <VStack align="start" spacing={0}>
       <Heading size="sm" lineHeight={1.2}>Marathon Majors</Heading>
       <Text fontSize="xs" opacity={0.8}>Fantasy League</Text>
@@ -877,7 +877,7 @@ export function StickyHeader() {
         <HStack spacing={3} flex={1}>
           <Link href="/">
             <Image 
-              src="/images/MMFL-logo.png" 
+              src="/assets/mmfl-logo.png" 
               h={{ base: '36px', md: '44px', lg: '48px' }}
               w={{ base: '36px', md: '44px', lg: '48px' }}
               alt="MMFL Logo" 

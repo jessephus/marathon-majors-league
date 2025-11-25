@@ -349,7 +349,7 @@ export function MobileMenuDrawer({
 
           <HStack gap={3}>
             <Image
-              src="/images/MMFL-logo.png"
+              src="/assets/mmfl-logo.png"
               alt="MMFL Logo"
               width="40px"
               height="40px"

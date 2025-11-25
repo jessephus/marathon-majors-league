@@ -86,7 +86,7 @@
 
 #### Primary Logo
 
-<img src="../public/images/MMFL-logo.png" alt="MMFL Logo" width="250" height="250" valign="top"/>
+<img src="../public/assets/mmfl-logo.png" alt="MMFL Logo" width="250" height="250" valign="top"/>
 
 The circular badge design embodies championship prestige. 
 

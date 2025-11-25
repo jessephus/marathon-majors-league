@@ -267,7 +267,7 @@ function isNavItemActive(
 ```tsx
 <HStack gap={{ base: 2, md: 3 }}>
   <Image 
-    src="/images/MMFL-logo.png" 
+    src="/assets/mmfl-logo.png" 
     alt="MMFL Logo" 
     width={{ base: '32px', md: '40px', lg: '48px' }}
     height={{ base: '32px', md: '40px', lg: '48px' }}
