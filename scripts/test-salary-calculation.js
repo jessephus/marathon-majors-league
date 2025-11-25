@@ -1,6 +1,10 @@
 /**
  * Test Salary Calculation (Standalone Version)
  * Works with athletes.json to test pricing algorithm without database
+ * 
+ * NORMALIZATION: Salaries are normalized per gender so that both men 
+ * and women have an average salary centered around $5,000. This ensures
+ * fair team building with balanced spending across genders.
  */
 
 import { readFileSync } from 'fs';
@@ -182,58 +186,147 @@ function calculateSalary(athlete) {
 }
 
 /**
+ * Normalize salaries within a group to have the target average salary
+ * while preserving relative ordering and respecting min/max bounds.
+ * 
+ * This uses a scaling approach that:
+ * 1. Shifts salaries so the current average matches the target average
+ * 2. Preserves relative ordering of athletes
+ * 3. Clamps final values to min/max salary bounds
+ * 4. Re-rounds to nearest $100
+ */
+function normalizeSalaries(athletes, targetAverage = SALARY_CONFIG.averageSalary) {
+  if (athletes.length === 0) return athletes;
+  
+  // Calculate current average
+  const currentTotal = athletes.reduce((sum, a) => sum + a.rawSalary, 0);
+  const currentAverage = currentTotal / athletes.length;
+  
+  if (currentAverage === 0) return athletes;
+  
+  // Calculate scale factor to achieve target average
+  const scaleFactor = targetAverage / currentAverage;
+  
+  // Apply scaling and clamp to bounds
+  return athletes.map(athlete => {
+    const scaledSalary = athlete.rawSalary * scaleFactor;
+    
+    // Clamp to min/max bounds
+    const clampedSalary = Math.max(
+      SALARY_CONFIG.minSalary,
+      Math.min(SALARY_CONFIG.maxSalary, scaledSalary)
+    );
+    
+    // Round to nearest $100
+    const finalSalary = Math.round(clampedSalary / 100) * 100;
+    
+    return {
+      ...athlete,
+      salary: finalSalary
+    };
+  });
+}
+
+/**
  * Test salary calculation
  */
 function testSalaryCalculation() {
-  console.log('🔄 Testing salary calculation...\n');
+  console.log('🔄 Testing salary calculation with gender normalization...\n');
   
   // Load athletes.json
   const athletesPath = join(process.cwd(), 'public', 'athletes.json');
-  const athletesData = JSON.parse(readFileSync(athletesPath, 'utf-8'));
+  let athletesData;
+  try {
+    athletesData = JSON.parse(readFileSync(athletesPath, 'utf-8'));
+  } catch (error) {
+    console.error('❌ Could not load athletes.json:', error.message);
+    console.log('   This test requires public/athletes.json file.');
+    console.log('   Run the database calculation script instead: node scripts/calculate-athlete-salaries.js');
+    process.exit(1);
+  }
   
-  // Calculate salaries for all athletes
-  const updates = [];
+  // Phase 1: Calculate raw salaries for all athletes
+  const rawUpdates = {
+    men: [],
+    women: []
+  };
+  
+  for (const gender of ['men', 'women']) {
+    for (const athlete of athletesData[gender]) {
+      const { salary: rawSalary, score } = calculateSalary({ ...athlete, gender });
+      
+      rawUpdates[gender].push({
+        id: athlete.id,
+        name: athlete.name,
+        gender,
+        rawSalary,
+        score,
+        pb: athlete.pb,
+        rank: athlete.worldAthletics?.marathonRank
+      });
+    }
+  }
+  
+  // Display pre-normalization statistics
+  console.log('📊 PRE-NORMALIZATION STATISTICS\n');
+  console.log('='.repeat(70));
+  
+  for (const gender of ['men', 'women']) {
+    const genderAthletes = rawUpdates[gender];
+    if (genderAthletes.length === 0) continue;
+    
+    const total = genderAthletes.reduce((sum, a) => sum + a.rawSalary, 0);
+    const avg = total / genderAthletes.length;
+    const sorted = genderAthletes.map(a => a.rawSalary).sort((a, b) => b - a);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const min = Math.min(...sorted);
+    const max = Math.max(...sorted);
+    
+    console.log(`\n${gender.toUpperCase()} (Raw, before normalization):`);
+    console.log(`  Count: ${genderAthletes.length}`);
+    console.log(`  Average: $${Math.round(avg).toLocaleString()}`);
+    console.log(`  Median: $${median.toLocaleString()}`);
+    console.log(`  Range: $${min.toLocaleString()} - $${max.toLocaleString()}`);
+  }
+  
+  // Phase 2: Normalize salaries per gender to target $5,000 average
+  console.log('\n\n🔧 APPLYING GENDER NORMALIZATION...');
+  console.log(`   Target average per gender: $${SALARY_CONFIG.averageSalary.toLocaleString()}\n`);
+  
+  const normalizedMen = normalizeSalaries(rawUpdates.men);
+  const normalizedWomen = normalizeSalaries(rawUpdates.women);
+  const updates = [...normalizedMen, ...normalizedWomen];
+  
+  // Calculate final statistics
   const stats = {
     men: { total: 0, count: 0, min: Infinity, max: -Infinity, salaries: [] },
     women: { total: 0, count: 0, min: Infinity, max: -Infinity, salaries: [] }
   };
   
-  for (const gender of ['men', 'women']) {
-    for (const athlete of athletesData[gender]) {
-      const { salary, score } = calculateSalary({ ...athlete, gender });
-      
-      updates.push({
-        id: athlete.id,
-        name: athlete.name,
-        gender,
-        salary,
-        score,
-        pb: athlete.pb,
-        rank: athlete.worldAthletics?.marathonRank
-      });
-      
-      const genderStats = stats[gender];
-      genderStats.total += salary;
-      genderStats.count++;
-      genderStats.min = Math.min(genderStats.min, salary);
-      genderStats.max = Math.max(genderStats.max, salary);
-      genderStats.salaries.push(salary);
-    }
+  for (const update of updates) {
+    const genderStats = stats[update.gender];
+    genderStats.total += update.salary;
+    genderStats.count++;
+    genderStats.min = Math.min(genderStats.min, update.salary);
+    genderStats.max = Math.max(genderStats.max, update.salary);
+    genderStats.salaries.push(update.salary);
   }
   
-  // Display statistics
-  console.log('📈 SALARY STATISTICS\n');
+  // Display post-normalization statistics
+  console.log('📈 POST-NORMALIZATION SALARY STATISTICS\n');
   console.log('='.repeat(70));
   
   for (const gender of ['men', 'women']) {
     const genderStats = stats[gender];
+    if (genderStats.count === 0) continue;
+    
     const avg = genderStats.total / genderStats.count;
-    const sorted = genderStats.salaries.sort((a, b) => b - a);
+    const sorted = [...genderStats.salaries].sort((a, b) => b - a);
     const median = sorted[Math.floor(sorted.length / 2)];
     
     console.log(`\n${gender.toUpperCase()}:`);
     console.log(`  Count: ${genderStats.count}`);
-    console.log(`  Average: $${Math.round(avg).toLocaleString()}`);
+    console.log(`  Average: $${Math.round(avg).toLocaleString()} (target: $${SALARY_CONFIG.averageSalary.toLocaleString()})`);
     console.log(`  Median: $${median.toLocaleString()}`);
     console.log(`  Range: $${genderStats.min.toLocaleString()} - $${genderStats.max.toLocaleString()}`);
     
@@ -331,11 +424,21 @@ function testSalaryCalculation() {
     console.log('  ✅ Cannot afford all elite athletes - forces strategic choices');
   }
   
-  const avgSalary = (stats.men.total + stats.women.total) / (stats.men.count + stats.women.count);
-  const avgDiff = Math.abs(avgSalary - SALARY_CONFIG.averageSalary);
-  console.log(`  📊 Average salary: $${Math.round(avgSalary).toLocaleString()} (target: $${SALARY_CONFIG.averageSalary.toLocaleString()})`);
-  if (avgDiff < 500) {
-    console.log('  ✅ Average is close to target - good balance');
+  // Check gender balance
+  console.log('\n📊 GENDER BALANCE CHECK:');
+  const menAvg = stats.men.total / stats.men.count;
+  const womenAvg = stats.women.total / stats.women.count;
+  console.log(`  Men average: $${Math.round(menAvg).toLocaleString()} (target: $${SALARY_CONFIG.averageSalary.toLocaleString()})`);
+  console.log(`  Women average: $${Math.round(womenAvg).toLocaleString()} (target: $${SALARY_CONFIG.averageSalary.toLocaleString()})`);
+  
+  const menDiff = Math.abs(menAvg - SALARY_CONFIG.averageSalary);
+  const womenDiff = Math.abs(womenAvg - SALARY_CONFIG.averageSalary);
+  
+  if (menDiff < 500 && womenDiff < 500) {
+    console.log('  ✅ Both genders are close to target average - good balance!');
+  } else {
+    if (menDiff >= 500) console.log(`  ⚠️  Men average is $${Math.round(menDiff)} off target`);
+    if (womenDiff >= 500) console.log(`  ⚠️  Women average is $${Math.round(womenDiff)} off target`);
   }
   
   console.log('');

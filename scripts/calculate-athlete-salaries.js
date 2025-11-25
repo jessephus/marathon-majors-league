@@ -12,6 +12,10 @@
  * Target: $30,000 total cap for 6 athletes = $5,000 average
  * Elite athletes should be 2-3x average ($10k-$15k)
  * Lower-tier athletes should be 0.3-0.7x average ($1.5k-$3.5k)
+ * 
+ * NORMALIZATION: Salaries are normalized per gender so that both men 
+ * and women have an average salary centered around $5,000. This ensures
+ * fair team building with balanced spending across genders.
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -212,6 +216,48 @@ function calculateSalary(athlete) {
 }
 
 /**
+ * Normalize salaries within a group to have the target average salary
+ * while preserving relative ordering and respecting min/max bounds.
+ * 
+ * This uses a scaling approach that:
+ * 1. Shifts salaries so the current average matches the target average
+ * 2. Preserves relative ordering of athletes
+ * 3. Clamps final values to min/max salary bounds
+ * 4. Re-rounds to nearest $100
+ */
+function normalizeSalaries(athletes, targetAverage = SALARY_CONFIG.averageSalary) {
+  if (athletes.length === 0) return athletes;
+  
+  // Calculate current average
+  const currentTotal = athletes.reduce((sum, a) => sum + a.rawSalary, 0);
+  const currentAverage = currentTotal / athletes.length;
+  
+  if (currentAverage === 0) return athletes;
+  
+  // Calculate scale factor to achieve target average
+  const scaleFactor = targetAverage / currentAverage;
+  
+  // Apply scaling and clamp to bounds
+  return athletes.map(athlete => {
+    const scaledSalary = athlete.rawSalary * scaleFactor;
+    
+    // Clamp to min/max bounds
+    const clampedSalary = Math.max(
+      SALARY_CONFIG.minSalary,
+      Math.min(SALARY_CONFIG.maxSalary, scaledSalary)
+    );
+    
+    // Round to nearest $100
+    const finalSalary = Math.round(clampedSalary / 100) * 100;
+    
+    return {
+      ...athlete,
+      salary: finalSalary
+    };
+  });
+}
+
+/**
  * Main function to update all athlete salaries
  */
 async function updateAthleteSalaries() {
@@ -228,31 +274,67 @@ async function updateAthleteSalaries() {
     
     console.log(`📊 Found ${athletes.length} athletes\n`);
     
-    // Calculate salaries
-    const updates = [];
+    // Phase 1: Calculate raw salaries for all athletes
+    const rawUpdates = {
+      men: [],
+      women: []
+    };
+    
+    for (const athlete of athletes) {
+      const { salary: rawSalary, score, factors } = calculateSalary(athlete);
+      
+      rawUpdates[athlete.gender].push({
+        id: athlete.id,
+        name: athlete.name,
+        gender: athlete.gender,
+        rawSalary,
+        score
+      });
+    }
+    
+    // Display pre-normalization statistics
+    console.log('📊 PRE-NORMALIZATION STATISTICS\n');
+    console.log('=' .repeat(60));
+    
+    for (const gender of ['men', 'women']) {
+      const genderAthletes = rawUpdates[gender];
+      if (genderAthletes.length === 0) continue;
+      
+      const total = genderAthletes.reduce((sum, a) => sum + a.rawSalary, 0);
+      const avg = total / genderAthletes.length;
+      const sorted = genderAthletes.map(a => a.rawSalary).sort((a, b) => b - a);
+      const median = sorted[Math.floor(sorted.length / 2)];
+      const min = Math.min(...sorted);
+      const max = Math.max(...sorted);
+      
+      console.log(`\n${gender.toUpperCase()} (Raw, before normalization):`);
+      console.log(`  Count: ${genderAthletes.length}`);
+      console.log(`  Average: $${Math.round(avg).toLocaleString()}`);
+      console.log(`  Median: $${median.toLocaleString()}`);
+      console.log(`  Range: $${min.toLocaleString()} - $${max.toLocaleString()}`);
+    }
+    
+    // Phase 2: Normalize salaries per gender to target $5,000 average
+    console.log('\n\n🔧 APPLYING GENDER NORMALIZATION...');
+    console.log(`   Target average per gender: $${SALARY_CONFIG.averageSalary.toLocaleString()}\n`);
+    
+    const normalizedMen = normalizeSalaries(rawUpdates.men);
+    const normalizedWomen = normalizeSalaries(rawUpdates.women);
+    const updates = [...normalizedMen, ...normalizedWomen];
+    
+    // Calculate final statistics
     const stats = {
       men: { total: 0, count: 0, min: Infinity, max: -Infinity, salaries: [] },
       women: { total: 0, count: 0, min: Infinity, max: -Infinity, salaries: [] }
     };
     
-    for (const athlete of athletes) {
-      const { salary, score, factors } = calculateSalary(athlete);
-      
-      updates.push({
-        id: athlete.id,
-        name: athlete.name,
-        gender: athlete.gender,
-        salary,
-        score
-      });
-      
-      // Track stats
-      const genderStats = stats[athlete.gender];
-      genderStats.total += salary;
+    for (const update of updates) {
+      const genderStats = stats[update.gender];
+      genderStats.total += update.salary;
       genderStats.count++;
-      genderStats.min = Math.min(genderStats.min, salary);
-      genderStats.max = Math.max(genderStats.max, salary);
-      genderStats.salaries.push(salary);
+      genderStats.min = Math.min(genderStats.min, update.salary);
+      genderStats.max = Math.max(genderStats.max, update.salary);
+      genderStats.salaries.push(update.salary);
     }
     
     // Update database
@@ -268,19 +350,21 @@ async function updateAthleteSalaries() {
     
     console.log('✅ All salaries updated!\n');
     
-    // Display statistics
-    console.log('📈 SALARY STATISTICS\n');
+    // Display post-normalization statistics
+    console.log('📈 POST-NORMALIZATION SALARY STATISTICS\n');
     console.log('=' .repeat(60));
     
     for (const gender of ['men', 'women']) {
       const genderStats = stats[gender];
+      if (genderStats.count === 0) continue;
+      
       const avg = genderStats.total / genderStats.count;
-      const sorted = genderStats.salaries.sort((a, b) => b - a);
+      const sorted = [...genderStats.salaries].sort((a, b) => b - a);
       const median = sorted[Math.floor(sorted.length / 2)];
       
       console.log(`\n${gender.toUpperCase()}:`);
       console.log(`  Count: ${genderStats.count}`);
-      console.log(`  Average: $${Math.round(avg).toLocaleString()}`);
+      console.log(`  Average: $${Math.round(avg).toLocaleString()} (target: $${SALARY_CONFIG.averageSalary.toLocaleString()})`);
       console.log(`  Median: $${median.toLocaleString()}`);
       console.log(`  Range: $${genderStats.min.toLocaleString()} - $${genderStats.max.toLocaleString()}`);
       
