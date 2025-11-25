@@ -307,7 +307,7 @@ async function updateAthleteSalaries() {
     
     // Display pre-normalization statistics
     console.log('📊 PRE-NORMALIZATION STATISTICS\n');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     
     for (const gender of ['men', 'women']) {
       const genderAthletes = rawUpdates[gender];
@@ -369,7 +369,7 @@ async function updateAthleteSalaries() {
     
     // Display post-normalization statistics
     console.log('📈 POST-NORMALIZATION SALARY STATISTICS\n');
-    console.log('=' .repeat(60));
+    console.log('='.repeat(60));
     
     for (const gender of ['men', 'women']) {
       const genderStats = stats[gender];
