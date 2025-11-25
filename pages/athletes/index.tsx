@@ -36,7 +36,7 @@ import {
 } from '@chakra-ui/react';
 import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import AthleteModal from '@/components/AthleteModal';
-import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton } from '@/components/chakra';
+import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton, Checkbox } from '@/components/chakra';
 import Head from 'next/head';
 
 // ===========================
@@ -56,6 +56,7 @@ interface Athlete {
   sponsor?: string;
   seasonBest?: string;
   worldAthleticsProfileUrl?: string;
+  nycConfirmed?: boolean;
 }
 
 type SortOption = 'fantasyScore' | 'pb' | 'rank' | 'salary' | 'age' | 'name';
@@ -151,6 +152,7 @@ export default function AthletesBrowsePage() {
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('fantasyScore');
+  const [showConfirmedOnly, setShowConfirmedOnly] = useState(false);
   
   // Modal state
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
@@ -250,6 +252,11 @@ export default function AthletesBrowsePage() {
       );
     }
     
+    // Apply confirmation filter
+    if (showConfirmedOnly) {
+      filtered = filtered.filter(a => a.nycConfirmed === true);
+    }
+    
     // Calculate fantasy scores for sorting
     const withScores = filtered.map(a => ({
       athlete: a,
@@ -277,7 +284,7 @@ export default function AthletesBrowsePage() {
     });
     
     return withScores;
-  }, [athletes, genderFilter, countryFilter, searchQuery, sortBy]);
+  }, [athletes, genderFilter, countryFilter, searchQuery, sortBy, showConfirmedOnly]);
 
   // Handlers
   const handleAthleteClick = useCallback((athlete: Athlete) => {
@@ -310,13 +317,13 @@ export default function AthletesBrowsePage() {
           py={{ base: 2, md: 3 }}
         >
           <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
-            {/* Single responsive row - wraps search on mobile */}
+            {/* Responsive controls - reordered per user request */}
             <Flex 
               gap={2}
               flexWrap="wrap"
               align="center"
             >
-              {/* Gender Tabs */}
+              {/* Gender Tabs - Always first */}
               <HStack gap={0} flexShrink={0}>
                 {(['all', 'men', 'women'] as GenderFilter[]).map((gender) => (
                   <Button
@@ -340,8 +347,56 @@ export default function AthletesBrowsePage() {
                 ))}
               </HStack>
 
-              {/* Country Filter */}
-              <Box flex="0 1 150px" minW={{ base: '100px', md: '120px' }}>
+              {/* Search Bar - On first row, fills available space */}
+              <Box position="relative" flex={{ base: '1 1 auto', md: '1 1 auto' }} minW="200px">
+                <MagnifyingGlassIcon
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '18px',
+                    height: '18px',
+                    color: '#6B7280',
+                    pointerEvents: 'none',
+                    zIndex: 1,
+                  }}
+                />
+                <Input
+                  placeholder="Search athletes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  pl="40px"
+                  size="sm"
+                  bg="gray.50"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  color="gray.900"
+                  borderRadius="lg"
+                  _placeholder={{ color: 'gray.400' }}
+                  _hover={{ borderColor: 'gray.300' }}
+                  _focus={{ 
+                    borderColor: 'navy.500', 
+                    boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)',
+                    outline: 'none',
+                    bg: 'white',
+                  }}
+                  aria-label="Search athletes by name or country"
+                />
+              </Box>
+
+              {/* Confirmation Toggle - On first row, wraps to second on mobile */}
+              <Checkbox
+                checked={showConfirmedOnly}
+                onChange={(e) => setShowConfirmedOnly(e.target.checked)}
+                size="sm"
+                colorPalette="navy"
+              >
+                Confirmed Only
+              </Checkbox>
+
+              {/* Country Filter - Wraps to second row on mobile */}
+              <Box flex={{ base: '0 1 auto', md: '0 1 150px' }} minW={{ base: '100px', md: '120px' }}>
                 <Box position="relative">
                   <select
                     value={countryFilter}
@@ -383,8 +438,8 @@ export default function AthletesBrowsePage() {
                 </Box>
               </Box>
 
-              {/* Sort By Filter */}
-              <Box flex="0 1 150px" minW={{ base: '100px', md: '120px' }}>
+              {/* Sort By Filter - Wraps to second row on mobile */}
+              <Box flex={{ base: '0 1 auto', md: '0 1 150px' }} minW={{ base: '100px', md: '120px' }}>
                 <Box position="relative">
                   <select
                     value={sortBy}
@@ -424,44 +479,6 @@ export default function AthletesBrowsePage() {
                     }}
                   />
                 </Box>
-              </Box>
-
-              {/* Search Bar - Wraps to next row on mobile */}
-              <Box position="relative" flex={{ base: '1 1 100%', md: '1 1 auto' }} minW="200px">
-                <MagnifyingGlassIcon
-                  style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: '18px',
-                    height: '18px',
-                    color: '#6B7280',
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                  }}
-                />
-                <Input
-                  placeholder="Search athletes..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  pl="40px"
-                  size="sm"
-                  bg="gray.50"
-                  border="1px solid"
-                  borderColor="gray.200"
-                  color="gray.900"
-                  borderRadius="lg"
-                  _placeholder={{ color: 'gray.400' }}
-                  _hover={{ borderColor: 'gray.300' }}
-                  _focus={{ 
-                    borderColor: 'navy.500', 
-                    boxShadow: '0 0 0 1px var(--chakra-colors-navy-500)',
-                    outline: 'none',
-                    bg: 'white',
-                  }}
-                  aria-label="Search athletes by name or country"
-                />
               </Box>
             </Flex>
           </Container>
