@@ -62,6 +62,13 @@ type SortOption = 'fantasyScore' | 'pb' | 'rank' | 'salary' | 'age' | 'name';
 type GenderFilter = 'all' | 'men' | 'women';
 
 // ===========================
+// Constants
+// ===========================
+
+/** Default salary for athletes without a salary set */
+const DEFAULT_SALARY = 5000;
+
+// ===========================
 // Helper Functions
 // ===========================
 
@@ -190,8 +197,8 @@ export default function AthletesBrowsePage() {
         
         // Combine men and women into single array with salary defaults
         const allAthletes: Athlete[] = [
-          ...(data.men || []).map((a: any) => ({ ...a, salary: a.salary || 5000 })),
-          ...(data.women || []).map((a: any) => ({ ...a, salary: a.salary || 5000 })),
+          ...(data.men || []).map((a: any) => ({ ...a, salary: a.salary || DEFAULT_SALARY })),
+          ...(data.women || []).map((a: any) => ({ ...a, salary: a.salary || DEFAULT_SALARY })),
         ];
         
         // If no athletes returned, use demo data
@@ -575,10 +582,10 @@ export default function AthletesBrowsePage() {
         />
       )}
 
-      {/* Custom styles for select options */}
+      {/* Custom styles for select options - uses navy.800 from theme */}
       <style jsx global>{`
         select option {
-          background-color: #1F2D47;
+          background-color: var(--chakra-colors-navy-800, #1F2D47);
           color: white;
           padding: 8px;
         }
