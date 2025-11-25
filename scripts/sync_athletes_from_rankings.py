@@ -70,7 +70,7 @@ if not DATABASE_URL:
     sys.exit(1)
 
 BASE_URL = "https://worldathletics.org"
-RANKING_URL_TEMPLATE = f"{BASE_URL}/world-rankings/marathon/{{gender}}?regionType=world&page={{page}}&rankDate={{rank_date}}&limitByCountry=0"
+RANKING_URL_TEMPLATE = f"{BASE_URL}/world-rankings/marathon/{{gender}}?page={{page}}"
 REQUEST_TIMEOUT = 30
 DELAY_BETWEEN_REQUESTS = 2  # Be polite to the server
 DELAY_BETWEEN_PROFILES = 3  # Even more polite for profile fetches
@@ -130,21 +130,13 @@ def get_placeholder_url(gender: str) -> str:
 # PART 1: EXTRACTING RANKINGS
 # ============================================================================
 
-def get_recent_tuesday() -> str:
-    """Get the most recent Tuesday (when rankings update)."""
-    today = datetime.now()
-    days_since_tuesday = (today.weekday() - 1) % 7
-    recent_tuesday = today - timedelta(days=days_since_tuesday)
-    return recent_tuesday.strftime('%Y-%m-%d')
-
-
-def scrape_rankings_page(gender: str, page: int, rank_date: str) -> List[Dict]:
+def scrape_rankings_page(gender: str, page: int) -> List[Dict]:
     """
     Scrape a single page of World Rankings.
     
     Returns list of athlete dictionaries with basic data from rankings table.
     """
-    url = RANKING_URL_TEMPLATE.format(gender=gender, page=page, rank_date=rank_date)
+    url = RANKING_URL_TEMPLATE.format(gender=gender, page=page)
     print(f"  Fetching page {page}: {url}")
     
     try:
@@ -235,16 +227,14 @@ def scrape_all_rankings(gender: str, limit: int = 100) -> List[Dict]:
     
     Returns complete list of athletes with basic ranking data.
     """
-    rank_date = get_recent_tuesday()
     print(f"\nExtracting {gender}'s marathon world rankings (limit: {limit})...")
-    print(f"Using rank date: {rank_date}")
     
     all_athletes = []
     page = 1
     max_pages = (limit // 50) + 2  # Safety margin
     
     while len(all_athletes) < limit and page <= max_pages:
-        page_athletes = scrape_rankings_page(gender, page, rank_date)
+        page_athletes = scrape_rankings_page(gender, page)
         
         if not page_athletes:
             break
@@ -264,7 +254,7 @@ def scrape_all_rankings(gender: str, limit: int = 100) -> List[Dict]:
     return all_athletes
 
 
-def find_dropped_athletes(gender: str, existing_athlete_ids: set, top_100_ids: set, rank_date: str) -> List[Dict]:
+def find_dropped_athletes(gender: str, existing_athlete_ids: set, top_100_ids: set) -> List[Dict]:
     """
     Search beyond top 100 to find athletes who dropped out of rankings.
     
@@ -275,7 +265,6 @@ def find_dropped_athletes(gender: str, existing_athlete_ids: set, top_100_ids: s
         gender: 'men' or 'women'
         existing_athlete_ids: Set of all WA IDs in database for this gender
         top_100_ids: Set of WA IDs currently in top 100
-        rank_date: Recent Tuesday date string
     
     Returns:
         List of athlete dicts for those who dropped out but still rank
@@ -297,7 +286,7 @@ def find_dropped_athletes(gender: str, existing_athlete_ids: set, top_100_ids: s
     
     while found_ids < dropped_ids and page <= max_page:
         print(f"  Checking page {page}...")
-        page_athletes = scrape_rankings_page(gender, page, rank_date)
+        page_athletes = scrape_rankings_page(gender, page)
         
         if not page_athletes:
             print(f"  No more athletes found on page {page}, stopping search")
@@ -1147,8 +1136,6 @@ def main():
         print("\n🔍 STEP 2b: FINDING DROPPED ATHLETES")
         print("=" * 70)
         
-        rank_date = get_recent_tuesday()
-        
         # Get IDs from top 100
         top_100_men_ids = {a['world_athletics_id'] for a in men if a.get('world_athletics_id')}
         top_100_women_ids = {a['world_athletics_id'] for a in women if a.get('world_athletics_id')}
@@ -1160,9 +1147,9 @@ def main():
                              if data.get('gender') == 'women'}
         
         # Find dropped athletes beyond top 100
-        dropped_men = find_dropped_athletes('men', existing_men_ids, top_100_men_ids, rank_date)
+        dropped_men = find_dropped_athletes('men', existing_men_ids, top_100_men_ids)
         time.sleep(DELAY_BETWEEN_REQUESTS)
-        dropped_women = find_dropped_athletes('women', existing_women_ids, top_100_women_ids, rank_date)
+        dropped_women = find_dropped_athletes('women', existing_women_ids, top_100_women_ids)
         
         # Add dropped athletes to the processing list
         if dropped_men or dropped_women:
