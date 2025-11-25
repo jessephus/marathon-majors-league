@@ -88,6 +88,11 @@ export function BottomNavItem({
       bg="transparent"
       border="none"
       cursor="pointer"
+      // Inset bevel effect for active state: lighter gold on top/left, darker gold on bottom/right
+      boxShadow={isActive 
+        ? 'inset 2px 2px 0 0 #FFDE84, inset -2px -2px 0 0 #9A7A15' 
+        : 'none'}
+      borderRadius="md"
       // Enhanced transitions with proper timing
       transition="all 0.15s cubic-bezier(0, 0, 0.2, 1)"
       transform={isPressed ? 'scale(0.92)' : isActive ? 'translateY(-2px)' : 'none'}
