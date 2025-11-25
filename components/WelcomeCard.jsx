@@ -393,8 +393,9 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
             <Button 
               data-session-cta
               colorPalette="primary"
-              size="lg"
-              rightIcon={<ArrowRightIcon style={{ width: '18px', height: '18px' }} />}
+              size="md"
+              width="auto"
+              rightIcon={<ArrowRightIcon style={{ width: '16px', height: '16px' }} />}
               onClick={() => {
                 // Navigate to new React-based team session page
                 if (typeof window !== 'undefined' && window.anonymousSession?.token) {
@@ -425,8 +426,9 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
           </p>
           <Button 
             colorPalette="primary"
-            size="lg"
-            leftIcon={<PlusIcon style={{ width: '18px', height: '18px' }} />}
+            size="md"
+            width="auto"
+            leftIcon={<PlusIcon style={{ width: '16px', height: '16px' }} />}
             onClick={onCreateTeam}
           >
             Create a New Team
