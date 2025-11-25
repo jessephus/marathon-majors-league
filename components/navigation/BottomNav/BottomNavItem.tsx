@@ -100,9 +100,8 @@ export function BottomNavItem({
         transform: isActive ? 'translateY(-2px)' : 'translateY(-1px)',
       }}
       _focus={{
-        outline: '2px solid',
-        outlineColor: 'gold.500',
-        outlineOffset: '2px',
+        outline: 'none',
+        boxShadow: 'inset 0 0 0 2px var(--chakra-colors-gold-500)',
         bg: 'gray.50'
       }}
       aria-label={ariaLabel || `Navigate to ${label}`}
