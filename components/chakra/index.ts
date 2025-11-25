@@ -46,6 +46,7 @@ export { Badge } from './Badge';
 // Card Components
 export { Card, CardHeader, CardBody, CardFooter } from './Card';
 export { AthleteCard } from './AthleteCard';
+export { AthleteBrowseCard, AthleteBrowseCardSkeleton } from './AthleteBrowseCard';
 export { TeamCard } from './TeamCard';
 export { RaceCard } from './RaceCard';
 export { LeaderboardCard } from './LeaderboardCard';
@@ -72,6 +73,7 @@ export type { ButtonGroupProps } from './ButtonGroup';
 export type { SemanticBadgeProps } from './Badge';
 export type { CardProps, CardHeaderProps, CardBodyProps, CardFooterProps } from './Card';
 export type { AthleteCardProps, AthleteCardData } from './AthleteCard';
+export type { AthleteBrowseCardProps, AthleteBrowseData } from './AthleteBrowseCard';
 export type { TeamCardProps, TeamCardData } from './TeamCard';
 export type { RaceCardProps, RaceCardData } from './RaceCard';
 export type { LeaderboardCardProps, LeaderboardEntry } from './LeaderboardCard';
