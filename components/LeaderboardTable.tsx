@@ -108,7 +108,7 @@ export default function LeaderboardTable({
       const scrollTop = window.scrollY;
 
       // Header and footer offsets
-      const headerOffset = 80;
+      const headerOffset = 145;
       const bottomOffset = 20;
 
       // Calculate viewport boundaries
