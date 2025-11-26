@@ -56,6 +56,7 @@ export default function TestRacePage() {
         <RaceHero
           raceName={sampleRace.name}
           raceDate={sampleRace.date}
+          lockTime={null}  // No lock time for this test race
           location={sampleRace.location}
           logoUrl={sampleRace.logoUrl}
           backgroundImageUrl={sampleRace.backgroundImageUrl}

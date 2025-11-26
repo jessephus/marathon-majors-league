@@ -27,6 +27,7 @@ interface Race {
   id: number;
   name: string;
   date: string;
+  lockTime?: string | null;
   location: string;
   distance: string;
   eventType: string;
@@ -218,6 +219,7 @@ export default function RacePage({ raceId }: RacePageProps) {
         <RaceHero
           raceName={race.name}
           raceDate={race.date}
+          lockTime={race.lockTime}
           location={race.location}
           logoUrl={race.logoUrl}
           backgroundImageUrl={race.backgroundImageUrl}

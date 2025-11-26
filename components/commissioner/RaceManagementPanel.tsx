@@ -53,12 +53,77 @@ interface RaceFormData {
   description: string;
   isActive: boolean;
   lockTime: string;
+  lockTimeZone: string;
   logoUrl: string;
   backgroundImageUrl: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
 }
+
+// Location to timezone mapping helper
+const getTimezoneFromLocation = (location: string): string => {
+  const loc = location.toLowerCase();
+  
+  // Common marathon cities and their timezones
+  const locationTimezones: Record<string, string> = {
+    // US Cities
+    'new york': 'America/New_York',
+    'nyc': 'America/New_York',
+    'boston': 'America/New_York',
+    'chicago': 'America/Chicago',
+    'los angeles': 'America/Los_Angeles',
+    'la': 'America/Los_Angeles',
+    'san francisco': 'America/Los_Angeles',
+    
+    // European Cities
+    'london': 'Europe/London',
+    'paris': 'Europe/Paris',
+    'berlin': 'Europe/Berlin',
+    'rome': 'Europe/Rome',
+    'madrid': 'Europe/Madrid',
+    'barcelona': 'Europe/Madrid',
+    'valencia': 'Europe/Madrid',
+    'amsterdam': 'Europe/Amsterdam',
+    'vienna': 'Europe/Vienna',
+    'prague': 'Europe/Prague',
+    'copenhagen': 'Europe/Copenhagen',
+    'stockholm': 'Europe/Stockholm',
+    
+    // Asian Cities
+    'tokyo': 'Asia/Tokyo',
+    'osaka': 'Asia/Tokyo',
+    'beijing': 'Asia/Shanghai',
+    'shanghai': 'Asia/Shanghai',
+    'hong kong': 'Asia/Hong_Kong',
+    'singapore': 'Asia/Singapore',
+    'dubai': 'Asia/Dubai',
+    'mumbai': 'Asia/Kolkata',
+    'delhi': 'Asia/Kolkata',
+    
+    // Other Major Cities
+    'sydney': 'Australia/Sydney',
+    'melbourne': 'Australia/Melbourne',
+    'toronto': 'America/Toronto',
+    'vancouver': 'America/Vancouver',
+    'mexico city': 'America/Mexico_City',
+    'buenos aires': 'America/Argentina/Buenos_Aires',
+    'sao paulo': 'America/Sao_Paulo',
+    'rio de janeiro': 'America/Sao_Paulo',
+    'johannesburg': 'Africa/Johannesburg',
+    'cape town': 'Africa/Johannesburg'
+  };
+  
+  // Try to find a matching city in the location string
+  for (const [city, timezone] of Object.entries(locationTimezones)) {
+    if (loc.includes(city)) {
+      return timezone;
+    }
+  }
+  
+  // Default to America/New_York if no match
+  return 'America/New_York';
+};
 
 export default function RaceManagementPanel() {
   const [races, setRaces] = useState<Race[]>([]);
@@ -79,6 +144,7 @@ export default function RaceManagementPanel() {
     description: '',
     isActive: true,
     lockTime: '',
+    lockTimeZone: 'America/New_York',
     logoUrl: '',
     backgroundImageUrl: '',
     primaryColor: '',
@@ -124,6 +190,7 @@ export default function RaceManagementPanel() {
       description: '',
       isActive: true,
       lockTime: '',
+      lockTimeZone: 'America/New_York',
       logoUrl: '',
       backgroundImageUrl: '',
       primaryColor: '',
@@ -166,6 +233,7 @@ export default function RaceManagementPanel() {
       description: race.description || '',
       isActive: race.isActive,
       lockTime: formattedLockTime,
+      lockTimeZone: getTimezoneFromLocation(race.location),
       logoUrl: race.logoUrl || '',
       backgroundImageUrl: race.backgroundImageUrl || '',
       primaryColor: race.primaryColor || '',
@@ -181,6 +249,14 @@ export default function RaceManagementPanel() {
     setSuccessMessage(null);
 
     try {
+      // Format lockTime with timezone for PostgreSQL TIMESTAMPTZ
+      let lockTimeWithZone = null;
+      if (formData.lockTime && formData.lockTimeZone) {
+        // Format: "2025-11-03T08:35:00 America/New_York"
+        // PostgreSQL will parse this as TIMESTAMP WITH TIME ZONE
+        lockTimeWithZone = `${formData.lockTime}:00 ${formData.lockTimeZone}`;
+      }
+
       const payload = {
         name: formData.name,
         date: formData.date,
@@ -190,7 +266,7 @@ export default function RaceManagementPanel() {
         worldAthleticsEventId: formData.worldAthleticsEventId || null,
         description: formData.description || null,
         isActive: formData.isActive,
-        lockTime: formData.lockTime || null,
+        lockTime: lockTimeWithZone,
         logoUrl: formData.logoUrl || null,
         backgroundImageUrl: formData.backgroundImageUrl || null,
         primaryColor: formData.primaryColor || null,
@@ -384,7 +460,15 @@ export default function RaceManagementPanel() {
                   id="location"
                   type="text"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) => {
+                    const newLocation = e.target.value;
+                    const detectedTimezone = getTimezoneFromLocation(newLocation);
+                    setFormData({ 
+                      ...formData, 
+                      location: newLocation,
+                      lockTimeZone: detectedTimezone
+                    });
+                  }}
                   placeholder="e.g., New York City, USA"
                   variant="outline"
                   size="md"
@@ -455,6 +539,57 @@ export default function RaceManagementPanel() {
                 />
                 <FormHelperText>
                   Optional: When should rosters lock for this race?
+                </FormHelperText>
+              </FormControl>
+
+              <FormControl style={{ marginBottom: '20px' }}>
+                <FormLabel htmlFor="lockTimeZone">Lock Time Timezone</FormLabel>
+                <select
+                  id="lockTimeZone"
+                  value={formData.lockTimeZone}
+                  onChange={(e) => setFormData({ ...formData, lockTimeZone: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #E2E8F0',
+                    fontSize: '16px',
+                    backgroundColor: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <optgroup label="North America">
+                    <option value="America/New_York">Eastern (New York, Boston)</option>
+                    <option value="America/Chicago">Central (Chicago)</option>
+                    <option value="America/Denver">Mountain (Denver)</option>
+                    <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+                    <option value="America/Toronto">Toronto</option>
+                  </optgroup>
+                  <optgroup label="Europe">
+                    <option value="Europe/London">London (GMT/BST)</option>
+                    <option value="Europe/Paris">Paris, Berlin (CET/CEST)</option>
+                    <option value="Europe/Madrid">Madrid (CET/CEST)</option>
+                    <option value="Europe/Amsterdam">Amsterdam (CET/CEST)</option>
+                    <option value="Europe/Rome">Rome (CET/CEST)</option>
+                    <option value="Europe/Athens">Athens (EET/EEST)</option>
+                  </optgroup>
+                  <optgroup label="Asia">
+                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                    <option value="Asia/Shanghai">Beijing, Shanghai (CST)</option>
+                    <option value="Asia/Hong_Kong">Hong Kong (HKT)</option>
+                    <option value="Asia/Singapore">Singapore (SGT)</option>
+                    <option value="Asia/Dubai">Dubai (GST)</option>
+                    <option value="Asia/Seoul">Seoul (KST)</option>
+                  </optgroup>
+                  <optgroup label="Other">
+                    <option value="Australia/Sydney">Sydney (AEDT/AEST)</option>
+                    <option value="Pacific/Auckland">Auckland (NZDT/NZST)</option>
+                    <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+                    <option value="Africa/Johannesburg">Johannesburg (SAST)</option>
+                  </optgroup>
+                </select>
+                <FormHelperText>
+                  Auto-selected based on race location. Change if needed.
                 </FormHelperText>
               </FormControl>
 

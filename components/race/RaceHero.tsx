@@ -23,6 +23,7 @@ export interface RaceHeroProps {
   raceName: string;
   raceDate: string;
   raceTime?: string;
+  lockTime?: string | null;  // TIMESTAMPTZ from database - will be converted to user's timezone
   location?: string;
   logoUrl?: string;
   backgroundImageUrl?: string;
@@ -36,6 +37,7 @@ export function RaceHero({
   raceName,
   raceDate,
   raceTime,
+  lockTime,
   location,
   logoUrl,
   backgroundImageUrl,
@@ -55,22 +57,44 @@ export function RaceHero({
     }
   };
 
-  // Format time for display
-  const formatTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }).format(date);
-    } catch {
-      return '';
+  // Format time for display - prioritizes lockTime with automatic timezone conversion
+  const formatTime = (lockTimeValue?: string | null, fallbackDateString?: string) => {
+    // If lockTime is available, use it (TIMESTAMPTZ from database)
+    // This will automatically convert to the user's browser timezone
+    if (lockTimeValue) {
+      try {
+        const date = new Date(lockTimeValue);
+        return new Intl.DateTimeFormat(undefined, {  // undefined = user's locale/timezone
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+          timeZoneName: 'short'  // Shows EST, PST, JST, etc.
+        }).format(date);
+      } catch {
+        // If lockTime parsing fails, fall through to fallback
+      }
     }
+    
+    // Fallback to extracting time from date string (legacy behavior)
+    if (fallbackDateString) {
+      try {
+        const date = new Date(fallbackDateString);
+        return new Intl.DateTimeFormat('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }).format(date);
+      } catch {
+        return '';
+      }
+    }
+    
+    return '';
   };
 
   const displayDate = formatDate(raceDate);
-  const displayTime = raceTime ? raceTime : formatTime(raceDate);
+  // Priority: raceTime (explicit) > lockTime (with timezone) > fallback extraction from raceDate
+  const displayTime = raceTime ? raceTime : formatTime(lockTime, raceDate);
 
   return (
     <Box
