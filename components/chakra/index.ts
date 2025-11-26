@@ -51,6 +51,7 @@ export { TeamCard } from './TeamCard';
 export { RaceCard } from './RaceCard';
 export { LeaderboardCard } from './LeaderboardCard';
 export { StatsCard, PresetStatsCards } from './StatsCard';
+export { RaceResultCard } from './RaceResultCard';
 
 // Form Components
 export { Input } from './Input';
@@ -78,6 +79,7 @@ export type { TeamCardProps, TeamCardData } from './TeamCard';
 export type { RaceCardProps, RaceCardData } from './RaceCard';
 export type { LeaderboardCardProps, LeaderboardEntry } from './LeaderboardCard';
 export type { StatsCardProps } from './StatsCard';
+export type { RaceResultCardProps } from './RaceResultCard';
 export type { InputProps } from './Input';
 export type { SelectProps, SelectOption } from './Select';
 export type { TextareaProps } from './Textarea';

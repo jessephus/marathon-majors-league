@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { Button, ButtonGroup, Select, SelectOption } from '@/components/chakra';
+import { Button, ButtonGroup, Select, SelectOption, RaceResultCard } from '@/components/chakra';
 import { Stack, Box } from '@chakra-ui/react';
 
 interface AthleteResult {
@@ -243,15 +243,14 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
         {/* Results List */}
         <div className="race-results-list">
           {filteredResults.map((result) => {
-            const placement = result.placement || '-';
-            const medal = placement === 1 ? '🥇' : placement === 2 ? '🥈' : placement === 3 ? '🥉' : '';
+            const placement = result.placement || 0;
             const { time: displayTime, label: timeLabel } = getDisplayTime(result);
-            const hasSomeSplits =
+            const hasSomeSplits = Boolean(
               result.split_5k || result.split_10k || result.split_half ||
-              result.split_30k || result.split_35k || result.split_40k;
+              result.split_30k || result.split_35k || result.split_40k
+            );
             const isDNS = !result.finish_time && !hasSomeSplits;
             const isDNF = !result.finish_time && hasSomeSplits;
-            const statusClass = isDNS ? 'status-dns' : isDNF ? 'status-dnf' : '';
 
             // Gap from first place
             let gapFromFirst = '';
@@ -263,69 +262,27 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
             }
 
             const shorthand = getPointsShorthand(result);
-            const headshotUrl = result.headshot_url || getRunnerSvg(result.gender);
             const countryCode = (result.country || '').toUpperCase();
             const personalBest = result.personal_best || '';
 
             return (
-              <div
+              <RaceResultCard
                 key={result.athlete_id}
-                className={`race-result-row ${statusClass}`}
+                placement={placement}
+                athleteName={result.athlete_name}
+                athleteId={result.athlete_id}
+                headshotUrl={result.headshot_url}
+                country={countryCode}
+                personalBest={personalBest}
+                finishTime={displayTime}
+                gap={gapFromFirst}
+                totalPoints={result.total_points}
+                breakdown={shorthand}
+                gender={selectedGender}
+                isDNS={isDNS}
+                isDNF={isDNF}
                 onClick={() => onAthleteClick?.(result)}
-                role="button"
-                tabIndex={0}
-                aria-label={`${result.athlete_name}, place ${placement}, ${displayTime}`}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onAthleteClick?.(result);
-                  }
-                }}
-              >
-                <div className="race-result-placement">
-                  {medal ? (
-                    <span className="placement-medal" aria-label={`${placement} place`}>
-                      {medal}
-                    </span>
-                  ) : (
-                    <span className="placement-number">#{placement}</span>
-                  )}
-                </div>
-                <div className="race-result-athlete">
-                  <img
-                    src={headshotUrl}
-                    alt={result.athlete_name}
-                    className="race-result-headshot"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = getRunnerSvg(result.gender);
-                    }}
-                  />
-                  <div className="athlete-details">
-                    <div className="athlete-name">{result.athlete_name}</div>
-                    <div className="athlete-meta">
-                      <span className="athlete-country">
-                        {getCountryFlagEmoji(countryCode)} {countryCode || 'N/A'}
-                      </span>
-                      {personalBest && <span className="athlete-pb">PB: {personalBest}</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="race-result-performance">
-                  <div className={`finish-time ${isDNS || isDNF ? 'status-label' : ''}`}>
-                    {displayTime}
-                  </div>
-                  {gapFromFirst ? (
-                    <div className="time-gap">{gapFromFirst}</div>
-                  ) : selectedSplit !== 'finish' ? (
-                    <div className="time-gap">{timeLabel} Split</div>
-                  ) : null}
-                </div>
-                <div className="race-result-points">
-                  <div className="points-value">{result.total_points} pts</div>
-                  <div className="points-breakdown">{shorthand}</div>
-                </div>
-              </div>
+              />
             );
           })}
         </div>

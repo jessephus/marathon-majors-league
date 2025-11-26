@@ -248,21 +248,10 @@ function LeaderboardPageContent({
 
   // Sort standings to put current player's team at top (if they have a session)
   const sortedStandings = React.useMemo(() => {
-    if (!standings?.standings || !currentPlayerCode) {
-      return standings?.standings || [];
-    }
-
-    const standingsCopy = [...standings.standings];
-    const currentPlayerIndex = standingsCopy.findIndex(s => s.player_code === currentPlayerCode);
-    
-    if (currentPlayerIndex > 0) {
-      // Move current player to top
-      const [currentPlayer] = standingsCopy.splice(currentPlayerIndex, 1);
-      standingsCopy.unshift(currentPlayer);
-    }
-    
-    return standingsCopy;
-  }, [standings, currentPlayerCode]);
+    // Return standings in their natural sorted order (by score)
+    // The LeaderboardTable component will handle sticky positioning for the active team
+    return standings?.standings || [];
+  }, [standings]);
 
   // Format time since last update
   const timeSinceUpdate = Math.floor((Date.now() - lastUpdate) / 1000);

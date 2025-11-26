@@ -104,14 +104,12 @@ export default function LeaderboardTable({
       if (wasTop) highlightedRow.classList.add('sticky-top');
       if (wasBottom) highlightedRow.classList.add('sticky-bottom');
 
-      const viewportHeight = window.innerHeight;
-      const scrollTop = window.scrollY;
+    const viewportHeight = window.innerHeight;
+    const scrollTop = window.scrollY;
 
-      // Header and footer offsets
-      const headerOffset = 145;
-      const bottomOffset = 20;
-
-      // Calculate viewport boundaries
+    // Header and footer offsets
+    const headerOffset = 210; // Increased to fully clear navigation tabs and avoid overlap
+    const bottomOffset = 50;      // Calculate viewport boundaries
       const viewportTop = scrollTop + headerOffset;
       const viewportBottom = scrollTop + viewportHeight - bottomOffset;
 
