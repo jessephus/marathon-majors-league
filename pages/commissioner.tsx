@@ -85,6 +85,12 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
   const [confirmedAthletesCount, setConfirmedAthletesCount] = useState(0);
   const [rosterLockTime, setRosterLockTime] = useState<string | null>(null);
   const [resultsStatus, setResultsStatus] = useState<'Pre-Race' | 'In Progress' | 'Finished' | 'Certified'>('Pre-Race');
+  
+  // Active race state
+  const [activeRaceId, setActiveRaceId] = useState<number | null>(null);
+  const [activeRace, setActiveRace] = useState<{ id: number; name: string; date: string; location: string } | null>(null);
+  const [availableRaces, setAvailableRaces] = useState<Array<{ id: number; name: string; date: string; isActive: boolean }>>([]);
+  const [savingActiveRace, setSavingActiveRace] = useState(false);
 
   // Sync SSR authentication state with React state
   // BUT skip this if user has explicitly logged out
@@ -124,12 +130,13 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
       if (!commissionerState.isCommissioner) return;
       
       try {
-        // Fetch team count, confirmed athletes, game state, and results in parallel using API client
-        const [teamsData, athletesData, gameStateData, resultsData] = await Promise.all([
+        // Fetch team count, confirmed athletes, game state, results, and races in parallel using API client
+        const [teamsData, athletesData, gameStateData, resultsData, racesData] = await Promise.all([
           apiClient.salaryCapDraft.getTeam(gameState.gameId),
-          apiClient.athletes.list({ confirmedOnly: true }),
+          apiClient.athletes.list({ confirmedOnly: true, gameId: gameState.gameId }),
           apiClient.gameState.load(gameState.gameId),
-          apiClient.results.fetch(gameState.gameId)
+          apiClient.results.fetch(gameState.gameId),
+          apiClient.races.list()
         ]);
         
         // Calculate team count
@@ -142,6 +149,18 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
         
         // Set roster lock time
         setRosterLockTime((gameStateData as any)?.rosterLockTime || null);
+        
+        // Set active race info
+        setActiveRaceId((gameStateData as any)?.activeRaceId || null);
+        setActiveRace((gameStateData as any)?.activeRace || null);
+        
+        // Set available races for dropdown
+        setAvailableRaces(racesData.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          date: r.date,
+          isActive: r.isActive
+        })));
         
         // Determine results status
         if ((gameStateData as any)?.resultsFinalized) {
@@ -180,6 +199,38 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
       window.removeEventListener('athleteUpdated', handleAthleteUpdated);
     };
   }, [commissionerState.isCommissioner, gameState.gameId]);
+
+  // Handle changing the active race for the game
+  async function handleChangeActiveRace(newRaceId: number | null) {
+    if (savingActiveRace) return;
+    
+    try {
+      setSavingActiveRace(true);
+      setError(null);
+      
+      await apiClient.gameState.save(gameState.gameId, {
+        activeRaceId: newRaceId
+      });
+      
+      setActiveRaceId(newRaceId);
+      
+      // Find the race details
+      const race = availableRaces.find(r => r.id === newRaceId);
+      setActiveRace(race ? { id: race.id, name: race.name, date: race.date, location: '' } : null);
+      
+      // Dispatch event to notify other components
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('gameStateUpdated', {
+          detail: { gameId: gameState.gameId, activeRaceId: newRaceId }
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to update active race:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update active race');
+    } finally {
+      setSavingActiveRace(false);
+    }
+  }
 
   async function handleTOTPLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -427,6 +478,58 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
                     style={{ cursor: 'pointer' }}
                   />
                 </SimpleGrid>
+              </div>
+
+              {/* Active Race Settings */}
+              <div className="dashboard-section">
+                <h3>Active Race for This Game</h3>
+                <p style={{ fontSize: '14px', color: '#666', marginBottom: '1rem' }}>
+                  Set which race this game is associated with. Athletes confirmed for this race will be available for drafting.
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <FormControl style={{ maxWidth: '400px' }}>
+                    <FormLabel htmlFor="active-race-select">Select Race</FormLabel>
+                    <select
+                      id="active-race-select"
+                      value={activeRaceId || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        handleChangeActiveRace(value ? parseInt(value, 10) : null);
+                      }}
+                      disabled={savingActiveRace}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #E2E8F0',
+                        fontSize: '16px',
+                        backgroundColor: 'white',
+                        cursor: savingActiveRace ? 'wait' : 'pointer'
+                      }}
+                    >
+                      <option value="">-- No race selected --</option>
+                      {availableRaces.map(race => (
+                        <option key={race.id} value={race.id}>
+                          {race.name} ({new Date(race.date).toLocaleDateString()})
+                          {race.isActive ? ' [Active]' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                  {savingActiveRace && (
+                    <span style={{ color: '#666', fontSize: '14px' }}>Saving...</span>
+                  )}
+                  {activeRace && !savingActiveRace && (
+                    <span style={{ color: '#28a745', fontSize: '14px' }}>
+                      Current: {activeRace.name}
+                    </span>
+                  )}
+                </div>
+                {error && (
+                  <div style={{ color: 'red', marginTop: '0.5rem', fontSize: '14px' }}>
+                    {error}
+                  </div>
+                )}
               </div>
 
               <div className="dashboard-section">
