@@ -152,6 +152,7 @@ function getCountryFlag(countryCode: string): string {
     'JPN': '🇯🇵', 'CHN': '🇨🇳', 'KOR': '🇰🇷', 'IND': '🇮🇳',
     'BRN': '🇧🇭', 'ISR': '🇮🇱', 'KAZ': '🇰🇿', 'UZB': '🇺🇿',
     'KGZ': '🇰🇬', 'THA': '🇹🇭', 'VIE': '🇻🇳', 'SIN': '🇸🇬',
+    'MGL': '🇲🇳', 'PRK': '🇰🇵',
     // Oceania
     'AUS': '🇦🇺', 'NZL': '🇳🇿', 'PNG': '🇵🇬', 'FIJ': '🇫🇯',
   };
