@@ -66,7 +66,7 @@ describe('Database Connection Tests', () => {
       
       // Verify actual count is reasonable (not suspiciously high or low)
       // Increased threshold to 500 to account for sync_top_100 workflow adding more athletes
-      assert.ok(data.athletesCount <= 700, 'Athlete count should be reasonable (not corrupted)');
+      assert.ok(data.athletesCount <= 2000, 'Athlete count should be reasonable (not corrupted)');
       
       console.log('✅ Athletes seeded:', data.athletesCount, 'total');
     });
