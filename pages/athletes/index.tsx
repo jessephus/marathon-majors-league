@@ -367,6 +367,7 @@ export default function AthletesBrowsePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   pl="40px"
+                  pr={searchQuery ? "40px" : "12px"}
                   size="sm"
                   bg="gray.50"
                   border="1px solid"
@@ -383,6 +384,25 @@ export default function AthletesBrowsePage() {
                   }}
                   aria-label="Search athletes by name or country"
                 />
+                {searchQuery && (
+                  <Button
+                    onClick={() => setSearchQuery('')}
+                    position="absolute"
+                    right="4px"
+                    top="50%"
+                    transform="translateY(-50%)"
+                    variant="ghost"
+                    size="xs"
+                    minW="auto"
+                    h="24px"
+                    px={2}
+                    color="gray.500"
+                    _hover={{ color: 'gray.700', bg: 'gray.100' }}
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </Button>
+                )}
               </Box>
 
               {/* Confirmation Toggle - On first row, wraps to second on mobile */}

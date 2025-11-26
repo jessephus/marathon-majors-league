@@ -221,23 +221,42 @@ def scrape_rankings_page(gender: str, page: int) -> List[Dict]:
         return []
 
 
-def scrape_all_rankings(gender: str, limit: int = 100) -> List[Dict]:
+def scrape_all_rankings(gender: str, limit: int = 100, start_rank: int = 1) -> List[Dict]:
     """
-    Scrape all pages needed to get top N athletes.
+    Scrape all pages needed to get N athletes starting from a specific rank.
+    
+    Args:
+        gender: 'men' or 'women'
+        limit: Number of athletes to fetch
+        start_rank: Starting rank (1 = top athlete, 101 = rank 101, etc.)
     
     Returns complete list of athletes with basic ranking data.
     """
-    print(f"\nExtracting {gender}'s marathon world rankings (limit: {limit})...")
+    end_rank = start_rank + limit - 1
+    print(f"\nExtracting {gender}'s marathon world rankings (ranks {start_rank}-{end_rank})...")
     
     all_athletes = []
-    page = 1
-    max_pages = (limit // 50) + 2  # Safety margin
+    
+    # Calculate which page to start on (100 athletes per page)
+    start_page = ((start_rank - 1) // 100) + 1
+    
+    # Calculate how many pages we might need
+    athletes_needed = limit
+    max_pages = start_page + (athletes_needed // 100) + 2  # Safety margin
+    
+    page = start_page
+    athletes_to_skip = (start_rank - 1) % 100  # Skip first N athletes on start page
     
     while len(all_athletes) < limit and page <= max_pages:
         page_athletes = scrape_rankings_page(gender, page)
         
         if not page_athletes:
             break
+        
+        # On first page, skip athletes before start_rank
+        if page == start_page and athletes_to_skip > 0:
+            page_athletes = page_athletes[athletes_to_skip:]
+            athletes_to_skip = 0  # Only skip on first page
         
         all_athletes.extend(page_athletes)
         
@@ -477,18 +496,26 @@ def fetch_profile_fallback(athlete_id: str, html: str, name: str, gender: str = 
     return result
 
 
-def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = None) -> List[Dict]:
+def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = None, force_update: bool = False) -> List[Dict]:
     """
     Enrich athlete data by fetching their profile pages.
     
     Uses World Athletics score for efficient change detection:
     - If athlete exists and score is unchanged, skip enrichment (fast)
     - If athlete is new or score changed, fetch full profile (slow)
+    - If force_update=True, always fetch profiles (ignore score)
+    
+    Args:
+        athletes: List of athlete dictionaries to enrich
+        existing_athletes: Dict of existing athletes keyed by WA ID
+        force_update: If True, fetch all profiles regardless of changes
     
     Returns updated list with additional fields from profiles.
     """
     print("\n" + "=" * 70)
     print("ENRICHING ATHLETE PROFILES")
+    if force_update:
+        print("(FORCE UPDATE MODE - fetching all profiles)")
     print("=" * 70)
     
     if existing_athletes is None:
@@ -510,7 +537,8 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
         wa_id = athlete.get('world_athletics_id')
         existing = existing_athletes.get(wa_id)
         
-        if existing:
+        # Skip cache check if force_update is enabled
+        if not force_update and existing:
             existing_score = existing.get('world_athletics_marathon_ranking_score')
             current_score = athlete.get('world_athletics_marathon_ranking_score')
             
@@ -740,9 +768,14 @@ def fetch_existing_athletes(conn) -> Dict[str, Dict]:
         return athletes
 
 
-def detect_changes(extracted_athletes: List[Dict], existing_athletes: Dict[str, Dict]) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+def detect_changes(extracted_athletes: List[Dict], existing_athletes: Dict[str, Dict], force_update: bool = False) -> Tuple[List[Dict], List[Dict], List[Dict]]:
     """
     Detect which athletes are new, changed, or unchanged.
+    
+    Args:
+        extracted_athletes: Athletes from World Athletics
+        existing_athletes: Athletes currently in database
+        force_update: If True, treat all existing athletes as changed
     
     Returns (new_athletes, changed_athletes, unchanged_athletes)
     """
@@ -766,7 +799,7 @@ def detect_changes(extracted_athletes: List[Dict], existing_athletes: Dict[str, 
             existing = existing_athletes[wa_id]
             old_hash = existing.get('data_hash')
             
-            if old_hash != new_hash:
+            if force_update or old_hash != new_hash:
                 athlete['data_hash'] = new_hash
                 athlete['db_id'] = existing['id']
                 changed_athletes.append(athlete)
@@ -1063,6 +1096,18 @@ def main():
         help='Number of athletes to fetch per gender (default: 100)'
     )
     parser.add_argument(
+        '--rank-range',
+        nargs=2,
+        type=int,
+        metavar=('START', 'END'),
+        help='Fetch athletes in a specific rank range (e.g., --rank-range 101 200). Overrides --limit.'
+    )
+    parser.add_argument(
+        '--force-update',
+        action='store_true',
+        help='Force update all athletes, ignoring change detection (slower but ensures fresh data)'
+    )
+    parser.add_argument(
         '--skip-enrichment',
         action='store_true',
         help='Skip fetching profile pages (faster but less data)'
@@ -1097,12 +1142,35 @@ def main():
         sync_single_athlete(args.athlete_id, dry_run=args.dry_run)
         return
     
+    # Parse rank range if provided
+    start_rank = 1
+    limit_per_gender = args.limit
+    
+    if args.rank_range:
+        start_rank = args.rank_range[0]
+        end_rank = args.rank_range[1]
+        
+        if start_rank < 1:
+            print("Error: Start rank must be >= 1")
+            return 1
+        
+        if end_rank < start_rank:
+            print("Error: End rank must be >= start rank")
+            return 1
+        
+        limit_per_gender = end_rank - start_rank + 1
+        print(f"\n📍 Using rank range: {start_rank}-{end_rank} ({limit_per_gender} athletes per gender)")
+    
     print("=" * 70)
-    print("WORLD ATHLETICS TOP 100 MARATHON SYNC")
+    print("WORLD ATHLETICS MARATHON SYNC")
     print("=" * 70)
     print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE UPDATE'}")
-    print(f"Limit: Top {args.limit} per gender")
+    if args.rank_range:
+        print(f"Rank Range: {start_rank}-{end_rank} ({limit_per_gender} athletes per gender)")
+    else:
+        print(f"Limit: Top {limit_per_gender} per gender")
     print(f"Enrichment: {'Disabled' if args.skip_enrichment else 'Enabled'}")
+    print(f"Force Update: {'Yes (ignoring change detection)' if args.force_update else 'No'}")
     print(f"Sync Dropped Athletes: {'Yes' if args.sync_dropped else 'No'}")
     print("=" * 70)
     
@@ -1110,9 +1178,9 @@ def main():
     print("\n📥 STEP 1: EXTRACTING RANKINGS")
     print("=" * 70)
     
-    men = scrape_all_rankings('men', limit=args.limit)
+    men = scrape_all_rankings('men', limit=limit_per_gender, start_rank=start_rank)
     time.sleep(DELAY_BETWEEN_REQUESTS)
-    women = scrape_all_rankings('women', limit=args.limit)
+    women = scrape_all_rankings('women', limit=limit_per_gender, start_rank=start_rank)
     
     all_athletes = men + women
     print(f"\n✓ Extracted {len(all_athletes)} total athletes ({len(men)} men, {len(women)} women)")
@@ -1162,7 +1230,7 @@ def main():
     if not args.skip_enrichment:
         print("\n📥 STEP 3: ENRICHING PROFILES")
         print("=" * 70)
-        all_athletes = enrich_athletes(all_athletes, existing_athletes)
+        all_athletes = enrich_athletes(all_athletes, existing_athletes, force_update=args.force_update)
     else:
         print("\n⏭️  Skipping profile enrichment (--skip-enrichment flag)")
     
@@ -1170,7 +1238,7 @@ def main():
     print("\n🔍 STEP 4: DETECTING CHANGES")
     print("=" * 70)
     
-    new_athletes, changed_athletes, unchanged_athletes = detect_changes(all_athletes, existing_athletes)
+    new_athletes, changed_athletes, unchanged_athletes = detect_changes(all_athletes, existing_athletes, force_update=args.force_update)
     
     print(f"\n📊 Change Detection Results:")
     print(f"   New: {len(new_athletes)}")

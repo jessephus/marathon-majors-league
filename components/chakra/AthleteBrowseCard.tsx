@@ -39,6 +39,7 @@
 
 import { Box, Flex, Text, Heading, Image, HStack, VStack } from '@chakra-ui/react';
 import { forwardRef, useState } from 'react';
+import { Badge } from '@/components/chakra/Badge';
 
 // ===========================
 // Types
@@ -489,25 +490,63 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
           </HStack>
         </Flex>
         
-        {/* Right Column: WA Score */}
-        <Flex direction="column" align="flex-end" justify="center" gap={0} flexShrink={0}>
-          <Text 
-            color="navy.600" 
-            fontSize={{ base: '2xs', md: 'xs' }}
-            fontWeight="bold"
-            textTransform="uppercase"
-            letterSpacing="wide"
-          >
-            WA Score
-          </Text>
-          <Text 
-            color="navy.900" 
-            fontSize={{ base: 'xl', md: '2xl' }}
-            fontWeight="extrabold"
-            lineHeight="1"
-          >
-            {athlete.worldAthleticsMarathonRankingScore || '--'}
-          </Text>
+        {/* Right Column: WA Rank & Score */}
+        <Flex direction="column" align="flex-end" justify="center" gap={0.5} flexShrink={0}>
+          {/* Row 1: Headings */}
+          <HStack gap={2} align="baseline">
+            {athlete.marathonRank && (
+              <Text 
+                color="navy.400" 
+                fontSize={{ base: '2xs', md: 'xs' }}
+                fontWeight="bold"
+                textTransform="uppercase"
+                letterSpacing="wide"
+              >
+                Rank |
+              </Text>
+            )}
+            <Text 
+              color="navy.600" 
+              fontSize={{ base: '2xs', md: 'xs' }}
+              fontWeight="bold"
+              textTransform="uppercase"
+              letterSpacing="wide"
+            >
+              Score
+            </Text>
+          </HStack>
+          
+          {/* Row 2: Values on same line */}
+          <HStack gap={2} align="baseline">
+            {athlete.marathonRank && (
+              <HStack gap={0.5} align="baseline">
+                <Text 
+                  color="gray.500" 
+                  fontSize={{ base: '2xs', md: 'xs' }}
+                  fontWeight="semibold"
+                >
+                  #
+                </Text>
+                <Badge 
+                  colorPalette="navy"
+                  fontSize={{ base: 'sm', md: 'md' }}
+                  fontWeight="bold"
+                  lineHeight="1"
+                  padding={{ base: '1px', md: '2px' }}
+                >
+                  {athlete.marathonRank}
+                </Badge>
+              </HStack>
+            )}
+            <Text 
+              color="navy.600" 
+              fontSize={{ base: 'xl', md: '2xl' }}
+              fontWeight="extrabold"
+              lineHeight="1"
+            >
+              {athlete.worldAthleticsMarathonRankingScore || '--'}
+            </Text>
+          </HStack>
         </Flex>
       </Flex>
     </Box>
