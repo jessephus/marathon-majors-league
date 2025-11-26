@@ -43,18 +43,37 @@ export function RaceHero({
   backgroundImageUrl,
 }: RaceHeroProps) {
   
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      }).format(date);
-    } catch {
-      return dateString;
+  // Format date for display - prioritizes lockTime over raceDate
+  const formatDate = (lockTimeValue?: string | null, fallbackDateString?: string) => {
+    // If lockTime is available, use it (TIMESTAMPTZ from database with full date/time)
+    if (lockTimeValue) {
+      try {
+        const date = new Date(lockTimeValue);
+        return new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        }).format(date);
+      } catch {
+        // Fall through to fallback if lockTime parsing fails
+      }
     }
+    
+    // Fallback to raceDate field (legacy behavior)
+    if (fallbackDateString) {
+      try {
+        const date = new Date(fallbackDateString);
+        return new Intl.DateTimeFormat('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        }).format(date);
+      } catch {
+        return fallbackDateString;
+      }
+    }
+    
+    return fallbackDateString || '';
   };
 
   // Format time for display - prioritizes lockTime with automatic timezone conversion
@@ -92,7 +111,8 @@ export function RaceHero({
     return '';
   };
 
-  const displayDate = formatDate(raceDate);
+  // Priority: lockTime (for both date and time) > raceDate (fallback for date only)
+  const displayDate = formatDate(lockTime, raceDate);
   // Priority: raceTime (explicit) > lockTime (with timezone) > fallback extraction from raceDate
   const displayTime = raceTime ? raceTime : formatTime(lockTime, raceDate);
 
