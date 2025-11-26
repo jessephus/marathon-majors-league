@@ -123,18 +123,19 @@ function LeaderboardPageContent({
       setLoading(true);
       setError(null);
 
-      // Clear cache to ensure fresh data (especially for roster_lock_time)
+      // Clear cache to ensure fresh data
       clearCache();
 
-      // Fetch standings, results, and game state in parallel using API client
-      const [standingsData, resultsData, gameStateData] = await Promise.all([
+      // Fetch standings, results, game state, and active race in parallel
+      const [standingsData, resultsData, gameStateData, activeRaces] = await Promise.all([
         apiClient.standings.fetch(gameId),
         apiClient.results.fetch(gameId),
-        apiClient.gameState.load(gameId)
+        apiClient.gameState.load(gameId),
+        apiClient.races.list({ active: true })
       ]);
 
-      console.log('🔍 DEBUG - gameStateData:', gameStateData);
-      console.log('🔍 DEBUG - rosterLockTime value:', (gameStateData as any)?.rosterLockTime);
+      // Extract lock time from active race (races table is the source of truth)
+      const lockTime = activeRaces && activeRaces.length > 0 ? activeRaces[0].lockTime : null;
 
       setStandings(standingsData);
 
@@ -147,7 +148,7 @@ function LeaderboardPageContent({
       setGameState({ 
         results: (resultsData as any)?.results || {},
         resultsFinalized: isFinalized,
-        rosterLockTime: (gameStateData as any)?.rosterLockTime || null
+        rosterLockTime: lockTime
       });
 
     } catch (err) {
@@ -283,7 +284,7 @@ function LeaderboardPageContent({
           <Box
             className="leaderboard-tabs"
             position="sticky"
-            top={{ base: '60px', md: '80px' }} // Responsive: mobile header 60px, desktop header 80px
+            top={{ base: '40px', md: '60px' }} // Responsive: mobile header 60px, desktop header 80px
             zIndex={10}
             bg="#f9fafb"
             pt="2rem"

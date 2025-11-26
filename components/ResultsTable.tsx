@@ -183,9 +183,22 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
 
   return (
     <div className="race-results-container">
-      {/* Filter Controls */}
-      <div className="race-results-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        <Stack direction="row" align="center">
+      {/* Gender and Split Controls - Sticky under tabs */}
+      <Box
+        position="sticky"
+        top={{ base: '125px', md: '145px' }}
+        zIndex={10}
+        bg="white"
+        borderBottom="1px solid"
+        borderColor="gray.200"
+        py={3}
+        mb={4}
+        display="flex"
+        justifyContent="center"
+        gap={4}
+        flexWrap="wrap"
+      >
+        <Stack direction="row" align="center" gap={3}>
           {/* Split Selector */}
           <Select
             id="split-select"
@@ -201,21 +214,27 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
           <ButtonGroup isAttached size="md">
             <Button
               variant={selectedGender === 'men' ? 'solid' : 'outline'}
-              colorPalette={selectedGender === 'men' ? 'navy' : 'secondary'}
+              colorPalette={selectedGender === 'men' ? 'primary' : 'secondary'}
               onClick={() => setSelectedGender('men')}
+              fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
+              px={{ base: 3, sm: 4, md: 6 }}
+              minW={{ base: '60px', sm: '70px', md: '80px' }}
             >
               Men
             </Button>
             <Button
               variant={selectedGender === 'women' ? 'solid' : 'outline'}
-              colorPalette={selectedGender === 'women' ? 'navy' : 'secondary'}
+              colorPalette={selectedGender === 'women' ? 'primary' : 'secondary'}
               onClick={() => setSelectedGender('women')}
+              fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
+              px={{ base: 3, sm: 4, md: 6 }}
+              minW={{ base: '60px', sm: '70px', md: '80px' }}
             >
               Women
             </Button>
           </ButtonGroup>
         </Stack>
-      </div>
+      </Box>
 
       {/* Results Header */}
       <div className="race-gender-section">
