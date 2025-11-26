@@ -529,7 +529,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
                 </Text>
                 <Badge 
                   colorPalette="navy"
-                  fontSize={{ base: 'sm', md: 'md' }}
+                  fontSize={{ base: 'xs', md: 'sm' }}
                   fontWeight="bold"
                   lineHeight="1"
                   padding={{ base: '1px', md: '2px' }}
@@ -540,7 +540,7 @@ export const AthleteBrowseCard = forwardRef<HTMLDivElement, AthleteBrowseCardPro
             )}
             <Text 
               color="navy.600" 
-              fontSize={{ base: 'xl', md: '2xl' }}
+              fontSize={{ base: 'sm', md: 'md' }}
               fontWeight="extrabold"
               lineHeight="1"
             >

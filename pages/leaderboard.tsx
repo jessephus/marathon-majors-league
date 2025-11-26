@@ -269,7 +269,6 @@ function LeaderboardPageContent({
 
       <div className="container">
         <main className="page active" id="leaderboard-page">
-          <h2>Leaderboard</h2>
 
           {/* Tab Navigation */}
           <div className="leaderboard-tabs">
