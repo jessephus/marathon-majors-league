@@ -22,6 +22,7 @@ import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/chakra';
+import { ArrowPathIcon, PauseIcon } from '@heroicons/react/24/outline';
 
 // Dynamic import AthleteModal with performance tracking
 const AthleteModal = dynamicImport(
@@ -128,6 +129,9 @@ function LeaderboardPageContent({
         apiClient.gameState.load(gameId)
       ]);
 
+      console.log('🔍 DEBUG - gameStateData:', gameStateData);
+      console.log('🔍 DEBUG - rosterLockTime value:', (gameStateData as any)?.rosterLockTime);
+
       setStandings(standingsData);
 
       // Results and game state already fetched via API client
@@ -138,7 +142,8 @@ function LeaderboardPageContent({
       setLastUpdate(Date.now());
       setGameState({ 
         results: (resultsData as any)?.results || {},
-        resultsFinalized: isFinalized
+        resultsFinalized: isFinalized,
+        rosterLockTime: (gameStateData as any)?.rosterLockTime || null
       });
 
     } catch (err) {
@@ -270,8 +275,20 @@ function LeaderboardPageContent({
       <div className="container">
         <main className="page active" id="leaderboard-page">
 
-          {/* Tab Navigation */}
-          <div className="leaderboard-tabs">
+          {/* Tab Navigation - Sticky at top */}
+          <div 
+            className="leaderboard-tabs" 
+            style={{
+              position: 'sticky',
+              top: {base:'60px', md:'72px', lg:'80px'}, // Header height (adjust if different)
+              zIndex: 10,
+              backgroundColor: '#f9fafb',
+              paddingTop: '2rem',
+              paddingBottom: '0.5rem',
+              marginTop: '-1.5rem',
+              marginBottom: '1rem'
+            }}
+          >
             <Button
               className={`leaderboard-tab ${activeTab === 'fantasy' ? 'active' : ''}`}
               onClick={() => setActiveTab('fantasy')}
@@ -329,6 +346,7 @@ function LeaderboardPageContent({
                     hasResults={standings?.hasResults}
                     projectionInfo={standings?.projectionInfo || null}
                     resultsFinalized={gameState.resultsFinalized}
+                    rosterLockTime={gameState.rosterLockTime}
                     onPlayerClick={handlePlayerClick}
                   />
                 )}
@@ -366,11 +384,17 @@ function LeaderboardPageContent({
               alignItems: 'center'
             }}
           >
-            <span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {isVisible && isFocused ? (
-                <>🔄 Auto-refreshing every 60 seconds</>
+                <>
+                  <ArrowPathIcon style={{ width: '16px', height: '16px', color: '#4A5F9D' }} />
+                  Auto-refreshing every 60 seconds
+                </>
               ) : (
-                <>⏸️ Auto-refresh paused (tab inactive)</>
+                <>
+                  <PauseIcon style={{ width: '16px', height: '16px', color: '#71717A' }} />
+                  Auto-refresh paused (tab inactive)
+                </>
               )}
             </span>
             <span>Last update: {updateTimeText}</span>
