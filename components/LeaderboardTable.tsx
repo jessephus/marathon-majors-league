@@ -151,7 +151,7 @@ export default function LeaderboardTable({
           <div className="banner-content">
             <strong>Pre-Race Standings</strong>
             <span className="banner-detail">
-              The race hasn't started yet. Teams will earn points once results are entered.
+              The race will start on Dec 7. Teams will earn points once results are entered.
             </span>
           </div>
         </div>
