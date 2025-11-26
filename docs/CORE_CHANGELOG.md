@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Athletes Page Infinite Scroll** (November 25, 2025)
+  - Implemented client-side lazy loading on `/athletes` using IntersectionObserver
+  - Initial render limits to 40 cards; loads +30 per scroll near bottom
+  - Improves performance for long athlete lists on mobile and desktop
+  - File: `pages/athletes.tsx`
 - **Bulk Athlete Confirmation Tool** (November 24, 2025)
   - Commissioner script for bulk confirming athletes from CSV/JSON files
   - Intelligent name matching with fuzzy logic (Levenshtein distance algorithm)
