@@ -132,14 +132,28 @@ function timeToSeconds(timeStr: string): number {
  */
 function getCountryFlag(countryCode: string): string {
   const flags: Record<string, string> = {
-    'USA': '🇺🇸', 'KEN': '🇰🇪', 'ETH': '🇪🇹', 'GBR': '🇬🇧',
-    'JPN': '🇯🇵', 'ITA': '🇮🇹', 'GER': '🇩🇪', 'FRA': '🇫🇷',
-    'ESP': '🇪🇸', 'NED': '🇳🇱', 'BEL': '🇧🇪', 'NOR': '🇳🇴',
-    'SWE': '🇸🇪', 'UGA': '🇺🇬', 'ERI': '🇪🇷', 'MEX': '🇲🇽',
-    'CAN': '🇨🇦', 'AUS': '🇦🇺', 'NZL': '🇳🇿', 'RSA': '🇿🇦',
-    'BRA': '🇧🇷', 'CHN': '🇨🇳', 'MAR': '🇲🇦', 'TAN': '🇹🇿',
-    'RWA': '🇷🇼', 'BDI': '🇧🇮', 'ISR': '🇮🇱', 'POR': '🇵🇹',
-    'SUI': '🇨🇭', 'IRL': '🇮🇪', 'POL': '🇵🇱', 'BRN': '🇧🇭',
+    // Americas
+    'USA': '🇺🇸', 'CAN': '🇨🇦', 'MEX': '🇲🇽', 'BRA': '🇧🇷',
+    'ARG': '🇦🇷', 'CHI': '🇨🇱', 'COL': '🇨🇴', 'PER': '🇵🇪',
+    'ECU': '🇪🇨', 'VEN': '🇻🇪', 'BOL': '🇧🇴', 'URU': '🇺🇾',
+    // Europe
+    'GBR': '🇬🇧', 'GER': '🇩🇪', 'FRA': '🇫🇷', 'ITA': '🇮🇹',
+    'ESP': '🇪🇸', 'NED': '🇳🇱', 'BEL': '🇧🇪', 'SUI': '🇨🇭',
+    'NOR': '🇳🇴', 'SWE': '🇸🇪', 'DEN': '🇩🇰', 'FIN': '🇫🇮',
+    'IRL': '🇮🇪', 'POR': '🇵🇹', 'POL': '🇵🇱', 'CZE': '🇨🇿',
+    'HUN': '🇭🇺', 'AUT': '🇦🇹', 'ROU': '🇷🇴', 'BLR': '🇧🇾',
+    'UKR': '🇺🇦', 'RUS': '🇷🇺', 'GRE': '🇬🇷', 'TUR': '🇹🇷',
+    // Africa
+    'KEN': '🇰🇪', 'ETH': '🇪🇹', 'UGA': '🇺🇬', 'ERI': '🇪🇷',
+    'TAN': '🇹🇿', 'RWA': '🇷🇼', 'BDI': '🇧🇮', 'RSA': '🇿🇦',
+    'MAR': '🇲🇦', 'ALG': '🇩🇿', 'TUN': '🇹🇳', 'EGY': '🇪🇬',
+    'DJI': '🇩🇯', 'LES': '🇱🇸', 'NAM': '🇳🇦', 'ZIM': '🇿🇼',
+    // Asia
+    'JPN': '🇯🇵', 'CHN': '🇨🇳', 'KOR': '🇰🇷', 'IND': '🇮🇳',
+    'BRN': '🇧🇭', 'ISR': '🇮🇱', 'KAZ': '🇰🇿', 'UZB': '🇺🇿',
+    'KGZ': '🇰🇬', 'THA': '🇹🇭', 'VIE': '🇻🇳', 'SIN': '🇸🇬',
+    // Oceania
+    'AUS': '🇦🇺', 'NZL': '🇳🇿', 'PNG': '🇵🇬', 'FIJ': '🇫🇯',
   };
   return flags[countryCode] || '🏃';
 }
