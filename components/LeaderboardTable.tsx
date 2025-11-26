@@ -108,8 +108,8 @@ export default function LeaderboardTable({
     const scrollTop = window.scrollY;
 
     // Header and footer offsets
-    const headerOffset = 210; // Increased to fully clear navigation tabs and avoid overlap
-    const bottomOffset = 50;      // Calculate viewport boundaries
+    const headerOffset = 130; // Increased to fully clear sticky header + navigation tabs and avoid overlap
+    const bottomOffset = 70;      // Calculate viewport boundaries
       const viewportTop = scrollTop + headerOffset;
       const viewportBottom = scrollTop + viewportHeight - bottomOffset;
 
