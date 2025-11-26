@@ -19,15 +19,20 @@ import { neon } from '@neondatabase/serverless';
 const sql = neon(process.env.DATABASE_URL);
 
 async function fixDuplicateWAIds() {
+  const dryRun = process.argv.includes('--dry-run');
+  if (dryRun) {
+    console.log('🧪 Running in DRY RUN mode — no changes will be written.\n');
+  }
   console.log('🔍 Finding duplicate World Athletics IDs...\n');
 
   // Find all duplicates
   const duplicates = await sql`
     SELECT 
       LTRIM(world_athletics_id, '0') as normalized_id,
-      ARRAY_AGG(id ORDER BY updated_at DESC, last_fetched_at DESC NULLS LAST) as athlete_ids,
-      ARRAY_AGG(name ORDER BY updated_at DESC, last_fetched_at DESC NULLS LAST) as names,
-      ARRAY_AGG(world_athletics_id ORDER BY updated_at DESC, last_fetched_at DESC NULLS LAST) as wa_ids
+      ARRAY_AGG(id ORDER BY created_at ASC) as athlete_ids,
+      ARRAY_AGG(name ORDER BY created_at ASC) as names,
+      ARRAY_AGG(world_athletics_id ORDER BY created_at ASC) as wa_ids,
+      ARRAY_AGG(created_at ORDER BY created_at ASC) as created_ats
     FROM athletes 
     WHERE world_athletics_id IS NOT NULL
     GROUP BY LTRIM(world_athletics_id, '0')
@@ -51,11 +56,12 @@ async function fixDuplicateWAIds() {
     console.log(`📍 Normalized WA ID: ${normalizedId}`);
     console.log(`   Duplicate entries:`);
     
-    for (let i = 0; i < athleteIds.length; i++) {
-      console.log(`     - ID ${athleteIds[i]}: ${names[i]} (WA ID: ${waIds[i]})`);
+      for (let i = 0; i < athleteIds.length; i++) {
+        const createdAt = dup.created_ats[i];
+        console.log(`     - ID ${athleteIds[i]}: ${names[i]} (WA ID: ${waIds[i]}) | created_at=${createdAt}`);
     }
 
-    const keepId = athleteIds[0]; // Most recently updated
+    const keepId = athleteIds[0]; // Earliest created
     const deleteIds = athleteIds.slice(1);
 
     console.log(`   ✅ Keeping: ID ${keepId} (${names[0]})`);
@@ -73,29 +79,35 @@ async function fixDuplicateWAIds() {
     // For athlete_progression, we need to handle conflicts specially
     // Delete progression records for duplicate athletes that would conflict
     for (const deleteId of deleteIds) {
-      const deleted = await sql`
-        DELETE FROM athlete_progression
-        WHERE athlete_id = ${deleteId}
-        AND (discipline, season) IN (
-          SELECT discipline, season
-          FROM athlete_progression
-          WHERE athlete_id = ${keepId}
-        )
-      `;
-      
-      if (deleted.count > 0) {
-        console.log(`     Deleted ${deleted.count} conflicting progression record(s) for athlete ${deleteId}`);
+      if (dryRun) {
+        console.log(`     (dry-run) Would delete conflicting progression records for athlete ${deleteId} where (discipline, season) overlaps with athlete ${keepId}`);
+      } else {
+        const deleted = await sql`
+          DELETE FROM athlete_progression
+          WHERE athlete_id = ${deleteId}
+          AND (discipline, season) IN (
+            SELECT discipline, season
+            FROM athlete_progression
+            WHERE athlete_id = ${keepId}
+          )
+        `;
+        if (deleted.count > 0) {
+          console.log(`     Deleted ${deleted.count} conflicting progression record(s) for athlete ${deleteId}`);
+        }
       }
 
       // Update non-conflicting progression records
-      const updated = await sql`
-        UPDATE athlete_progression
-        SET athlete_id = ${keepId}
-        WHERE athlete_id = ${deleteId}
-      `;
-      
-      if (updated.count > 0) {
-        console.log(`     Updated ${updated.count} progression record(s) to athlete ${keepId}`);
+      if (dryRun) {
+        console.log(`     (dry-run) Would update progression records from athlete ${deleteId} → ${keepId}`);
+      } else {
+        const updated = await sql`
+          UPDATE athlete_progression
+          SET athlete_id = ${keepId}
+          WHERE athlete_id = ${deleteId}
+        `;
+        if (updated.count > 0) {
+          console.log(`     Updated ${updated.count} progression record(s) to athlete ${keepId}`);
+        }
       }
     }
 
@@ -110,21 +122,28 @@ async function fixDuplicateWAIds() {
     for (const table of tables) {
       for (const deleteId of deleteIds) {
         // Use sql.query for dynamic table names
-        const result = await sql.query(
-          `UPDATE ${table} SET athlete_id = $1 WHERE athlete_id = $2`,
-          [keepId, deleteId]
-        );
-        
-        if (result.rowCount > 0) {
-          console.log(`     Updated ${result.rowCount} row(s) in ${table}`);
+        if (dryRun) {
+          console.log(`     (dry-run) Would update rows in ${table}: athlete_id ${deleteId} → ${keepId}`);
+        } else {
+          const result = await sql.query(
+            `UPDATE ${table} SET athlete_id = $1 WHERE athlete_id = $2`,
+            [keepId, deleteId]
+          );
+          if (result.rowCount > 0) {
+            console.log(`     Updated ${result.rowCount} row(s) in ${table}`);
+          }
         }
       }
     }
 
     // Delete duplicate athlete entries
     for (const deleteId of deleteIds) {
-      await sql`DELETE FROM athletes WHERE id = ${deleteId}`;
-      console.log(`     Deleted athlete ID ${deleteId}`);
+      if (dryRun) {
+        console.log(`     (dry-run) Would delete athlete ID ${deleteId}`);
+      } else {
+        await sql`DELETE FROM athletes WHERE id = ${deleteId}`;
+        console.log(`     Deleted athlete ID ${deleteId}`);
+      }
     }
 
     console.log();
@@ -133,13 +152,16 @@ async function fixDuplicateWAIds() {
   // Now normalize ALL world_athletics_id values
   console.log('🔧 Normalizing all World Athletics IDs (stripping leading zeros)...\n');
 
-  const normalized = await sql`
-    UPDATE athletes 
-    SET world_athletics_id = LTRIM(world_athletics_id, '0')
-    WHERE world_athletics_id ~ '^0+'
-  `;
-
-  console.log(`✅ Normalized ${normalized.count} athlete(s)\n`);
+  if (dryRun) {
+    console.log('    (dry-run) Would normalize world_athletics_id values by stripping leading zeros');
+  } else {
+    const normalized = await sql`
+      UPDATE athletes 
+      SET world_athletics_id = LTRIM(world_athletics_id, '0')
+      WHERE world_athletics_id ~ '^0+'
+    `;
+    console.log(`✅ Normalized ${normalized.count} athlete(s)\n`);
+  }
 
   // Verify no more duplicates
   const remaining = await sql`
