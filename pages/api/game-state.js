@@ -14,6 +14,7 @@
  *   - roster_lock_time
  *   - results_finalized
  *   - draft_complete (legacy field, kept for compatibility)
+ *   - active_race_id (the active race for this game)
  */
 import { getGameState, updateGameState, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
 
@@ -55,6 +56,8 @@ export default async function handler(req, res) {
         draftComplete: gameState?.draft_complete || false,
         resultsFinalized: gameState?.results_finalized || false,
         rosterLockTime: gameState?.roster_lock_time || null,
+        activeRaceId: gameState?.active_race_id || null,
+        activeRace: gameState?.active_race || null,
         results,
         // Include session info if valid
         session: sessionInfo ? {
@@ -78,13 +81,14 @@ export default async function handler(req, res) {
       }
       
       // Update game state
-      const { players, draftComplete, resultsFinalized, rosterLockTime } = req.body;
+      const { players, draftComplete, resultsFinalized, rosterLockTime, activeRaceId } = req.body;
 
       await updateGameState(gameId, {
         players,
         draft_complete: draftComplete,
         results_finalized: resultsFinalized,
-        roster_lock_time: rosterLockTime
+        roster_lock_time: rosterLockTime,
+        active_race_id: activeRaceId
       });
 
       res.status(200).json({ message: 'Game state updated successfully' });

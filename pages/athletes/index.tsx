@@ -57,7 +57,8 @@ interface Athlete {
   sponsor?: string;
   seasonBest?: string;
   worldAthleticsProfileUrl?: string;
-  nycConfirmed?: boolean;
+  nycConfirmed?: boolean; // Deprecated - use raceConfirmed
+  raceConfirmed?: boolean; // New field - confirmed for active race
 }
 
 type SortOption = 'fantasyScore' | 'pb' | 'rank' | 'salary' | 'age' | 'name';
@@ -278,9 +279,9 @@ export default function AthletesBrowsePage() {
       );
     }
     
-    // Apply confirmation filter
+    // Apply confirmation filter (supports both old and new field names)
     if (showConfirmedOnly) {
-      filtered = filtered.filter(a => a.nycConfirmed === true);
+      filtered = filtered.filter(a => a.raceConfirmed === true || a.nycConfirmed === true);
     }
     
     // Calculate fantasy scores for sorting
