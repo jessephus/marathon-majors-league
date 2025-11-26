@@ -67,6 +67,13 @@ interface TeamSessionPageProps {
     rosterLockTime: string | null;
     resultsFinalized: boolean;
     draftComplete: boolean;
+    activeRaceId?: number | null;
+    activeRace?: {
+      id: number;
+      name: string;
+      date: string;
+      location: string;
+    } | null;
   };
   existingRoster: TeamRoster | null;
   isRosterComplete: boolean;  // Whether roster has been fully submitted
@@ -575,6 +582,7 @@ function TeamSessionPageContent({
           totalBudget={DEFAULT_BUDGET}
           onSelect={handleAthleteSelect}
           onClose={() => setIsModalOpen(false)}
+          activeRaceName={gameStateData.activeRace?.name}
         />
 
         <Footer mode="team" showCopyright={true} />
@@ -604,6 +612,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           rosterLockTime: null,
           resultsFinalized: false,
           draftComplete: false,
+          activeRaceId: null,
+          activeRace: null,
         },
         existingRoster: null,
         isRosterComplete: false,
@@ -634,6 +644,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
             rosterLockTime: null,
             resultsFinalized: false,
             draftComplete: false,
+            activeRaceId: null,
+            activeRace: null,
           },
           existingRoster: null,
           isRosterComplete: false,
@@ -720,6 +732,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           rosterLockTime: gameStateData.rosterLockTime || null,
           resultsFinalized: gameStateData.resultsFinalized || false,
           draftComplete: gameStateData.draftComplete || false,
+          activeRaceId: (gameStateData as any).activeRaceId || null,
+          activeRace: (gameStateData as any).activeRace || null,
         },
         existingRoster,
         isRosterComplete,
@@ -737,6 +751,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           rosterLockTime: null,
           resultsFinalized: false,
           draftComplete: false,
+          activeRaceId: null,
+          activeRace: null,
         },
         existingRoster: null,
         isRosterComplete: false,
