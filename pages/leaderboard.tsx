@@ -15,13 +15,14 @@ import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
-import { apiClient, createServerApiClient } from '@/lib/api-client';
+import { apiClient, createServerApiClient, clearCache } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/chakra';
+import { Box } from '@chakra-ui/react';
 import { ArrowPathIcon, PauseIcon } from '@heroicons/react/24/outline';
 
 // Dynamic import AthleteModal with performance tracking
@@ -121,6 +122,9 @@ function LeaderboardPageContent({
     try {
       setLoading(true);
       setError(null);
+
+      // Clear cache to ensure fresh data (especially for roster_lock_time)
+      clearCache();
 
       // Fetch standings, results, and game state in parallel using API client
       const [standingsData, resultsData, gameStateData] = await Promise.all([
@@ -276,18 +280,16 @@ function LeaderboardPageContent({
         <main className="page active" id="leaderboard-page">
 
           {/* Tab Navigation - Sticky at top */}
-          <div 
-            className="leaderboard-tabs" 
-            style={{
-              position: 'sticky',
-              top: {base:'60px', md:'72px', lg:'80px'}, // Header height (adjust if different)
-              zIndex: 10,
-              backgroundColor: '#f9fafb',
-              paddingTop: '2rem',
-              paddingBottom: '0.5rem',
-              marginTop: '-1.5rem',
-              marginBottom: '1rem'
-            }}
+          <Box
+            className="leaderboard-tabs"
+            position="sticky"
+            top={{ base: '60px', md: '80px' }} // Responsive: mobile header 60px, desktop header 80px
+            zIndex={10}
+            bg="#f9fafb"
+            pt="2rem"
+            pb="0.5rem"
+            mt="-1.5rem"
+            mb="1rem"
           >
             <Button
               className={`leaderboard-tab ${activeTab === 'fantasy' ? 'active' : ''}`}
@@ -311,7 +313,7 @@ function LeaderboardPageContent({
             >
               Race Results
             </Button>
-          </div>
+          </Box>
 
           {/* Error State */}
           {error && (

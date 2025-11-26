@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import { Button, ButtonGroup, Select, SelectOption } from '@/components/chakra';
+import { Stack, Box } from '@chakra-ui/react';
 
 interface AthleteResult {
   athlete_id: number;
@@ -184,34 +185,36 @@ export default function ResultsTable({ results, onAthleteClick }: ResultsTablePr
     <div className="race-results-container">
       {/* Filter Controls */}
       <div className="race-results-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-        {/* Gender Toggle */}
-        <ButtonGroup isAttached size="md">
-          <Button
-            variant={selectedGender === 'men' ? 'solid' : 'outline'}
-            colorPalette={selectedGender === 'men' ? 'navy' : 'secondary'}
-            onClick={() => setSelectedGender('men')}
-          >
-            Men
-          </Button>
-          <Button
-            variant={selectedGender === 'women' ? 'solid' : 'outline'}
-            colorPalette={selectedGender === 'women' ? 'navy' : 'secondary'}
-            onClick={() => setSelectedGender('women')}
-          >
-            Women
-          </Button>
-        </ButtonGroup>
+        <Stack direction="row" align="center">
+          {/* Split Selector */}
+          <Select
+            id="split-select"
+            options={splitOptions}
+            value={selectedSplit}
+            onChange={(e) => setSelectedSplit(e.target.value)}
+            variant="filled"
+            size="sm"
+            style={{ maxWidth: '150px' }}
+          />
 
-        {/* Split Selector */}
-        <Select
-          id="split-select"
-          options={splitOptions}
-          value={selectedSplit}
-          onChange={(e) => setSelectedSplit(e.target.value)}
-          variant="outline"
-          size="md"
-          style={{ maxWidth: '200px' }}
-        />
+          {/* Gender Toggle */}
+          <ButtonGroup isAttached size="md">
+            <Button
+              variant={selectedGender === 'men' ? 'solid' : 'outline'}
+              colorPalette={selectedGender === 'men' ? 'navy' : 'secondary'}
+              onClick={() => setSelectedGender('men')}
+            >
+              Men
+            </Button>
+            <Button
+              variant={selectedGender === 'women' ? 'solid' : 'outline'}
+              colorPalette={selectedGender === 'women' ? 'navy' : 'secondary'}
+              onClick={() => setSelectedGender('women')}
+            >
+              Women
+            </Button>
+          </ButtonGroup>
+        </Stack>
       </div>
 
       {/* Results Header */}
