@@ -15,13 +15,15 @@ import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
-import { apiClient, createServerApiClient } from '@/lib/api-client';
+import { apiClient, createServerApiClient, clearCache } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import Footer from '@/components/Footer';
 import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/chakra';
+import { Box } from '@chakra-ui/react';
+import { ArrowPathIcon, PauseIcon } from '@heroicons/react/24/outline';
 
 // Dynamic import AthleteModal with performance tracking
 const AthleteModal = dynamicImport(
@@ -121,12 +123,19 @@ function LeaderboardPageContent({
       setLoading(true);
       setError(null);
 
-      // Fetch standings, results, and game state in parallel using API client
-      const [standingsData, resultsData, gameStateData] = await Promise.all([
+      // Clear cache to ensure fresh data
+      clearCache();
+
+      // Fetch standings, results, game state, and active race in parallel
+      const [standingsData, resultsData, gameStateData, activeRaces] = await Promise.all([
         apiClient.standings.fetch(gameId),
         apiClient.results.fetch(gameId),
-        apiClient.gameState.load(gameId)
+        apiClient.gameState.load(gameId),
+        apiClient.races.list({ active: true })
       ]);
+
+      // Extract lock time from active race (races table is the source of truth)
+      const lockTime = activeRaces && activeRaces.length > 0 ? activeRaces[0].lockTime : null;
 
       setStandings(standingsData);
 
@@ -138,7 +147,8 @@ function LeaderboardPageContent({
       setLastUpdate(Date.now());
       setGameState({ 
         results: (resultsData as any)?.results || {},
-        resultsFinalized: isFinalized
+        resultsFinalized: isFinalized,
+        rosterLockTime: lockTime
       });
 
     } catch (err) {
@@ -238,21 +248,10 @@ function LeaderboardPageContent({
 
   // Sort standings to put current player's team at top (if they have a session)
   const sortedStandings = React.useMemo(() => {
-    if (!standings?.standings || !currentPlayerCode) {
-      return standings?.standings || [];
-    }
-
-    const standingsCopy = [...standings.standings];
-    const currentPlayerIndex = standingsCopy.findIndex(s => s.player_code === currentPlayerCode);
-    
-    if (currentPlayerIndex > 0) {
-      // Move current player to top
-      const [currentPlayer] = standingsCopy.splice(currentPlayerIndex, 1);
-      standingsCopy.unshift(currentPlayer);
-    }
-    
-    return standingsCopy;
-  }, [standings, currentPlayerCode]);
+    // Return standings in their natural sorted order (by score)
+    // The LeaderboardTable component will handle sticky positioning for the active team
+    return standings?.standings || [];
+  }, [standings]);
 
   // Format time since last update
   const timeSinceUpdate = Math.floor((Date.now() - lastUpdate) / 1000);
@@ -270,8 +269,18 @@ function LeaderboardPageContent({
       <div className="container">
         <main className="page active" id="leaderboard-page">
 
-          {/* Tab Navigation */}
-          <div className="leaderboard-tabs">
+          {/* Tab Navigation - Sticky at top */}
+          <Box
+            className="leaderboard-tabs"
+            position="sticky"
+            top={{ base: '40px', md: '60px' }} // Responsive: mobile header 60px, desktop header 80px
+            zIndex={10}
+            bg="#f9fafb"
+            pt="2rem"
+            pb="0.5rem"
+            mt="-1.5rem"
+            mb="1rem"
+          >
             <Button
               className={`leaderboard-tab ${activeTab === 'fantasy' ? 'active' : ''}`}
               onClick={() => setActiveTab('fantasy')}
@@ -294,7 +303,7 @@ function LeaderboardPageContent({
             >
               Race Results
             </Button>
-          </div>
+          </Box>
 
           {/* Error State */}
           {error && (
@@ -329,6 +338,7 @@ function LeaderboardPageContent({
                     hasResults={standings?.hasResults}
                     projectionInfo={standings?.projectionInfo || null}
                     resultsFinalized={gameState.resultsFinalized}
+                    rosterLockTime={gameState.rosterLockTime}
                     onPlayerClick={handlePlayerClick}
                   />
                 )}
@@ -366,11 +376,17 @@ function LeaderboardPageContent({
               alignItems: 'center'
             }}
           >
-            <span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {isVisible && isFocused ? (
-                <>🔄 Auto-refreshing every 60 seconds</>
+                <>
+                  <ArrowPathIcon style={{ width: '16px', height: '16px', color: '#4A5F9D' }} />
+                  Auto-refreshing every 60 seconds
+                </>
               ) : (
-                <>⏸️ Auto-refresh paused (tab inactive)</>
+                <>
+                  <PauseIcon style={{ width: '16px', height: '16px', color: '#71717A' }} />
+                  Auto-refresh paused (tab inactive)
+                </>
               )}
             </span>
             <span>Last update: {updateTimeText}</span>

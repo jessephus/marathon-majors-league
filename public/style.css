@@ -3597,12 +3597,12 @@ footer .footer-copyright {
 /* Bidirectional sticky behavior - applied dynamically via JavaScript */
 .leaderboard-row-highlight.sticky-top {
     position: sticky;
-    top: 80px;
+    top: 130px; /* Increased to clear sticky header + navigation tabs */
 }
 
 .leaderboard-row-highlight.sticky-bottom {
     position: sticky;
-    bottom: 20px;
+    bottom: 70px;
 }
 
 .leaderboard-row-highlight:hover {

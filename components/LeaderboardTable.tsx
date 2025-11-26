@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
+import { FlagIcon, ClockIcon, BoltIcon, TrophyIcon } from '@heroicons/react/24/outline';
 
 interface Standing {
   rank: number;
@@ -25,6 +26,7 @@ interface LeaderboardTableProps {
     mostCommonSplit: string;
   } | null;
   resultsFinalized?: boolean;
+  rosterLockTime?: string | null;
   onPlayerClick?: (playerCode: string) => void;
 }
 
@@ -36,10 +38,34 @@ export default function LeaderboardTable({
   hasResults = false,
   projectionInfo = null,
   resultsFinalized = false,
+  rosterLockTime = null,
   onPlayerClick,
 }: LeaderboardTableProps) {
+  console.log('🔍 DEBUG LeaderboardTable - rosterLockTime prop:', rosterLockTime);
+  
   const highlightedRowRef = useRef<HTMLDivElement>(null);
   const [stickyMode, setStickyMode] = useState<'top' | 'bottom' | null>(null);
+
+  // Format lockTime for display
+  const formatLockTime = (lockTime: string | null): string => {
+    console.log('🔍 DEBUG formatLockTime - input:', lockTime);
+    if (!lockTime) return 'TBD';
+    try {
+      const date = new Date(lockTime);
+      const formatted = new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      }).format(date);
+      console.log('🔍 DEBUG formatLockTime - output:', formatted);
+      return formatted;
+    } catch (e) {
+      console.error('🔍 DEBUG formatLockTime - error:', e);
+      return 'TBD';
+    }
+  };
 
   // Format split label for display
   const formatSplitLabel = (splitName: string): string => {
@@ -78,14 +104,12 @@ export default function LeaderboardTable({
       if (wasTop) highlightedRow.classList.add('sticky-top');
       if (wasBottom) highlightedRow.classList.add('sticky-bottom');
 
-      const viewportHeight = window.innerHeight;
-      const scrollTop = window.scrollY;
+    const viewportHeight = window.innerHeight;
+    const scrollTop = window.scrollY;
 
-      // Header and footer offsets
-      const headerOffset = 80;
-      const bottomOffset = 20;
-
-      // Calculate viewport boundaries
+    // Header and footer offsets
+    const headerOffset = 130; // Increased to fully clear sticky header + navigation tabs and avoid overlap
+    const bottomOffset = 70;      // Calculate viewport boundaries
       const viewportTop = scrollTop + headerOffset;
       const viewportBottom = scrollTop + viewportHeight - bottomOffset;
 
@@ -147,11 +171,13 @@ export default function LeaderboardTable({
       {/* Pre-race banner */}
       {preRaceState && (
         <div className="temporary-scores-banner" style={{ background: 'linear-gradient(135deg, #2C39A2 0%, #1e2870 100%)', boxShadow: '0 3px 12px rgba(44, 57, 162, 0.3)' }}>
-          <span className="banner-icon">🏁</span>
+          <span className="banner-icon">
+            <FlagIcon style={{ width: '20px', height: '20px', display: 'inline-block' }} />
+          </span>
           <div className="banner-content">
             <strong>Pre-Race Standings</strong>
             <span className="banner-detail">
-              The race will start on Dec 7. Teams will earn points once results are entered.
+              The race will start at {formatLockTime(rosterLockTime)}. Teams will earn points once results are entered.
             </span>
           </div>
         </div>
@@ -160,7 +186,9 @@ export default function LeaderboardTable({
       {/* Banners for temporary scores or manual review */}
       {raceFinishedNotFinalized && (
         <div className="temporary-scores-banner review-state">
-          <span className="banner-icon">⏳</span>
+          <span className="banner-icon">
+            <ClockIcon style={{ width: '20px', height: '20px', display: 'inline-block' }} />
+          </span>
           <div className="banner-content">
             <strong>Race Finished - Results Being Manually Reviewed</strong>
             <span className="banner-detail">
@@ -172,7 +200,9 @@ export default function LeaderboardTable({
 
       {isTemporary && projectionInfo && !raceFinishedNotFinalized && (
         <div className="temporary-scores-banner">
-          <span className="banner-icon">⚡</span>
+          <span className="banner-icon">
+            <BoltIcon style={{ width: '20px', height: '20px', display: 'inline-block' }} />
+          </span>
           <div className="banner-content">
             <strong>Live Projections</strong>
             <span className="banner-detail">
@@ -188,7 +218,16 @@ export default function LeaderboardTable({
         const isCurrentPlayer = standing.player_code === currentPlayerCode;
         const rank = standing.rank;
         const displayRank = rank <= 3 ? '' : `#${rank}`;
-        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+        
+        // Medal icon with colors
+        const getMedalIcon = () => {
+          if (rank === 1) return <TrophyIcon style={{ width: '20px', height: '20px', display: 'inline-block', color: '#FFD700' }} />;
+          if (rank === 2) return <TrophyIcon style={{ width: '20px', height: '20px', display: 'inline-block', color: '#C0C0C0' }} />;
+          if (rank === 3) return <TrophyIcon style={{ width: '20px', height: '20px', display: 'inline-block', color: '#CD7F32' }} />;
+          return null;
+        };
+        const medal = getMedalIcon();
+        
         const stats = `${standing.wins} wins, ${standing.top3} top-3`;
 
         const rowClasses = [
