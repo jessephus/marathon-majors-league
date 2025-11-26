@@ -23,7 +23,7 @@
  * Issue: #59 - Redesign UI with Modern Mobile-First Look
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   Box,
   Container,
@@ -33,6 +33,7 @@ import {
   Text,
   VStack,
   HStack,
+  Spinner,
 } from '@chakra-ui/react';
 import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import AthleteModal from '@/components/AthleteModal';
@@ -68,6 +69,12 @@ type GenderFilter = 'all' | 'men' | 'women';
 
 /** Default salary for athletes without a salary set */
 const DEFAULT_SALARY = 5000;
+
+/** Initial number of athletes to display */
+const INITIAL_LOAD_COUNT = 40;
+
+/** Number of athletes to load on each scroll */
+const LOAD_MORE_COUNT = 30;
 
 // ===========================
 // Helper Functions
@@ -153,6 +160,10 @@ export default function AthletesBrowsePage() {
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('fantasyScore');
   const [showConfirmedOnly, setShowConfirmedOnly] = useState(false);
+  
+  // Pagination state
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   
   // Modal state
   const [selectedAthlete, setSelectedAthlete] = useState<Athlete | null>(null);
@@ -285,6 +296,40 @@ export default function AthletesBrowsePage() {
     
     return withScores;
   }, [athletes, genderFilter, countryFilter, searchQuery, sortBy, showConfirmedOnly]);
+
+  // Visible athletes for pagination (slice based on visibleCount)
+  const visibleAthletes = useMemo(() => {
+    return filteredAthletes.slice(0, visibleCount);
+  }, [filteredAthletes, visibleCount]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_LOAD_COUNT);
+  }, [searchQuery, genderFilter, countryFilter, showConfirmedOnly, sortBy]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && visibleCount < filteredAthletes.length) {
+          setVisibleCount(prev => Math.min(prev + LOAD_MORE_COUNT, filteredAthletes.length));
+        }
+      },
+      { rootMargin: '100px' } // Start loading slightly before sentinel is visible
+    );
+
+    const currentSentinel = sentinelRef.current;
+    if (currentSentinel) {
+      observer.observe(currentSentinel);
+    }
+
+    return () => {
+      if (currentSentinel) {
+        observer.unobserve(currentSentinel);
+      }
+    };
+  }, [visibleCount, filteredAthletes.length]);
 
   // Handlers
   const handleAthleteClick = useCallback((athlete: Athlete) => {
@@ -509,7 +554,7 @@ export default function AthletesBrowsePage() {
           {/* Results Count */}
           {!loading && (
             <Text fontSize="sm" color="gray.600" mb={4}>
-              Showing {filteredAthletes.length} athlete{filteredAthletes.length !== 1 ? 's' : ''}
+              Showing {visibleAthletes.length} of {filteredAthletes.length} athlete{filteredAthletes.length !== 1 ? 's' : ''}
             </Text>
           )}
 
@@ -571,16 +616,40 @@ export default function AthletesBrowsePage() {
 
           {/* Athletes List */}
           {!loading && !error && filteredAthletes.length > 0 && (
-            <VStack gap={4} align="stretch">
-              {filteredAthletes.map(({ athlete, score }) => (
-                <AthleteBrowseCard
-                  key={athlete.id}
-                  athlete={athlete}
-                  fantasyScore={score}
-                  onClick={() => handleAthleteClick(athlete)}
-                />
-              ))}
-            </VStack>
+            <>
+              <VStack gap={4} align="stretch">
+                {visibleAthletes.map(({ athlete, score }) => (
+                  <AthleteBrowseCard
+                    key={athlete.id}
+                    athlete={athlete}
+                    fantasyScore={score}
+                    onClick={() => handleAthleteClick(athlete)}
+                  />
+                ))}
+              </VStack>
+              
+              {/* Sentinel element for intersection observer */}
+              <div ref={sentinelRef} style={{ height: '20px', marginTop: '20px' }} />
+              
+              {/* Loading more indicator */}
+              {visibleCount < filteredAthletes.length && (
+                <Flex justify="center" py={6}>
+                  <Spinner size="lg" color="navy.500" />
+                </Flex>
+              )}
+              
+              {/* All loaded message */}
+              {visibleCount >= filteredAthletes.length && filteredAthletes.length > INITIAL_LOAD_COUNT && (
+                <Text 
+                  textAlign="center" 
+                  py={6} 
+                  color="gray.500" 
+                  fontSize="sm"
+                >
+                  All athletes loaded
+                </Text>
+              )}
+            </>
           )}
         </Container>
       </Box>
