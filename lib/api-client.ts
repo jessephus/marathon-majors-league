@@ -1001,6 +1001,13 @@ interface GameStateResponse {
   rosterLockTime?: string | null;
   resultsFinalized?: boolean;
   draftComplete?: boolean;
+  activeRaceId?: number | null;
+  activeRace?: {
+    id: number;
+    name: string;
+    date: string;
+    location: string;
+  } | null;
   [key: string]: any;
 }
 

@@ -55,7 +55,8 @@ export async function getAllAthletes(confirmedOnly = false, raceId = null) {
            AND arr.finish_time IS NOT NULL),
           a.season_best
         ) as "seasonBest",
-        true as "raceConfirmed"
+        true as "raceConfirmed",
+        true as "nycConfirmed"
       FROM athletes a
       INNER JOIN athlete_races ar ON a.id = ar.athlete_id
       WHERE ar.race_id = ${targetRaceId}
@@ -97,7 +98,11 @@ export async function getAllAthletes(confirmedOnly = false, raceId = null) {
         CASE 
           WHEN ar.id IS NOT NULL THEN true 
           ELSE false 
-        END as "raceConfirmed"
+        END as "raceConfirmed",
+        CASE 
+          WHEN ar.id IS NOT NULL THEN true 
+          ELSE false 
+        END as "nycConfirmed"
       FROM athletes a
       LEFT JOIN athlete_races ar ON a.id = ar.athlete_id AND ar.race_id = ${targetRaceId}
       ORDER BY a.gender, a.personal_best
@@ -131,7 +136,8 @@ export async function getAllAthletes(confirmedOnly = false, raceId = null) {
            AND arr.finish_time IS NOT NULL),
           a.season_best
         ) as "seasonBest",
-        false as "raceConfirmed"
+        false as "raceConfirmed",
+        false as "nycConfirmed"
       FROM athletes a
       ORDER BY a.gender, a.personal_best
     `;

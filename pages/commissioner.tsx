@@ -131,6 +131,8 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
       
       try {
         // Fetch team count, confirmed athletes, game state, results, and races in parallel using API client
+        // Note: confirmedOnly with gameId will filter athletes for the game's active race.
+        // If no active race is set for the game, getAllAthletes falls back to the first active race in the system.
         const [teamsData, athletesData, gameStateData, resultsData, racesData] = await Promise.all([
           apiClient.salaryCapDraft.getTeam(gameState.gameId),
           apiClient.athletes.list({ confirmedOnly: true, gameId: gameState.gameId }),
