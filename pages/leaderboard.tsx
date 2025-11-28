@@ -126,16 +126,15 @@ function LeaderboardPageContent({
       // Clear cache to ensure fresh data
       clearCache();
 
-      // Fetch standings, results, game state, and active race in parallel
-      const [standingsData, resultsData, gameStateData, activeRaces] = await Promise.all([
+      // Fetch standings, results, and game state in parallel
+      const [standingsData, resultsData, gameStateData] = await Promise.all([
         apiClient.standings.fetch(gameId),
         apiClient.results.fetch(gameId),
-        apiClient.gameState.load(gameId),
-        apiClient.races.list({ active: true })
+        apiClient.gameState.load(gameId)
       ]);
 
-      // Extract lock time from active race (races table is the source of truth)
-      const lockTime = activeRaces && activeRaces.length > 0 ? activeRaces[0].lockTime : null;
+      // Extract lock time from game state (games table is the source of truth)
+      const lockTime = (gameStateData as any)?.rosterLockTime || null;
 
       setStandings(standingsData);
 

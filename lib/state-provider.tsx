@@ -53,6 +53,7 @@ export interface AthleteResult {
 
 export interface GameState {
   gameId: string; // Current game identifier
+  activeRaceId: number | null; // Per-game active race (from games.active_race_id)
   athletes: {
     men: Athlete[];
     women: Athlete[];
@@ -100,6 +101,7 @@ const DEFAULT_STATE: AppState = {
     gameId: typeof window !== 'undefined' 
       ? localStorage.getItem('current_game_id') || 'default'
       : 'default',
+    activeRaceId: null,
     athletes: { men: [], women: [] },
     players: [],
     currentPlayer: null,

@@ -157,7 +157,7 @@ function TeamSessionPageContent({
     
     setLoadingFullAthletes(true);
     try {
-      const athletes = await apiClient.athletes.list({ confirmedOnly: false, gameId: gameStateData.gameId });
+      const athletes = await apiClient.athletes.list({ confirmedOnly: false, gameId: gameState.gameId });
       
       // Update game state with full athlete list
       setGameState({
