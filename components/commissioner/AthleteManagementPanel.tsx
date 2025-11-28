@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, clearCache } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import SkeletonLoader from './SkeletonLoader';
 import { Button, IconButton, Input, Select, Checkbox, FormControl, FormLabel } from '@/components/chakra';
@@ -227,6 +227,10 @@ export default function AthleteManagementPanel() {
 
       setEditingAthlete(null);
       
+      // CRITICAL: Clear cache BEFORE dispatching event to ensure fresh data on refetch
+      // This clears both in-memory and sessionStorage cache
+      clearCache();
+      
       // Emit athleteUpdated event - listener will reload athletes
       // Don't call loadAthletes() manually here to avoid double-loading
       console.log('[AthletePanel] Emitting athleteUpdated event (updated)');
@@ -253,6 +257,9 @@ export default function AthleteManagementPanel() {
       
       // Close confirmation dialog
       setDeleteConfirmation({ open: false, athlete: null });
+      
+      // CRITICAL: Clear cache BEFORE dispatching event to ensure fresh data on refetch
+      clearCache();
       
       // Emit athleteUpdated event - listener will reload athletes
       console.log('[AthletePanel] Emitting athleteUpdated event (deleted)');
