@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { getActiveRaceForGame } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,7 +14,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'POST') {
-      const { athleteId, confirmed } = req.body;
+      const { athleteId, confirmed, gameId = 'default' } = req.body;
 
       if (!athleteId) {
         return res.status(400).json({ error: 'athleteId is required' });
@@ -23,19 +24,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'confirmed must be a boolean' });
       }
 
-      // Get the active race
-      const activeRaces = await sql`
-        SELECT id, name FROM races WHERE is_active = true LIMIT 1
-      `;
+      // Get the active race for this specific game
+      const race = await getActiveRaceForGame(gameId);
 
-      if (activeRaces.length === 0) {
+      if (!race) {
         return res.status(404).json({
-          error: 'No active race found',
-          details: 'Please create an active race first'
+          error: 'No active race found for this game',
+          details: 'Please set an active race for this game first'
         });
       }
-
-      const race = activeRaces[0];
 
       if (confirmed) {
         // Add athlete to the race
@@ -65,8 +62,8 @@ export default async function handler(req, res) {
 
       res.status(200).json({
         message: confirmed
-          ? 'Athlete confirmed for NYC Marathon'
-          : 'Athlete removed from NYC Marathon',
+          ? `Athlete confirmed for ${race.name}`
+          : `Athlete removed from ${race.name}`,
         athlete: {
           id: athleteResult[0].id,
           name: athleteResult[0].name,

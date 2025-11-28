@@ -11,18 +11,22 @@ const sql = neon(process.env.DATABASE_URL);
  * Get all athletes with optional filtering by race confirmation
  * 
  * @param {boolean} confirmedOnly - If true, only return athletes confirmed for the specified race
- * @param {number|null} raceId - The race ID to check confirmations against. If null, uses the first active race.
+ * @param {number|null} raceId - The race ID to check confirmations against. If null, uses active race for game.
+ * @param {string} gameId - Game ID for determining active race context
  * @returns {Object} Object with men and women arrays
  */
-export async function getAllAthletes(confirmedOnly = false, raceId = null) {
+export async function getAllAthletes(confirmedOnly = false, raceId = null, gameId = 'default') {
   let athletes;
   
   // Determine which race to check confirmations against
   let targetRaceId = raceId;
   if (targetRaceId === null) {
-    // Fall back to the first active race if no race ID specified
-    const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true ORDER BY date DESC LIMIT 1`;
+    // Get the active race for this specific game
+    const activeRace = await getActiveRaceForGame(gameId);
     targetRaceId = activeRace?.id || null;
+    
+    // DEPRECATED: Old code used global is_active flag (marked for deletion)
+    // const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true ORDER BY date DESC LIMIT 1`;
   }
   
   if (confirmedOnly && targetRaceId) {
@@ -511,9 +515,13 @@ export async function getGameState(gameId) {
  * Do not add teams to games.players[] array.
  */
 export async function createGame(gameId, players = []) {
-  // Get the first active race to set as default
-  const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true ORDER BY date DESC LIMIT 1`;
+  // Get the active race for the 'default' game to use as template
+  // DEPRECATED: Old code used global is_active flag - use game's active_race_id instead
+  const activeRace = await getActiveRaceForGame('default');
   const activeRaceId = activeRace?.id || null;
+  
+  // DEPRECATED: Old code that queried global flag (marked for deletion)
+  // const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true ORDER BY date DESC LIMIT 1`;
   
   const [game] = await sql`
     INSERT INTO games (game_id, players, draft_complete, results_finalized, active_race_id)
@@ -856,7 +864,48 @@ export async function getAllRaces() {
   return races;
 }
 
+/**
+ * Get the active race for a specific game
+ * @param {string} gameId - The game ID to get the active race for
+ * @returns {Promise<Object|null>} The active race for the game, or null if none
+ */
+export async function getActiveRaceForGame(gameId) {
+  const [race] = await sql`
+    SELECT 
+      r.id, 
+      r.name, 
+      r.date, 
+      r.location, 
+      r.distance, 
+      r.event_type as "eventType",
+      r.world_athletics_event_id as "worldAthleticsEventId",
+      r.description,
+      r.is_active as "isActive",
+      r.lock_time as "lockTime",
+      r.logo_url as "logoUrl",
+      r.background_image_url as "backgroundImageUrl",
+      r.primary_color as "primaryColor",
+      r.secondary_color as "secondaryColor",
+      r.accent_color as "accentColor",
+      r.created_at as "createdAt",
+      r.updated_at as "updatedAt"
+    FROM races r
+    INNER JOIN games g ON g.active_race_id = r.id
+    WHERE g.game_id = ${gameId}
+  `;
+  return race || null;
+}
+
+/**
+ * DEPRECATED: Use getActiveRaceForGame(gameId) instead
+ * This function queries the global is_active flag and is marked for deletion.
+ * Each game should have its own active race via games.active_race_id.
+ * 
+ * Get all races marked as globally active (legacy behavior)
+ * @deprecated Use getActiveRaceForGame(gameId) for per-game active race
+ */
 export async function getActiveRaces() {
+  // DEPRECATED: Using global is_active flag - use game's active_race_id instead (marked for deletion)
   const races = await sql`
     SELECT 
       id, 
@@ -877,7 +926,7 @@ export async function getActiveRaces() {
       created_at as "createdAt",
       updated_at as "updatedAt"
     FROM races
-    WHERE is_active = true
+    WHERE is_active = true  -- DEPRECATED: Global flag, use games.active_race_id
     ORDER BY date DESC
   `;
   return races;

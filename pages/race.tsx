@@ -18,6 +18,7 @@ import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
 import { Box, Container, Heading, Text, VStack, SimpleGrid } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
+import { useGameState } from '@/lib/state-provider';
 import { Button, Card, CardBody } from '@/components/chakra';
 import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
@@ -69,6 +70,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 export default function RacePage({ raceId }: RacePageProps) {
   const router = useRouter();
+  const { gameState } = useGameState();
   const [race, setRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,31 +100,28 @@ export default function RacePage({ raceId }: RacePageProps) {
       setLoading(true);
       setError(null);
       
-      // If no race ID provided, fetch active races and use the first one
+      // If no race ID provided, use the game's active race
       if (!raceId) {
-        const activeRaces = await apiClient.races.list({ active: true });
+        const activeRaceId = gameState.activeRaceId;
         
-        // Handle both array and single object responses
-        if (Array.isArray(activeRaces) && activeRaces.length > 0) {
-          // Fetch the first active race with athletes
-          const raceData = await apiClient.races.list({ 
-            id: activeRaces[0].id, 
-            includeAthletes: true 
-          });
-          
-          // Handle response type - could be object or array
-          if (Array.isArray(raceData) && raceData.length > 0) {
-            setRace(raceData[0]);
-          } else if (!Array.isArray(raceData) && raceData) {
-            setRace(raceData);
-          } else {
-            setError('Race not found');
-          }
-        } else if (!Array.isArray(activeRaces) && activeRaces) {
-          // If API returns a single object when active=true
-          setRace(activeRaces);
+        if (!activeRaceId) {
+          setError('No active race set for this game. Please contact the commissioner.');
+          return;
+        }
+        
+        // Fetch the game's active race with athletes
+        const raceData = await apiClient.races.list({ 
+          id: activeRaceId, 
+          includeAthletes: true 
+        });
+        
+        // Handle response type - could be object or array
+        if (Array.isArray(raceData) && raceData.length > 0) {
+          setRace(raceData[0]);
+        } else if (!Array.isArray(raceData) && raceData) {
+          setRace(raceData);
         } else {
-          setError('No active races found');
+          setError('Race not found');
         }
         return;
       }

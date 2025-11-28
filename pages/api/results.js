@@ -1,4 +1,4 @@
-import { getRaceResults, saveRaceResults, hasCommissionerAccess } from './db';
+import { getRaceResults, saveRaceResults, hasCommissionerAccess, getActiveRaceForGame } from './db';
 import { scoreRace } from './scoring-engine';
 import { calculateTemporaryScores, hasTemporaryScores } from './lib/temporary-scoring.js';
 import { neon } from '@neondatabase/serverless';
@@ -28,9 +28,8 @@ async function ensureResultsScored(gameId) {
     return false;
   }
 
-  const [activeRace] = await sql`
-    SELECT id FROM races WHERE is_active = true LIMIT 1
-  `;
+  // Get the active race for this specific game
+  const activeRace = await getActiveRaceForGame(gameId);
 
   if (!activeRace) {
     return false;
@@ -117,10 +116,8 @@ export default async function handler(req, res) {
           `;
         }
         
-        // Get the active race ID
-        const [activeRace] = await sql`
-          SELECT id FROM races WHERE is_active = true LIMIT 1
-        `;
+        // Get the active race for this specific game
+        const activeRace = await getActiveRaceForGame(gameId);
         
         if (!activeRace) {
           // No active race, just return race results
@@ -344,10 +341,8 @@ export default async function handler(req, res) {
       let scoringResult = null;
       if (autoScore !== false) {
         try {
-          // Get active race
-          const [activeRace] = await sql`
-            SELECT id FROM races WHERE is_active = true LIMIT 1
-          `;
+          // Get active race for this specific game
+          const activeRace = await getActiveRaceForGame(gameId);
           
           if (activeRace) {
             scoringResult = await scoreRace(gameId, activeRace.id, 2);
