@@ -9,6 +9,7 @@ import CommissionerTOTPModal from '../components/CommissionerTOTPModal'
 import Footer from '../components/Footer'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
 import { getCurrentGameId } from '../lib/session-manager'
+import { DEFAULT_GAME_ID } from '../config/constants'
 
 export async function getServerSideProps(context) {
   const { req, query } = context;
@@ -35,7 +36,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCommissionerModalOpen, setIsCommissionerModalOpen] = useState(false);
-  const [gameId, setGameId] = useState('default');
+  const [gameId, setGameId] = useState(DEFAULT_GAME_ID);
   
   // Handle action query parameter (works for both initial load and client-side navigation)
   useEffect(() => {

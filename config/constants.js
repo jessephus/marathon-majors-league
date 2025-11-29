@@ -52,7 +52,7 @@ export const TOTAL_ROSTER_SLOTS = 6; // Total roster slots (3M + 3W)
 /**
  * Game Configuration Defaults
  */
-export const DEFAULT_GAME_ID = 'default';
+export const DEFAULT_GAME_ID = 'valencia-25'; // Valencia-25 game
 
 /**
  * API Configuration
