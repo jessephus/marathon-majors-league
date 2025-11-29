@@ -4,6 +4,7 @@
 
 import { scoreRace } from './scoring-engine';
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
   const action = req.query.action || 'calculate';
 
   try {

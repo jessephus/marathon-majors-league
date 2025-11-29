@@ -17,6 +17,7 @@
  *   - active_race_id (the active race for this game)
  */
 import { getGameState, updateGameState, getRaceResults, verifyAnonymousSession, hasCommissionerAccess } from './db';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
   
   // Get session token from query parameter or Authorization header
   const sessionToken = req.query.session 

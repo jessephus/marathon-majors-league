@@ -20,6 +20,8 @@
  * - components/Footer.tsx - Session-aware footer component
  */
 
+import { DEFAULT_GAME_ID } from '../config/constants';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -407,13 +409,13 @@ export function dispatchSessionsUpdated(): void {
  * Get current game ID from localStorage
  */
 export function getCurrentGameId(): string {
-  if (typeof window === 'undefined') return 'default';
+  if (typeof window === 'undefined') return DEFAULT_GAME_ID;
   
   try {
-    return localStorage.getItem(GAME_ID_KEY) || 'default';
+    return localStorage.getItem(GAME_ID_KEY) || DEFAULT_GAME_ID;
   } catch (error) {
     console.error('[Session Manager] Error retrieving game ID:', error);
-    return 'default';
+    return DEFAULT_GAME_ID;
   }
 }
 

@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -13,12 +14,10 @@ export default async function handler(req, res) {
     }
 
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-    const gameId = req.query.gameId || 'default';
-
-    // Safety check: don't allow resetting without explicit gameId
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;    // Safety check: don't allow resetting without explicit gameId
     if (!gameId || gameId.trim() === '') {
         return res.status(400).json({ 
             error: 'Game ID is required',

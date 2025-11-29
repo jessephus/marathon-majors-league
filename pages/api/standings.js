@@ -251,7 +251,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
 
   try {
     if (req.method === 'GET') {

@@ -3,6 +3,7 @@ import { scoreRace } from './scoring-engine';
 import { calculateTemporaryScores, hasTemporaryScores } from './lib/temporary-scoring.js';
 import { neon } from '@neondatabase/serverless';
 import { generateETag, setCacheHeaders, checkETag, send304 } from './lib/cache-utils.js';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -54,7 +55,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
   
   // Get session token from query parameter or Authorization header
   const sessionToken = req.query.session 

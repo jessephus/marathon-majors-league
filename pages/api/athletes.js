@@ -1,6 +1,7 @@
 import { getAllAthletes, getAthleteProfile, getGameState } from './db';
 import { neon } from '@neondatabase/serverless';
 import { generateETag, checkETag, send304 } from './lib/cache-utils.js';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -93,7 +94,7 @@ export default async function handler(req, res) {
       
       // Get race ID from query params - can be explicit raceId or derived from gameId
       let raceId = req.query.raceId ? parseInt(req.query.raceId, 10) : null;
-      const gameId = req.query.gameId || null;
+      const gameId = req.query.gameId || DEFAULT_GAME_ID;
       
       // If gameId is provided, get the active race for that game
       if (gameId && !raceId) {
