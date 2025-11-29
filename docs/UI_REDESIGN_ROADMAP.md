@@ -1138,23 +1138,53 @@ npm run audit:navigation
 
 ### Week 27-28: Home / Welcome Page
 
+**Status:** 🔄 In Progress  
+**Start Date:** November 29, 2025
+
+#### Implementation Summary
+- ✅ **LandingPage Component** (`components/LandingPage.tsx`)
+  - Navy (#161C4F) and gold (#D4AF37) brand palette implementation
+  - Responsive design (mobile-first with desktop breakpoints)
+  - Uses existing Chakra primitives (Box, Flex, Text, Heading, Image, Container)
+  - Uses migrated Button component from @/components/chakra
+  
+- ✅ **Sections Implemented:**
+  1. **Header Section** - Logo + gold outline "Log in" / "Sign Up" buttons
+  2. **Hero Section** - "Fantasy Marathon" heading with gold underline, description, navy "Get Started" CTA
+  3. **How It Works Section** - 3 numbered steps (1, 2, 3) with gold-bordered circles and connecting line
+  4. **Next Marathon Section** - Navy footer with race countdown timer (DD:HH:MM:SS format)
+
+- ✅ **WelcomeCard Integration**
+  - Updated WelcomeCard.jsx to use LandingPage for logged-out users
+  - Maintained team dashboard card view for logged-in users
+  - Updated color palette from orange/blue to navy/gold
+
 #### Tasks
-- [ ] Design new landing page layout
+- [x] Design new landing page layout
   - Hero section with logo
-  - "Create Team" CTA (gold button)
-  - Feature highlights
-  - Recent race results
-- [ ] Implement with Chakra components
-- [ ] Add animations (fade-in, slide-up)
-- [ ] Test mobile responsiveness
-- [ ] A/B test new vs old design
+  - "Create Team" CTA (navy button with gold text on hover)
+  - Feature highlights ("How it works" steps)
+  - Next marathon countdown
+- [x] Implement with Chakra components (Box, Flex, Text, Heading, Image, Container, Button)
+- [x] Test mobile responsiveness (375px, 768px, 1024px breakpoints)
+- [ ] Add animations (fade-in, slide-up) - deferred to future iteration
+- [ ] A/B test new vs old design - requires feature flag implementation
+- [ ] Feature flag: `chakra_home_page` - not yet implemented (landing page shows to all logged-out users)
 
 #### Deliverables
-- ✅ New home page with Chakra
-- ✅ Feature flag: `chakra_home_page`
-- ✅ A/B test results
+- ✅ New home page with Chakra (`components/LandingPage.tsx` - 540 lines)
+- ✅ Navy/gold brand colors from CORE_DESIGN_GUIDELINES.md
+- ✅ Countdown timer for next marathon race
+- ✅ Mobile-responsive layout
+- ✅ Build validation passed
+- ⏳ Feature flag: `chakra_home_page` - not yet implemented
+- ⏳ A/B test results - pending feature flag implementation
 
-**GitHub Sub-Issue:** [#126 - Page: Home](https://github.com/jessephus/marathon-majors-league/issues/126)
+#### Screenshots
+- Desktop view: Shows all sections with hero image placeholder on large screens
+- Mobile view: Stacked layout with compact "How it works" section
+
+**GitHub Issue:** [#59 - Update Logged Out User Landing Page](https://github.com/jessephus/marathon-majors-league/issues/59)
 
 ### Week 29-30: Salary Cap Draft Page
 
