@@ -7,16 +7,18 @@
  * Uses existing Chakra primitives (Box, Flex, Text, Heading, Image, Container)
  * and the migrated Button component from @/components/chakra.
  * 
+ * Note: This component relies on the global NavigationWrapper for header/navigation.
+ * It does not render its own header.
+ * 
  * Sections:
- * 1. Header - Logo + Login/Sign Up buttons
- * 2. Hero - Title, description, Get Started CTA
- * 3. How It Works - 3 numbered steps with visual timeline
- * 4. Next Marathon - Countdown timer to next race
+ * 1. Hero - Title, description, Get Started CTA
+ * 2. How It Works - 3 numbered steps with visual timeline
+ * 3. Next Marathon - Countdown timer to next race (from active race lock time)
  * 
  * Design Reference: docs/CORE_DESIGN_GUIDELINES.md
  * Phase 5 Implementation: Week 27-28 Home/Welcome Page
  * 
- * @version 1.0.0
+ * @version 1.1.0
  * @date November 2025
  */
 
@@ -30,8 +32,6 @@ import { Button } from '@/components/chakra';
 
 interface LandingPageProps {
   onGetStarted: () => void;
-  onLogin?: () => void;
-  onSignUp?: () => void;
   nextRace?: {
     name: string;
     date: Date;
@@ -108,63 +108,6 @@ function formatCountdownUnit(value: number): string {
 // ===========================
 // Sub-Components
 // ===========================
-
-/**
- * Header with logo and auth buttons
- */
-function LandingHeader({ onLogin, onSignUp }: { onLogin?: () => void; onSignUp?: () => void }) {
-  return (
-    <Flex
-      as="header"
-      bg={COLORS.navy}
-      px={{ base: 4, md: 8 }}
-      py={4}
-      justify="space-between"
-      align="center"
-      borderTopRadius={{ base: 0, md: 'xl' }}
-    >
-      {/* Logo */}
-      <Flex align="center" gap={2}>
-        <Image
-          src="/assets/mmfl-logo.png"
-          alt="Marathon Majors Fantasy League"
-          boxSize={{ base: '48px', md: '56px' }}
-          objectFit="contain"
-        />
-      </Flex>
-
-      {/* Auth Buttons */}
-      <Flex gap={2}>
-        <Button
-          variant="outline"
-          size="md"
-          onClick={onLogin}
-          borderColor={COLORS.gold}
-          color={COLORS.gold}
-          _hover={{
-            bg: COLORS.goldHover,
-            borderColor: COLORS.gold,
-          }}
-        >
-          Log in
-        </Button>
-        <Button
-          variant="outline"
-          size="md"
-          onClick={onSignUp}
-          borderColor={COLORS.gold}
-          color={COLORS.gold}
-          _hover={{
-            bg: COLORS.goldHover,
-            borderColor: COLORS.gold,
-          }}
-        >
-          Sign Up
-        </Button>
-      </Flex>
-    </Flex>
-  );
-}
 
 /**
  * Hero section with title and CTA
@@ -506,18 +449,59 @@ function CountdownSeparator() {
 
 export default function LandingPage({
   onGetStarted,
-  onLogin,
-  onSignUp,
-  nextRace,
+  nextRace: nextRaceProp,
 }: LandingPageProps) {
-  // Default next race if not provided - Tokyo Marathon 2026
-  // Using a future date to ensure countdown works correctly
-  const defaultNextRace = {
-    name: 'Tokyo Marathon',
-    date: new Date('2026-03-01T09:10:00+09:00'), // First Sunday of March 2026
-  };
+  const [activeRace, setActiveRace] = useState<{ name: string; date: Date } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const race = nextRace || defaultNextRace;
+  // Fetch the active race from the API on mount
+  useEffect(() => {
+    async function fetchActiveRace() {
+      try {
+        // Fetch active races from the API
+        const response = await fetch('/api/races?active=true');
+        if (response.ok) {
+          const races = await response.json();
+          // Find the next upcoming race with a lock time
+          if (races && races.length > 0) {
+            // Sort by lock time and find the next one that hasn't passed
+            const now = new Date();
+            const upcomingRace = races
+              .filter((race: { lockTime?: string }) => race.lockTime && new Date(race.lockTime) > now)
+              .sort((a: { lockTime: string }, b: { lockTime: string }) => 
+                new Date(a.lockTime).getTime() - new Date(b.lockTime).getTime()
+              )[0];
+            
+            if (upcomingRace) {
+              setActiveRace({
+                name: upcomingRace.name,
+                date: new Date(upcomingRace.lockTime),
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[LandingPage] Error fetching active race:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    // Only fetch if no nextRace prop was provided
+    if (!nextRaceProp) {
+      fetchActiveRace();
+    } else {
+      setIsLoading(false);
+    }
+  }, [nextRaceProp]);
+
+  // Use prop if provided, otherwise use fetched active race, otherwise use fallback
+  const fallbackRace = {
+    name: 'Tokyo Marathon',
+    date: new Date('2026-03-01T09:10:00+09:00'), // March 1, 2026 (first Sunday)
+  };
+  
+  const race = nextRaceProp || activeRace || fallbackRace;
 
   return (
     <Box
@@ -528,7 +512,6 @@ export default function LandingPage({
       overflow="hidden"
       shadow={{ base: 'none', md: 'xl' }}
     >
-      <LandingHeader onLogin={onLogin || onGetStarted} onSignUp={onSignUp || onGetStarted} />
       <HeroSection onGetStarted={onGetStarted} />
       <HowItWorksSection />
       <NextMarathonSection race={race} />

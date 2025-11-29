@@ -392,12 +392,11 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
     }
 
     // No team session - show new LandingPage with navy/gold branding
+    // The landing page fetches the active race from the API for the countdown timer
     console.log('[WelcomeCard] Rendering LANDING PAGE');
     return (
       <LandingPage 
         onGetStarted={onCreateTeam}
-        onLogin={onCreateTeam}
-        onSignUp={onCreateTeam}
       />
     );
   };
