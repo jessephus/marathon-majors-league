@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { getActiveRaceForGame } from './db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,7 +25,8 @@ export default async function handler(req, res) {
         age,
         sponsor,
         seasonBest,
-        confirmForNYC
+        confirmForNYC,
+        gameId = 'default'
       } = req.body;
 
       // Validate required fields
@@ -81,17 +83,15 @@ export default async function handler(req, res) {
 
       // If confirmForNYC is true, add to athlete_races for the active race
       if (confirmForNYC) {
-        const activeRaces = await sql`
-          SELECT id FROM races WHERE is_active = true LIMIT 1
-        `;
+        const activeRace = await getActiveRaceForGame(gameId);
 
-        if (activeRaces.length > 0) {
+        if (activeRace) {
           await sql`
             INSERT INTO athlete_races (athlete_id, race_id)
-            VALUES (${newAthlete.id}, ${activeRaces[0].id})
+            VALUES (${newAthlete.id}, ${activeRace.id})
             ON CONFLICT (athlete_id, race_id) DO NOTHING
           `;
-          console.log(`Confirmed athlete ${newAthlete.id} for NYC Marathon`);
+          console.log(`Confirmed athlete ${newAthlete.id} for ${activeRace.name}`);
         }
       }
 

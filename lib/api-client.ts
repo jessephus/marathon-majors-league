@@ -457,11 +457,15 @@ export const athleteApi = {
    * Fetch all athletes
    * @param confirmedOnly - If true, only return athletes confirmed for active race (default: false for admin)
    * @param bustCache - If true, adds timestamp to bypass HTTP cache (for post-update refreshes)
+   * @param raceId - Optional race ID to filter confirmed athletes (if not provided, uses first active race)
+   * @param gameId - Optional game ID to get the active race for that game
    */
-  async list(params?: { confirmedOnly?: boolean; bustCache?: boolean }) {
+  async list(params?: { confirmedOnly?: boolean; bustCache?: boolean; raceId?: number; gameId?: string }) {
     const confirmedOnly = params?.confirmedOnly ?? false;
     const cacheBust = params?.bustCache ? `&_t=${Date.now()}` : '';
-    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}${cacheBust}`);
+    const raceIdParam = params?.raceId ? `&raceId=${params.raceId}` : '';
+    const gameIdParam = params?.gameId ? `&gameId=${encodeURIComponent(params.gameId)}` : '';
+    return apiRequest<{ men: any[]; women: any[] }>(`/api/athletes?confirmedOnly=${confirmedOnly}${raceIdParam}${gameIdParam}${cacheBust}`);
   },
 
   /**
@@ -997,6 +1001,13 @@ interface GameStateResponse {
   rosterLockTime?: string | null;
   resultsFinalized?: boolean;
   draftComplete?: boolean;
+  activeRaceId?: number | null;
+  activeRace?: {
+    id: number;
+    name: string;
+    date: string;
+    location: string;
+  } | null;
   [key: string]: any;
 }
 

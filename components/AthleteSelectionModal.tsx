@@ -37,7 +37,8 @@ interface Athlete {
   marathonRank?: number;
   age?: number;
   sponsor?: string;
-  nycConfirmed?: boolean;
+  nycConfirmed?: boolean; // Deprecated - use raceConfirmed
+  raceConfirmed?: boolean; // New field - confirmed for active race
 }
 
 interface RosterSlot {
@@ -55,6 +56,7 @@ interface AthleteSelectionModalProps {
   totalBudget?: number;
   onSelect: (athlete: Athlete) => void;
   onClose: () => void;
+  activeRaceName?: string; // Name of the active race for display
 }
 
 export default function AthleteSelectionModal({
@@ -66,6 +68,7 @@ export default function AthleteSelectionModal({
   totalBudget = 30000,
   onSelect,
   onClose,
+  activeRaceName,
 }: AthleteSelectionModalProps) {
   const [sortBy, setSortBy] = useState<'salary' | 'pb' | 'rank'>('salary');
   const [detailAthlete, setDetailAthlete] = useState<Athlete | null>(null);
@@ -110,9 +113,9 @@ export default function AthleteSelectionModal({
   const sortedAthletes = useMemo(() => {
     let sorted = [...athletes];
 
-    // Filter by NYC confirmation status
+    // Filter by race confirmation status (supports both old and new field names)
     if (showConfirmedOnly) {
-      sorted = sorted.filter(athlete => athlete.nycConfirmed === true);
+      sorted = sorted.filter(athlete => athlete.raceConfirmed === true || athlete.nycConfirmed === true);
     }
 
     // Sort athletes
@@ -277,7 +280,7 @@ export default function AthleteSelectionModal({
                 cursor: 'pointer'
               }}
             />
-            <span>Show only confirmed for NYC Marathon</span>
+            <span>Show only confirmed for {activeRaceName || 'active race'}</span>
           </label>
         </div>
 

@@ -109,15 +109,12 @@ export default function AthleteManagementPanel() {
 
   async function loadConfirmedAthletes() {
     try {
-      // Get active race
-      const racesData = await apiClient.races.list({ active: true });
-      console.log('[AthletePanel] Active races:', racesData);
-      if (!racesData || racesData.length === 0) {
-        console.log('[AthletePanel] No active races found');
+      // Get active race for this game
+      const raceId = gameState.activeRaceId;
+      if (!raceId) {
+        console.log('[AthletePanel] No active race set for game:', gameState.gameId);
         return;
       }
-      
-      const raceId = racesData[0].id;
       console.log('[AthletePanel] Loading confirmations for race ID:', raceId);
 
       // Fetch confirmed athletes for this race
@@ -147,7 +144,7 @@ export default function AthleteManagementPanel() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiClient.athletes.list({ confirmedOnly: false, bustCache });
+      const data = await apiClient.athletes.list({ confirmedOnly: false, bustCache, gameId: gameState.gameId });
       
       // DIAGNOSTIC: Log raw API response for athlete ID 14335060
       const rawAthlete14335060 = [...data.men, ...data.women].find(a => 
@@ -407,15 +404,13 @@ export default function AthleteManagementPanel() {
       setSaving(true);
       setError(null);
 
-      // Get active race
-      const racesData = await apiClient.races.list({ active: true });
-      if (!racesData || racesData.length === 0) {
-        alert('No active race found. Please create a race first.');
+      // Get active race for this game
+      const raceId = gameState.activeRaceId;
+      if (!raceId) {
+        alert('No active race set for this game. Please set an active race first.');
         setSaving(false);
         return;
       }
-      
-      const raceId = racesData[0].id;
       
       // Check if there's a pending confirmation change
       if (pendingConfirmations.has(athleteId)) {
@@ -519,15 +514,14 @@ export default function AthleteManagementPanel() {
       setSaving(true);
       setError(null);
 
-      // Get active race
-      const racesData = await apiClient.races.list({ active: true });
-      if (!racesData || racesData.length === 0) {
-        alert('No active race found. Please create a race first.');
+      // Get active race for this game
+      const raceId = gameState.activeRaceId;
+      if (!raceId) {
+        alert('No active race set for this game. Please set an active race first.');
         setSaving(false);
         return;
       }
       
-      const raceId = racesData[0].id;
       const isCurrentlyConfirmed = confirmedAthletes.has(athleteId);
 
       if (isCurrentlyConfirmed) {

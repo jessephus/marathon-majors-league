@@ -213,13 +213,32 @@ export default function RaceManagementPanel() {
       }
     }
     
-    // Format lockTime for input type="datetime-local" (expects YYYY-MM-DDTHH:MM)
+    // Format lockTime for input type="datetime-local" (expects YYYY-MM-DDTHH:MM in the race's timezone)
     let formattedLockTime = '';
-    if (race.lockTime) {
+    const raceTimezone = getTimezoneFromLocation(race.location);
+    
+    if (race.lockTime && raceTimezone) {
       const lockTimeObj = new Date(race.lockTime);
       if (!isNaN(lockTimeObj.getTime())) {
-        // datetime-local expects format: YYYY-MM-DDTHH:MM
-        formattedLockTime = lockTimeObj.toISOString().slice(0, 16);
+        // Convert UTC time to the race's timezone using Intl.DateTimeFormat
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: raceTimezone,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        
+        const parts = formatter.formatToParts(lockTimeObj);
+        const year = parts.find(p => p.type === 'year')?.value;
+        const month = parts.find(p => p.type === 'month')?.value;
+        const day = parts.find(p => p.type === 'day')?.value;
+        const hour = parts.find(p => p.type === 'hour')?.value;
+        const minute = parts.find(p => p.type === 'minute')?.value;
+        
+        formattedLockTime = `${year}-${month}-${day}T${hour}:${minute}`;
       }
     }
     
@@ -233,7 +252,7 @@ export default function RaceManagementPanel() {
       description: race.description || '',
       isActive: race.isActive,
       lockTime: formattedLockTime,
-      lockTimeZone: getTimezoneFromLocation(race.location),
+      lockTimeZone: raceTimezone,
       logoUrl: race.logoUrl || '',
       backgroundImageUrl: race.backgroundImageUrl || '',
       primaryColor: race.primaryColor || '',
@@ -265,7 +284,6 @@ export default function RaceManagementPanel() {
         eventType: formData.eventType,
         worldAthleticsEventId: formData.worldAthleticsEventId || null,
         description: formData.description || null,
-        isActive: formData.isActive,
         lockTime: lockTimeWithZone,
         logoUrl: formData.logoUrl || null,
         backgroundImageUrl: formData.backgroundImageUrl || null,
@@ -286,7 +304,6 @@ export default function RaceManagementPanel() {
           event_type: payload.eventType,
           world_athletics_event_id: payload.worldAthleticsEventId,
           description: payload.description,
-          is_active: payload.isActive,
           lock_time: payload.lockTime,
           logo_url: payload.logoUrl,
           background_image_url: payload.backgroundImageUrl,
@@ -668,17 +685,6 @@ export default function RaceManagementPanel() {
                 <FormHelperText>
                   Colors for race detail page styling
                 </FormHelperText>
-              </FormControl>
-
-              <FormControl style={{ marginBottom: '20px' }}>
-                <Checkbox
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  colorPalette="navy"
-                  size="md"
-                >
-                  Active Race
-                </Checkbox>
               </FormControl>
 
               <div className="form-actions">

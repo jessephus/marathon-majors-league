@@ -4,6 +4,7 @@
 
 import { scoreRace } from './scoring-engine';
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -27,9 +28,11 @@ async function ensureResultsScored(gameId) {
     return false;
   }
 
-  const [activeRace] = await sql`
-    SELECT id FROM races WHERE is_active = true LIMIT 1
-  `;
+  // Get the active race for this specific game
+  const activeRace = await getActiveRaceForGame(gameId);
+  
+  // DEPRECATED: Old code used global is_active flag (marked for deletion)
+  // const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true LIMIT 1`;
 
   if (!activeRace) {
     return false;
@@ -48,7 +51,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
   const action = req.query.action || 'calculate';
 
   try {
@@ -92,14 +95,16 @@ export default async function handler(req, res) {
       if (action === 'calculate' || action === 'recalculate') {
         const { raceId, rulesVersion } = req.body;
         
-        // Get active race if not specified
+        // Get active race for this specific game if not specified
         let targetRaceId = raceId;
         if (!targetRaceId) {
-          const [activeRace] = await sql`
-            SELECT id FROM races WHERE is_active = true LIMIT 1
-          `;
+          const activeRace = await getActiveRaceForGame(gameId);
+          
+          // DEPRECATED: Old code used global is_active flag (marked for deletion)
+          // const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true LIMIT 1`;
+          
           if (!activeRace) {
-            return res.status(400).json({ error: 'No active race found' });
+            return res.status(400).json({ error: 'No active race found for this game' });
           }
           targetRaceId = activeRace.id;
         }

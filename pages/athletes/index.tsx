@@ -39,6 +39,7 @@ import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outlin
 import AthleteModal from '@/components/AthleteModal';
 import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton, Checkbox } from '@/components/chakra';
 import Head from 'next/head';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 
 // ===========================
 // Types
@@ -57,7 +58,8 @@ interface Athlete {
   sponsor?: string;
   seasonBest?: string;
   worldAthleticsProfileUrl?: string;
-  nycConfirmed?: boolean;
+  nycConfirmed?: boolean; // Deprecated - use raceConfirmed
+  raceConfirmed?: boolean; // New field - confirmed for active race
 }
 
 type SortOption = 'fantasyScore' | 'pb' | 'rank' | 'salary' | 'age' | 'name';
@@ -211,7 +213,8 @@ export default function AthletesBrowsePage() {
     async function fetchAthletes() {
       try {
         setLoading(true);
-        const response = await fetch('/api/athletes');
+        // Pass gameId to fetch confirmed athletes for the active race of this game
+        const response = await fetch(`/api/athletes?gameId=${DEFAULT_GAME_ID}`);
         
         if (!response.ok) {
           // Use demo data if API fails (development/preview environments)
@@ -278,9 +281,9 @@ export default function AthletesBrowsePage() {
       );
     }
     
-    // Apply confirmation filter
+    // Apply confirmation filter (supports both old and new field names)
     if (showConfirmedOnly) {
-      filtered = filtered.filter(a => a.nycConfirmed === true);
+      filtered = filtered.filter(a => a.raceConfirmed === true || a.nycConfirmed === true);
     }
     
     // Calculate fantasy scores for sorting

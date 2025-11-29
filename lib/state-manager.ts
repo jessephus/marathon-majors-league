@@ -31,6 +31,7 @@ export interface Athlete {
 }
 
 export interface GameState {
+  activeRaceId?: number | null; // Per-game active race (from games.active_race_id)
   athletes: {
     men: Athlete[];
     women: Athlete[];

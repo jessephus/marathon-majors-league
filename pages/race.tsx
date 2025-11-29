@@ -18,6 +18,7 @@ import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
 import { Box, Container, Heading, Text, VStack, SimpleGrid } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
+import { useGameState } from '@/lib/state-provider';
 import { Button, Card, CardBody } from '@/components/chakra';
 import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
@@ -69,15 +70,39 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 export default function RacePage({ raceId }: RacePageProps) {
   const router = useRouter();
+  const { gameState, setGameState } = useGameState();
   const [race, setRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Load game state from API if not already loaded
+  useEffect(() => {
+    const loadGameState = async () => {
+      if (gameState.activeRaceId === null && gameState.gameId) {
+        try {
+          const response = await fetch(`/api/game-state?gameId=${gameState.gameId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setGameState({
+              activeRaceId: data.activeRaceId,
+              draftComplete: data.draftComplete,
+              resultsFinalized: data.resultsFinalized,
+              rosterLockTime: data.rosterLockTime,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load game state:', err);
+        }
+      }
+    };
+    loadGameState();
+  }, [gameState.gameId, gameState.activeRaceId, setGameState]);
+
   useEffect(() => {
     loadRaceDetails();
-  }, [raceId]);
+  }, [raceId, gameState.activeRaceId]);
 
   const handleViewAll = () => {
     router.push('/athletes');
@@ -98,31 +123,36 @@ export default function RacePage({ raceId }: RacePageProps) {
       setLoading(true);
       setError(null);
       
-      // If no race ID provided, fetch active races and use the first one
+      // If no race ID provided, use the game's active race
       if (!raceId) {
-        const activeRaces = await apiClient.races.list({ active: true });
+        const activeRaceId = gameState.activeRaceId;
         
-        // Handle both array and single object responses
-        if (Array.isArray(activeRaces) && activeRaces.length > 0) {
-          // Fetch the first active race with athletes
-          const raceData = await apiClient.races.list({ 
-            id: activeRaces[0].id, 
-            includeAthletes: true 
-          });
-          
-          // Handle response type - could be object or array
-          if (Array.isArray(raceData) && raceData.length > 0) {
-            setRace(raceData[0]);
-          } else if (!Array.isArray(raceData) && raceData) {
-            setRace(raceData);
-          } else {
-            setError('Race not found');
-          }
-        } else if (!Array.isArray(activeRaces) && activeRaces) {
-          // If API returns a single object when active=true
-          setRace(activeRaces);
+        console.log('[Race Page] gameState.activeRaceId:', activeRaceId);
+        console.log('[Race Page] gameState.gameId:', gameState.gameId);
+        
+        // Wait for gameState to be loaded (activeRaceId will be set from API)
+        if (activeRaceId === undefined || activeRaceId === null) {
+          // GameState not yet loaded, keep loading state
+          console.log('[Race Page] activeRaceId is null/undefined, waiting for gameState to load...');
+          setLoading(true);
+          return;
+        }
+        
+        console.log('[Race Page] Fetching race with ID:', activeRaceId);
+        
+        // Fetch the game's active race with athletes
+        const raceData = await apiClient.races.list({ 
+          id: activeRaceId, 
+          includeAthletes: true 
+        });
+        
+        // Handle response type - could be object or array
+        if (Array.isArray(raceData) && raceData.length > 0) {
+          setRace(raceData[0]);
+        } else if (!Array.isArray(raceData) && raceData) {
+          setRace(raceData);
         } else {
-          setError('No active races found');
+          setError('Race not found');
         }
         return;
       }
