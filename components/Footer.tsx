@@ -81,6 +81,7 @@ export default function Footer({
     const gameNames: Record<string, string> = {
       'default': 'Default Game',
       'NY2025': 'NY 2025',
+      'Valencia-25': 'Valencia 2025',
       'demo-game': 'Demo Game'
     };
 
@@ -104,6 +105,7 @@ export default function Footer({
   const gameOptions: SelectOption[] = [
     { value: 'default', label: 'Default Game' },
     { value: 'NY2025', label: 'NY 2025' },
+    { value: 'Valencia-25', label: 'Valencia 2025'},
     { value: 'demo-game', label: 'Demo Game' }
   ];
 

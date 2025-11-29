@@ -70,16 +70,39 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
 export default function RacePage({ raceId }: RacePageProps) {
   const router = useRouter();
-  const { gameState } = useGameState();
+  const { gameState, setGameState } = useGameState();
   const [race, setRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Load game state from API if not already loaded
+  useEffect(() => {
+    const loadGameState = async () => {
+      if (gameState.activeRaceId === null && gameState.gameId) {
+        try {
+          const response = await fetch(`/api/game-state?gameId=${gameState.gameId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setGameState({
+              activeRaceId: data.activeRaceId,
+              draftComplete: data.draftComplete,
+              resultsFinalized: data.resultsFinalized,
+              rosterLockTime: data.rosterLockTime,
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load game state:', err);
+        }
+      }
+    };
+    loadGameState();
+  }, [gameState.gameId, gameState.activeRaceId, setGameState]);
+
   useEffect(() => {
     loadRaceDetails();
-  }, [raceId]);
+  }, [raceId, gameState.activeRaceId]);
 
   const handleViewAll = () => {
     router.push('/athletes');
@@ -104,10 +127,18 @@ export default function RacePage({ raceId }: RacePageProps) {
       if (!raceId) {
         const activeRaceId = gameState.activeRaceId;
         
-        if (!activeRaceId) {
-          setError('No active race set for this game. Please contact the commissioner.');
+        console.log('[Race Page] gameState.activeRaceId:', activeRaceId);
+        console.log('[Race Page] gameState.gameId:', gameState.gameId);
+        
+        // Wait for gameState to be loaded (activeRaceId will be set from API)
+        if (activeRaceId === undefined || activeRaceId === null) {
+          // GameState not yet loaded, keep loading state
+          console.log('[Race Page] activeRaceId is null/undefined, waiting for gameState to load...');
+          setLoading(true);
           return;
         }
+        
+        console.log('[Race Page] Fetching race with ID:', activeRaceId);
         
         // Fetch the game's active race with athletes
         const raceData = await apiClient.races.list({ 
