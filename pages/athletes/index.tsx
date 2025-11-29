@@ -39,6 +39,7 @@ import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outlin
 import AthleteModal from '@/components/AthleteModal';
 import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton, Checkbox } from '@/components/chakra';
 import Head from 'next/head';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 
 // ===========================
 // Types
@@ -212,7 +213,8 @@ export default function AthletesBrowsePage() {
     async function fetchAthletes() {
       try {
         setLoading(true);
-        const response = await fetch('/api/athletes');
+        // Pass gameId to fetch confirmed athletes for the active race of this game
+        const response = await fetch(`/api/athletes?gameId=${DEFAULT_GAME_ID}`);
         
         if (!response.ok) {
           // Use demo data if API fails (development/preview environments)

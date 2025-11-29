@@ -7,6 +7,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { DEFAULT_GAME_ID } from '../config/constants';
 
 // Type definitions matching legacy state structures
 export interface Athlete {
@@ -99,8 +100,8 @@ interface AppContextValue extends AppState {
 const DEFAULT_STATE: AppState = {
   gameState: {
     gameId: typeof window !== 'undefined' 
-      ? localStorage.getItem('current_game_id') || 'default'
-      : 'default',
+      ? localStorage.getItem('current_game_id') || DEFAULT_GAME_ID
+      : DEFAULT_GAME_ID,
     activeRaceId: null,
     athletes: { men: [], women: [] },
     players: [],

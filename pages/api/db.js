@@ -471,13 +471,14 @@ export async function getGameState(gameId) {
       g.players, 
       g.draft_complete, 
       g.results_finalized, 
-      g.roster_lock_time,
+      g.roster_lock_time as game_roster_lock_time,
       g.active_race_id,
       g.created_at, 
       g.updated_at,
       r.name as active_race_name,
       r.date as active_race_date,
-      r.location as active_race_location
+      r.location as active_race_location,
+      r.lock_time as race_lock_time
     FROM games g
     LEFT JOIN races r ON g.active_race_id = r.id
     WHERE g.game_id = ${gameId}
@@ -487,17 +488,21 @@ export async function getGameState(gameId) {
     return null;
   }
   
+  // Prioritize race lock_time over game roster_lock_time
+  const rosterLockTime = game.race_lock_time || game.game_roster_lock_time;
+  
   return {
     players: game.players || [], // ⚠️ DEPRECATED - Query anonymous_sessions instead
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
-    roster_lock_time: game.roster_lock_time,
+    roster_lock_time: rosterLockTime,
     active_race_id: game.active_race_id,
     active_race: game.active_race_id ? {
       id: game.active_race_id,
       name: game.active_race_name,
       date: game.active_race_date,
-      location: game.active_race_location
+      location: game.active_race_location,
+      roster_lock_time: game.race_lock_time
     } : null,
     created_at: game.created_at,
     updated_at: game.updated_at
