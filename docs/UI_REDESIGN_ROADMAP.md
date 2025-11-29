@@ -1147,12 +1147,16 @@ npm run audit:navigation
   - Responsive design (mobile-first with desktop breakpoints)
   - Uses existing Chakra primitives (Box, Flex, Text, Heading, Image, Container)
   - Uses migrated Button component from @/components/chakra
+  - Uses global NavigationWrapper for header (no duplicate header)
+  - Fetches active race lock time from API for countdown timer
   
 - ✅ **Sections Implemented:**
-  1. **Header Section** - Logo + gold outline "Log in" / "Sign Up" buttons
-  2. **Hero Section** - "Fantasy Marathon" heading with gold underline, description, navy "Get Started" CTA
-  3. **How It Works Section** - 3 numbered steps (1, 2, 3) with gold-bordered circles and connecting line
-  4. **Next Marathon Section** - Navy footer with race countdown timer (DD:HH:MM:SS format)
+  1. **Hero Section** - "Fantasy Marathon" heading with gold underline, description, navy "Get Started" CTA
+  2. **How It Works Section** - 3 numbered steps (1, 2, 3) with gold-bordered circles and connecting line
+  3. **Next Marathon Section** - Navy footer with race countdown timer (DD:HH:MM:SS format)
+     - Fetches active race from `/api/races?active=true`
+     - Uses lock_time for countdown
+     - Falls back to Tokyo Marathon 2026 if no active race
 
 - ✅ **WelcomeCard Integration**
   - Updated WelcomeCard.jsx to use LandingPage for logged-out users
@@ -1161,22 +1165,24 @@ npm run audit:navigation
 
 #### Tasks
 - [x] Design new landing page layout
-  - Hero section with logo
-  - "Create Team" CTA (navy button with gold text on hover)
+  - Hero section (uses global nav for header)
+  - "Create Team" CTA (navy button)
   - Feature highlights ("How it works" steps)
-  - Next marathon countdown
+  - Next marathon countdown (from active race lock time)
 - [x] Implement with Chakra components (Box, Flex, Text, Heading, Image, Container, Button)
 - [x] Test mobile responsiveness (375px, 768px, 1024px breakpoints)
+- [x] Fetch active race lock time from API for countdown
 - [ ] Add animations (fade-in, slide-up) - deferred to future iteration
 - [ ] A/B test new vs old design - requires feature flag implementation
 - [ ] Feature flag: `chakra_home_page` - not yet implemented (landing page shows to all logged-out users)
 
 #### Deliverables
-- ✅ New home page with Chakra (`components/LandingPage.tsx` - 540 lines)
+- ✅ New home page with Chakra (`components/LandingPage.tsx` - 490 lines)
 - ✅ Navy/gold brand colors from CORE_DESIGN_GUIDELINES.md
-- ✅ Countdown timer for next marathon race
+- ✅ Countdown timer for next marathon race (uses active race lock time)
 - ✅ Mobile-responsive layout
 - ✅ Build validation passed
+- ✅ CodeQL security scan passed
 - ⏳ Feature flag: `chakra_home_page` - not yet implemented
 - ⏳ A/B test results - pending feature flag implementation
 
