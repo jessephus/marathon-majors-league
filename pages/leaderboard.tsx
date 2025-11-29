@@ -14,6 +14,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
 import { apiClient, createServerApiClient, clearCache } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
@@ -417,10 +418,10 @@ export default function NewLeaderboardPage(props: LeaderboardPageProps) {
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Get gameId from cookie (set by game switcher in Footer component)
-  // Falls back to query param, then 'default'
+  // Falls back to query param, then DEFAULT_GAME_ID
   const gameIdCookie = context.req.cookies.current_game_id;
   const gameIdQuery = context.query.gameId;
-  const gameId = gameIdCookie || gameIdQuery || 'default';
+  const gameId = gameIdCookie || gameIdQuery || DEFAULT_GAME_ID;
 
   // Construct base URL for server-side API requests
   const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
@@ -449,7 +450,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   return {
     props: {
-      gameId: typeof gameId === 'string' ? gameId : 'default',
+      gameId: typeof gameId === 'string' ? gameId : DEFAULT_GAME_ID,
       initialStandings,
       initialResults,
       cacheTimestamp,

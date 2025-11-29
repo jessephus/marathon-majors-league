@@ -15,6 +15,7 @@ import { GetServerSidePropsContext } from 'next';
 import { Box, VStack, Heading, Text } from '@chakra-ui/react';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient, createServerApiClient, salaryCapDraftApi } from '@/lib/api-client';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
@@ -653,7 +654,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       };
     }
 
-    const gameId = sessionData.session.gameId || 'default';
+    const gameId = sessionData.session.gameId || DEFAULT_GAME_ID;
 
     // Fetch game state using API client (benefits from caching headers and retry logic)
     const gameStateData = await serverApi.gameState.load(gameId);

@@ -13,6 +13,7 @@ import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import { SimpleGrid } from '@chakra-ui/react';
 import { AppStateProvider, useCommissionerState, useGameState } from '@/lib/state-provider';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 import { apiClient } from '@/lib/api-client';
 import SkeletonLoader from '@/components/commissioner/SkeletonLoader';
 import Footer from '@/components/Footer';
@@ -629,7 +630,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const commissionerCookie = context.req.cookies.marathon_fantasy_commissioner || null;
   
   // Get gameId from cookie (set by game selector in app.js)
-  const gameIdCookie = context.req.cookies.current_game_id || 'default';
+  const gameIdCookie = context.req.cookies.current_game_id || DEFAULT_GAME_ID;
   
   let isAuthenticated = false;
   
