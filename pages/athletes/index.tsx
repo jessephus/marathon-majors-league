@@ -39,6 +39,7 @@ import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outlin
 import AthleteModal from '@/components/AthleteModal';
 import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton, Checkbox } from '@/components/chakra';
 import Head from 'next/head';
+import type { GetServerSidePropsContext } from 'next';
 import { DEFAULT_GAME_ID } from '@/config/constants';
 
 // ===========================
@@ -165,7 +166,11 @@ function getCountryFlag(countryCode: string): string {
 // Main Page Component
 // ===========================
 
-export default function AthletesBrowsePage() {
+interface AthletesBrowsePageProps {
+  initialGameId: string;
+}
+
+export default function AthletesBrowsePage({ initialGameId }: AthletesBrowsePageProps) {
   // Data state
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,12 +218,8 @@ export default function AthletesBrowsePage() {
     async function fetchAthletes() {
       try {
         setLoading(true);
-        // Get active game ID from cookie (commissioner's selected game) or use default
-        const gameIdCookie = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('current_game_id='))
-          ?.split('=')[1];
-        const activeGameId = gameIdCookie || DEFAULT_GAME_ID;
+        // Use SSR-provided gameId (respects commissioner's game selection and logout)
+        const activeGameId = initialGameId;
         // Pass gameId to fetch confirmed athletes for the active race of this game
         const response = await fetch(`/api/athletes?gameId=${activeGameId}`);
         
@@ -256,7 +257,7 @@ export default function AthletesBrowsePage() {
     }
     
     fetchAthletes();
-  }, []);
+  }, [initialGameId]); // Re-fetch if gameId changes
 
   // Get unique countries for dropdown
   const countries = useMemo(() => {
@@ -697,4 +698,33 @@ export default function AthletesBrowsePage() {
       `}</style>
     </>
   );
+}
+
+// ===========================
+// Server-Side Props
+// ===========================
+
+/**
+ * Server-Side Rendering (SSR) for Athletes Page
+ * 
+ * Reads current_game_id cookie server-side to ensure correct game context.
+ * This ensures:
+ * - Fresh cookie read on every page load
+ * - Respects commissioner's game selection via Footer game switcher
+ * - Respects logout (cookie cleared)
+ * - No flash of wrong content during hydration
+ * 
+ * Pattern matches: /pages/race.tsx, /pages/leaderboard.tsx
+ */
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // Read current_game_id cookie (commissioner's selected game) or use default
+  // This ensures fresh read on every page load, respects logout
+  const gameIdCookie = context.req.cookies.current_game_id;
+  const gameId = gameIdCookie || DEFAULT_GAME_ID;
+  
+  return {
+    props: {
+      initialGameId: gameId,
+    },
+  };
 }
