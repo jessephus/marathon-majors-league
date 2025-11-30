@@ -52,7 +52,7 @@ interface CountdownTime {
 // Design colors from CORE_DESIGN_GUIDELINES.md
 const COLORS = {
   navy: '#161C4F',
-  navyLight: '#C3CDE3',
+  navyLight: '#E4E9F2',
   navyDark: '#0F1530',
   gold: '#D4AF37',
   goldHover: 'rgba(212, 175, 55, 0.1)',
@@ -194,7 +194,7 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
             maxW="400px"
           >
             <Box
-              bg={COLORS.grayLight}
+              bg={COLORS.navyLight}
               borderRadius="lg"
               h="280px"
               w="100%"
@@ -203,7 +203,7 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
               justifyContent="center"
             >
               <Image
-                src="/assets/mmfl-logo.png"
+                src="/assets/winged-shoe.png"
                 alt="Marathon Majors Fantasy League"
                 boxSize="180px"
                 objectFit="contain"
