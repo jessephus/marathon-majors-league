@@ -316,7 +316,7 @@ export default function RacePage({ initialActiveRaceId }: RacePageProps) {
 
 #### Commissioner Privileges
 - **Can switch games** via game switcher dropdown in footer
-- Switching games sets `current_game_id` cookie
+- Switching games sets `current_game_id` cookie and localStorage
 - All subsequent page loads use the selected game context
 - Commissioner can view/manage multiple games
 - Access controlled by TOTP authentication
@@ -326,6 +326,19 @@ export default function RacePage({ initialActiveRaceId }: RacePageProps) {
 - Always use `DEFAULT_GAME_ID` constant
 - Cannot see or access other games
 - Simple, focused experience for casual players
+
+#### Critical: Commissioner Logout Behavior
+
+**Problem:** When a commissioner logs out, the `current_game_id` remains in localStorage/cookies. If a regular user then creates a team on the same browser, the team gets created in the commissioner's game instead of the `DEFAULT_GAME_ID`.
+
+**Solution:** Commissioner logout **must clear game context**:
+```javascript
+// Footer.tsx - Commissioner logout
+localStorage.removeItem('current_game_id');
+document.cookie = 'current_game_id=; path=/; max-age=0; SameSite=Lax';
+```
+
+This ensures regular users are returned to `DEFAULT_GAME_ID` after commissioner logout.
 
 **Implementation:**
 ```javascript
@@ -339,6 +352,17 @@ const isCommissioner = /* TOTP authenticated check */;
     ))}
   </Select>
 )}
+
+// pages/index.js - SSR game ID detection
+export async function getServerSideProps(context) {
+  const cookies = context.req.headers.cookie || '';
+  let gameId = DEFAULT_GAME_ID;
+  const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+  if (cookieMatch) {
+    gameId = cookieMatch[1];
+  }
+  return { props: { initialGameId: gameId } };
+}
 ```
 
 ### Race State Management

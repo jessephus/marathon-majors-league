@@ -379,20 +379,33 @@ describe('Performance Benchmark Tests', () => {
       const start = Date.now();
       
       // Mix of different request types (app.js and athletes.json removed after migrations)
-      const requests = [
-        fetch(`${BASE_URL}/`),
-        fetch(`${BASE_URL}/api/athletes`),
-        fetch(`${BASE_URL}/api/races`),
-        fetch(`${BASE_URL}/style.css`),
-        fetch(`${BASE_URL}/api/game-state`),
-        fetch(`${BASE_URL}/api/standings`)
+      const endpoints = [
+        '/',
+        '/api/athletes',
+        '/api/races',
+        '/style.css',
+        '/api/game-state',
+        '/api/standings'
       ];
       
+      const requests = endpoints.map(endpoint => fetch(`${BASE_URL}${endpoint}`));
       const responses = await Promise.all(requests);
       const duration = Date.now() - start;
       
+      // Log status of each request for debugging
+      const results = responses.map((r, i) => ({
+        endpoint: endpoints[i],
+        status: r.status
+      }));
+      
+      const failures = results.filter(r => r.status !== 200);
+      if (failures.length > 0) {
+        console.log('   ❌ Failed requests:');
+        failures.forEach(f => console.log(`      ${f.endpoint}: ${f.status}`));
+      }
+      
       const allSuccessful = responses.every(r => r.status === 200);
-      assert.ok(allSuccessful, 'All mixed concurrent requests should succeed');
+      assert.ok(allSuccessful, `All mixed concurrent requests should succeed. Failures: ${failures.map(f => `${f.endpoint}:${f.status}`).join(', ')}`);
       
       console.log(`   ${requests.length} mixed requests in ${duration}ms`);
       console.log('✅ Mixed concurrent requests handled successfully');
