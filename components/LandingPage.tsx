@@ -223,7 +223,7 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
 function HowItWorksSection() {
   return (
     <Box
-      bg={COLORS.cream}
+      bg={COLORS.navyLight}
       px={{ base: 4, md: 8 }}
       py={{ base: 8, md: 12 }}
       borderTop="1px solid"
