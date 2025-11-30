@@ -65,18 +65,18 @@ const COLORS = {
 const HOW_IT_WORKS_STEPS = [
   {
     number: 1,
-    title: 'Create Your Team',
-    description: 'Sign up and build your fantasy team within a $30,000 salary cap.',
+    title: 'Build Your Team',
+    description: 'Draft a mix of runners before each Marathon Major.',
   },
   {
     number: 2,
-    title: 'Draft Elite Runners',
-    description: 'Choose 3 men and 3 women from the world\'s top marathoners.',
+    title: 'Watch Them Race',
+    description: 'We turn their real race results into points.',
   },
   {
     number: 3,
-    title: 'Race Day Glory',
-    description: 'Watch your team compete and climb the leaderboard in real-time.',
+    title: 'Climb the Leaderboard',
+    description: 'Earn the most points to reach the top.',
   },
 ] as const;
 
