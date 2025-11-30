@@ -23,20 +23,31 @@ export async function getServerSideProps(context) {
   const cookies = req.headers.cookie || '';
   const sessionType = detectSessionType(cookies);
   
+  // Get game ID from cookie (server-side), fallback to DEFAULT_GAME_ID
+  // This ensures that when a commissioner logs out and clears their game context,
+  // the next team created will use the DEFAULT_GAME_ID instead of the commissioner's game
+  let gameId = DEFAULT_GAME_ID;
+  const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+  if (cookieMatch) {
+    gameId = cookieMatch[1];
+  }
+  
   return {
     props: {
       serverSessionType: sessionType,
       hasURLSession: !!sessionToken,
+      initialGameId: gameId,
     },
   };
 }
 
-export default function Home({ serverSessionType, hasURLSession }) {
+export default function Home({ serverSessionType, hasURLSession, initialGameId }) {
   const router = useRouter();
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCommissionerModalOpen, setIsCommissionerModalOpen] = useState(false);
-  const [gameId, setGameId] = useState(DEFAULT_GAME_ID);
+  // Initialize with SSR game ID (from cookie) to ensure correct game context
+  const [gameId, setGameId] = useState(initialGameId || DEFAULT_GAME_ID);
   
   // Handle action query parameter (works for both initial load and client-side navigation)
   useEffect(() => {
@@ -63,9 +74,16 @@ export default function Home({ serverSessionType, hasURLSession }) {
   // Client-side session detection (after hydration)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Get current game ID
+      // Get current game ID from localStorage (commissioner context)
+      // For regular users, this should be empty (cleared on logout)
+      // and we'll keep using the SSR initialGameId (DEFAULT_GAME_ID)
       const currentGameId = getCurrentGameId();
-      setGameId(currentGameId);
+      
+      // Only update gameId if there's a commissioner-set game ID in localStorage
+      // Otherwise, keep the SSR initialGameId (which defaults to DEFAULT_GAME_ID)
+      if (currentGameId !== DEFAULT_GAME_ID) {
+        setGameId(currentGameId);
+      }
       
       // Check if there's a session token in the URL
       const sessionToken = router.query.session;

@@ -182,6 +182,13 @@ export default function Footer({
           localStorage.removeItem('commissionerLoginTime');
           localStorage.removeItem('commissionerExpiresAt');
           
+          // CRITICAL: Clear game context so regular users return to DEFAULT_GAME_ID
+          // When a commissioner logs out, they should not retain the game they were managing
+          localStorage.removeItem('current_game_id');
+          
+          // Clear game ID cookie as well (for SSR pages)
+          document.cookie = 'current_game_id=; path=/; max-age=0; SameSite=Lax';
+          
           // Clear commissioner session global (for app.js compatibility)
           if (typeof window !== 'undefined' && window.commissionerSession) {
             window.commissionerSession = { isCommissioner: false, loginTime: null, expiresAt: null };
