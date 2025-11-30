@@ -182,6 +182,346 @@ CREATE TABLE race_results (
 );
 ```
 
+## Game and Race State Management
+
+### Conceptual Model
+
+**Games** and **Races** are separate but related entities:
+
+- **Race**: A physical marathon event (e.g., "2025 NYC Marathon", "2025 Valencia Marathon")
+  - Stored in `races` table
+  - Has a unique ID, date, location, and list of confirmed athletes
+  - Exists independently of any fantasy game
+  - Multiple races can exist simultaneously in the database
+
+- **Game**: A fantasy league competition context
+  - Stored in `games` table with unique `game_id` (e.g., "default", "valencia-2025")
+  - Contains league configuration (players, draft status, results)
+  - Has an `active_race_id` field pointing to which race the game is tracking
+  - Multiple games can track the same race (e.g., different friend groups for NYC Marathon)
+
+**Relationship**: Games reference Races via `active_race_id` foreign key. One race can have many games, but each game tracks only one active race at a time.
+
+### State Management Architecture
+
+#### 1. Server-Side State (Source of Truth)
+
+**Games Table Schema:**
+```sql
+CREATE TABLE games (
+    id SERIAL PRIMARY KEY,
+    game_id VARCHAR(255) UNIQUE NOT NULL,
+    active_race_id INTEGER REFERENCES races(id),  -- Which race this game is tracking
+    players TEXT[] NOT NULL DEFAULT '{}',
+    draft_complete BOOLEAN DEFAULT FALSE,
+    results_finalized BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Key Points:**
+- `active_race_id` determines which race the game is currently tracking
+- Commissioner can switch `active_race_id` to track different races
+- All game-specific data (teams, results) is isolated by `game_id`
+
+#### 2. Cookie-Based Game Context
+
+**Primary Cookie:** `current_game_id`
+- **Purpose**: Persists which game the user is currently viewing
+- **Scope**: Browser-wide, shared across all tabs
+- **Set By**: Commissioner via game switcher in footer
+- **Default**: Falls back to `DEFAULT_GAME_ID` constant if not set
+- **Security**: HttpOnly=false (needs client-side access), SameSite=Lax
+
+**Usage Pattern:**
+```javascript
+// Server-side (API routes, getServerSideProps)
+const gameId = context.req.cookies.current_game_id || DEFAULT_GAME_ID;
+
+// Client-side
+const gameId = getCookie('current_game_id') || DEFAULT_GAME_ID;
+```
+
+#### 3. Server-Side Rendering (SSR) Strategy
+
+**Problem Solved:** Eliminates client-side waterfall delays (e.g., 5-second "race not found" warnings)
+
+**Implementation Pattern:**
+```typescript
+// Example: /pages/race.tsx
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // 1. Read game context from cookie
+  const gameId = context.req.cookies.current_game_id || DEFAULT_GAME_ID;
+  
+  // 2. Fetch game state server-side (includes active_race_id)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const response = await fetch(`${baseUrl}/api/game-state?gameId=${gameId}`);
+  const gameState = await response.json();
+  
+  // 3. Pass critical data as props (available immediately on mount)
+  return {
+    props: {
+      initialGameId: gameId,
+      initialActiveRaceId: gameState.activeRaceId || null,
+      // ... other initial data
+    },
+  };
+}
+```
+
+**Benefits:**
+- ✅ No client-side API calls needed on mount
+- ✅ Data available immediately (no loading delay)
+- ✅ Eliminates race conditions and "waiting for state" issues
+- ✅ Better perceived performance (~5 seconds faster)
+
+**Pages Using SSR for Game State:**
+- `/pages/race.tsx` - Fetches game state to get active_race_id
+- `/pages/athletes/index.tsx` - Fetches game ID for athlete filtering
+- Other pages should follow this pattern when depending on game context
+
+#### 4. Client-Side State Management
+
+**GameStateManager Context** (`lib/state-manager.ts`):
+- Centralized React Context for managing game state
+- Hydrated with SSR props on mount
+- Provides `useGameState()` hook for components
+- Handles state updates and persistence
+
+**Usage:**
+```typescript
+// Component receives SSR props
+export default function RacePage({ initialActiveRaceId }: RacePageProps) {
+  const { gameState, setGameState } = useGameState();
+  
+  // Initialize state with SSR data (eliminates wait)
+  useEffect(() => {
+    if (initialActiveRaceId) {
+      setGameState({ activeRaceId: initialActiveRaceId });
+    }
+  }, [initialActiveRaceId]);
+  
+  // Use SSR prop immediately (no client fetch needed)
+  useEffect(() => {
+    const activeRaceId = initialActiveRaceId || gameState.activeRaceId;
+    if (activeRaceId) {
+      loadRaceDetails(activeRaceId);
+    }
+  }, [initialActiveRaceId]);
+}
+```
+
+### Commissioner vs Regular User Behavior
+
+#### Commissioner Privileges
+- **Can switch games** via game switcher dropdown in footer
+- Switching games sets `current_game_id` cookie
+- All subsequent page loads use the selected game context
+- Commissioner can view/manage multiple games
+- Access controlled by TOTP authentication
+
+#### Regular Users (Non-Commissioners)
+- **Cannot switch games** - game switcher not visible
+- Always use `DEFAULT_GAME_ID` constant
+- Cannot see or access other games
+- Simple, focused experience for casual players
+
+**Implementation:**
+```javascript
+// Footer.tsx - Game switcher visibility
+const isCommissioner = /* TOTP authenticated check */;
+
+{isCommissioner && (
+  <Select onChange={handleGameChange}>
+    {availableGames.map(game => (
+      <option value={game.id}>{game.name}</option>
+    ))}
+  </Select>
+)}
+```
+
+### Race State Management
+
+#### Active Race Concept
+Each game has one "active race" at a time (via `games.active_race_id`):
+- This is the race currently being tracked for fantasy scoring
+- Commissioner sets this when creating/configuring the game
+- All race-related pages (race details, results entry) use the active race
+- Can be changed by commissioner to track different races over time
+
+#### Race Discovery Pattern
+```javascript
+// Pages needing race data follow this pattern:
+async function loadRaceData() {
+  // 1. Get game context (from SSR prop or cookie)
+  const gameId = initialGameId || getCookie('current_game_id') || DEFAULT_GAME_ID;
+  
+  // 2. Get game state (includes active_race_id)
+  const gameState = await fetch(`/api/game-state?gameId=${gameId}`);
+  const activeRaceId = gameState.activeRaceId;
+  
+  // 3. Fetch race details
+  const race = await fetch(`/api/races?id=${activeRaceId}`);
+}
+
+// OPTIMIZED SSR VERSION (preferred):
+export async function getServerSideProps(context) {
+  // Fetch game state server-side, pass activeRaceId as prop
+  // Component uses prop immediately (no client wait)
+}
+```
+
+#### Deprecated: Race `is_active` Flag
+
+**Status:** ⚠️ **DEPRECATED - DO NOT USE**
+
+The `races.is_active` boolean flag is **deprecated and should not be used** for any logic:
+
+**Why it's deprecated:**
+- Originally intended to mark "current" race (conflated with game's active_race_id)
+- Creates ambiguity: multiple games can track the same race
+- The "active" race is game-specific, not a race property
+- Led to bugs when multiple games existed
+- No clear definition of when a race should be "active" vs "inactive"
+
+**Current approach:**
+- Use `games.active_race_id` to determine which race a game is tracking
+- Races are simply marathon events in the database (no "active" status)
+- If a race needs to be hidden, use soft delete or separate visibility flag
+
+**Migration plan:**
+- [ ] Remove `is_active` from all queries and logic
+- [ ] Add `visible` or `archived` flag if needed for race visibility
+- [ ] Update database schema to drop `is_active` column
+- [ ] Document in TECH_MIGRATION.md
+
+**Example of correct pattern:**
+```javascript
+// ❌ WRONG (deprecated):
+const activeRace = await sql`SELECT * FROM races WHERE is_active = true`;
+
+// ✅ CORRECT:
+const gameState = await sql`SELECT * FROM games WHERE game_id = ${gameId}`;
+const race = await sql`SELECT * FROM races WHERE id = ${gameState.active_race_id}`;
+```
+
+### Data Flow Examples
+
+#### Example 1: User Loads Race Page
+
+**Old Approach (Client-Side - Slow):**
+```
+1. Browser → GET /race (HTML)
+2. JavaScript mounts component
+3. Component → GET /api/game-state?gameId=default
+4. Wait for response (2-3 seconds)
+5. Component → GET /api/races?id=644
+6. Wait for response (2-3 seconds)
+7. Render race (total: 5+ seconds) ❌
+```
+
+**New Approach (SSR - Fast):**
+```
+1. Browser → GET /race (HTML)
+2. Server (SSR):
+   - Read current_game_id cookie → "default"
+   - Fetch game state → active_race_id = 644
+   - Pass as props to page
+3. JavaScript mounts component with activeRaceId prop
+4. Component → GET /api/races?id=644 (immediately)
+5. Wait for response (2-3 seconds)
+6. Render race (total: 2-3 seconds) ✅ 50% faster
+```
+
+#### Example 2: Commissioner Switches Game
+
+**Flow:**
+```
+1. Commissioner authenticated with TOTP
+2. Footer shows game switcher dropdown
+3. Commissioner selects "valencia-2025" game
+4. Footer.tsx calls setCookie('current_game_id', 'valencia-2025')
+5. Page reloads with new cookie
+6. SSR reads cookie → gameId = "valencia-2025"
+7. Fetches game state for valencia-2025 → active_race_id = 645
+8. All pages now show Valencia race data
+9. Commissioner can enter results for Valencia race
+```
+
+### Best Practices
+
+#### For New Pages
+1. **Always use SSR** for game/race context:
+   ```typescript
+   export async function getServerSideProps(context) {
+     const gameId = context.req.cookies.current_game_id || DEFAULT_GAME_ID;
+     const gameState = await fetchGameState(gameId);
+     return { props: { initialGameId: gameId, initialActiveRaceId: gameState.activeRaceId } };
+   }
+   ```
+
+2. **Accept SSR props in component**:
+   ```typescript
+   export default function MyPage({ initialActiveRaceId }: PageProps) {
+     // Use prop immediately (no wait)
+   }
+   ```
+
+3. **Initialize state from SSR props**:
+   ```typescript
+   useEffect(() => {
+     if (initialActiveRaceId) {
+       setGameState({ activeRaceId: initialActiveRaceId });
+     }
+   }, [initialActiveRaceId]);
+   ```
+
+4. **Use props for immediate data needs**:
+   ```typescript
+   useEffect(() => {
+     // Prefer SSR prop over client state
+     const activeRaceId = initialActiveRaceId || gameState.activeRaceId;
+     if (activeRaceId) loadData(activeRaceId);
+   }, [initialActiveRaceId]);
+   ```
+
+#### For API Endpoints
+1. **Accept gameId as query parameter**:
+   ```javascript
+   const gameId = req.query.gameId || DEFAULT_GAME_ID;
+   ```
+
+2. **Never use race `is_active` flag** - use `games.active_race_id` instead
+
+3. **Return consistent JSON**:
+   ```javascript
+   res.json({ activeRaceId, players, draftComplete, resultsFinalized });
+   ```
+
+#### For State Updates
+1. **Update cookies** when game context changes (commissioner only)
+2. **Reload page** after cookie update to trigger SSR with new context
+3. **Use optimistic UI** for immediate feedback before API response
+
+### Troubleshooting
+
+**Problem:** "Race not found" error on page load
+- **Cause:** Component trying to load race before game state available
+- **Solution:** Use SSR to pass `initialActiveRaceId` as prop
+
+**Problem:** Commissioner game switching doesn't work
+- **Cause:** Cookie not being set or SSR not reading cookie
+- **Solution:** Check cookie setting logic, verify SSR reads `context.req.cookies`
+
+**Problem:** Multiple tabs showing different games
+- **Cause:** Expected behavior - each tab has independent cookie state
+- **Solution:** Reload all tabs after switching games, or implement cross-tab sync
+
+**Problem:** `is_active` flag causing confusion
+- **Cause:** Deprecated field still in use
+- **Solution:** Remove all references, use `games.active_race_id` instead
+
 ## API Architecture
 
 ### Endpoint Design
