@@ -52,7 +52,7 @@ interface CountdownTime {
 // Design colors from CORE_DESIGN_GUIDELINES.md
 const COLORS = {
   navy: '#161C4F',
-  navyLight: '#1F2847',
+  navyLight: '#C3CDE3',
   navyDark: '#0F1530',
   gold: '#D4AF37',
   goldHover: 'rgba(212, 175, 55, 0.1)',
