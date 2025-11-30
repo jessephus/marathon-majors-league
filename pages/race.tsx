@@ -23,6 +23,7 @@ import { Button, Card, CardBody } from '@/components/chakra';
 import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
 import AthleteModal from '@/components/AthleteModal';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 
 interface Race {
   id: number;
@@ -56,19 +57,26 @@ interface Athlete {
 
 interface RacePageProps {
   raceId: string | null;
+  initialGameId: string; // Added to pass SSR cookie reading
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { id } = context.query;
   
+  // Read current_game_id cookie (commissioner's selected game) or use default
+  // This ensures fresh read on every page load, respects logout
+  const gameIdCookie = context.req.cookies.current_game_id;
+  const gameId = gameIdCookie || DEFAULT_GAME_ID;
+  
   return {
     props: {
       raceId: id ? String(id) : null,
+      initialGameId: gameId, // Pass to component for initialization
     },
   };
 }
 
-export default function RacePage({ raceId }: RacePageProps) {
+export default function RacePage({ raceId, initialGameId }: RacePageProps) {
   const router = useRouter();
   const { gameState, setGameState } = useGameState();
   const [race, setRace] = useState<Race | null>(null);
@@ -77,28 +85,26 @@ export default function RacePage({ raceId }: RacePageProps) {
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Load game state from API if not already loaded
+  // Load game state from API using SSR-provided gameId (respects logout)
   useEffect(() => {
     const loadGameState = async () => {
-      if (gameState.activeRaceId === null && gameState.gameId) {
-        try {
-          const response = await fetch(`/api/game-state?gameId=${gameState.gameId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setGameState({
-              activeRaceId: data.activeRaceId,
-              draftComplete: data.draftComplete,
-              resultsFinalized: data.resultsFinalized,
-              rosterLockTime: data.rosterLockTime,
-            });
-          }
-        } catch (err) {
-          console.error('Failed to load game state:', err);
+      try {
+        const response = await fetch(`/api/game-state?gameId=${initialGameId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setGameState({
+            activeRaceId: data.activeRaceId,
+            draftComplete: data.draftComplete,
+            resultsFinalized: data.resultsFinalized,
+            rosterLockTime: data.rosterLockTime,
+          });
         }
+      } catch (err) {
+        console.error('Failed to load game state:', err);
       }
     };
     loadGameState();
-  }, [gameState.gameId, gameState.activeRaceId, setGameState]);
+  }, [initialGameId, setGameState]);
 
   useEffect(() => {
     loadRaceDetails();

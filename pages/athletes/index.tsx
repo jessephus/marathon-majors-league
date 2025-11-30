@@ -213,8 +213,14 @@ export default function AthletesBrowsePage() {
     async function fetchAthletes() {
       try {
         setLoading(true);
+        // Get active game ID from cookie (commissioner's selected game) or use default
+        const gameIdCookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('current_game_id='))
+          ?.split('=')[1];
+        const activeGameId = gameIdCookie || DEFAULT_GAME_ID;
         // Pass gameId to fetch confirmed athletes for the active race of this game
-        const response = await fetch(`/api/athletes?gameId=${DEFAULT_GAME_ID}`);
+        const response = await fetch(`/api/athletes?gameId=${activeGameId}`);
         
         if (!response.ok) {
           // Use demo data if API fails (development/preview environments)

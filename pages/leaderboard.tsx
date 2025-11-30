@@ -15,6 +15,7 @@ import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
 import { DEFAULT_GAME_ID } from '@/config/constants';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
 import { apiClient, createServerApiClient, clearCache } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
@@ -417,11 +418,18 @@ export default function NewLeaderboardPage(props: LeaderboardPageProps) {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // Check if user has active commissioner session
+  const isCommissioner = hasActiveCommissionerSession(context.req.cookies);
+  
   // Get gameId from cookie (set by game switcher in Footer component)
   // Falls back to query param, then DEFAULT_GAME_ID
+  // NON-COMMISSIONERS: Always use DEFAULT_GAME_ID (ignore cookies/query params)
   const gameIdCookie = context.req.cookies.current_game_id;
   const gameIdQuery = context.query.gameId;
-  const gameId = gameIdCookie || gameIdQuery || DEFAULT_GAME_ID;
+  
+  const gameId = isCommissioner 
+    ? (gameIdCookie || gameIdQuery || DEFAULT_GAME_ID)
+    : DEFAULT_GAME_ID;
 
   // Construct base URL for server-side API requests
   const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';

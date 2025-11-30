@@ -16,6 +16,7 @@ import { Box, VStack, Heading, Text } from '@chakra-ui/react';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient, createServerApiClient, salaryCapDraftApi } from '@/lib/api-client';
 import { DEFAULT_GAME_ID } from '@/config/constants';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
@@ -654,7 +655,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       };
     }
 
-    const gameId = sessionData.session.gameId || DEFAULT_GAME_ID;
+    // Check if user has active commissioner session
+    const isCommissioner = hasActiveCommissionerSession(context.req.cookies);
+    
+    // Get gameId from session data
+    // NON-COMMISSIONERS: Always use DEFAULT_GAME_ID (override session gameId)
+    const sessionGameId = sessionData.session.gameId;
+    const gameId = isCommissioner 
+      ? (sessionGameId || DEFAULT_GAME_ID)
+      : DEFAULT_GAME_ID;
 
     // Fetch game state using API client (benefits from caching headers and retry logic)
     const gameStateData = await serverApi.gameState.load(gameId);
