@@ -10,6 +10,7 @@
  * Props:
  * - sessionType: 'anonymous' | 'team' | 'commissioner'
  * - onCreateTeam: callback for creating a new team
+ * - nextRace: { name: string, date: string } - Next race data from SSR (date as ISO string)
  */
 
 import { useState, useEffect } from 'react';
@@ -74,7 +75,7 @@ const criticalStyles = {
   },
 };
 
-export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam }) {
+export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam, nextRace }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [hasTeamSession, setHasTeamSession] = useState(false);
@@ -392,11 +393,19 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
     }
 
     // No team session - show new LandingPage with navy/gold branding
-    // The landing page fetches the active race from the API for the countdown timer
+    // Race data is passed via SSR props from getServerSideProps
     console.log('[WelcomeCard] Rendering LANDING PAGE');
+    
+    // Convert ISO date string back to Date object (SSR serializes dates as strings)
+    const raceData = nextRace ? {
+      name: nextRace.name,
+      date: new Date(nextRace.date)
+    } : undefined;
+    
     return (
       <LandingPage 
         onGetStarted={onCreateTeam}
+        nextRace={raceData}
       />
     );
   };

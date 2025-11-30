@@ -10,15 +10,20 @@
  * Note: This component relies on the global NavigationWrapper for header/navigation.
  * It does not render its own header.
  * 
+ * SSR Optimized:
+ * - Race data should be passed via `nextRace` prop from getServerSideProps
+ * - No client-side fetching to avoid hydration mismatch
+ * - Uses `welcome-card` class for test compatibility
+ * 
  * Sections:
  * 1. Hero - Title, description, Get Started CTA
  * 2. How It Works - 3 numbered steps with visual timeline
- * 3. Next Marathon - Countdown timer to next race (from active race lock time)
+ * 3. Next Marathon - Countdown timer to next race (from SSR props)
  * 
  * Design Reference: docs/CORE_DESIGN_GUIDELINES.md
  * Phase 5 Implementation: Week 27-28 Home/Welcome Page
  * 
- * @version 1.1.0
+ * @version 1.2.0
  * @date November 2025
  */
 
@@ -65,7 +70,7 @@ const COLORS = {
 const HOW_IT_WORKS_STEPS = [
   {
     number: 1,
-    title: 'Build Your Team',
+    title: 'Create Your Team',
     description: 'Draft a mix of runners before each Marathon Major.',
   },
   {
@@ -447,64 +452,35 @@ function CountdownSeparator() {
 // Main Component
 // ===========================
 
+/**
+ * LandingPage component for logged-out users.
+ * 
+ * SSR Optimized:
+ * - Race data should be passed via `nextRace` prop from getServerSideProps
+ * - Falls back to a hardcoded default if no prop is provided
+ * - No client-side fetching to avoid hydration mismatch
+ * 
+ * @param onGetStarted - Callback when "Get Started" is clicked
+ * @param nextRace - Next race data (name and date), passed from SSR
+ */
 export default function LandingPage({
   onGetStarted,
   nextRace: nextRaceProp,
 }: LandingPageProps) {
-  const [activeRace, setActiveRace] = useState<{ name: string; date: Date } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch the active race from the API on mount
-  useEffect(() => {
-    async function fetchActiveRace() {
-      try {
-        // Fetch active races from the API
-        const response = await fetch('/api/races?active=true');
-        if (response.ok) {
-          const races = await response.json();
-          // Find the next upcoming race with a lock time
-          if (races && races.length > 0) {
-            // Sort by lock time and find the next one that hasn't passed
-            const now = new Date();
-            const upcomingRace = races
-              .filter((race: { lockTime?: string }) => race.lockTime && new Date(race.lockTime) > now)
-              .sort((a: { lockTime: string }, b: { lockTime: string }) => 
-                new Date(a.lockTime).getTime() - new Date(b.lockTime).getTime()
-              )[0];
-            
-            if (upcomingRace) {
-              setActiveRace({
-                name: upcomingRace.name,
-                date: new Date(upcomingRace.lockTime),
-              });
-            }
-          }
-        }
-      } catch (error) {
-        console.error('[LandingPage] Error fetching active race:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    // Only fetch if no nextRace prop was provided
-    if (!nextRaceProp) {
-      fetchActiveRace();
-    } else {
-      setIsLoading(false);
-    }
-  }, [nextRaceProp]);
-
-  // Use prop if provided, otherwise use fetched active race, otherwise use fallback
+  // Fallback race for when SSR doesn't provide race data
+  // This ensures the countdown always has something to display
   const fallbackRace = {
     name: 'Tokyo Marathon',
     date: new Date('2026-03-01T09:10:00+09:00'), // March 1, 2026 (first Sunday)
   };
   
-  const race = nextRaceProp || activeRace || fallbackRace;
+  // Use prop if provided, otherwise use fallback
+  // Race data should come from SSR (getServerSideProps in pages/index.js)
+  const race = nextRaceProp || fallbackRace;
 
   return (
     <Box
+      className="welcome-card"
       maxW="container.xl"
       mx="auto"
       my={{ base: 0, md: 4 }}

@@ -22,15 +22,50 @@ export async function getServerSideProps(context) {
   const cookies = req.headers.cookie || '';
   const sessionType = detectSessionType(cookies);
   
+  // Fetch next active race for the landing page countdown
+  // This ensures SSR includes the race data without client-side fetching
+  let nextRace = null;
+  
+  // Only attempt database fetch if DATABASE_URL is set
+  // During build time, this may not be available
+  if (process.env.DATABASE_URL) {
+    try {
+      // Dynamic import to avoid build-time errors when DATABASE_URL is not set
+      const { getActiveRaces } = await import('./api/db');
+      const races = await getActiveRaces();
+      if (races && races.length > 0) {
+        const now = new Date();
+        // Find the next upcoming race with a lock time
+        const upcomingRace = races
+          .filter(race => race.lockTime && new Date(race.lockTime) > now)
+          .sort((a, b) => new Date(a.lockTime).getTime() - new Date(b.lockTime).getTime())[0];
+        
+        if (upcomingRace) {
+          nextRace = {
+            name: upcomingRace.name,
+            // Serialize date as ISO string for SSR (JSON serialization)
+            date: new Date(upcomingRace.lockTime).toISOString(),
+          };
+        }
+      }
+    } catch (error) {
+      console.error('[SSR] Error fetching active races:', error.message);
+      // Fallback to null - component will use its default
+    }
+  } else {
+    console.log('[SSR] DATABASE_URL not set, skipping race fetch');
+  }
+  
   return {
     props: {
       serverSessionType: sessionType,
       hasURLSession: !!sessionToken,
+      nextRace, // Pass race data to client
     },
   };
 }
 
-export default function Home({ serverSessionType, hasURLSession }) {
+export default function Home({ serverSessionType, hasURLSession, nextRace }) {
   const router = useRouter();
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
@@ -261,6 +296,7 @@ export default function Home({ serverSessionType, hasURLSession }) {
             <WelcomeCard 
               sessionType={clientSessionType} 
               onCreateTeam={handleCreateTeam}
+              nextRace={nextRace}
             />
           </div>
         </main>
