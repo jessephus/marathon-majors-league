@@ -122,29 +122,30 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
     <Box
       bg={COLORS.cream}
       px={{ base: 4, md: 8 }}
-      py={{ base: 10, md: 16 }}
+      pt={{ base: 6, md: 8 }}
+      pb={{ base: 10, md: 16 }}
     >
       <Container maxW="container.lg">
         <Flex
           direction={{ base: 'column', lg: 'row' }}
           align="center"
           justify="space-between"
-          gap={{ base: 8, lg: 12 }}
+          gap={{ base: 12, lg: 16 }}
         >
           {/* Text Content */}
           <Box flex="1" textAlign={{ base: 'center', lg: 'left' }}>
             {/* Title with underline accent */}
             <Heading
               as="h1"
-              fontSize={{ base: '3xl', md: '4xl', lg: '5xl' }}
+              fontSize={{ base: '3xl', md: '4xl', lg: '4xl' }}
               fontWeight="extrabold"
               color={COLORS.navy}
               lineHeight="tight"
               mb={2}
             >
-              Fantasy
+              Marathon Majors
               <br />
-              Marathon
+              Fantasy League
             </Heading>
             
             {/* Gold underline */}
@@ -164,7 +165,7 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
               maxW="400px"
               mx={{ base: 'auto', lg: 0 }}
             >
-              Draft and manage teams of runners to compete for points in the marathon majors.
+              Bring the excitement of the Marathon Majors to life with your own roster of elite athletes to cheer on race day.
             </Text>
 
             {/* CTA Button */}
@@ -199,25 +200,45 @@ function HeroSection({ onGetStarted }: { onGetStarted: () => void }) {
             maxW="400px"
           >
             <Box
-              bg={COLORS.navyLight}
               borderRadius="lg"
               h="280px"
               w="100%"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
+              overflow="hidden"
             >
               <Image
-                src="/assets/winged-shoe.png"
+                src="/assets/foggy-morning-warmup.jpg"
                 alt="Marathon Majors Fantasy League"
-                boxSize="180px"
-                objectFit="contain"
-                opacity={0.3}
+                w="100%"
+                h="100%"
+                objectFit="cover"
               />
             </Box>
           </Box>
         </Flex>
       </Container>
+    </Box>
+  );
+}
+
+/**
+ * Image section between Hero and How It Works (mobile only)
+ */
+function ImageBreakSection() {
+  return (
+    <Box
+      w="100%"
+      h={{ base: '200px', md: '280px', lg: '320px' }}
+      overflow="hidden"
+      display={{ base: 'block', lg: 'none' }}
+    >
+      <Image
+        src="/assets/foggy-morning-warmup.jpg"
+        alt="Marathon runners in foggy morning warmup"
+        w="100%"
+        h="100%"
+        objectFit="cover"
+        objectPosition="center"
+      />
     </Box>
   );
 }
@@ -242,13 +263,14 @@ function HowItWorksSection() {
           color={COLORS.navy}
           mb={8}
         >
-          How it works
+          How Does This Work?
+          <br></br>
         </Heading>
 
         {/* Steps Timeline */}
         <Flex
           direction={{ base: 'column', md: 'row' }}
-          align={{ base: 'flex-start', md: 'flex-start' }}
+          align={{ base: 'center', md: 'flex-start' }}
           justify="space-between"
           gap={{ base: 6, md: 4 }}
         >
@@ -297,12 +319,12 @@ function HowItWorksSection() {
               <Box
                 ml={{ base: 4, md: 0 }}
                 mt={{ base: 0, md: 4 }}
-                textAlign={{ base: 'left', md: 'center' }}
+                textAlign={{ base: 'center', md: 'center' }}
               >
                 <Text
-                  fontWeight="semibold"
+                  fontWeight="bold"
                   color={COLORS.navy}
-                  fontSize={{ base: 'sm', md: 'md' }}
+                  fontSize={{ base: 'md', md: 'md' }}
                   mb={1}
                 >
                   {step.title}
@@ -356,12 +378,12 @@ function NextMarathonSection({ race }: { race?: { name: string; date: Date } }) 
       <Container maxW="container.lg">
         <Flex
           direction={{ base: 'column', md: 'row' }}
-          align={{ base: 'flex-start', md: 'center' }}
+          align={{ base: 'center', md: 'center' }}
           justify="space-between"
-          gap={{ base: 4, md: 0 }}
+          gap={{ base: 4, md: 6 }}
         >
           {/* Race Info */}
-          <Box>
+          <Box textAlign={{ base: 'center', md: 'left' }}>
             <Text
               fontSize="sm"
               color={COLORS.gold}
@@ -387,9 +409,9 @@ function NextMarathonSection({ race }: { race?: { name: string; date: Date } }) 
             border="2px solid"
             borderColor={COLORS.gold}
             borderRadius="lg"
-            px={{ base: 4, md: 6 }}
-            py={3}
-            gap={{ base: 1, md: 2 }}
+            px={{ base: 6, md: 8, lg: 10 }}
+            py={{ base: 4, md: 5, lg: 6 }}
+            gap={{ base: 2, md: 3, lg: 4 }}
             align="center"
           >
             <CountdownUnit value={countdown.days} label="D" />
@@ -411,20 +433,20 @@ function NextMarathonSection({ race }: { race?: { name: string; date: Date } }) 
  */
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
-    <Flex direction="column" align="center" minW={{ base: '36px', md: '48px' }}>
+    <Flex direction="row" align="center" gap={{ base: 2, md: 3 }}>
       <Text
-        fontSize={{ base: 'xl', md: '2xl' }}
+        fontSize={{ base: '2xl', md: '3xl', lg: '4xl' }}
         fontWeight="bold"
-        color={COLORS.gold}
         fontFamily="mono"
+        lineHeight="1"
+        sx={{ color: '#FFFFFF !important' }}
       >
         {formatCountdownUnit(value)}
       </Text>
       <Text
-        fontSize="xs"
-        color="gray.400"
+        fontSize={{ base: 'xs', md: 'sm' }}
         textTransform="uppercase"
-        display={{ base: 'none', md: 'block' }}
+        sx={{ color: '#FFFFFF !important' }}
       >
         {label}
       </Text>
@@ -438,10 +460,11 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
 function CountdownSeparator() {
   return (
     <Text
-      fontSize={{ base: 'xl', md: '2xl' }}
+      fontSize={{ base: '2xl', md: '3xl', lg: '4xl' }}
       fontWeight="bold"
-      color={COLORS.gold}
-      px={1}
+      px={{ base: 1, md: 2 }}
+      lineHeight="1"
+      sx={{ color: '#FFFFFF !important' }}
     >
       :
     </Text>
@@ -470,8 +493,8 @@ export default function LandingPage({
   // Fallback race for when SSR doesn't provide race data
   // This ensures the countdown always has something to display
   const fallbackRace = {
-    name: 'Tokyo Marathon',
-    date: new Date('2026-03-01T09:10:00+09:00'), // March 1, 2026 (first Sunday)
+    name: 'Error Marathon',
+    date: new Date('3026-03-01T09:10:00+09:00'), // March 1, 3026
   };
   
   // Use prop if provided, otherwise use fallback
@@ -489,6 +512,7 @@ export default function LandingPage({
       shadow={{ base: 'none', md: 'xl' }}
     >
       <HeroSection onGetStarted={onGetStarted} />
+      <ImageBreakSection />
       <HowItWorksSection />
       <NextMarathonSection race={race} />
     </Box>

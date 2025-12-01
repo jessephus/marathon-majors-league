@@ -43,25 +43,25 @@ export async function getServerSideProps(context) {
   if (process.env.DATABASE_URL) {
     try {
       // Dynamic import to avoid build-time errors when DATABASE_URL is not set
-      const { getActiveRaces } = await import('./api/db');
-      const races = await getActiveRaces();
-      if (races && races.length > 0) {
+      // Use getActiveRaceForGame to respect per-game active race configuration
+      const { getActiveRaceForGame } = await import('./api/db');
+      const race = await getActiveRaceForGame(gameId);
+      
+      if (race && race.lockTime) {
         const now = new Date();
-        // Find the next upcoming race with a lock time
-        const upcomingRace = races
-          .filter(race => race.lockTime && new Date(race.lockTime) > now)
-          .sort((a, b) => new Date(a.lockTime).getTime() - new Date(b.lockTime).getTime())[0];
+        const lockTime = new Date(race.lockTime);
         
-        if (upcomingRace) {
+        // Only include if lock time is in the future
+        if (lockTime > now) {
           nextRace = {
-            name: upcomingRace.name,
+            name: race.name,
             // Serialize date as ISO string for SSR (JSON serialization)
-            date: new Date(upcomingRace.lockTime).toISOString(),
+            date: lockTime.toISOString(),
           };
         }
       }
     } catch (error) {
-      console.error('[SSR] Error fetching active races:', error.message);
+      console.error('[SSR] Error fetching active race for game:', error.message);
       // Fallback to null - component will use its default
     }
   } else {

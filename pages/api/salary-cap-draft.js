@@ -39,7 +39,9 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || DEFAULT_GAME_ID;
+  // For GET requests, use query parameter (e.g., fetching teams)
+  // For POST requests, will be read from body (team submission)
+  let gameId = req.query.gameId || DEFAULT_GAME_ID;
   const DATABASE_URL = process.env.DATABASE_URL;
 
   if (!DATABASE_URL) {
@@ -152,6 +154,13 @@ export default async function handler(req, res) {
         }
       }
       const { team, totalSpent, teamName } = body;
+      
+      // 🔒 SECURITY FIX: Use gameId from request body, not query params
+      // This prevents cross-game contamination where a team in game X
+      // would be added to DEFAULT_GAME_ID's players array
+      if (body.gameId) {
+        gameId = body.gameId;
+      }
 
       if (!team || !team.men || !team.women) {
         return res.status(400).json({ error: 'Invalid team data' });
