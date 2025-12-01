@@ -73,8 +73,9 @@ export function NavigationWrapper({
   
   // Calculate top padding based on header presence
   // Header heights: 60px (base), 72px (md), 80px (lg)
+  // Reduced lg to 60px to minimize top spacing on desktop
   const topPadding = useChakraHeader
-    ? { base: '60px', md: '72px', lg: '80px' }
+    ? { base: '60px', md: '55px', lg: '55px' }
     : 0;
   
   // Calculate bottom padding based on bottom nav presence

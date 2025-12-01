@@ -34,16 +34,51 @@ export async function getServerSideProps(context) {
     }
   }
   
+  // Fetch next active race for the landing page countdown
+  // This ensures SSR includes the race data without client-side fetching
+  let nextRace = null;
+  
+  // Only attempt database fetch if DATABASE_URL is set
+  // During build time, this may not be available
+  if (process.env.DATABASE_URL) {
+    try {
+      // Dynamic import to avoid build-time errors when DATABASE_URL is not set
+      // Use getActiveRaceForGame to respect per-game active race configuration
+      const { getActiveRaceForGame } = await import('./api/db');
+      const race = await getActiveRaceForGame(gameId);
+      
+      if (race && race.lockTime) {
+        const now = new Date();
+        const lockTime = new Date(race.lockTime);
+        
+        // Only include if lock time is in the future
+        if (lockTime > now) {
+          nextRace = {
+            name: race.name,
+            // Serialize date as ISO string for SSR (JSON serialization)
+            date: lockTime.toISOString(),
+          };
+        }
+      }
+    } catch (error) {
+      console.error('[SSR] Error fetching active race for game:', error.message);
+      // Fallback to null - component will use its default
+    }
+  } else {
+    console.log('[SSR] DATABASE_URL not set, skipping race fetch');
+  }
+  
   return {
     props: {
       serverSessionType: sessionType,
       hasURLSession: !!sessionToken,
       initialGameId: gameId,
+      nextRace, // Pass race data to client
     },
   };
 }
 
-export default function Home({ serverSessionType, hasURLSession, initialGameId }) {
+export default function Home({ serverSessionType, hasURLSession, initialGameId, nextRace }) {
   const router = useRouter();
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
@@ -282,6 +317,7 @@ export default function Home({ serverSessionType, hasURLSession, initialGameId }
             <WelcomeCard 
               sessionType={clientSessionType} 
               onCreateTeam={handleCreateTeam}
+              nextRace={nextRace}
             />
           </div>
         </main>

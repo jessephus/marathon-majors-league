@@ -106,6 +106,9 @@ function TeamSessionPageContent({
   const [fullAthletesLoaded, setFullAthletesLoaded] = useState(false);
   const [loadingFullAthletes, setLoadingFullAthletes] = useState(false);
   
+  // Track submission loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   // Track initial mount to prevent auto-save on page load
   const isInitialMount = useRef(true);
   
@@ -291,6 +294,13 @@ function TeamSessionPageContent({
       return;
     }
 
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       // Convert roster to API format
       const team = {
@@ -343,8 +353,10 @@ function TeamSessionPageContent({
     } catch (err) {
       console.error('Failed to submit team:', err);
       alert(`Failed to submit team: ${err instanceof Error ? err.message : 'Please try again.'}`);
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [roster, sessionData, sessionToken, router]);
+  }, [roster, sessionData, sessionToken, router, isSubmitting]);
 
   // Error state
   if (!sessionData.valid) {
@@ -552,7 +564,9 @@ function TeamSessionPageContent({
                 variant="solid"
                 colorPalette="primary"
                 size="lg"
-                disabled={!allFilledSlots || isRosterLocked_computed}
+                disabled={!allFilledSlots || isRosterLocked_computed || isSubmitting}
+                isLoading={isSubmitting}
+                loadingText="Submitting team..."
                 onClick={handleSubmitRoster}
                 style={{ width: '100%' }}
               >

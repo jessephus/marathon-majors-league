@@ -4,9 +4,13 @@
  * Landing page welcome card that adapts based on user session state.
  * Server-side rendered with session-aware CTA buttons.
  * 
+ * For logged-out users: Shows the new LandingPage component with navy/gold branding
+ * For logged-in users: Shows the existing team dashboard card
+ * 
  * Props:
  * - sessionType: 'anonymous' | 'team' | 'commissioner'
  * - onCreateTeam: callback for creating a new team
+ * - nextRace: { name: string, date: string } - Next race data from SSR (date as ISO string)
  */
 
 import { useState, useEffect } from 'react';
@@ -14,9 +18,11 @@ import { useRouter } from 'next/router';
 import { SessionType } from '../lib/session-utils';
 import { Button } from '@/components/chakra';
 import { ArrowRightIcon, PlusIcon } from '@heroicons/react/24/solid';
+import LandingPage from './LandingPage';
 
 // Critical CSS for above-the-fold content (inlined for faster first paint)
-// Matches legacy welcome-card styling from public/style.css
+// Used for logged-in user views (team dashboard card)
+// Design colors aligned with CORE_DESIGN_GUIDELINES.md navy/gold palette
 const criticalStyles = {
   card: {
     background: '#fff',
@@ -37,7 +43,7 @@ const criticalStyles = {
     margin: '0 auto',
   },
   heading: {
-    color: '#2C39A2',
+    color: '#161C4F', // Navy from design guidelines
     marginBottom: '15px',
     fontSize: '1.875rem',
     fontWeight: 'bold',
@@ -51,13 +57,13 @@ const criticalStyles = {
   section: {
     marginBottom: '20px',
     padding: '30px',
-    background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.08) 0%, rgba(44, 57, 162, 0.08) 100%)',
+    background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.08) 0%, rgba(22, 28, 79, 0.08) 100%)', // Gold to Navy gradient
     borderRadius: '12px',
-    border: '2px solid #6c757d',
+    border: '2px solid #D4AF37', // Gold border
     textAlign: 'center',
   },
   sectionHeading: {
-    color: '#2C39A2',
+    color: '#161C4F', // Navy
     marginBottom: '10px',
     fontSize: '1.4rem',
     fontWeight: '600',
@@ -67,34 +73,9 @@ const criticalStyles = {
     marginBottom: '20px',
     fontSize: '1rem',
   },
-  button: {
-    display: 'inline-block',
-    padding: '12px 24px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#fff',
-    backgroundColor: '#2C39A2',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    transition: 'background-color 0.2s, transform 0.1s',
-    textAlign: 'center',
-    textDecoration: 'none',
-    textTransform: 'uppercase',
-  },
-  buttonHover: {
-    backgroundColor: '#1e2870',
-    transform: 'translateY(-2px)',
-  },
-  secondaryButton: {
-    backgroundColor: '#2C39A2',
-  },
-  secondaryButtonHover: {
-    backgroundColor: '#e05500',
-  },
 };
 
-export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam }) {
+export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam, nextRace }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [hasTeamSession, setHasTeamSession] = useState(false);
@@ -318,7 +299,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
       const budgetPercentUsed = ((teamData?.totalSalary || 0) / 30000) * 100;
       
       return (
-        <>
+        <div style={criticalStyles.card}>
           <h2 style={criticalStyles.heading}>Welcome Back!</h2>
           <p style={{...criticalStyles.description, fontSize: '1.2rem', fontWeight: '600', color: '#333'}}>
             {teamName || 'Your Fantasy Marathon Team'}
@@ -332,23 +313,23 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               gap: '15px',
               marginBottom: '25px',
               padding: '20px',
-              background: 'linear-gradient(135deg, rgba(255, 105, 0, 0.05) 0%, rgba(44, 57, 162, 0.05) 100%)',
+              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(22, 28, 79, 0.05) 100%)',
               borderRadius: '10px',
-              border: '1px solid rgba(255, 105, 0, 0.2)'
+              border: '1px solid rgba(212, 175, 55, 0.2)'
             }}>
               <div style={{textAlign: 'center', padding: '10px'}}>
                 <div style={{fontSize: '0.85rem', color: '#666', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Roster</div>
-                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: teamData.isDraftComplete ? '#28a745' : '#ff6900'}}>
+                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: teamData.isDraftComplete ? '#16A34A' : '#D4AF37'}}>
                   {teamData.rosterCount}/6
                 </div>
-                <div style={{fontSize: '0.75rem', color: teamData.isDraftComplete ? '#28a745' : '#999'}}>
+                <div style={{fontSize: '0.75rem', color: teamData.isDraftComplete ? '#16A34A' : '#999'}}>
                   {teamData.isDraftComplete ? '✓ Complete' : 'In Progress'}
                 </div>
               </div>
               
               <div style={{textAlign: 'center', padding: '10px'}}>
                 <div style={{fontSize: '0.85rem', color: '#666', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Salary Used</div>
-                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: budgetPercentUsed > 95 ? '#28a745' : '#2C39A2'}}>
+                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: budgetPercentUsed > 95 ? '#16A34A' : '#161C4F'}}>
                   {formatCurrency(teamData.totalSalary)}
                 </div>
                 <div style={{fontSize: '0.75rem', color: '#999'}}>
@@ -378,7 +359,7 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
                 <div style={{
                   height: '100%',
                   width: `${budgetPercentUsed}%`,
-                  background: budgetPercentUsed > 95 ? 'linear-gradient(90deg, #28a745 0%, #20c997 100%)' : 'linear-gradient(90deg, #ff6900 0%, #2C39A2 100%)',
+                  background: budgetPercentUsed > 95 ? 'linear-gradient(90deg, #16A34A 0%, #22C55E 100%)' : 'linear-gradient(90deg, #D4AF37 0%, #161C4F 100%)',
                   transition: 'width 0.3s ease',
                   borderRadius: '10px'
                 }} />
@@ -407,42 +388,28 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
               {teamData?.isDraftComplete ? 'View My Team' : 'Continue'}
             </Button>
           </div>
-        </>
+        </div>
       );
     }
 
-    // No team session - show "Create a New Team"
-    console.log('[WelcomeCard] Rendering CREATE TEAM card');
+    // No team session - show new LandingPage with navy/gold branding
+    // Race data is passed via SSR props from getServerSideProps
+    console.log('[WelcomeCard] Rendering LANDING PAGE');
+    
+    // Convert ISO date string back to Date object (SSR serializes dates as strings)
+    const raceData = nextRace ? {
+      name: nextRace.name,
+      date: new Date(nextRace.date)
+    } : undefined;
+    
     return (
-      <>
-        <h2 style={criticalStyles.heading}>Welcome to Marathon Majors Fantasy League!</h2>
-        <p style={criticalStyles.description}>
-          Compete with friends by drafting elite marathon runners.
-        </p>
-        
-        <div style={criticalStyles.section}>
-          <h3 style={criticalStyles.sectionHeading}>🏃‍♂️ Join the Competition</h3>
-          <p style={criticalStyles.sectionText}>
-            Create your team and draft elite runners - no registration required!
-          </p>
-          <Button 
-            colorPalette="primary"
-            size="md"
-            width="auto"
-            maxWidth="100%"
-            leftIcon={<PlusIcon style={{ width: '16px', height: '16px' }} />}
-            onClick={onCreateTeam}
-          >
-            Create a New Team
-          </Button>
-        </div>
-      </>
+      <LandingPage 
+        onGetStarted={onCreateTeam}
+        nextRace={raceData}
+      />
     );
   };
   
-  return (
-    <div style={hasTeamSession && hasCommissionerSession ? criticalStyles.cardMultiple : criticalStyles.card}>
-      {renderContent()}
-    </div>
-  );
+  // Render directly - the renderContent function handles the layout
+  return renderContent();
 }
