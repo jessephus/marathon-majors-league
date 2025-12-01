@@ -179,16 +179,16 @@ export default function Home({ serverSessionType, hasURLSession, initialGameId, 
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://marathonmajorsfantasy.com/" />
-        <meta property="og:title" content="Marathon Majors Fantasy League - Daily Fantasy Marathon League" />
+        <meta property="og:title" content="Marathon Majors Fantasy League" />
         <meta property="og:description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
-        <meta property="og:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
+        <meta property="og:image" content="https://www.marathonmajorsfantasy.com/assets/mmfl-logo.png" />
         
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content="https://marathonmajorsfantasy.com/" />
-        <meta property="twitter:title" content="Marathon Majors Fantasy League - Daily Fantasy Marathon League" />
+        <meta property="twitter:title" content="Marathon Majors Fantasy League" />
         <meta property="twitter:description" content="Turn marathon watching into the ultimate competitive experience! Build your dream team of elite runners within a $30,000 salary cap, then watch them compete for glory." />
-        <meta property="twitter:image" content="https://marathonmajorsfantasy.com/images/preview-image.png" />
+        <meta property="twitter:image" content="https://www.marathonmajorsfantasy.com/assets/mmfl-logo.png" />
       </Head>
 
       {/* Inline utilities - no external dependencies needed */}
