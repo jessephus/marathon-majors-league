@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_GAME_ID } from '../../config/constants';
 
 const SALARY_CAP = 30000;
 const TEAM_SIZE = 6;
@@ -17,6 +18,7 @@ async function verifySessionToken(sql, sessionToken) {
     }
     
     return {
+      sessionId: result[0].session_id,
       teamName: result[0].display_name || result[0].player_code,
       displayName: result[0].display_name,
       playerCode: result[0].player_code,
@@ -37,7 +39,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
   const DATABASE_URL = process.env.DATABASE_URL;
 
   if (!DATABASE_URL) {
@@ -233,22 +235,28 @@ export default async function handler(req, res) {
       // Insert new team with is_complete=TRUE
       for (const athlete of team.men) {
         await sql`
-          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'men', ${calculatedTotal}, TRUE)
+          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete, session_id)
+          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'men', ${calculatedTotal}, TRUE, ${user.sessionId})
         `;
       }
 
       for (const athlete of team.women) {
         await sql`
-          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'women', ${calculatedTotal}, TRUE)
+          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete, session_id)
+          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'women', ${calculatedTotal}, TRUE, ${user.sessionId})
         `;
       }
 
       // Update game state to mark salary cap draft as complete
+      // AND add player to players array if not already present
       await sql`
         UPDATE games
-        SET draft_complete = TRUE
+        SET 
+          draft_complete = TRUE,
+          players = CASE 
+            WHEN ${playerCode} = ANY(players) THEN players
+            ELSE array_append(players, ${playerCode})
+          END
         WHERE game_id = ${gameId}
       `;
 

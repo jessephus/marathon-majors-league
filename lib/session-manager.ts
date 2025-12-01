@@ -20,6 +20,8 @@
  * - components/Footer.tsx - Session-aware footer component
  */
 
+import { DEFAULT_GAME_ID } from '../config/constants';
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -271,6 +273,54 @@ export function getValidCommissionerSession(): CommissionerSession | null {
   return session;
 }
 
+/**
+ * Check if user has active commissioner session (from cookies or localStorage)
+ * SSR-compatible - can check cookies server-side
+ */
+export function hasActiveCommissionerSession(cookies?: string | ParsedCookies): boolean {
+  let parsedCookies: ParsedCookies = {};
+  
+  // Parse cookies if provided as string
+  if (typeof cookies === 'string') {
+    parsedCookies = parseCookies(cookies);
+  } else if (cookies) {
+    parsedCookies = cookies;
+  }
+  
+  // Check for commissioner session in cookies (SSR)
+  const commissionerCookie = parsedCookies[COMMISSIONER_SESSION_KEY];
+  
+  if (commissionerCookie) {
+    try {
+      const session = JSON.parse(commissionerCookie) as CommissionerSession;
+      
+      // Check if session is valid and not expired
+      if (session.isCommissioner && session.expiresAt && !isSessionExpired(session.expiresAt)) {
+        return true;
+      }
+    } catch (error) {
+      console.error('[Session Manager] Error parsing commissioner cookie:', error);
+    }
+  }
+  
+  // Check localStorage (client-side only)
+  if (typeof window !== 'undefined') {
+    const commissionerLocal = localStorage.getItem(COMMISSIONER_SESSION_KEY);
+    if (commissionerLocal) {
+      try {
+        const session = JSON.parse(commissionerLocal) as CommissionerSession;
+        if (session.isCommissioner && session.expiresAt && !isSessionExpired(session.expiresAt)) {
+          return true;
+        }
+      } catch (error) {
+        console.error('[Session Manager] Error parsing commissioner localStorage:', error);
+      }
+    }
+  }
+  
+  return false;
+}
+
 // ============================================================================
 // SESSION DETECTION (SSR-compatible)
 // ============================================================================
@@ -407,13 +457,13 @@ export function dispatchSessionsUpdated(): void {
  * Get current game ID from localStorage
  */
 export function getCurrentGameId(): string {
-  if (typeof window === 'undefined') return 'default';
+  if (typeof window === 'undefined') return DEFAULT_GAME_ID;
   
   try {
-    return localStorage.getItem(GAME_ID_KEY) || 'default';
+    return localStorage.getItem(GAME_ID_KEY) || DEFAULT_GAME_ID;
   } catch (error) {
     console.error('[Session Manager] Error retrieving game ID:', error);
-    return 'default';
+    return DEFAULT_GAME_ID;
   }
 }
 
@@ -458,6 +508,7 @@ export default {
   getCommissionerSession,
   clearCommissionerSession,
   getValidCommissionerSession,
+  hasActiveCommissionerSession,
   
   // Validation
   isSessionExpired,

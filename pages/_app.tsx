@@ -47,7 +47,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <ChakraProvider value={system}>
-      <AppStateProvider>
+      <AppStateProvider initialGameId={pageProps.initialGameId}>
         <NavigationWrapper>
           <Component {...pageProps} />
         </NavigationWrapper>

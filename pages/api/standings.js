@@ -5,6 +5,7 @@
 import { neon } from '@neondatabase/serverless';
 import { generateETag, setCacheHeaders, checkETag, send304 } from './lib/cache-utils.js';
 import { calculateTemporaryScores, hasTemporaryScores, getProjectionSummary } from './lib/temporary-scoring.js';
+import { DEFAULT_GAME_ID } from '../../config/constants.js';
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -251,7 +252,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
 
   try {
     if (req.method === 'GET') {

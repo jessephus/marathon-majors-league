@@ -78,11 +78,15 @@ export default async function handler(req, res) {
         // Set commissioner session cookie (HttpOnly for security)
         // 30-day expiration matching localStorage session
         const expiryDays = 30;
+        const now = new Date();
+        const expiresAt = new Date(now.getTime() + expiryDays * 24 * 60 * 60 * 1000);
+        
         const sessionData = JSON.stringify({
             userId: user.id,
             email: user.email,
             isCommissioner: true,
-            loginTime: new Date().toISOString()
+            loginTime: now.toISOString(),
+            expiresAt: expiresAt.toISOString()
         });
         
         res.setHeader('Set-Cookie', [

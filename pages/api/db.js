@@ -7,11 +7,30 @@ const sql = neon(process.env.DATABASE_URL);
 // ATHLETES
 // ============================================================================
 
-export async function getAllAthletes(confirmedOnly = false) {
+/**
+ * Get all athletes with optional filtering by race confirmation
+ * 
+ * @param {boolean} confirmedOnly - If true, only return athletes confirmed for the specified race
+ * @param {number|null} raceId - The race ID to check confirmations against. If null, uses active race for game.
+ * @param {string} gameId - Game ID for determining active race context
+ * @returns {Object} Object with men and women arrays
+ */
+export async function getAllAthletes(confirmedOnly = false, raceId = null, gameId = 'default') {
   let athletes;
   
-  if (confirmedOnly) {
-    // Only return athletes confirmed for active races
+  // Determine which race to check confirmations against
+  let targetRaceId = raceId;
+  if (targetRaceId === null) {
+    // Get the active race for this specific game
+    const activeRace = await getActiveRaceForGame(gameId);
+    targetRaceId = activeRace?.id || null;
+    
+    // DEPRECATED: Old code used global is_active flag (marked for deletion)
+    // const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true ORDER BY date DESC LIMIT 1`;
+  }
+  
+  if (confirmedOnly && targetRaceId) {
+    // Only return athletes confirmed for the specified race
     // Calculate season_best from 2025 marathon race results only
     athletes = await sql`
       SELECT DISTINCT
@@ -40,15 +59,18 @@ export async function getAllAthletes(confirmedOnly = false) {
            AND arr.finish_time IS NOT NULL),
           a.season_best
         ) as "seasonBest",
+        true as "raceConfirmed",
         true as "nycConfirmed"
       FROM athletes a
       INNER JOIN athlete_races ar ON a.id = ar.athlete_id
-      INNER JOIN races r ON ar.race_id = r.id
-      WHERE r.is_active = true
+      WHERE ar.race_id = ${targetRaceId}
       ORDER BY a.gender, a.personal_best
     `;
-  } else {
-    // Return all athletes with confirmation status
+  } else if (confirmedOnly && !targetRaceId) {
+    // confirmedOnly is true but no race specified - return empty since no race context
+    athletes = [];
+  } else if (targetRaceId) {
+    // Return all athletes with confirmation status for the specified race
     // Calculate season_best from 2025 marathon race results only
     athletes = await sql`
       SELECT DISTINCT
@@ -80,11 +102,47 @@ export async function getAllAthletes(confirmedOnly = false) {
         CASE 
           WHEN ar.id IS NOT NULL THEN true 
           ELSE false 
+        END as "raceConfirmed",
+        CASE 
+          WHEN ar.id IS NOT NULL THEN true 
+          ELSE false 
         END as "nycConfirmed"
       FROM athletes a
-      LEFT JOIN athlete_races ar ON a.id = ar.athlete_id AND ar.race_id = (
-        SELECT id FROM races WHERE is_active = true LIMIT 1
-      )
+      LEFT JOIN athlete_races ar ON a.id = ar.athlete_id AND ar.race_id = ${targetRaceId}
+      ORDER BY a.gender, a.personal_best
+    `;
+  } else {
+    // No race specified and not confirmedOnly - return all athletes without confirmation status
+    athletes = await sql`
+      SELECT DISTINCT
+        a.id, 
+        a.name, 
+        a.country, 
+        a.gender, 
+        a.personal_best as pb, 
+        a.headshot_url as "headshotUrl",
+        a.world_athletics_id as "worldAthleticsId",
+        a.world_athletics_profile_url as "worldAthleticsProfileUrl",
+        a.marathon_rank as "marathonRank",
+        a.road_running_rank as "roadRunningRank",
+        a.overall_rank as "overallRank",
+        a.age,
+        a.date_of_birth as "dateOfBirth",
+        a.sponsor,
+        a.salary,
+        a.world_athletics_marathon_ranking_score as "worldAthleticsMarathonRankingScore",
+        COALESCE(
+          (SELECT MIN(arr.finish_time)
+           FROM athlete_race_results arr
+           WHERE arr.athlete_id = a.id
+           AND arr.year = '2025'
+           AND arr.discipline = 'Marathon'
+           AND arr.finish_time IS NOT NULL),
+          a.season_best
+        ) as "seasonBest",
+        false as "raceConfirmed",
+        false as "nycConfirmed"
+      FROM athletes a
       ORDER BY a.gender, a.personal_best
     `;
   }
@@ -408,20 +466,44 @@ export async function getAthleteProfile(athleteId, options = {}) {
  */
 export async function getGameState(gameId) {
   const [game] = await sql`
-    SELECT game_id, players, draft_complete, results_finalized, roster_lock_time, created_at, updated_at
-    FROM games
-    WHERE game_id = ${gameId}
+    SELECT 
+      g.game_id, 
+      g.players, 
+      g.draft_complete, 
+      g.results_finalized, 
+      g.roster_lock_time as game_roster_lock_time,
+      g.active_race_id,
+      g.created_at, 
+      g.updated_at,
+      r.name as active_race_name,
+      r.date as active_race_date,
+      r.location as active_race_location,
+      r.lock_time as race_lock_time
+    FROM games g
+    LEFT JOIN races r ON g.active_race_id = r.id
+    WHERE g.game_id = ${gameId}
   `;
   
   if (!game) {
     return null;
   }
   
+  // Prioritize race lock_time over game roster_lock_time
+  const rosterLockTime = game.race_lock_time || game.game_roster_lock_time;
+  
   return {
     players: game.players || [], // ⚠️ DEPRECATED - Query anonymous_sessions instead
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
-    roster_lock_time: game.roster_lock_time,
+    roster_lock_time: rosterLockTime,
+    active_race_id: game.active_race_id,
+    active_race: game.active_race_id ? {
+      id: game.active_race_id,
+      name: game.active_race_name,
+      date: game.active_race_date,
+      location: game.active_race_location,
+      roster_lock_time: game.race_lock_time
+    } : null,
     created_at: game.created_at,
     updated_at: game.updated_at
   };
@@ -438,10 +520,18 @@ export async function getGameState(gameId) {
  * Do not add teams to games.players[] array.
  */
 export async function createGame(gameId, players = []) {
+  // Get the active race for the 'default' game to use as template
+  // DEPRECATED: Old code used global is_active flag - use game's active_race_id instead
+  const activeRace = await getActiveRaceForGame('default');
+  const activeRaceId = activeRace?.id || null;
+  
+  // DEPRECATED: Old code that queried global flag (marked for deletion)
+  // const [activeRace] = await sql`SELECT id FROM races WHERE is_active = true ORDER BY date DESC LIMIT 1`;
+  
   const [game] = await sql`
-    INSERT INTO games (game_id, players, draft_complete, results_finalized)
-    VALUES (${gameId}, ${players}, false, false)
-    RETURNING game_id, players, draft_complete, results_finalized, roster_lock_time, created_at, updated_at
+    INSERT INTO games (game_id, players, draft_complete, results_finalized, active_race_id)
+    VALUES (${gameId}, ${players}, false, false, ${activeRaceId})
+    RETURNING game_id, players, draft_complete, results_finalized, roster_lock_time, active_race_id, created_at, updated_at
   `;
   
   return {
@@ -449,13 +539,14 @@ export async function createGame(gameId, players = []) {
     draft_complete: game.draft_complete,
     results_finalized: game.results_finalized,
     roster_lock_time: game.roster_lock_time,
+    active_race_id: game.active_race_id,
     created_at: game.created_at,
     updated_at: game.updated_at
   };
 }
 
 export async function updateGameState(gameId, updates) {
-  const { players, draft_complete, results_finalized, roster_lock_time } = updates;
+  const { players, draft_complete, results_finalized, roster_lock_time, active_race_id } = updates;
   
   // Get current game state or create if doesn't exist
   let game = await getGameState(gameId);
@@ -481,6 +572,10 @@ export async function updateGameState(gameId, updates) {
   
   if (roster_lock_time !== undefined) {
     updateParts.push({ field: 'roster_lock_time', value: roster_lock_time });
+  }
+  
+  if (active_race_id !== undefined) {
+    updateParts.push({ field: 'active_race_id', value: active_race_id });
   }
   
   if (updateParts.length === 0) {
@@ -511,6 +606,12 @@ export async function updateGameState(gameId, updates) {
       await sql`
         UPDATE games
         SET roster_lock_time = ${part.value}, updated_at = CURRENT_TIMESTAMP
+        WHERE game_id = ${gameId}
+      `;
+    } else if (part.field === 'active_race_id') {
+      await sql`
+        UPDATE games
+        SET active_race_id = ${part.value}, updated_at = CURRENT_TIMESTAMP
         WHERE game_id = ${gameId}
       `;
     }
@@ -768,7 +869,48 @@ export async function getAllRaces() {
   return races;
 }
 
+/**
+ * Get the active race for a specific game
+ * @param {string} gameId - The game ID to get the active race for
+ * @returns {Promise<Object|null>} The active race for the game, or null if none
+ */
+export async function getActiveRaceForGame(gameId) {
+  const [race] = await sql`
+    SELECT 
+      r.id, 
+      r.name, 
+      r.date, 
+      r.location, 
+      r.distance, 
+      r.event_type as "eventType",
+      r.world_athletics_event_id as "worldAthleticsEventId",
+      r.description,
+      r.is_active as "isActive",
+      r.lock_time as "lockTime",
+      r.logo_url as "logoUrl",
+      r.background_image_url as "backgroundImageUrl",
+      r.primary_color as "primaryColor",
+      r.secondary_color as "secondaryColor",
+      r.accent_color as "accentColor",
+      r.created_at as "createdAt",
+      r.updated_at as "updatedAt"
+    FROM races r
+    INNER JOIN games g ON g.active_race_id = r.id
+    WHERE g.game_id = ${gameId}
+  `;
+  return race || null;
+}
+
+/**
+ * DEPRECATED: Use getActiveRaceForGame(gameId) instead
+ * This function queries the global is_active flag and is marked for deletion.
+ * Each game should have its own active race via games.active_race_id.
+ * 
+ * Get all races marked as globally active (legacy behavior)
+ * @deprecated Use getActiveRaceForGame(gameId) for per-game active race
+ */
 export async function getActiveRaces() {
+  // DEPRECATED: Using global is_active flag - use game's active_race_id instead (marked for deletion)
   const races = await sql`
     SELECT 
       id, 
@@ -789,7 +931,7 @@ export async function getActiveRaces() {
       created_at as "createdAt",
       updated_at as "updatedAt"
     FROM races
-    WHERE is_active = true
+    WHERE is_active = true  -- DEPRECATED: Global flag, use games.active_race_id
     ORDER BY date DESC
   `;
   return races;

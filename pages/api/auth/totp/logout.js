@@ -19,15 +19,12 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     
-    try {
-        // Clear the commissioner session cookie by setting Max-Age to 0
-        res.setHeader('Set-Cookie', [
-            `marathon_fantasy_commissioner=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
-        ]);
-        
-        console.log('[TOTP Logout] Cleared commissioner cookie');
-        
-        return res.status(200).json({
+      try {
+          // Clear BOTH commissioner cookies (session + game selection) by setting Max-Age to 0
+          res.setHeader('Set-Cookie', [
+              `marathon_fantasy_commissioner=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
+              `current_game_id=; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`
+          ]);          console.log('[TOTP Logout] Cleared commissioner session and game selection cookies');        return res.status(200).json({
             success: true,
             message: 'Logged out successfully'
         });

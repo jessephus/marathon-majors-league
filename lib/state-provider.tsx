@@ -7,6 +7,8 @@
  */
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { DEFAULT_GAME_ID } from '../config/constants';
+import { hasActiveCommissionerSession } from './session-manager';
 
 // Type definitions matching legacy state structures
 export interface Athlete {
@@ -53,6 +55,7 @@ export interface AthleteResult {
 
 export interface GameState {
   gameId: string; // Current game identifier
+  activeRaceId: number | null; // Per-game active race (from games.active_race_id)
   athletes: {
     men: Athlete[];
     women: Athlete[];
@@ -97,9 +100,22 @@ interface AppContextValue extends AppState {
 // Default stub data (matches PROCESS_SSR_STRATEGY.md)
 const DEFAULT_STATE: AppState = {
   gameState: {
-    gameId: typeof window !== 'undefined' 
-      ? localStorage.getItem('current_game_id') || 'default'
-      : 'default',
+    gameId: (() => {
+      // SSR: Always use DEFAULT_GAME_ID
+      if (typeof window === 'undefined') {
+        return DEFAULT_GAME_ID;
+      }
+      
+      // Client: Check if user has active commissioner session
+      // NON-COMMISSIONERS: Always use DEFAULT_GAME_ID (ignore localStorage)
+      const isCommissioner = hasActiveCommissionerSession();
+      if (isCommissioner) {
+        return localStorage.getItem('current_game_id') || DEFAULT_GAME_ID;
+      } else {
+        return DEFAULT_GAME_ID;
+      }
+    })(),
+    activeRaceId: null,
     athletes: { men: [], women: [] },
     players: [],
     currentPlayer: null,
