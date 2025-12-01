@@ -439,14 +439,14 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
         fontWeight="bold"
         fontFamily="mono"
         lineHeight="1"
-        style={{ color: '#FFFFFF', margin: 0 }}
+        style={{ color: 'white', margin: 0 }}
       >
         {formatCountdownUnit(value)}
       </Text>
       <Text
         fontSize={{ base: 'xs', md: 'sm' }}
         textTransform="uppercase"
-        style={{ color: '#FFFFFF', margin: 0 }}
+        style={{ margin: 0 }}
       >
         {label}
       </Text>
