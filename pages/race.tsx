@@ -23,6 +23,7 @@ import { Button, Card, CardBody } from '@/components/chakra';
 import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
 import AthleteModal from '@/components/AthleteModal';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 import { DEFAULT_GAME_ID } from '@/config/constants';
 
 interface Race {
@@ -66,8 +67,18 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   
   // Read current_game_id cookie (commissioner's selected game) or use default
   // This ensures fresh read on every page load, respects logout
-  const gameIdCookie = context.req.cookies.current_game_id;
-  const gameId = gameIdCookie || DEFAULT_GAME_ID;
+    // Determine commissioner status server-side, then pick gameId accordingly
+    const cookies = context.req.headers.cookie || '';
+
+    const isCommissioner = hasActiveCommissionerSession(cookies);
+
+    let gameId = DEFAULT_GAME_ID;
+    if (isCommissioner) {
+      const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+      if (cookieMatch) {
+        gameId = cookieMatch[1];
+      }
+    }
   
   // Fetch game state server-side to get activeRaceId immediately
   // This eliminates the "race not found" delay on page load

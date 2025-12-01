@@ -41,6 +41,7 @@ import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton, Checkbox }
 import Head from 'next/head';
 import type { GetServerSidePropsContext } from 'next';
 import { DEFAULT_GAME_ID } from '@/config/constants';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 
 // ===========================
 // Types
@@ -717,10 +718,17 @@ export default function AthletesBrowsePage({ initialGameId }: AthletesBrowsePage
  * Pattern matches: /pages/race.tsx, /pages/leaderboard.tsx
  */
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  // Read current_game_id cookie (commissioner's selected game) or use default
-  // This ensures fresh read on every page load, respects logout
-  const gameIdCookie = context.req.cookies.current_game_id;
-  const gameId = gameIdCookie || DEFAULT_GAME_ID;
+  // Determine commissioner status server-side, then pick gameId accordingly
+  const cookies = context.req.headers.cookie || '';
+  const isCommissioner = hasActiveCommissionerSession(cookies);
+
+  let gameId = DEFAULT_GAME_ID;
+  if (isCommissioner) {
+    const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+    if (cookieMatch) {
+      gameId = cookieMatch[1];
+    }
+  }
   
   return {
     props: {
