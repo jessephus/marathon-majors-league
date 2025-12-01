@@ -8,7 +8,7 @@ import TeamCreationModal from '../components/TeamCreationModal'
 import CommissionerTOTPModal from '../components/CommissionerTOTPModal'
 import Footer from '../components/Footer'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
-import { getCurrentGameId } from '../lib/session-manager'
+import { getCurrentGameId, hasActiveCommissionerSession } from '../lib/session-manager'
 import { DEFAULT_GAME_ID } from '../config/constants'
 
 export async function getServerSideProps(context) {
@@ -23,13 +23,15 @@ export async function getServerSideProps(context) {
   const cookies = req.headers.cookie || '';
   const sessionType = detectSessionType(cookies);
   
-  // Get game ID from cookie (server-side), fallback to DEFAULT_GAME_ID
-  // This ensures that when a commissioner logs out and clears their game context,
-  // the next team created will use the DEFAULT_GAME_ID instead of the commissioner's game
+  // Get game ID: only honor cookie when a commissioner session is active.
+  // Otherwise, force DEFAULT_GAME_ID for regular users.
   let gameId = DEFAULT_GAME_ID;
-  const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
-  if (cookieMatch) {
-    gameId = cookieMatch[1];
+  const isCommissioner = hasActiveCommissionerSession(cookies);
+  if (isCommissioner) {
+    const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+    if (cookieMatch) {
+      gameId = cookieMatch[1];
+    }
   }
   
   return {
@@ -79,9 +81,9 @@ export default function Home({ serverSessionType, hasURLSession, initialGameId }
       // and we'll keep using the SSR initialGameId (DEFAULT_GAME_ID)
       const currentGameId = getCurrentGameId();
       
-      // Only update gameId if there's a commissioner-set game ID in localStorage
-      // Otherwise, keep the SSR initialGameId (which defaults to DEFAULT_GAME_ID)
-      if (currentGameId !== DEFAULT_GAME_ID) {
+      // Only update gameId from localStorage when the client is truly in commissioner mode.
+      // Regular users must continue to use the SSR initialGameId (DEFAULT_GAME_ID).
+      if (clientSessionType === SessionType.COMMISSIONER && currentGameId && currentGameId !== DEFAULT_GAME_ID) {
         setGameId(currentGameId);
       }
       

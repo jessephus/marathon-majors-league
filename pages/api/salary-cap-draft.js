@@ -247,9 +247,15 @@ export default async function handler(req, res) {
       }
 
       // Update game state to mark salary cap draft as complete
+      // AND add player to players array if not already present
       await sql`
         UPDATE games
-        SET draft_complete = TRUE
+        SET 
+          draft_complete = TRUE,
+          players = CASE 
+            WHEN ${playerCode} = ANY(players) THEN players
+            ELSE array_append(players, ${playerCode})
+          END
         WHERE game_id = ${gameId}
       `;
 
