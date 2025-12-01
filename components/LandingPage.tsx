@@ -439,14 +439,14 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
         fontWeight="bold"
         fontFamily="mono"
         lineHeight="1"
-        sx={{ color: '#FFFFFF !important' }}
+        style={{ color: '#FFFFFF', margin: 0 }}
       >
         {formatCountdownUnit(value)}
       </Text>
       <Text
         fontSize={{ base: 'xs', md: 'sm' }}
         textTransform="uppercase"
-        sx={{ color: '#FFFFFF !important' }}
+        style={{ color: '#FFFFFF', margin: 0 }}
       >
         {label}
       </Text>
@@ -464,7 +464,7 @@ function CountdownSeparator() {
       fontWeight="bold"
       px={{ base: 1, md: 2 }}
       lineHeight="1"
-      sx={{ color: '#FFFFFF !important' }}
+      style={{ color: '#FFFFFF', margin: 0 }}
     >
       :
     </Text>
