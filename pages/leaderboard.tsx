@@ -14,6 +14,8 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Head from 'next/head';
 import { GetServerSidePropsContext } from 'next';
 import { AppStateProvider, useGameState, useSessionState } from '@/lib/state-provider';
+import { DEFAULT_GAME_ID } from '@/config/constants';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 import { useStateManagerEvent } from '@/lib/use-state-manager';
 import { apiClient, createServerApiClient, clearCache } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
@@ -126,16 +128,15 @@ function LeaderboardPageContent({
       // Clear cache to ensure fresh data
       clearCache();
 
-      // Fetch standings, results, game state, and active race in parallel
-      const [standingsData, resultsData, gameStateData, activeRaces] = await Promise.all([
+      // Fetch standings, results, and game state in parallel
+      const [standingsData, resultsData, gameStateData] = await Promise.all([
         apiClient.standings.fetch(gameId),
         apiClient.results.fetch(gameId),
-        apiClient.gameState.load(gameId),
-        apiClient.races.list({ active: true })
+        apiClient.gameState.load(gameId)
       ]);
 
-      // Extract lock time from active race (races table is the source of truth)
-      const lockTime = activeRaces && activeRaces.length > 0 ? activeRaces[0].lockTime : null;
+      // Extract lock time from game state (games table is the source of truth)
+      const lockTime = (gameStateData as any)?.rosterLockTime || null;
 
       setStandings(standingsData);
 
@@ -417,11 +418,18 @@ export default function NewLeaderboardPage(props: LeaderboardPageProps) {
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // Check if user has active commissioner session
+  const isCommissioner = hasActiveCommissionerSession(context.req.cookies);
+  
   // Get gameId from cookie (set by game switcher in Footer component)
-  // Falls back to query param, then 'default'
+  // Falls back to query param, then DEFAULT_GAME_ID
+  // NON-COMMISSIONERS: Always use DEFAULT_GAME_ID (ignore cookies/query params)
   const gameIdCookie = context.req.cookies.current_game_id;
   const gameIdQuery = context.query.gameId;
-  const gameId = gameIdCookie || gameIdQuery || 'default';
+  
+  const gameId = isCommissioner 
+    ? (gameIdCookie || gameIdQuery || DEFAULT_GAME_ID)
+    : DEFAULT_GAME_ID;
 
   // Construct base URL for server-side API requests
   const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
@@ -450,7 +458,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
   return {
     props: {
-      gameId: typeof gameId === 'string' ? gameId : 'default',
+      gameId: typeof gameId === 'string' ? gameId : DEFAULT_GAME_ID,
       initialStandings,
       initialResults,
       cacheTimestamp,

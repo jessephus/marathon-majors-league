@@ -81,6 +81,7 @@ export default function Footer({
     const gameNames: Record<string, string> = {
       'default': 'Default Game',
       'NY2025': 'NY 2025',
+      'Valencia-25': 'Valencia 2025',
       'demo-game': 'Demo Game'
     };
 
@@ -104,6 +105,7 @@ export default function Footer({
   const gameOptions: SelectOption[] = [
     { value: 'default', label: 'Default Game' },
     { value: 'NY2025', label: 'NY 2025' },
+    { value: 'Valencia-25', label: 'Valencia 2025'},
     { value: 'demo-game', label: 'Demo Game' }
   ];
 
@@ -179,6 +181,13 @@ export default function Footer({
           localStorage.removeItem('commissioner_state'); // Legacy cleanup
           localStorage.removeItem('commissionerLoginTime');
           localStorage.removeItem('commissionerExpiresAt');
+          
+          // CRITICAL: Clear game context so regular users return to DEFAULT_GAME_ID
+          // When a commissioner logs out, they should not retain the game they were managing
+          localStorage.removeItem('current_game_id');
+          
+          // Clear game ID cookie as well (for SSR pages)
+          document.cookie = 'current_game_id=; path=/; max-age=0; SameSite=Lax';
           
           // Clear commissioner session global (for app.js compatibility)
           if (typeof window !== 'undefined' && window.commissionerSession) {

@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless';
+import { DEFAULT_GAME_ID } from '../../../config/constants';
 
 const SALARY_CAP = 30000;
 
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const gameId = req.query.gameId || 'default';
+  const gameId = req.query.gameId || DEFAULT_GAME_ID;
   const DATABASE_URL = process.env.DATABASE_URL;
 
   if (!DATABASE_URL) {

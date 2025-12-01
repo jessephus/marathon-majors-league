@@ -8,7 +8,8 @@ import TeamCreationModal from '../components/TeamCreationModal'
 import CommissionerTOTPModal from '../components/CommissionerTOTPModal'
 import Footer from '../components/Footer'
 import { detectSessionType, getSessionFromURL, SessionType } from '../lib/session-utils'
-import { getCurrentGameId } from '../lib/session-manager'
+import { getCurrentGameId, hasActiveCommissionerSession } from '../lib/session-manager'
+import { DEFAULT_GAME_ID } from '../config/constants'
 
 export async function getServerSideProps(context) {
   const { req, query } = context;
@@ -22,20 +23,33 @@ export async function getServerSideProps(context) {
   const cookies = req.headers.cookie || '';
   const sessionType = detectSessionType(cookies);
   
+  // Get game ID: only honor cookie when a commissioner session is active.
+  // Otherwise, force DEFAULT_GAME_ID for regular users.
+  let gameId = DEFAULT_GAME_ID;
+  const isCommissioner = hasActiveCommissionerSession(cookies);
+  if (isCommissioner) {
+    const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+    if (cookieMatch) {
+      gameId = cookieMatch[1];
+    }
+  }
+  
   return {
     props: {
       serverSessionType: sessionType,
       hasURLSession: !!sessionToken,
+      initialGameId: gameId,
     },
   };
 }
 
-export default function Home({ serverSessionType, hasURLSession }) {
+export default function Home({ serverSessionType, hasURLSession, initialGameId }) {
   const router = useRouter();
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [isCommissionerModalOpen, setIsCommissionerModalOpen] = useState(false);
-  const [gameId, setGameId] = useState('default');
+  // Initialize with SSR game ID (from cookie) to ensure correct game context
+  const [gameId, setGameId] = useState(initialGameId || DEFAULT_GAME_ID);
   
   // Handle action query parameter (works for both initial load and client-side navigation)
   useEffect(() => {
@@ -62,9 +76,16 @@ export default function Home({ serverSessionType, hasURLSession }) {
   // Client-side session detection (after hydration)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Get current game ID
+      // Get current game ID from localStorage (commissioner context)
+      // For regular users, this should be empty (cleared on logout)
+      // and we'll keep using the SSR initialGameId (DEFAULT_GAME_ID)
       const currentGameId = getCurrentGameId();
-      setGameId(currentGameId);
+      
+      // Only update gameId from localStorage when the client is truly in commissioner mode.
+      // Regular users must continue to use the SSR initialGameId (DEFAULT_GAME_ID).
+      if (clientSessionType === SessionType.COMMISSIONER && currentGameId && currentGameId !== DEFAULT_GAME_ID) {
+        setGameId(currentGameId);
+      }
       
       // Check if there's a session token in the URL
       const sessionToken = router.query.session;

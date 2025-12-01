@@ -15,6 +15,8 @@ import { GetServerSidePropsContext } from 'next';
 import { Box, VStack, Heading, Text } from '@chakra-ui/react';
 import { AppStateProvider, useSessionState, useGameState } from '@/lib/state-provider';
 import { apiClient, createServerApiClient, salaryCapDraftApi } from '@/lib/api-client';
+import { DEFAULT_GAME_ID } from '@/config/constants';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
@@ -67,6 +69,13 @@ interface TeamSessionPageProps {
     rosterLockTime: string | null;
     resultsFinalized: boolean;
     draftComplete: boolean;
+    activeRaceId?: number | null;
+    activeRace?: {
+      id: number;
+      name: string;
+      date: string;
+      location: string;
+    } | null;
   };
   existingRoster: TeamRoster | null;
   isRosterComplete: boolean;  // Whether roster has been fully submitted
@@ -150,7 +159,7 @@ function TeamSessionPageContent({
     
     setLoadingFullAthletes(true);
     try {
-      const athletes = await apiClient.athletes.list({ confirmedOnly: false });
+      const athletes = await apiClient.athletes.list({ confirmedOnly: false, gameId: gameState.gameId });
       
       // Update game state with full athlete list
       setGameState({
@@ -575,6 +584,7 @@ function TeamSessionPageContent({
           totalBudget={DEFAULT_BUDGET}
           onSelect={handleAthleteSelect}
           onClose={() => setIsModalOpen(false)}
+          activeRaceName={gameStateData.activeRace?.name}
         />
 
         <Footer mode="team" showCopyright={true} />
@@ -604,6 +614,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           rosterLockTime: null,
           resultsFinalized: false,
           draftComplete: false,
+          activeRaceId: null,
+          activeRace: null,
         },
         existingRoster: null,
         isRosterComplete: false,
@@ -634,6 +646,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
             rosterLockTime: null,
             resultsFinalized: false,
             draftComplete: false,
+            activeRaceId: null,
+            activeRace: null,
           },
           existingRoster: null,
           isRosterComplete: false,
@@ -641,7 +655,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       };
     }
 
-    const gameId = sessionData.session.gameId || 'default';
+    // Check if user has active commissioner session
+    const isCommissioner = hasActiveCommissionerSession(context.req.cookies);
+    
+    // Get gameId from session data
+    // NON-COMMISSIONERS: Always use DEFAULT_GAME_ID (override session gameId)
+    const sessionGameId = sessionData.session.gameId;
+    const gameId = isCommissioner 
+      ? (sessionGameId || DEFAULT_GAME_ID)
+      : DEFAULT_GAME_ID;
 
     // Fetch game state using API client (benefits from caching headers and retry logic)
     const gameStateData = await serverApi.gameState.load(gameId);
@@ -720,6 +742,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           rosterLockTime: gameStateData.rosterLockTime || null,
           resultsFinalized: gameStateData.resultsFinalized || false,
           draftComplete: gameStateData.draftComplete || false,
+          activeRaceId: gameStateData.activeRaceId || null,
+          activeRace: gameStateData.activeRace || null,
         },
         existingRoster,
         isRosterComplete,
@@ -737,6 +761,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           rosterLockTime: null,
           resultsFinalized: false,
           draftComplete: false,
+          activeRaceId: null,
+          activeRace: null,
         },
         existingRoster: null,
         isRosterComplete: false,

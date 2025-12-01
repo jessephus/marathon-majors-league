@@ -39,6 +39,9 @@ import { MagnifyingGlassIcon, ChevronDownIcon } from '@heroicons/react/24/outlin
 import AthleteModal from '@/components/AthleteModal';
 import { Button, Badge, AthleteBrowseCard, AthleteBrowseCardSkeleton, Checkbox } from '@/components/chakra';
 import Head from 'next/head';
+import type { GetServerSidePropsContext } from 'next';
+import { DEFAULT_GAME_ID } from '@/config/constants';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
 
 // ===========================
 // Types
@@ -57,7 +60,8 @@ interface Athlete {
   sponsor?: string;
   seasonBest?: string;
   worldAthleticsProfileUrl?: string;
-  nycConfirmed?: boolean;
+  nycConfirmed?: boolean; // Deprecated - use raceConfirmed
+  raceConfirmed?: boolean; // New field - confirmed for active race
 }
 
 type SortOption = 'fantasyScore' | 'pb' | 'rank' | 'salary' | 'age' | 'name';
@@ -163,7 +167,11 @@ function getCountryFlag(countryCode: string): string {
 // Main Page Component
 // ===========================
 
-export default function AthletesBrowsePage() {
+interface AthletesBrowsePageProps {
+  initialGameId: string;
+}
+
+export default function AthletesBrowsePage({ initialGameId }: AthletesBrowsePageProps) {
   // Data state
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
@@ -211,7 +219,10 @@ export default function AthletesBrowsePage() {
     async function fetchAthletes() {
       try {
         setLoading(true);
-        const response = await fetch('/api/athletes');
+        // Use SSR-provided gameId (respects commissioner's game selection and logout)
+        const activeGameId = initialGameId;
+        // Pass gameId to fetch confirmed athletes for the active race of this game
+        const response = await fetch(`/api/athletes?gameId=${activeGameId}`);
         
         if (!response.ok) {
           // Use demo data if API fails (development/preview environments)
@@ -247,7 +258,7 @@ export default function AthletesBrowsePage() {
     }
     
     fetchAthletes();
-  }, []);
+  }, [initialGameId]); // Re-fetch if gameId changes
 
   // Get unique countries for dropdown
   const countries = useMemo(() => {
@@ -278,9 +289,9 @@ export default function AthletesBrowsePage() {
       );
     }
     
-    // Apply confirmation filter
+    // Apply confirmation filter (supports both old and new field names)
     if (showConfirmedOnly) {
-      filtered = filtered.filter(a => a.nycConfirmed === true);
+      filtered = filtered.filter(a => a.raceConfirmed === true || a.nycConfirmed === true);
     }
     
     // Calculate fantasy scores for sorting
@@ -688,4 +699,40 @@ export default function AthletesBrowsePage() {
       `}</style>
     </>
   );
+}
+
+// ===========================
+// Server-Side Props
+// ===========================
+
+/**
+ * Server-Side Rendering (SSR) for Athletes Page
+ * 
+ * Reads current_game_id cookie server-side to ensure correct game context.
+ * This ensures:
+ * - Fresh cookie read on every page load
+ * - Respects commissioner's game selection via Footer game switcher
+ * - Respects logout (cookie cleared)
+ * - No flash of wrong content during hydration
+ * 
+ * Pattern matches: /pages/race.tsx, /pages/leaderboard.tsx
+ */
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // Determine commissioner status server-side, then pick gameId accordingly
+  const cookies = context.req.headers.cookie || '';
+  const isCommissioner = hasActiveCommissionerSession(cookies);
+
+  let gameId = DEFAULT_GAME_ID;
+  if (isCommissioner) {
+    const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+    if (cookieMatch) {
+      gameId = cookieMatch[1];
+    }
+  }
+  
+  return {
+    props: {
+      initialGameId: gameId,
+    },
+  };
 }

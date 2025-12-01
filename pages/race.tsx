@@ -18,10 +18,13 @@ import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
 import { Box, Container, Heading, Text, VStack, SimpleGrid } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
+import { useGameState } from '@/lib/state-provider';
 import { Button, Card, CardBody } from '@/components/chakra';
 import { RaceHero, CompactAthleteList } from '@/components/race';
 import Footer from '@/components/Footer';
 import AthleteModal from '@/components/AthleteModal';
+import { hasActiveCommissionerSession } from '@/lib/session-manager';
+import { DEFAULT_GAME_ID } from '@/config/constants';
 
 interface Race {
   id: number;
@@ -55,29 +58,95 @@ interface Athlete {
 
 interface RacePageProps {
   raceId: string | null;
+  initialGameId: string; // Added to pass SSR cookie reading
+  initialActiveRaceId: number | null; // Added to eliminate client-side wait
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { id } = context.query;
   
+  // Read current_game_id cookie (commissioner's selected game) or use default
+  // This ensures fresh read on every page load, respects logout
+    // Determine commissioner status server-side, then pick gameId accordingly
+    const cookies = context.req.headers.cookie || '';
+
+    const isCommissioner = hasActiveCommissionerSession(cookies);
+
+    let gameId = DEFAULT_GAME_ID;
+    if (isCommissioner) {
+      const cookieMatch = cookies.match(/current_game_id=([^;]+)/);
+      if (cookieMatch) {
+        gameId = cookieMatch[1];
+      }
+    }
+  
+  // Fetch game state server-side to get activeRaceId immediately
+  // This eliminates the "race not found" delay on page load
+  let activeRaceId: number | null = null;
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/game-state?gameId=${gameId}`);
+    if (response.ok) {
+      const data = await response.json();
+      activeRaceId = data.activeRaceId || null;
+    }
+  } catch (err) {
+    console.error('[Race SSR] Failed to fetch game state:', err);
+    // Continue with null - component will handle gracefully
+  }
+  
   return {
     props: {
       raceId: id ? String(id) : null,
+      initialGameId: gameId, // Pass to component for initialization
+      initialActiveRaceId: activeRaceId, // Pass activeRaceId from SSR
     },
   };
 }
 
-export default function RacePage({ raceId }: RacePageProps) {
+export default function RacePage({ raceId, initialGameId, initialActiveRaceId }: RacePageProps) {
   const router = useRouter();
+  const { gameState, setGameState } = useGameState();
   const [race, setRace] = useState<Race | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Initialize game state with SSR-provided activeRaceId (eliminates client-side wait)
+  useEffect(() => {
+    const loadGameState = async () => {
+      try {
+        const response = await fetch(`/api/game-state?gameId=${initialGameId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setGameState({
+            activeRaceId: data.activeRaceId,
+            draftComplete: data.draftComplete,
+            resultsFinalized: data.resultsFinalized,
+            rosterLockTime: data.rosterLockTime,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load game state:', err);
+      }
+    };
+    
+    // Set initial activeRaceId from SSR immediately (no wait)
+    if (initialActiveRaceId !== null) {
+      setGameState({
+        activeRaceId: initialActiveRaceId,
+      });
+    }
+    
+    // Still load full game state for other properties (draft status, etc.)
+    loadGameState();
+  }, [initialGameId, initialActiveRaceId, setGameState]);
+
+  // Load race details when dependencies change - uses SSR-provided activeRaceId
   useEffect(() => {
     loadRaceDetails();
-  }, [raceId]);
+  }, [raceId, initialActiveRaceId, gameState.activeRaceId]);
 
   const handleViewAll = () => {
     router.push('/athletes');
@@ -98,31 +167,40 @@ export default function RacePage({ raceId }: RacePageProps) {
       setLoading(true);
       setError(null);
       
-      // If no race ID provided, fetch active races and use the first one
+      // If no race ID provided, use the game's active race
       if (!raceId) {
-        const activeRaces = await apiClient.races.list({ active: true });
+        // Use SSR-provided activeRaceId first (immediate, no wait!)
+        // Falls back to gameState if SSR didn't provide it
+        const activeRaceId = initialActiveRaceId || gameState.activeRaceId;
         
-        // Handle both array and single object responses
-        if (Array.isArray(activeRaces) && activeRaces.length > 0) {
-          // Fetch the first active race with athletes
-          const raceData = await apiClient.races.list({ 
-            id: activeRaces[0].id, 
-            includeAthletes: true 
-          });
-          
-          // Handle response type - could be object or array
-          if (Array.isArray(raceData) && raceData.length > 0) {
-            setRace(raceData[0]);
-          } else if (!Array.isArray(raceData) && raceData) {
-            setRace(raceData);
-          } else {
-            setError('Race not found');
-          }
-        } else if (!Array.isArray(activeRaces) && activeRaces) {
-          // If API returns a single object when active=true
-          setRace(activeRaces);
+        console.log('[Race Page] gameState.activeRaceId:', gameState.activeRaceId);
+        console.log('[Race Page] initialActiveRaceId (SSR):', initialActiveRaceId);
+        console.log('[Race Page] gameState.gameId:', gameState.gameId);
+        
+        // Check if we have an activeRaceId
+        if (activeRaceId === undefined || activeRaceId === null) {
+          // No activeRaceId available (shouldn't happen with SSR, but handle gracefully)
+          console.log('[Race Page] No activeRaceId available');
+          setError('Race not found');
+          setLoading(false);
+          return;
+        }
+        
+        console.log('[Race Page] Fetching race with ID:', activeRaceId);
+        
+        // Fetch the game's active race with athletes
+        const raceData = await apiClient.races.list({ 
+          id: activeRaceId, 
+          includeAthletes: true 
+        });
+        
+        // Handle response type - could be object or array
+        if (Array.isArray(raceData) && raceData.length > 0) {
+          setRace(raceData[0]);
+        } else if (!Array.isArray(raceData) && raceData) {
+          setRace(raceData);
         } else {
-          setError('No active races found');
+          setError('Race not found');
         }
         return;
       }

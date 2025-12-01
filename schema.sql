@@ -104,11 +104,13 @@ CREATE TABLE IF NOT EXISTS games (
     results_finalized BOOLEAN DEFAULT FALSE,
     roster_lock_time TIMESTAMP WITH TIME ZONE,
     commissioner_password VARCHAR(255) DEFAULT 'kipchoge',
+    active_race_id INTEGER REFERENCES races(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_games_game_id ON games(game_id);
+CREATE INDEX idx_games_active_race_id ON games(active_race_id);
 
 -- Player rankings table (replacing rankings.json)
 -- ⚠️ DEPRECATED: This table is part of the legacy snake draft system.
