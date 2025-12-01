@@ -15,16 +15,15 @@ const sql = neon(process.env.DATABASE_URL);
  * Also shows teams with submitted rosters even when no race results exist yet
  */
 async function calculateStandings(gameId) {
-  // Get all players in the game
+  // Get game settings (results_finalized flag)
   const [game] = await sql`
-    SELECT players, results_finalized FROM games WHERE game_id = ${gameId}
+    SELECT results_finalized FROM games WHERE game_id = ${gameId}
   `;
   
   if (!game) {
     return { standings: [], isTemporary: false, projectionInfo: null, hasResults: false };
   }
   
-  const players = game.players || [];
   const isFinalized = game.results_finalized || false;
   
   // Get all teams with complete/submitted rosters (using is_complete flag)
@@ -85,9 +84,9 @@ async function calculateStandings(gameId) {
   
   const standings = [];
   
-  // Calculate stats for each player who has a submitted roster
-  // If no results exist yet, show all teams with 0 points
-  const playersToShow = hasAnyResults ? players : teamsWithRosters;
+  // Show all teams with complete rosters (from salary_cap_teams table)
+  // ✅ FIXED: Always use salary_cap_teams table, not deprecated games.players column
+  const playersToShow = teamsWithRosters;
   
   console.log('📊 About to iterate. hasAnyResults:', hasAnyResults, 'playersToShow:', playersToShow);
   

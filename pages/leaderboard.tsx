@@ -329,7 +329,7 @@ function LeaderboardPageContent({
                 {loading && !standings ? (
                   <div className="loading-spinner">Loading leaderboard...</div>
                 ) : !standings || (!standings.standings || standings.standings.length === 0) ? (
-                  <p>No teams have submitted rosters yet. Be the first to create a team!</p>
+                  <p style={{ padding: '15px', fontFamily: 'Roboto' }}>No teams have submitted rosters yet. Be the first to create a team!</p>
                 ) : (
                   <LeaderboardTable
                     standings={sortedStandings}
