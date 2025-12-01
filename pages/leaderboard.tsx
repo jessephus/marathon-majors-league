@@ -177,10 +177,10 @@ function LeaderboardPageContent({
 
     // Only set up interval if page is visible and focused
     if (isVisible && isFocused) {
-      // Set up 60-second refresh interval
+      // Set up 15-second refresh interval (reduced from 60s for faster team updates)
       intervalRef.current = setInterval(() => {
         fetchData();
-      }, 60000);
+      }, 15000);
     } else {
       console.log('⏸️ Auto-refresh paused');
     }

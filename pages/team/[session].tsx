@@ -336,7 +336,10 @@ function TeamSessionPageContent({
       setIsEditingRoster(false);
 
       alert('Team submitted successfully!');
-      router.push('/leaderboard');
+      
+      // Force fresh data by adding timestamp to URL (prevents Next.js client-side caching)
+      const timestamp = Date.now();
+      router.push(`/leaderboard?t=${timestamp}`);
     } catch (err) {
       console.error('Failed to submit team:', err);
       alert(`Failed to submit team: ${err instanceof Error ? err.message : 'Please try again.'}`);
