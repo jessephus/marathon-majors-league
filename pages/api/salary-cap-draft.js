@@ -18,6 +18,7 @@ async function verifySessionToken(sql, sessionToken) {
     }
     
     return {
+      sessionId: result[0].session_id,
       teamName: result[0].display_name || result[0].player_code,
       displayName: result[0].display_name,
       playerCode: result[0].player_code,
@@ -234,15 +235,15 @@ export default async function handler(req, res) {
       // Insert new team with is_complete=TRUE
       for (const athlete of team.men) {
         await sql`
-          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'men', ${calculatedTotal}, TRUE)
+          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete, session_id)
+          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'men', ${calculatedTotal}, TRUE, ${user.sessionId})
         `;
       }
 
       for (const athlete of team.women) {
         await sql`
-          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete)
-          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'women', ${calculatedTotal}, TRUE)
+          INSERT INTO salary_cap_teams (game_id, player_code, athlete_id, gender, total_spent, is_complete, session_id)
+          VALUES (${gameId}, ${playerCode}, ${athlete.id}, 'women', ${calculatedTotal}, TRUE, ${user.sessionId})
         `;
       }
 
