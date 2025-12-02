@@ -28,7 +28,6 @@ interface TeamCreationModalProps {
 
 export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' }: TeamCreationModalProps) {
   const [teamName, setTeamName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle Escape key to close modal
@@ -57,6 +56,7 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
     
     try {
       // Create anonymous session via API
+      // Using team name for both display and player code
       const response = await fetch('/api/session/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,7 +80,6 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
         token: data.session.token,
         teamName: teamName.trim(),
         playerCode: data.session.playerCode || teamName.trim(),
-        ownerName: ownerName.trim() || null,
         expiresAt: data.session.expiresAt
       };
       localStorage.setItem('marathon_fantasy_team', JSON.stringify(sessionData));
@@ -102,7 +101,6 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
 
   const handleClose = () => {
     setTeamName('');
-    setOwnerName('');
     onClose();
   };
 
@@ -138,21 +136,7 @@ export default function TeamCreationModal({ isOpen, onClose, gameId = 'default' 
               variant="outline"
               size="md"
             />
-          </FormControl>
-          <FormControl style={{ marginBottom: '24px' }}>
-            <FormLabel htmlFor="team-owner">Your Name (optional)</FormLabel>
-            <Input
-              id="team-owner"
-              type="text"
-              value={ownerName}
-              onChange={(e) => setOwnerName(e.target.value)}
-              placeholder="e.g., John Smith"
-              maxLength={50}
-              isDisabled={isSubmitting}
-              variant="outline"
-              size="md"
-            />
-            <FormHelperText>This will be displayed on the leaderboard</FormHelperText>
+            <FormHelperText>This will be used as your team name on the leaderboard</FormHelperText>
           </FormControl>
           <div className="form-actions">
             <Button

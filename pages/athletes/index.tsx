@@ -182,7 +182,17 @@ export default function AthletesBrowsePage({ initialGameId }: AthletesBrowsePage
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('fantasyScore');
-  const [showConfirmedOnly, setShowConfirmedOnly] = useState(false);
+  const [showConfirmedOnly, setShowConfirmedOnly] = useState(() => {
+    // Initialize from localStorage, default to true (show confirmed only)
+    if (typeof window === 'undefined') return true; // SSR default
+    const saved = localStorage.getItem('athletesFilterConfirmedOnly');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  
+  // Persist filter preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('athletesFilterConfirmedOnly', JSON.stringify(showConfirmedOnly));
+  }, [showConfirmedOnly]);
   
   // Pagination state
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
