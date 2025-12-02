@@ -35,7 +35,27 @@ function AthleteModalTestContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Load athletes on mount
+  // Mock athlete data for testing when API is unavailable
+  const mockAthletes = {
+    men: [
+      { id: 1, name: 'Kelvin Kiptum', country: 'KEN', pb: '2:00:35', gender: 'men', salary: 14000, marathonRank: 1, overallRank: 1, headshotUrl: null },
+      { id: 2, name: 'Eliud Kipchoge', country: 'KEN', pb: '2:01:09', gender: 'men', salary: 12000, marathonRank: 2, overallRank: 2, headshotUrl: null },
+      { id: 3, name: 'Kenenisa Bekele', country: 'ETH', pb: '2:01:41', gender: 'men', salary: 10000, marathonRank: 3, overallRank: 5, headshotUrl: null },
+      { id: 4, name: 'Tamirat Tola', country: 'ETH', pb: '2:03:39', gender: 'men', salary: 8000, marathonRank: 4, overallRank: 8, headshotUrl: null },
+      { id: 5, name: 'Marius Kipserem', country: 'KEN', pb: '2:04:11', gender: 'men', salary: 7000, marathonRank: 5, overallRank: 12, headshotUrl: null },
+      { id: 6, name: 'Mohamed Reda El Aaraby', country: 'MAR', pb: '2:05:42', gender: 'men', salary: 5000, marathonRank: 10, overallRank: 25, headshotUrl: null },
+    ] as Athlete[],
+    women: [
+      { id: 101, name: 'Tigst Assefa', country: 'ETH', pb: '2:11:53', gender: 'women', salary: 14000, marathonRank: 1, overallRank: 1, headshotUrl: null },
+      { id: 102, name: 'Sifan Hassan', country: 'NED', pb: '2:13:44', gender: 'women', salary: 12000, marathonRank: 2, overallRank: 2, headshotUrl: null },
+      { id: 103, name: 'Brigid Kosgei', country: 'KEN', pb: '2:14:04', gender: 'women', salary: 10000, marathonRank: 3, overallRank: 3, headshotUrl: null },
+      { id: 104, name: 'Ruth Chepngetich', country: 'KEN', pb: '2:14:18', gender: 'women', salary: 9000, marathonRank: 4, overallRank: 5, headshotUrl: null },
+      { id: 105, name: 'Amane Beriso', country: 'ETH', pb: '2:14:58', gender: 'women', salary: 8000, marathonRank: 5, overallRank: 8, headshotUrl: null },
+      { id: 106, name: 'Hellen Obiri', country: 'KEN', pb: '2:18:38', gender: 'women', salary: 7000, marathonRank: 8, overallRank: 15, headshotUrl: null },
+    ] as Athlete[],
+  };
+
+  // Load athletes on mount - fallback to mock data if API fails
   useEffect(() => {
     async function loadAthletes() {
       try {
@@ -48,7 +68,9 @@ function AthleteModalTestContent() {
         });
         setLoading(false);
       } catch (err) {
-        console.error('Failed to load athletes:', err);
+        console.error('Failed to load athletes, using mock data:', err);
+        // Use mock data when API fails (e.g., no database connection)
+        setGameState({ athletes: mockAthletes });
         setLoading(false);
       }
     }
