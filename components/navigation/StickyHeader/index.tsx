@@ -378,23 +378,6 @@ export function StickyHeader({
           </Box>
         </Link>
         
-        {/* Commissioner Link - Desktop only */}
-        <Link href="/commissioner" passHref legacyBehavior>
-          <Box 
-            as="a" 
-            fontSize="sm"
-            fontWeight="medium"
-            color="white"
-            opacity={0.9}
-            _hover={{ opacity: 1, textDecoration: 'underline' }}
-            display={{ base: 'none', lg: 'block' }}
-            transition="opacity 0.2s"
-            cursor="pointer"
-          >
-            Commissioner
-          </Box>
-        </Link>
-        
         {/* Notifications Icon - Optional */}
         {showNotifications && (
           <Box
