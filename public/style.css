@@ -1535,18 +1535,6 @@ footer .footer-copyright {
     }
 }
 
-/* Slide down animation (for closing) */
-@keyframes slideDownToBottom {
-    from {
-        transform: translateY(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-}
-
 .modal-close {
     position: absolute;
     top: 12px;
@@ -2300,24 +2288,14 @@ footer .footer-copyright {
         max-height: 80vh; /* Relative to screen */
         min-height: 400px;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
-        animation: slideUpDesktop 0.4s ease-out;
+        /* Use same animation timing as mobile for consistency */
+        animation: slideUpFromBottom 0.4s ease-out;
     }
     
     /* Tab content uniform height on desktop */
     .tab-content-area {
         min-height: 300px;
         max-height: 400px;
-    }
-}
-
-@keyframes slideUpDesktop {
-    from {
-        transform: translateY(60px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
     }
 }
 
@@ -2437,9 +2415,9 @@ footer .footer-copyright {
     .athlete-card-container {
         max-width: 100%;
         width: 100%;
-        /* On smallest screens, take more of the screen */
-        height: 88vh;
-        max-height: 88vh;
+        /* Consistent 85vh height across all mobile breakpoints */
+        height: 85vh;
+        max-height: 85vh;
         border-radius: 20px 20px 0 0;
     }
 
