@@ -1222,13 +1222,18 @@ footer .footer-copyright {
     right: 0;
     bottom: 0;
     z-index: 10000;
-    align-items: flex-end; /* Align to bottom for mobile slide-up */
+    align-items: center; /* Center by default for regular modals */
     justify-content: center;
     padding: 0;
 }
 
 .modal.active {
     display: flex;
+}
+
+/* Athlete modal specifically aligns to bottom for mobile slide-up */
+.modal.athlete-modal {
+    align-items: flex-end;
 }
 
 .modal-overlay {
@@ -2284,9 +2289,9 @@ footer .footer-copyright {
         border-radius: 16px; /* Rounded all corners on desktop */
         max-width: 640px;
         width: 90%;
-        height: auto; /* Let content determine height */
+        height: 80vh; /* Fixed height to prevent resizing */
         max-height: 80vh; /* Relative to screen */
-        min-height: 400px;
+        min-height: 500px;
         box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
         /* Use same animation timing as mobile for consistency */
         animation: slideUpFromBottom 0.4s ease-out;
@@ -2294,8 +2299,9 @@ footer .footer-copyright {
     
     /* Tab content uniform height on desktop */
     .tab-content-area {
-        min-height: 300px;
-        max-height: 400px;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
 }
 
@@ -2303,11 +2309,15 @@ footer .footer-copyright {
 @media (min-width: 1024px) {
     .athlete-card-container {
         max-width: 700px;
+        height: 85vh; /* Fixed height to prevent resizing */
         max-height: 85vh;
+        min-height: 550px;
     }
     
     .tab-content-area {
-        max-height: 450px;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
 }
 
