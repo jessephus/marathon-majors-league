@@ -21,9 +21,10 @@
  * - User Guide: docs/CORE_USER_GUIDE.md
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { getValidTeamSession } from '@/lib/session-manager';
 import {
   Box,
   Container,
@@ -46,6 +47,7 @@ import {
   ChartBarIcon,
   DevicePhoneMobileIcon,
   ShareIcon,
+  HomeModernIcon
 } from '@heroicons/react/24/outline';
 import { Button, Card, CardBody } from '@/components/chakra';
 import Footer from '@/components/Footer';
@@ -207,6 +209,14 @@ function FAQCard({ item, defaultOpen = false }: FAQCardProps) {
  * Help Page Component
  */
 export default function HelpPage() {
+  const [hasActiveSession, setHasActiveSession] = useState(false);
+
+  // Check for active session on mount
+  useEffect(() => {
+    const session = getValidTeamSession();
+    setHasActiveSession(!!session);
+  }, []);
+
   // FAQ data - casual, friendly language for novice users
   const faqItems: FAQItemData[] = [
     {
@@ -255,7 +265,7 @@ export default function HelpPage() {
         <VStack align="start" gap={3}>
           <Text>
             You get a $30,000 budget to build your dream team. Each athlete has a &quot;price&quot; based 
-            on how fast they are and how likely they are to win. Elite runners like Kelvin Kiptum 
+            on how fast they are and how likely they are to win. Elite runners like Sabastian Sawe 
             or Tigst Assefa cost more, while up-and-comers are more affordable.
           </Text>
           <Text>
@@ -301,10 +311,10 @@ export default function HelpPage() {
             Athletes earn points based on their performance. Here&apos;s how it breaks down:
           </Text>
           <VStack align="start" gap={2} pl={4}>
-            <Text><strong>Finish Time Points:</strong> Faster times = more points</Text>
-            <Text><strong>Placement Bonus:</strong> Extra points for top 3 finishes</Text>
-            <Text><strong>Personal Best:</strong> Bonus if they set a new PR</Text>
-            <Text><strong>Course Record:</strong> Big bonus for breaking records</Text>
+            <Text><strong>Placement Points:</strong> Extra points for top 10 finishes</Text>
+            <Text><strong>Time Gap Bonus:</strong> Closer to the winner = more points</Text>
+            <Text><strong>Personal Best:</strong> Bonus for negative splits and fast finishing kicks</Text>
+            <Text><strong>Record Setters:</strong> Big bonuses for breaking records</Text>
           </VStack>
           <Text>
             Your team&apos;s total score is the sum of all 6 athletes. The highest score wins! 
@@ -363,20 +373,22 @@ export default function HelpPage() {
       icon: DevicePhoneMobileIcon,
     },
     {
-      question: 'Who are the \"Marathon Majors\"?',
+      question: 'What are the \"Marathon Majors\"?',
       answer: (
         <VStack align="start" gap={3}>
           <Text>
-            The Abbott World Marathon Majors are the six biggest and most prestigious 
-            marathons in the world:
+            The Abbott World Marathon Majors are the seven (soon to be nine) biggest and most 
+            prestigious marathons in the world:
           </Text>
           <VStack align="start" gap={1} pl={4}>
-            <Text>🗽 New York City Marathon</Text>
-            <Text>🦃 Boston Marathon</Text>
-            <Text>🌬️ Chicago Marathon</Text>
-            <Text>🎡 London Marathon</Text>
-            <Text>🗼 Berlin Marathon</Text>
-            <Text>🗻 Tokyo Marathon</Text>
+            <Text>New York City Marathon</Text>
+            <Text>Boston Marathon</Text>
+            <Text>Chicago Marathon</Text>
+            <Text>London Marathon</Text>
+            <Text>Berlin Marathon</Text>
+            <Text>Tokyo Marathon</Text>
+            <Text>Sydney Marathon</Text>
+            <Text>(Shanghai and Cape Town are expected to be added in coming years)</Text>
           </VStack>
           <Text>
             These races attract the fastest runners on the planet and offer massive prize 
@@ -385,6 +397,20 @@ export default function HelpPage() {
         </VStack>
       ),
       icon: StarIcon,
+    },
+    {
+      question: 'So what\'s up with having the Valencia Marathon?',
+      answer: (
+        <VStack align="start" gap={3}>
+          <Text>
+            Although not a Major, the Valencia Marathon is a World Athletics Platinum Label race. 
+            Known for its exceptionally flat and fast course and €1M prize for anyone that breaks a 
+            World Record, the race is ideal for achieving fast times and attracts the most elite 
+            athletes in the world. So we can do fantasy with it.
+          </Text>
+        </VStack>
+      ),
+      icon: HomeModernIcon,
     },
   ];
 
@@ -430,6 +456,27 @@ export default function HelpPage() {
             bg="gold.500"
             opacity={0.03}
           />
+          {/* Winged shoe logo in center */}
+          <Box
+            position="absolute"
+            top="50%"
+            left="50%"
+            transform="translate(-50%, -50%)"
+            w={{ base: "200px", md: "300px" }}
+            h={{ base: "200px", md: "300px" }}
+            opacity={0.08}
+            pointerEvents="none"
+          >
+            <img
+              src="/assets/winged-shoe.png"
+              alt=""
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+              }}
+            />
+          </Box>
           
           <Container maxW="container.xl" position="relative">
             <VStack gap={4} align="center" textAlign="center">
@@ -457,11 +504,18 @@ export default function HelpPage() {
         </Box>
 
         {/* Main Content */}
-        <Container maxW="container.xl" py={{ base: 8, md: 12 }}>
+        <Container maxW="container.xl" py={{ base: 8, md: 12 }} px={{ base: 4, md: 6 }}>
           <VStack gap={{ base: 10, md: 16 }} align="stretch">
             
             {/* How to Play Section */}
-            <Box>
+            <Box
+              bg="white"
+              borderRadius="lg"
+              p={{ base: 6, md: 8 }}
+              shadow="sm"
+              border="1px solid"
+              borderColor="gray.200"
+            >
               <VStack gap={6} align="stretch">
                 <VStack align={{ base: 'center', md: 'start' }} gap={2}>
                   <Heading
@@ -522,10 +576,15 @@ export default function HelpPage() {
               </VStack>
             </Box>
 
-            <Separator borderColor="gray.200" />
-
             {/* Quick Tips Section */}
-            <Box>
+            <Box
+              bg="white"
+              borderRadius="lg"
+              p={{ base: 6, md: 8 }}
+              shadow="sm"
+              border="1px solid"
+              borderColor="gray.200"
+            >
               <VStack gap={6} align="stretch">
                 <VStack align={{ base: 'center', md: 'start' }} gap={2}>
                   <Heading
@@ -653,10 +712,15 @@ export default function HelpPage() {
               </VStack>
             </Box>
 
-            <Separator borderColor="gray.200" />
-
             {/* FAQ Section */}
-            <Box>
+            <Box
+              bg="white"
+              borderRadius="lg"
+              p={{ base: 6, md: 8 }}
+              shadow="sm"
+              border="1px solid"
+              borderColor="gray.200"
+            >
               <VStack gap={6} align="stretch">
                 <VStack align={{ base: 'center', md: 'start' }} gap={2}>
                   <Heading
@@ -688,10 +752,18 @@ export default function HelpPage() {
               </VStack>
             </Box>
 
-            <Separator borderColor="gray.200" />
-
-            {/* Call to Action */}
-            <Box textAlign="center" py={{ base: 4, md: 8 }}>
+            {/* Call to Action - Only show if no active session */}
+            {!hasActiveSession && (
+              <Box
+                textAlign="center"
+                py={{ base: 4, md: 8 }}
+                bg="white"
+                borderRadius="lg"
+                p={{ base: 6, md: 8 }}
+                shadow="sm"
+                border="1px solid"
+                borderColor="gray.200"
+              >
               <VStack gap={6}>
                 <VStack gap={2}>
                   <Heading
@@ -710,7 +782,7 @@ export default function HelpPage() {
                   </Text>
                 </VStack>
                 <HStack gap={4} justify="center" flexWrap="wrap">
-                  <Link href="/" passHref legacyBehavior>
+                  <Link href="/?action=create-team" passHref legacyBehavior>
                     <Button
                       as="a"
                       colorPalette="navy"
@@ -734,6 +806,7 @@ export default function HelpPage() {
                 </HStack>
               </VStack>
             </Box>
+            )}
 
           </VStack>
         </Container>
