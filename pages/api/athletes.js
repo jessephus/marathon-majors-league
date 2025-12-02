@@ -169,12 +169,12 @@ export default async function handler(req, res) {
       const athletes = await getAllAthletes(confirmedOnly, raceId);
       
       // Set cache headers for athlete data (stale-while-revalidate strategy)
-      // Athletes change infrequently, so long cache with stale-while-revalidate
+      // Athletes change infrequently, but when they do we want updates within 5 minutes
       // Cache busting: Client can add ?_t=timestamp to force fresh data after updates
       const etag = generateETag(athletes);
       res.setHeader('ETag', `"${etag}"`);
-      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=7200, stale-while-revalidate=86400');
-      res.setHeader('CDN-Cache-Control', 'max-age=7200');
+      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=600');
+      res.setHeader('CDN-Cache-Control', 'max-age=300');
       res.setHeader('Vary', 'Accept-Encoding');
       
       // Check if client has current version (also sets X-Cache-Status header)

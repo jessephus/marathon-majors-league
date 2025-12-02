@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 import { SimpleGrid } from '@chakra-ui/react';
 import { athleteApi } from '@/lib/api-client';
 import { Athlete } from '@/lib/state-provider';
-import { Button, IconButton, StatsCard } from '@/components/chakra';
+import { Button, IconButton, StatsCard, Badge } from '@/components/chakra';
 
 interface AthleteModalProps {
   athlete: Athlete | null;
@@ -242,6 +242,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                     variant={activeTab === 'scoring' ? 'solid' : 'ghost'}
                     colorPalette="navy"
                     size="sm"
+                    fontSize={{ base: 'xs', md: 'sm' }}
                   >
                     Scoring Breakdown
                   </Button>
@@ -253,6 +254,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                       variant={activeTab === 'bio' ? 'solid' : 'ghost'}
                       colorPalette="navy"
                       size="sm"
+                      fontSize={{ base: 'xs', md: 'sm' }}
                     >
                       Overview
                     </Button>
@@ -262,6 +264,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                       variant={activeTab === 'raceLog' ? 'solid' : 'ghost'}
                       colorPalette="navy"
                       size="sm"
+                      fontSize={{ base: 'xs', md: 'sm' }}
                     >
                       Race Log
                     </Button>
@@ -271,6 +274,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                       variant={activeTab === 'progression' ? 'solid' : 'ghost'}
                       colorPalette="navy"
                       size="sm"
+                      fontSize={{ base: 'xs', md: 'sm' }}
                     >
                       Progression
                     </Button>
@@ -280,6 +284,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                       variant={activeTab === 'news' ? 'solid' : 'ghost'}
                       colorPalette="navy"
                       size="sm"
+                      fontSize={{ base: 'xs', md: 'sm' }}
                     >
                       News
                     </Button>
@@ -295,37 +300,32 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                   {/* Key Statistics */}
                   <div className="content-section">
                     <h3 className="section-heading">Key Statistics</h3>
-                    <SimpleGrid columns={{ base: 2, md: 4 }} gap={4}>
-                      <StatsCard
-                        label="Personal Best"
-                        value={athlete.pb || 'N/A'}
-                        type="custom"
-                        size="sm"
-                        colorPalette="navy"
-                      />
-                      <StatsCard
-                        label="Season Best"
-                        value={athlete.seasonBest || 'N/A'}
-                        type="custom"
-                        size="sm"
-                        colorPalette="info"
-                      />
-                      <StatsCard
-                        label="Marathon Rank"
-                        value={athlete.marathonRank ? `#${athlete.marathonRank}` : 'N/A'}
-                        type="custom"
-                        size="sm"
-                        colorPalette="success"
-                      />
-                      <StatsCard
-                        label="Overall Rank"
-                        value={athlete.overallRank ? `#${athlete.overallRank}` : 'N/A'}
-                        type="custom"
-                        size="sm"
-                        colorPalette="gold"
-                        variant="elevated"
-                      />
-                    </SimpleGrid>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+                      {athlete.pb && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px', color: '#718096' }}>PB:</span>
+                          <Badge colorPalette="navy" fontSize="sm" px={2}>{athlete.pb}</Badge>
+                        </div>
+                      )}
+                      {athlete.seasonBest && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px', color: '#718096' }}>SB:</span>
+                          <Badge colorPalette="info" fontSize="sm" px={2}>{athlete.seasonBest}</Badge>
+                        </div>
+                      )}
+                      {athlete.marathonRank && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px', color: '#718096' }}>Marathon:</span>
+                          <Badge colorPalette="success" fontSize="sm" px={2}>#{athlete.marathonRank}</Badge>
+                        </div>
+                      )}
+                      {athlete.overallRank && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '14px', color: '#718096' }}>Overall:</span>
+                          <Badge colorPalette="gold" fontSize="sm" px={2}>#{athlete.overallRank}</Badge>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Profile Information */}
@@ -347,7 +347,15 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                       {athlete.worldAthleticsId && (
                         <div className="info-row">
                           <span className="info-label">World Athletics ID</span>
-                          <span className="info-value">{athlete.worldAthleticsId}</span>
+                          <a
+                            href={`https://worldathletics.org/athletes/${athlete.worldAthleticsId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="info-value"
+                            style={{ color: '#3182CE', textDecoration: 'underline', cursor: 'pointer' }}
+                          >
+                            {athlete.worldAthleticsId}
+                          </a>
                         </div>
                       )}
                       {athlete.roadRunningRank && (
@@ -365,7 +373,9 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                 <div className="tab-panel">
                   {detailedData?.raceResults && detailedData.raceResults.length > 0 ? (
                     <div className="results-list">
-                      {detailedData.raceResults.map((result) => {
+                      {detailedData.raceResults
+                        .sort((a, b) => new Date(b.competitionDate).getTime() - new Date(a.competitionDate).getTime())
+                        .map((result) => {
                         const date = new Date(result.competitionDate);
                         const formattedDate = date.toLocaleDateString('en-US', { 
                           month: 'short', 
@@ -377,7 +387,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                             <div className="result-header">
                               <div className="result-competition">{result.competitionName}</div>
                               <div className="result-position">
-                                {result.position ? `${result.position}.` : 'N/A'}
+                                {result.position || 'N/A'}
                               </div>
                             </div>
                             <div className="result-details">

@@ -12,6 +12,9 @@ export default function Document() {
           rel="stylesheet" 
         />
         
+        {/* Chart.js for progression charts */}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+        
         {/* Favicon and app icons */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
