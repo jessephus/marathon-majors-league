@@ -51,11 +51,27 @@ import { Button, Card, CardBody } from '@/components/chakra';
 import Footer from '@/components/Footer';
 
 /**
+ * Brand color constants for inline styles
+ * These match the theme tokens in theme/colors.ts
+ * Used when Chakra color tokens can't be applied (e.g., SVG icon colors)
+ */
+const BRAND_COLORS = {
+  gold: '#D4AF37',      // gold.500
+  navy: '#4A5F9D',      // navy.500
+  navyDark: '#161C4F',  // navy.900
+} as const;
+
+/**
+ * Icon component type for Heroicons
+ */
+type HeroIconComponent = React.ComponentType<{ style?: React.CSSProperties }>;
+
+/**
  * Step card for the How to Play section
  */
 interface StepCardProps {
   stepNumber: number;
-  icon: React.ComponentType<{ style?: React.CSSProperties }>;
+  icon: HeroIconComponent;
   title: string;
   description: string;
 }
@@ -89,7 +105,7 @@ function StepCard({ stepNumber, icon: IconComponent, title, description }: StepC
               alignItems="center"
               justifyContent="center"
             >
-              <IconComponent style={{ width: '24px', height: '24px', color: '#D4AF37' }} />
+              <IconComponent style={{ width: '24px', height: '24px', color: BRAND_COLORS.gold }} />
             </Box>
           </HStack>
           <Heading as="h3" size="md" color="navy.800">
@@ -110,7 +126,7 @@ function StepCard({ stepNumber, icon: IconComponent, title, description }: StepC
 interface FAQItemData {
   question: string;
   answer: React.ReactNode;
-  icon: React.ComponentType<{ style?: React.CSSProperties }>;
+  icon: HeroIconComponent;
 }
 
 /**
@@ -148,7 +164,7 @@ function FAQCard({ item, defaultOpen = false }: FAQCardProps) {
                 justifyContent="center"
                 flexShrink={0}
               >
-                <IconComponent style={{ width: '20px', height: '20px', color: '#4A5F9D' }} />
+                <IconComponent style={{ width: '20px', height: '20px', color: BRAND_COLORS.navy }} />
               </Box>
               <Text
                 fontWeight="semibold"
@@ -164,7 +180,7 @@ function FAQCard({ item, defaultOpen = false }: FAQCardProps) {
               transform={isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}
               flexShrink={0}
             >
-              <ChevronDownIcon style={{ width: '20px', height: '20px', color: '#4A5F9D' }} />
+              <ChevronDownIcon style={{ width: '20px', height: '20px', color: BRAND_COLORS.navy }} />
             </Box>
           </HStack>
         </CardBody>
@@ -418,7 +434,7 @@ export default function HelpPage() {
           <Container maxW="container.xl" position="relative">
             <VStack gap={4} align="center" textAlign="center">
               <HStack gap={3}>
-                <QuestionMarkCircleIcon style={{ width: '40px', height: '40px', color: '#D4AF37' }} />
+                <QuestionMarkCircleIcon style={{ width: '40px', height: '40px', color: BRAND_COLORS.gold }} />
               </HStack>
               <Heading
                 as="h1"
@@ -542,7 +558,7 @@ export default function HelpPage() {
                           justifyContent="center"
                           flexShrink={0}
                         >
-                          <BookmarkIcon style={{ width: '24px', height: '24px', color: '#D4AF37' }} />
+                          <BookmarkIcon style={{ width: '24px', height: '24px', color: BRAND_COLORS.gold }} />
                         </Box>
                         <VStack align="start" gap={1}>
                           <Text fontWeight="semibold" color="navy.800">
@@ -568,7 +584,7 @@ export default function HelpPage() {
                           justifyContent="center"
                           flexShrink={0}
                         >
-                          <StarIcon style={{ width: '24px', height: '24px', color: '#D4AF37' }} />
+                          <StarIcon style={{ width: '24px', height: '24px', color: BRAND_COLORS.gold }} />
                         </Box>
                         <VStack align="start" gap={1}>
                           <Text fontWeight="semibold" color="navy.800">
@@ -594,7 +610,7 @@ export default function HelpPage() {
                           justifyContent="center"
                           flexShrink={0}
                         >
-                          <ClockIcon style={{ width: '24px', height: '24px', color: '#D4AF37' }} />
+                          <ClockIcon style={{ width: '24px', height: '24px', color: BRAND_COLORS.gold }} />
                         </Box>
                         <VStack align="start" gap={1}>
                           <Text fontWeight="semibold" color="navy.800">
@@ -620,7 +636,7 @@ export default function HelpPage() {
                           justifyContent="center"
                           flexShrink={0}
                         >
-                          <ShareIcon style={{ width: '24px', height: '24px', color: '#D4AF37' }} />
+                          <ShareIcon style={{ width: '24px', height: '24px', color: BRAND_COLORS.gold }} />
                         </Box>
                         <VStack align="start" gap={1}>
                           <Text fontWeight="semibold" color="navy.800">
