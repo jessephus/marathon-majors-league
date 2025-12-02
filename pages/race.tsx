@@ -16,7 +16,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { GetServerSidePropsContext } from 'next';
 import Link from 'next/link';
-import { Box, Container, Heading, Text, VStack, SimpleGrid } from '@chakra-ui/react';
+import { Box, Container, Heading, Text, VStack, SimpleGrid, Flex } from '@chakra-ui/react';
 import { apiClient } from '@/lib/api-client';
 import { useGameState } from '@/lib/state-provider';
 import { Button, Card, CardBody } from '@/components/chakra';
@@ -54,6 +54,20 @@ interface Athlete {
   headshotUrl?: string;
   marathonRank?: number;
   bibNumber?: string;
+}
+
+interface RaceNews {
+  id: number;
+  raceId: number;
+  headline: string;
+  description?: string;
+  articleUrl?: string;
+  imageUrl?: string;
+  publishedDate?: string;
+  displayOrder: number;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface RacePageProps {
@@ -112,6 +126,8 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
   const [error, setError] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newsItems, setNewsItems] = useState<RaceNews[]>([]);
+  const [loadingNews, setLoadingNews] = useState(false);
 
   // Initialize game state with SSR-provided activeRaceId (eliminates client-side wait)
   useEffect(() => {
@@ -148,6 +164,13 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
     loadRaceDetails();
   }, [raceId, initialActiveRaceId, gameState.activeRaceId]);
 
+  // Load race news when race is loaded
+  useEffect(() => {
+    if (race?.id) {
+      loadRaceNews(race.id);
+    }
+  }, [race?.id]);
+
   const handleViewAll = () => {
     router.push('/athletes');
   };
@@ -160,6 +183,19 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedAthleteId(null);
+  };
+
+  const loadRaceNews = async (raceId: number) => {
+    try {
+      setLoadingNews(true);
+      const news = await apiClient.raceNews.list({ raceId });
+      setNewsItems(news || []);
+    } catch (err: any) {
+      console.error('Failed to load race news:', err);
+      setNewsItems([]);
+    } finally {
+      setLoadingNews(false);
+    }
   };
 
   const loadRaceDetails = async () => {
@@ -313,6 +349,117 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
           <Container maxW="container.xl" py={{ base: 4, md: 6 }}>
             <VStack gap={{ base: 6, md: 8 }} align="stretch">
               
+              {/* Race News & Updates Section */}
+              <Card variant="filled" size="lg">
+                <CardBody>
+                  <VStack align="stretch" gap={4}>
+                    <Heading as="h3" size="lg" color="navy.800">
+                      Race News & Updates
+                    </Heading>
+                    {loadingNews ? (
+                      <Box py={8} textAlign="center">
+                        <Text color="gray.500">Loading news...</Text>
+                      </Box>
+                    ) : newsItems.length === 0 ? (
+                      <Box
+                        py={8}
+                        textAlign="center"
+                        borderRadius="md"
+                        bg="gray.50"
+                      >
+                        <Text color="gray.500" fontSize="lg">
+                          No updates yet.
+                        </Text>
+                      </Box>
+                    ) : (
+                      <VStack align="stretch" gap={4}>
+                        {newsItems.map((newsItem) => (
+                          <Box
+                            key={newsItem.id}
+                            p={4}
+                            borderRadius="md"
+                            bg="white"
+                            border="1px solid"
+                            borderColor="gray.200"
+                            _hover={{ shadow: 'md', borderColor: 'navy.300' }}
+                            transition="all 0.2s"
+                          >
+                            <Flex
+                              direction={{ base: 'column', md: 'row' }}
+                              gap={{ base: 3, md: 4 }}
+                              align="stretch"
+                            >
+                              {/* Content Section (left side on desktop) */}
+                              <VStack
+                                align="stretch"
+                                gap={3}
+                                flex={{ base: '1', md: newsItem.imageUrl ? '1' : '1' }}
+                              >
+                                <Heading as="h4" size="md" color="navy.800">
+                                  {newsItem.headline}
+                                </Heading>
+                                {newsItem.description && (
+                                  <Text color="gray.700" fontSize="md">
+                                    {newsItem.description}
+                                  </Text>
+                                )}
+                                {newsItem.publishedDate && (
+                                  <Text color="gray.500" fontSize="sm">
+                                    {new Date(newsItem.publishedDate).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric',
+                                    })}
+                                  </Text>
+                                )}
+                                {newsItem.articleUrl && (
+                                  <Box>
+                                    <Link href={newsItem.articleUrl} target="_blank" rel="noopener noreferrer" passHref legacyBehavior>
+                                      <Button
+                                        as="a"
+                                        colorPalette="navy"
+                                        variant="outline"
+                                        size="sm"
+                                      >
+                                        Read Full Article →
+                                      </Button>
+                                    </Link>
+                                  </Box>
+                                )}
+                              </VStack>
+
+                              {/* Image Section (right side on desktop, top on mobile) */}
+                              {newsItem.imageUrl && (
+                                <Box
+                                  width={{ base: '100%', md: '280px' }}
+                                  height={{ base: '200px', md: 'auto' }}
+                                  minHeight={{ md: '180px' }}
+                                  borderRadius="md"
+                                  overflow="hidden"
+                                  bg="gray.100"
+                                  flexShrink={0}
+                                  order={{ base: -1, md: 1 }}
+                                >
+                                  <img
+                                    src={newsItem.imageUrl}
+                                    alt={newsItem.headline}
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                    }}
+                                  />
+                                </Box>
+                              )}
+                            </Flex>
+                          </Box>
+                        ))}
+                      </VStack>
+                    )}
+                  </VStack>
+                </CardBody>
+              </Card>
+
               {/* Confirmed Athletes Section */}
               {allAthletes.length > 0 && (
                 <Card variant="filled" size="md">
@@ -327,27 +474,6 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
                   </CardBody>
                 </Card>
               )}
-
-              {/* Race News & Updates Section */}
-              <Card variant="filled" size="lg">
-                <CardBody>
-                  <VStack align="stretch" gap={4}>
-                    <Heading as="h3" size="lg" color="navy.800">
-                      Race News & Updates
-                    </Heading>
-                    <Box
-                      py={8}
-                      textAlign="center"
-                      borderRadius="md"
-                      bg="gray.50"
-                    >
-                      <Text color="gray.500" fontSize="lg">
-                        No updates yet.
-                      </Text>
-                    </Box>
-                  </VStack>
-                </CardBody>
-              </Card>
 
               {/* Race Details Section */}
               {race.description && (

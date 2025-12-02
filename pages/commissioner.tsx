@@ -154,8 +154,12 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
         setRosterLockTime((gameStateData as any)?.rosterLockTime || null);
         
         // Set active race info
-        setActiveRaceId((gameStateData as any)?.activeRaceId || null);
+        const loadedActiveRaceId = (gameStateData as any)?.activeRaceId || null;
+        setActiveRaceId(loadedActiveRaceId);
         setActiveRace((gameStateData as any)?.activeRace || null);
+        
+        // Update global gameState with activeRaceId so child components can access it
+        setGameState({ activeRaceId: loadedActiveRaceId });
         
         // Set available races for dropdown
         setAvailableRaces(racesData.map((r: any) => ({
@@ -220,6 +224,9 @@ function CommissionerPageContent({ isAuthenticated: initialAuth, initialGameId =
       // Find the race details
       const race = availableRaces.find(r => r.id === newRaceId);
       setActiveRace(race ? { id: race.id, name: race.name, date: race.date, location: '' } : null);
+      
+      // Update global gameState with the new activeRaceId
+      setGameState({ activeRaceId: newRaceId });
       
       // Dispatch event to notify other components
       if (typeof window !== 'undefined') {
