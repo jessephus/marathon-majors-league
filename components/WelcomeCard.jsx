@@ -5,12 +5,13 @@
  * Server-side rendered with session-aware CTA buttons.
  * 
  * For logged-out users: Shows the new LandingPage component with navy/gold branding
- * For logged-in users: Shows the existing team dashboard card
+ * For logged-in users: Shows the LoggedInDashboard with race info, team status, and quick actions
  * 
  * Props:
  * - sessionType: 'anonymous' | 'team' | 'commissioner'
  * - onCreateTeam: callback for creating a new team
  * - nextRace: { name: string, date: string } - Next race data from SSR (date as ISO string)
+ * - activeRaceData: { name: string, lockTime: string, date: string, location: string } - Full race data for dashboard
  */
 
 import { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import { SessionType } from '../lib/session-utils';
 import { Button } from '@/components/chakra';
 import { ArrowRightIcon, PlusIcon } from '@heroicons/react/24/solid';
 import LandingPage from './LandingPage';
+import LoggedInDashboard from './LoggedInDashboard';
 
 // Critical CSS for above-the-fold content (inlined for faster first paint)
 // Used for logged-in user views (team dashboard card)
@@ -75,7 +77,7 @@ const criticalStyles = {
   },
 };
 
-export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam, nextRace }) {
+export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCreateTeam, nextRace, activeRaceData }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [hasTeamSession, setHasTeamSession] = useState(false);
@@ -287,108 +289,33 @@ export default function WelcomeCard({ sessionType = SessionType.ANONYMOUS, onCre
       renderKey
     });
     
-    // Team session active - show "View My Team" with enhanced details
+    // Team session active - show new LoggedInDashboard with race info, team status, and quick actions
     if (hasTeamSession) {
-      console.log('[WelcomeCard] Rendering TEAM card');
+      console.log('[WelcomeCard] Rendering LoggedInDashboard');
       
-      const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(amount);
+      // Handle navigation to team page
+      const handleViewTeam = () => {
+        if (typeof window !== 'undefined' && window.anonymousSession?.token) {
+          router.push(`/team/${window.anonymousSession.token}`);
+        }
       };
       
-      const budgetRemaining = 30000 - (teamData?.totalSalary || 0);
-      const budgetPercentUsed = ((teamData?.totalSalary || 0) / 30000) * 100;
+      // Convert activeRaceData from SSR props to raceData format
+      const raceData = activeRaceData ? {
+        name: activeRaceData.name,
+        lockTime: activeRaceData.lockTime,
+        date: activeRaceData.date,
+        location: activeRaceData.location,
+      } : null;
       
       return (
-        <div style={criticalStyles.card}>
-          <h2 style={criticalStyles.heading}>Welcome Back!</h2>
-          <p style={{...criticalStyles.description, fontSize: '1.2rem', fontWeight: '600', color: '#333'}}>
-            {teamName || 'Your Fantasy Marathon Team'}
-          </p>
-          
-          {/* Team Stats Grid */}
-          {teamData && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '15px',
-              marginBottom: '25px',
-              padding: '20px',
-              background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(22, 28, 79, 0.05) 100%)',
-              borderRadius: '10px',
-              border: '1px solid rgba(212, 175, 55, 0.2)'
-            }}>
-              <div style={{textAlign: 'center', padding: '10px'}}>
-                <div style={{fontSize: '0.85rem', color: '#666', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Roster</div>
-                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: teamData.isDraftComplete ? '#16A34A' : '#D4AF37'}}>
-                  {teamData.rosterCount}/6
-                </div>
-                <div style={{fontSize: '0.75rem', color: teamData.isDraftComplete ? '#16A34A' : '#999'}}>
-                  {teamData.isDraftComplete ? '✓ Complete' : 'In Progress'}
-                </div>
-              </div>
-              
-              <div style={{textAlign: 'center', padding: '10px'}}>
-                <div style={{fontSize: '0.85rem', color: '#666', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Salary Used</div>
-                <div style={{fontSize: '1.8rem', fontWeight: 'bold', color: budgetPercentUsed > 95 ? '#16A34A' : '#161C4F'}}>
-                  {formatCurrency(teamData.totalSalary)}
-                </div>
-                <div style={{fontSize: '0.75rem', color: '#999'}}>
-                  {formatCurrency(budgetRemaining)} left
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Loading state */}
-          {!teamData && loadingTeamData && (
-            <div style={{padding: '20px', color: '#999', fontSize: '0.9rem'}}>
-              Loading team details...
-            </div>
-          )}
-          
-          {/* Budget progress bar */}
-          {teamData && (
-            <div style={{marginBottom: '25px'}}>
-              <div style={{
-                height: '8px',
-                background: '#e9ecef',
-                borderRadius: '10px',
-                overflow: 'hidden',
-                position: 'relative'
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${budgetPercentUsed}%`,
-                  background: budgetPercentUsed > 95 ? 'linear-gradient(90deg, #16A34A 0%, #22C55E 100%)' : 'linear-gradient(90deg, #D4AF37 0%, #161C4F 100%)',
-                  transition: 'width 0.3s ease',
-                  borderRadius: '10px'
-                }} />
-              </div>
-              <div style={{fontSize: '0.75rem', color: '#666', marginTop: '5px', textAlign: 'right'}}>
-                {budgetPercentUsed.toFixed(0)}% of $30,000 budget used
-              </div>
-            </div>
-          )}
-          
-          <div style={criticalStyles.section}>
-            <Button 
-              data-session-cta
-              colorPalette="primary"
-              size="md"
-              width="auto"
-              maxWidth="100%"
-              rightIcon={<ArrowRightIcon style={{ width: '16px', height: '16px' }} />}
-              onClick={() => {
-                // Navigate to new React-based team session page
-                if (typeof window !== 'undefined' && window.anonymousSession?.token) {
-                  router.push(`/team/${window.anonymousSession.token}`);
-                }
-              }}
-            >
-              {teamData?.isDraftComplete ? 'View My Team' : 'Continue'}
-            </Button>
-          </div>
-        </div>
+        <LoggedInDashboard
+          teamName={teamName || 'Your Team'}
+          teamData={teamData}
+          raceData={raceData}
+          onViewTeam={handleViewTeam}
+          isLoading={loadingTeamData && !teamData}
+        />
       );
     }
 

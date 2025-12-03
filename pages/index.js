@@ -37,6 +37,7 @@ export async function getServerSideProps(context) {
   // Fetch next active race for the landing page countdown
   // This ensures SSR includes the race data without client-side fetching
   let nextRace = null;
+  let activeRaceData = null;
   
   // Only attempt database fetch if DATABASE_URL is set
   // During build time, this may not be available
@@ -47,17 +48,28 @@ export async function getServerSideProps(context) {
       const { getActiveRaceForGame } = await import('./api/db');
       const race = await getActiveRaceForGame(gameId);
       
-      if (race && race.lockTime) {
-        const now = new Date();
-        const lockTime = new Date(race.lockTime);
+      if (race) {
+        // Store full race data for logged-in dashboard
+        activeRaceData = {
+          name: race.name,
+          lockTime: race.lockTime ? new Date(race.lockTime).toISOString() : null,
+          date: race.date ? new Date(race.date).toISOString() : null,
+          location: race.location || null,
+        };
         
-        // Only include if lock time is in the future
-        if (lockTime > now) {
-          nextRace = {
-            name: race.name,
-            // Serialize date as ISO string for SSR (JSON serialization)
-            date: lockTime.toISOString(),
-          };
+        // Also set nextRace for landing page countdown (backwards compatibility)
+        if (race.lockTime) {
+          const now = new Date();
+          const lockTime = new Date(race.lockTime);
+          
+          // Only include if lock time is in the future
+          if (lockTime > now) {
+            nextRace = {
+              name: race.name,
+              // Serialize date as ISO string for SSR (JSON serialization)
+              date: lockTime.toISOString(),
+            };
+          }
         }
       }
     } catch (error) {
@@ -73,12 +85,13 @@ export async function getServerSideProps(context) {
       serverSessionType: sessionType,
       hasURLSession: !!sessionToken,
       initialGameId: gameId,
-      nextRace, // Pass race data to client
+      nextRace, // Pass race data to client for landing page
+      activeRaceData, // Pass full race data for logged-in dashboard
     },
   };
 }
 
-export default function Home({ serverSessionType, hasURLSession, initialGameId, nextRace }) {
+export default function Home({ serverSessionType, hasURLSession, initialGameId, nextRace, activeRaceData }) {
   const router = useRouter();
   const [clientSessionType, setClientSessionType] = useState(serverSessionType);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
@@ -318,6 +331,7 @@ export default function Home({ serverSessionType, hasURLSession, initialGameId, 
               sessionType={clientSessionType} 
               onCreateTeam={handleCreateTeam}
               nextRace={nextRace}
+              activeRaceData={activeRaceData}
             />
           </div>
         </main>
