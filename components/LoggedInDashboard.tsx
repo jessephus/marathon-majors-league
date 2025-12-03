@@ -395,7 +395,7 @@ function TeamStatusCard({
             <Box
               height="100%"
               width={`${Math.min(budgetPercentUsed, 100)}%`}
-              bg={budgetPercentUsed > 100 ? 'red.500' : budgetPercentUsed > 90 ? 'green.500' : COLORS.navyLight}
+              bg={budgetPercentUsed > 100 ? 'red.500' : budgetPercentUsed > 90 ? 'orange.500' : COLORS.navyLight}
               borderRadius="full"
               transition="width 0.3s ease"
             />
