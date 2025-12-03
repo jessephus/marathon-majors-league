@@ -346,7 +346,7 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
           minHeight="100vh"
         >
           {/* Main Content */}
-          <Container maxW="container.xl" py={{ base: 4, md: 6 }}>
+          <Container maxW="container.xl" mx="auto" py={{ base: 4, md: 6 }}>
             <VStack gap={{ base: 6, md: 8 }} align="stretch">
               
               {/* Race News & Updates Section */}
