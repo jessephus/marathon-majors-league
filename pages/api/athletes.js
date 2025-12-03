@@ -168,19 +168,12 @@ export default async function handler(req, res) {
       // Pass raceId for confirmation filtering
       const athletes = await getAllAthletes(confirmedOnly, raceId);
       
-      // Set cache headers for athlete data (stale-while-revalidate strategy)
-      // Athletes change infrequently, but when they do we want updates within 5 minutes
-      // Cache busting: Client can add ?_t=timestamp to force fresh data after updates
-      const etag = generateETag(athletes);
-      res.setHeader('ETag', `"${etag}"`);
-      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=600');
-      res.setHeader('CDN-Cache-Control', 'max-age=300');
-      res.setHeader('Vary', 'Accept-Encoding');
-      
-      // Check if client has current version (also sets X-Cache-Status header)
-      if (checkETag(req, etag, 'athletes', res)) {
-        return send304(res);
-      }
+      // No caching for athletes - always serve fresh data from database
+      // This ensures commissioners see new athletes immediately after adding them
+      // The race page uses the same no-cache strategy for consistency
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       
       res.status(200).json(athletes);
     } else {

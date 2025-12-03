@@ -345,18 +345,38 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                         </div>
                       )}
                       {athlete.worldAthleticsId && (
-                        <div className="info-row">
-                          <span className="info-label">World Athletics ID</span>
-                          <a
-                            href={`https://worldathletics.org/athletes/${athlete.worldAthleticsId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="info-value"
-                            style={{ color: '#3182CE', textDecoration: 'underline', cursor: 'pointer' }}
-                          >
-                            {athlete.worldAthleticsId}
-                          </a>
-                        </div>
+                        <a
+                          href={athlete.worldAthleticsProfileUrl || `https://worldathletics.org/athletes/${athlete.worldAthleticsId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="info-row"
+                          style={{
+                            cursor: 'pointer',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            backgroundColor: '#F7FAFC',
+                            border: '1px solid #E2E8F0',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#EDF2F7';
+                            e.currentTarget.style.borderColor = '#CBD5E0';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#F7FAFC';
+                            e.currentTarget.style.borderColor = '#E2E8F0';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                          }}
+                        >
+                          <span className="info-label" style={{ color: '#4A5568' }}>World Athletics ID</span>
+                          <span className="info-value" style={{ color: '#3182CE', fontWeight: '600' }}>
+                            {athlete.worldAthleticsId} →
+                          </span>
+                        </a>
                       )}
                       {athlete.roadRunningRank && (
                         <div className="info-row">
@@ -387,7 +407,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                             <div className="result-header">
                               <div className="result-competition">{result.competitionName}</div>
                               <div className="result-position">
-                                {result.position || 'N/A'}
+                                {(result.position || 'N/A').replace('.', '')}
                               </div>
                             </div>
                             <div className="result-details">

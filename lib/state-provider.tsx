@@ -19,6 +19,7 @@ export interface Athlete {
   pb: string; // API returns "pb" not "personal_best"
   headshotUrl?: string; // camelCase to match API
   worldAthleticsId?: string; // camelCase to match API
+  worldAthleticsProfileUrl?: string; // camelCase to match API
   salary?: number;
   // Extended fields (all camelCase to match API)
   marathonRank?: number;
