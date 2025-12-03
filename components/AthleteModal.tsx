@@ -407,7 +407,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                             <div className="result-header">
                               <div className="result-competition">{result.competitionName}</div>
                               <div className="result-position">
-                                {(result.position || 'N/A').replace('.', '')}
+                                {String(result.position || 'N/A').replace('.', '')}
                               </div>
                             </div>
                             <div className="result-details">
