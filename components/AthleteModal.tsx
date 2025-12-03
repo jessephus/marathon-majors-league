@@ -407,7 +407,7 @@ function AthleteModalContent({ athlete, isOpen, onClose, showScoring = false, sc
                             <div className="result-header">
                               <div className="result-competition">{result.competitionName}</div>
                               <div className="result-position">
-                                {String(result.position || 'N/A').replace('.', '')}
+                                {result.position ? Math.floor(result.position) : 'N/A'}
                               </div>
                             </div>
                             <div className="result-details">
