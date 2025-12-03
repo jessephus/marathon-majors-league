@@ -321,6 +321,16 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
     }))
   ];
 
+  const getBaseDomain = (url) => {
+  try {
+    const { hostname } = new URL(url);
+    // Remove "www." if present
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return "Read Full Article";
+  }
+};
+
   return (
     <>
       <Head>
@@ -421,7 +431,7 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
                                         variant="outline"
                                         size="sm"
                                       >
-                                        Read Full Article →
+                                        {getBaseDomain(newsItem.articleUrl)} →
                                       </Button>
                                     </Link>
                                   </Box>
