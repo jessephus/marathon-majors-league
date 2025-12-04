@@ -31,7 +31,7 @@ import {
 } from '@chakra-ui/react';
 import { Button } from './chakra/Button';
 import { RaceResultCard } from './chakra';
-import { TrophyIcon, UserIcon } from '@heroicons/react/24/solid';
+import { TrophyIcon } from '@heroicons/react/24/solid';
 import { athleteApi } from '@/lib/api-client';
 import AthleteModal from './AthleteModal';
 
@@ -232,14 +232,14 @@ export default function TeamDetailModal({
         display="flex"
         alignItems="center"
         justifyContent="center"
-        p={4}
+        p={{ base: 0, md: 4 }}
         pointerEvents="none"
       >
         <Box
           bg="white"
-          borderRadius="lg"
+          borderRadius={{ base: 'none', md: 'lg' }}
           boxShadow="2xl"
-          maxW="2xl"
+          maxW={{ base: '100%', md: '2xl' }}
           w="100%"
           maxH="90vh"
           display="flex"
@@ -321,93 +321,34 @@ export default function TeamDetailModal({
 
             {!loading && !error && teamData && (
               <VStack align="stretch" gap={6}>
-                {/* Men's Section */}
-                <Box>
-                  <Heading
-                    as="h3"
-                    size="md"
-                    mb={3}
-                    color="navy.700"
-                    display="flex"
-                    alignItems="center"
-                    gap={2}
-                  >
-                    <UserIcon style={{ width: '20px', height: '20px' }} />
-                    Men ({menAthletes.length})
-                  </Heading>
-                  <VStack align="stretch" gap={2}>
-                    {menAthletes.length === 0 ? (
-                      <Text color="gray.500" fontSize="sm">
-                        No men on this team
-                      </Text>
-                    ) : (
-                      menAthletes.map((athlete) => (
-                        <RaceResultCard
-                          key={athlete.athlete_id}
-                          placement={athlete.placement || 0}
-                          athleteName={athlete.athlete_name}
-                          athleteId={athlete.athlete_id}
-                          headshotUrl={athlete.headshot_url}
-                          country={athlete.country}
-                          personalBest={athlete.personal_best || ''}
-                          finishTime={athlete.finish_time || 'DNS'}
-                          gap=""
-                          totalPoints={athlete.total_points}
-                          breakdown={getPointsShorthand(athlete)}
-                          gender={athlete.gender}
-                          isDNS={!athlete.finish_time}
-                          isDNF={false}
-                          onClick={() => handleAthleteClick(athlete)}
-                        />
-                      ))
-                    )}
-                  </VStack>
-                </Box>
-
-                <Box height="1px" bg="gray.200" my={4} width="100%" />
-
-                {/* Women's Section */}
-                <Box>
-                  <Heading
-                    as="h3"
-                    size="md"
-                    mb={3}
-                    color="navy.700"
-                    display="flex"
-                    alignItems="center"
-                    gap={2}
-                  >
-                    <UserIcon style={{ width: '20px', height: '20px' }} />
-                    Women ({womenAthletes.length})
-                  </Heading>
-                  <VStack align="stretch" gap={2}>
-                    {womenAthletes.length === 0 ? (
-                      <Text color="gray.500" fontSize="sm">
-                        No women on this team
-                      </Text>
-                    ) : (
-                      womenAthletes.map((athlete) => (
-                        <RaceResultCard
-                          key={athlete.athlete_id}
-                          placement={athlete.placement || 0}
-                          athleteName={athlete.athlete_name}
-                          athleteId={athlete.athlete_id}
-                          headshotUrl={athlete.headshot_url}
-                          country={athlete.country}
-                          personalBest={athlete.personal_best || ''}
-                          finishTime={athlete.finish_time || 'DNS'}
-                          gap=""
-                          totalPoints={athlete.total_points}
-                          breakdown={getPointsShorthand(athlete)}
-                          gender={athlete.gender}
-                          isDNS={!athlete.finish_time}
-                          isDNF={false}
-                          onClick={() => handleAthleteClick(athlete)}
-                        />
-                      ))
-                    )}
-                  </VStack>
-                </Box>
+                {/* All Athletes */}
+                <VStack align="stretch" gap={2}>
+                  {[...menAthletes, ...womenAthletes].length === 0 ? (
+                    <Text color="gray.500" fontSize="sm">
+                      No athletes on this team
+                    </Text>
+                  ) : (
+                    [...menAthletes, ...womenAthletes].map((athlete) => (
+                      <RaceResultCard
+                        key={athlete.athlete_id}
+                        placement={athlete.placement || 0}
+                        athleteName={athlete.athlete_name}
+                        athleteId={athlete.athlete_id}
+                        headshotUrl={athlete.headshot_url}
+                        country={athlete.country}
+                        personalBest={athlete.personal_best || ''}
+                        finishTime={athlete.finish_time || 'DNS'}
+                        gap=""
+                        totalPoints={athlete.total_points}
+                        breakdown={getPointsShorthand(athlete)}
+                        gender={athlete.gender}
+                        isDNS={!athlete.finish_time}
+                        isDNF={false}
+                        onClick={() => handleAthleteClick(athlete)}
+                      />
+                    ))
+                  )}
+                </VStack>
 
                 {/* Total Points Summary */}
                 {teamData && (
@@ -430,13 +371,6 @@ export default function TeamDetailModal({
                 )}
               </VStack>
             )}
-          </Box>
-
-          {/* Footer */}
-          <Box p={4} borderTop="1px solid" borderColor="gray.200">
-            <Button variant="ghost" onClick={onClose}>
-              Close
-            </Button>
           </Box>
         </Box>
       </Box>
