@@ -21,6 +21,7 @@ import { apiClient, createServerApiClient, clearCache } from '@/lib/api-client';
 import LeaderboardTable from '@/components/LeaderboardTable';
 import ResultsTable from '@/components/ResultsTable';
 import Footer from '@/components/Footer';
+import TeamDetailModal from '@/components/TeamDetailModal';
 import { dynamicImport, CHUNK_NAMES, prefetchChunk } from '@/lib/dynamic-import';
 import { FeatureFlag } from '@/lib/feature-flags';
 import { Button } from '@/components/chakra';
@@ -76,6 +77,12 @@ function LeaderboardPageContent({
   const [selectedAthlete, setSelectedAthlete] = useState<{
     athlete: any;
     scoringData: any;
+  } | null>(null);
+
+  // Team detail modal state
+  const [selectedTeam, setSelectedTeam] = useState<{
+    playerCode: string;
+    gameId: string;
   } | null>(null);
 
   // Visibility tracking
@@ -195,7 +202,10 @@ function LeaderboardPageContent({
 
   // Handle player click
   const handlePlayerClick = (playerCode: string) => {
-    // Future: Open team details modal
+    setSelectedTeam({
+      playerCode,
+      gameId
+    });
   };
 
   // Handle athlete click - show athlete modal with scoring
@@ -405,6 +415,16 @@ function LeaderboardPageContent({
         showScoring={true}
         scoringData={selectedAthlete?.scoringData}
       />
+
+      {/* Team Detail Modal */}
+      {selectedTeam && (
+        <TeamDetailModal
+          isOpen={!!selectedTeam}
+          onClose={() => setSelectedTeam(null)}
+          playerCode={selectedTeam.playerCode}
+          gameId={selectedTeam.gameId}
+        />
+      )}
     </>
   );
 }
