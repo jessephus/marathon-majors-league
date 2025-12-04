@@ -100,6 +100,22 @@ export default function TeamDetailModal({
     }
   }, [isOpen, playerCode, gameId]);
 
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   const fetchTeamDetails = async () => {
     setLoading(true);
     setError(null);
