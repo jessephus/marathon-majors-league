@@ -74,6 +74,7 @@ interface RacePageProps {
   raceId: string | null;
   initialGameId: string; // Added to pass SSR cookie reading
   initialActiveRaceId: number | null; // Added to eliminate client-side wait
+  initialRace: Race | null; // SSR-provided full race data for immediate rendering
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
@@ -97,6 +98,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Fetch game state server-side to get activeRaceId immediately
   // This eliminates the "race not found" delay on page load
   let activeRaceId: number | null = null;
+  let initialRace: Race | null = null;
+  
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const response = await fetch(`${baseUrl}/api/game-state?gameId=${gameId}`);
@@ -109,20 +112,51 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     // Continue with null - component will handle gracefully
   }
   
+  // Fetch full race data server-side for SEO and immediate rendering
+  // This eliminates the "Race not found" flicker on initial page load
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    
+    // If a specific race ID is provided, fetch that race
+    // Otherwise, fetch the active race for the game
+    const targetRaceId = id ? parseInt(String(id)) : activeRaceId;
+    
+    if (targetRaceId) {
+      const raceResponse = await fetch(
+        `${baseUrl}/api/races?id=${targetRaceId}&includeAthletes=true`
+      );
+      
+      if (raceResponse.ok) {
+        const raceData = await raceResponse.json();
+        
+        // API returns single object when id is specified
+        if (raceData && typeof raceData === 'object' && !Array.isArray(raceData)) {
+          initialRace = raceData;
+        } else if (Array.isArray(raceData) && raceData.length > 0) {
+          initialRace = raceData[0];
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Race SSR] Failed to fetch race data:', err);
+    // Continue with null - component will handle gracefully
+  }
+  
   return {
     props: {
       raceId: id ? String(id) : null,
       initialGameId: gameId, // Pass to component for initialization
       initialActiveRaceId: activeRaceId, // Pass activeRaceId from SSR
+      initialRace, // Pass full race data from SSR for immediate rendering
     },
   };
 }
 
-export default function RacePage({ raceId, initialGameId, initialActiveRaceId }: RacePageProps) {
+export default function RacePage({ raceId, initialGameId, initialActiveRaceId, initialRace }: RacePageProps) {
   const router = useRouter();
   const { gameState, setGameState } = useGameState();
-  const [race, setRace] = useState<Race | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [race, setRace] = useState<Race | null>(initialRace); // Initialize with SSR data
+  const [loading, setLoading] = useState(!initialRace); // Only show loading if SSR didn't provide data
   const [error, setError] = useState<string | null>(null);
   const [selectedAthleteId, setSelectedAthleteId] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -208,6 +242,18 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
         // Use SSR-provided activeRaceId first (immediate, no wait!)
         // Falls back to gameState if SSR didn't provide it
         const activeRaceId = initialActiveRaceId || gameState.activeRaceId;
+        
+        // OPTIMIZATION: Use SSR data immediately if available and unchanged
+        // Skip fetch if:
+        // 1. We have SSR race data (initialRace)
+        // 2. No specific race ID requested (raceId)
+        // 3. The game hasn't changed (gameState.gameId matches initialGameId)
+        const gameChanged = gameState.gameId && gameState.gameId !== initialGameId;
+        if (initialRace && !gameChanged && race === initialRace) {
+          console.log('[Race Page] Using SSR race data (no fetch needed)');
+          setLoading(false);
+          return;
+        }
         
         console.log('[Race Page] gameState.activeRaceId:', gameState.activeRaceId);
         console.log('[Race Page] initialActiveRaceId (SSR):', initialActiveRaceId);
@@ -336,6 +382,24 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId }:
       <Head>
         <title>{race.name} | Marathon Majors Fantasy League</title>
         <meta name="description" content={race.description || `${race.name} - ${race.location}`} />
+        
+        {/* Open Graph Meta Tags for Facebook/LinkedIn */}
+        <meta property="og:title" content={`${race.name} | Marathon Majors Fantasy League`} />
+        <meta property="og:description" content={race.description || `${race.name} - ${race.location}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`https://marathonmajorsfantasy.com/race`} />
+        {(race.backgroundImageUrl || race.logoUrl) && (
+          <meta property="og:image" content={race.backgroundImageUrl || race.logoUrl || ''} />
+        )}
+        <meta property="og:site_name" content="Marathon Majors Fantasy League" />
+        
+        {/* Twitter Card Meta Tags */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${race.name} | Marathon Majors Fantasy League`} />
+        <meta name="twitter:description" content={race.description || `${race.name} - ${race.location}`} />
+        {(race.backgroundImageUrl || race.logoUrl) && (
+          <meta name="twitter:image" content={race.backgroundImageUrl || race.logoUrl || ''} />
+        )}
       </Head>
 
       <Box minHeight="100vh" position="relative" zIndex={1}>
