@@ -153,6 +153,16 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 }
 
 export default function RacePage({ raceId, initialGameId, initialActiveRaceId, initialRace }: RacePageProps) {
+  // DEBUG: Log props at component entry
+  console.log('[Race Page] Component mounted with props:', {
+    raceId,
+    raceIdType: typeof raceId,
+    initialGameId,
+    initialActiveRaceId,
+    hasInitialRace: !!initialRace,
+    initialRaceId: initialRace?.id
+  });
+  
   const router = useRouter();
   const { gameState, setGameState } = useGameState();
   const [race, setRace] = useState<Race | null>(initialRace); // Initialize with SSR data
@@ -197,12 +207,26 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
   // Load race details when dependencies change - uses SSR-provided activeRaceId
   // BUT: Skip initial load if we already have SSR data
   useEffect(() => {
+    // DEBUG: Log all values to understand guard failure
+    console.log('[Race Page DEBUG] ==================');
+    console.log('[Race Page DEBUG] useEffect triggered');
+    console.log('[Race Page DEBUG] hasLoadedRace:', hasLoadedRace);
+    console.log('[Race Page DEBUG] initialRace exists:', !!initialRace);
+    console.log('[Race Page DEBUG] initialRace?.id:', initialRace?.id);
+    console.log('[Race Page DEBUG] raceId prop:', raceId);
+    console.log('[Race Page DEBUG] raceId type:', typeof raceId);
+    console.log('[Race Page DEBUG] !raceId:', !raceId);
+    console.log('[Race Page DEBUG] raceId === initialRace?.id?.toString():', raceId === initialRace?.id?.toString());
+    console.log('[Race Page DEBUG] Guard evaluation:', hasLoadedRace && initialRace && (!raceId || raceId === initialRace.id.toString()));
+    console.log('[Race Page DEBUG] ==================');
+    
     // Skip if we already loaded race from SSR and the requested raceId matches what we have
     if (hasLoadedRace && initialRace && (!raceId || raceId === initialRace.id.toString())) {
-      console.log('[Race Page] Skipping loadRaceDetails - using SSR data');
+      console.log('[Race Page] ✅ GUARD SUCCESS: Skipping loadRaceDetails - using SSR data');
       return;
     }
     
+    console.log('[Race Page] ❌ GUARD FAILED: Calling loadRaceDetails');
     loadRaceDetails();
   }, [raceId, initialActiveRaceId, gameState.activeRaceId, hasLoadedRace, initialRace]);
 
