@@ -162,6 +162,7 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newsItems, setNewsItems] = useState<RaceNews[]>([]);
   const [loadingNews, setLoadingNews] = useState(false);
+  const [hasLoadedRace, setHasLoadedRace] = useState(!!initialRace); // Track if we've loaded race data
 
   // Initialize game state with SSR-provided activeRaceId (eliminates client-side wait)
   useEffect(() => {
@@ -194,9 +195,16 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
   }, [initialGameId, initialActiveRaceId, setGameState]);
 
   // Load race details when dependencies change - uses SSR-provided activeRaceId
+  // BUT: Skip initial load if we already have SSR data
   useEffect(() => {
+    // Skip if we already loaded race from SSR and no race-specific ID requested
+    if (hasLoadedRace && !raceId && initialRace) {
+      console.log('[Race Page] Skipping loadRaceDetails - using SSR data');
+      return;
+    }
+    
     loadRaceDetails();
-  }, [raceId, initialActiveRaceId, gameState.activeRaceId]);
+  }, [raceId, initialActiveRaceId, gameState.activeRaceId, hasLoadedRace, initialRace]);
 
   // Load race news when race is loaded
   useEffect(() => {
@@ -247,10 +255,17 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
         // Skip fetch if:
         // 1. We have SSR race data (initialRace)
         // 2. No specific race ID requested (raceId)
-        // 3. The game hasn't changed (gameState.gameId matches initialGameId)
-        const gameChanged = gameState.gameId && gameState.gameId !== initialGameId;
-        if (initialRace && !gameChanged && race === initialRace) {
+        // 3. Race hasn't been manually changed yet (hasLoadedRace check prevents re-fetch)
+        if (initialRace && hasLoadedRace && !gameState.gameId) {
           console.log('[Race Page] Using SSR race data (no fetch needed)');
+          setLoading(false);
+          return;
+        }
+        
+        // Also skip if we're still using the initial race and game hasn't changed
+        const gameChanged = gameState.gameId && gameState.gameId !== initialGameId;
+        if (initialRace && !gameChanged && race && race.id === initialRace.id) {
+          console.log('[Race Page] Race unchanged, using existing data (no fetch)');
           setLoading(false);
           return;
         }
@@ -279,8 +294,10 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
         // Handle response type - could be object or array
         if (Array.isArray(raceData) && raceData.length > 0) {
           setRace(raceData[0]);
+          setHasLoadedRace(true);
         } else if (!Array.isArray(raceData) && raceData) {
           setRace(raceData);
+          setHasLoadedRace(true);
         } else {
           setError('Race not found');
         }
