@@ -197,8 +197,8 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
   // Load race details when dependencies change - uses SSR-provided activeRaceId
   // BUT: Skip initial load if we already have SSR data
   useEffect(() => {
-    // Skip if we already loaded race from SSR and no race-specific ID requested
-    if (hasLoadedRace && !raceId && initialRace) {
+    // Skip if we already loaded race from SSR and the requested raceId matches what we have
+    if (hasLoadedRace && initialRace && (!raceId || raceId === initialRace.id.toString())) {
       console.log('[Race Page] Skipping loadRaceDetails - using SSR data');
       return;
     }
