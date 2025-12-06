@@ -455,7 +455,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
   const baseUrl = process.env.VERCEL_URL 
     ? `${protocol}://${process.env.VERCEL_URL}` 
-    : 'http://localhost:3000';
+    : `http://${context.req.headers.host}`;
 
   // Create server-side API client
   const serverApi = createServerApiClient(baseUrl);

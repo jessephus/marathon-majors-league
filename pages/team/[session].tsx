@@ -19,12 +19,11 @@ import { DEFAULT_GAME_ID } from '@/config/constants';
 import { hasActiveCommissionerSession } from '@/lib/session-manager';
 import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-helpers';
 import Footer from '@/components/Footer';
-import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
 import AthleteModal from '@/components/AthleteModal';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import { isRosterLocked, formatLockTime, getTimeUntilLock, DEFAULT_BUDGET } from '@/lib/budget-utils';
-import { Button, IconButton, Card, CardBody } from '@/components/chakra';
+import { Button, IconButton, Card, CardBody, Badge } from '@/components/chakra';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
@@ -114,6 +113,9 @@ function TeamSessionPageContent({
   // Track submission loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Track invalid athlete IDs (unconfirmed athletes)
+  const [invalidAthleteIds, setInvalidAthleteIds] = useState<Set<number>>(new Set());
+  
   // Track initial mount to prevent auto-save on page load
   const isInitialMount = useRef(true);
   
@@ -192,6 +194,40 @@ function TeamSessionPageContent({
       loadFullAthleteList();
     }
   }, [athletesData, existingRoster, fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList, gameState.athletes]);
+  
+  // Validate roster when it changes (check for unconfirmed athletes)
+  useEffect(() => {
+    const validateRoster = async () => {
+      const athleteIds = roster
+        .filter(slot => slot.athleteId !== null)
+        .map(slot => slot.athleteId!);
+      
+      if (athleteIds.length === 0) {
+        setInvalidAthleteIds(new Set());
+        return;
+      }
+      
+      try {
+        const gameId = sessionData.session?.gameId || 'default';
+        const response = await fetch(`/api/validate-roster`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ athleteIds, gameId })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setInvalidAthleteIds(new Set(data.invalidAthleteIds || []));
+        } else {
+          console.warn('[TeamSessionPageContent] Validation failed with status:', response.status);
+        }
+      } catch (error) {
+        console.error('[TeamSessionPageContent] Failed to validate roster:', error);
+      }
+    };
+    
+    validateRoster();
+  }, [roster, sessionData.session?.gameId]);
   
   // Handle entering edit mode
   const handleEnterEditMode = useCallback(async () => {
@@ -535,7 +571,14 @@ function TeamSessionPageContent({
                           />
                         </div>
                         <div className="slot-athlete-info-legacy">
-                          <div className="slot-athlete-name-legacy">{athlete.name}</div>
+                          <div className="slot-athlete-name-legacy">
+                            {athlete.name}
+                            {invalidAthleteIds.has(athlete.id) && (
+                              <Badge colorPalette="error" size="sm" ml={2}>
+                                ⚠️ Not Confirmed
+                              </Badge>
+                            )}
+                          </div>
                           <div className="slot-athlete-details-legacy">
                             {getCountryFlag(athlete.country)} {athlete.country} • {athlete.pb} • #{athlete.marathonRank || 'N/A'}
                           </div>
@@ -683,7 +726,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http';
     const baseUrl = process.env.VERCEL_URL 
       ? `${protocol}://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000';
+      : `http://${context.req.headers.host}`;
     
     // Create server-side API client with explicit baseUrl
     const serverApi = createServerApiClient(baseUrl);
