@@ -153,16 +153,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 }
 
 export default function RacePage({ raceId, initialGameId, initialActiveRaceId, initialRace }: RacePageProps) {
-  // DEBUG: Log props at component entry
-  console.log('[Race Page] Component mounted with props:', {
-    raceId,
-    raceIdType: typeof raceId,
-    initialGameId,
-    initialActiveRaceId,
-    hasInitialRace: !!initialRace,
-    initialRaceId: initialRace?.id
-  });
-  
   const router = useRouter();
   const { gameState, setGameState } = useGameState();
   const [race, setRace] = useState<Race | null>(initialRace); // Initialize with SSR data
@@ -207,26 +197,12 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
   // Load race details when dependencies change - uses SSR-provided activeRaceId
   // BUT: Skip initial load if we already have SSR data
   useEffect(() => {
-    // DEBUG: Log all values to understand guard failure
-    console.log('[Race Page DEBUG] ==================');
-    console.log('[Race Page DEBUG] useEffect triggered');
-    console.log('[Race Page DEBUG] hasLoadedRace:', hasLoadedRace);
-    console.log('[Race Page DEBUG] initialRace exists:', !!initialRace);
-    console.log('[Race Page DEBUG] initialRace?.id:', initialRace?.id);
-    console.log('[Race Page DEBUG] raceId prop:', raceId);
-    console.log('[Race Page DEBUG] raceId type:', typeof raceId);
-    console.log('[Race Page DEBUG] !raceId:', !raceId);
-    console.log('[Race Page DEBUG] raceId === initialRace?.id?.toString():', raceId === initialRace?.id?.toString());
-    console.log('[Race Page DEBUG] Guard evaluation:', hasLoadedRace && initialRace && (!raceId || raceId === initialRace.id.toString()));
-    console.log('[Race Page DEBUG] ==================');
-    
     // Skip if we already loaded race from SSR and the requested raceId matches what we have
     if (hasLoadedRace && initialRace && (!raceId || raceId === initialRace.id.toString())) {
-      console.log('[Race Page] ✅ GUARD SUCCESS: Skipping loadRaceDetails - using SSR data');
+      console.log('[Race Page] Using SSR data, skipping fetch');
       return;
     }
     
-    console.log('[Race Page] ❌ GUARD FAILED: Calling loadRaceDetails');
     loadRaceDetails();
   }, [raceId, initialActiveRaceId, gameState.activeRaceId, hasLoadedRace, initialRace]);
 
@@ -275,39 +251,20 @@ export default function RacePage({ raceId, initialGameId, initialActiveRaceId, i
         // Falls back to gameState if SSR didn't provide it
         const activeRaceId = initialActiveRaceId || gameState.activeRaceId;
         
-        // OPTIMIZATION: Use SSR data immediately if available and unchanged
-        // Skip fetch if:
-        // 1. We have SSR race data (initialRace)
-        // 2. No specific race ID requested (raceId)
-        // 3. Race hasn't been manually changed yet (hasLoadedRace check prevents re-fetch)
-        if (initialRace && hasLoadedRace && !gameState.gameId) {
-          console.log('[Race Page] Using SSR race data (no fetch needed)');
-          setLoading(false);
-          return;
-        }
-        
-        // Also skip if we're still using the initial race and game hasn't changed
+        // Skip if we're still using the initial race and game hasn't changed
         const gameChanged = gameState.gameId && gameState.gameId !== initialGameId;
         if (initialRace && !gameChanged && race && race.id === initialRace.id) {
-          console.log('[Race Page] Race unchanged, using existing data (no fetch)');
           setLoading(false);
           return;
         }
-        
-        console.log('[Race Page] gameState.activeRaceId:', gameState.activeRaceId);
-        console.log('[Race Page] initialActiveRaceId (SSR):', initialActiveRaceId);
-        console.log('[Race Page] gameState.gameId:', gameState.gameId);
         
         // Check if we have an activeRaceId
         if (activeRaceId === undefined || activeRaceId === null) {
           // No activeRaceId available (shouldn't happen with SSR, but handle gracefully)
-          console.log('[Race Page] No activeRaceId available');
           setError('Race not found');
           setLoading(false);
           return;
         }
-        
-        console.log('[Race Page] Fetching race with ID:', activeRaceId);
         
         // Fetch the game's active race with athletes
         const raceData = await apiClient.races.list({ 

@@ -682,6 +682,29 @@ def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
 
+def reset_athletes_sequence(conn):
+    """
+    Reset the athletes ID sequence to match the highest existing ID.
+    
+    This is needed when athletes are manually inserted without using the sequence,
+    which can cause "duplicate key" errors on subsequent inserts.
+    """
+    with conn.cursor() as cur:
+        # Get the current max ID
+        cur.execute("SELECT MAX(id) FROM athletes")
+        max_id = cur.fetchone()[0]
+        
+        if max_id is None:
+            print("   No existing athletes found, sequence is fine")
+            return
+        
+        # Reset the sequence to max_id + 1
+        cur.execute(f"SELECT setval('athletes_id_seq', {max_id}, true)")
+        new_val = cur.fetchone()[0]
+        
+        print(f"   ✓ Reset athletes_id_seq to {new_val} (max existing ID: {max_id})")
+
+
 def run_migration(conn):
     """
     Ensure database schema has sync tracking fields.
@@ -943,6 +966,10 @@ def sync_to_database(
     athletes_to_enrich = []  # Collect athletes that need progression data
     
     try:
+        # Reset sequence to prevent duplicate key errors from manual inserts
+        print("\n🔧 Checking athletes ID sequence...")
+        reset_athletes_sequence(conn)
+        
         print("\n💾 Applying changes to database...")
         
         # Insert new athletes and collect their IDs
