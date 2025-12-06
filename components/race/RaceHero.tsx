@@ -173,6 +173,7 @@ export function RaceHero({
       />
       <Container
         maxW="container.xl"
+        mx="auto"
         position="relative"
         zIndex={2}
         height="100%"

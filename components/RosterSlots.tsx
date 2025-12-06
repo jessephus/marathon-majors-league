@@ -34,7 +34,7 @@ interface RosterSlotsProps {
     women: Athlete[];
   };
   isLocked: boolean;
-  onSlotClick: (slotId: string, currentAthleteId: number | null) => void;
+  onSlotClick: (slotId: string, currentAthleteId: number | null, athlete: Athlete | null) => void;
   onRemoveAthlete: (slotId: string) => void;
 }
 
@@ -69,8 +69,8 @@ export default function RosterSlots({
         key={slotId}
         className={`draft-slot ${isEmpty ? 'empty' : 'filled'} ${isLocked ? 'locked' : ''}`}
         data-slot-id={slotId}
-        onClick={() => !isLocked && onSlotClick(slotId, athlete?.id || null)}
-        style={{ cursor: isLocked ? 'default' : 'pointer' }}
+        onClick={() => onSlotClick(slotId, athlete?.id || null, athlete)}
+        style={{ cursor: athlete ? 'pointer' : (isLocked ? 'default' : 'pointer') }}
       >
         <div className="slot-label">{slotId}</div>
         

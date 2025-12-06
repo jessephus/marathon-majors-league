@@ -1,0 +1,23 @@
+# Marathon Majors Fantasy League - Robots.txt
+# Generated: December 2025
+
+# Allow all search engines
+User-agent: *
+Allow: /
+
+# Disallow test pages
+Disallow: /chakra-demo
+Disallow: /debug-env
+Disallow: /test-*
+
+# Disallow API routes (no need to index)
+Disallow: /api/
+
+# Disallow commissioner dashboard (requires authentication)
+Disallow: /commissioner
+
+# Sitemap location
+Sitemap: https://marathonmajorsfantasy.com/sitemap.xml
+
+# Crawl-delay for politeness (optional)
+Crawl-delay: 1

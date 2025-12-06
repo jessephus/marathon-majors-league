@@ -21,6 +21,7 @@ import { createTeamAvatarSVG, getRunnerSvg, getCountryFlag } from '@/lib/ui-help
 import Footer from '@/components/Footer';
 import RosterSlots from '@/components/RosterSlots';
 import BudgetTracker from '@/components/BudgetTracker';
+import AthleteModal from '@/components/AthleteModal';
 import AthleteSelectionModal from '@/components/AthleteSelectionModal';
 import { isRosterLocked, formatLockTime, getTimeUntilLock, DEFAULT_BUDGET } from '@/lib/budget-utils';
 import { Button, IconButton, Card, CardBody } from '@/components/chakra';
@@ -98,6 +99,10 @@ function TeamSessionPageContent({
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedGender, setSelectedGender] = useState<'men' | 'women'>('men');
   
+  // Detail modal state (for viewing athlete details when roster is locked)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedDetailAthlete, setSelectedDetailAthlete] = useState<Athlete | null>(null);
+  
   // Track if roster has been submitted (complete roster, not auto-saved partial)
   const [hasSubmittedRoster, setHasSubmittedRoster] = useState<boolean>(isRosterComplete);
   const [isEditingRoster, setIsEditingRoster] = useState(false);
@@ -153,8 +158,8 @@ function TeamSessionPageContent({
     }
   }, [sessionData, athletesData, gameStateData, sessionToken, setSessionState, setGameState]);
 
-  // Check if roster is locked
-  const locked = isRosterLocked(gameStateData.rosterLockTime) || gameStateData.resultsFinalized;
+  // Check if roster is locked (either by time or finalized results)
+  const rosterLocked = isRosterLocked(gameStateData.rosterLockTime) || gameStateData.resultsFinalized;
   
   // Load full athlete list when entering edit mode (if not already loaded)
   const loadFullAthleteList = useCallback(async () => {
@@ -197,8 +202,29 @@ function TeamSessionPageContent({
     setIsEditingRoster(true);
   }, [fullAthletesLoaded, loadFullAthleteList]);
   
-  // Handle slot click (open athlete selection modal)
-  const handleSlotClick = useCallback(async (slotId: string, currentAthleteId: number | null) => {
+  // Handle slot click (open athlete selection modal or detail modal based on mode)
+  const handleSlotClick = useCallback(async (slotId: string, currentAthleteId: number | null, athlete: Athlete | null) => {
+    // If roster is submitted and not in edit mode, show detail modal (view mode)
+    const isViewMode = hasSubmittedRoster && !isEditingRoster;
+    
+    if (isViewMode) {
+      if (athlete) {
+        setSelectedDetailAthlete(athlete);
+        setIsDetailModalOpen(true);
+      }
+      return;
+    }
+
+    // If roster is time-locked, also only show details (no editing allowed)
+    if (rosterLocked) {
+      if (athlete) {
+        setSelectedDetailAthlete(athlete);
+        setIsDetailModalOpen(true);
+      }
+      return;
+    }
+
+    // Otherwise, open athlete selection modal for editing
     // Load full athlete list if not already loaded (for partial rosters)
     if (!fullAthletesLoaded && !loadingFullAthletes) {
       console.log('[handleSlotClick] Loading full athlete list before opening modal...');
@@ -209,10 +235,16 @@ function TeamSessionPageContent({
     setSelectedSlot(slotId);
     setSelectedGender(gender);
     setIsModalOpen(true);
-  }, [fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList]);
+  }, [fullAthletesLoaded, loadingFullAthletes, loadFullAthleteList, rosterLocked, hasSubmittedRoster, isEditingRoster]);
 
   // Handle athlete selection
   const handleAthleteSelect = useCallback((athlete: Athlete) => {
+    // Prevent athlete selection if roster is locked
+    if (rosterLocked) {
+      console.warn('[handleAthleteSelect] Roster is locked, cannot modify team');
+      return;
+    }
+    
     if (!selectedSlot) return;
     
     setRoster(prev => prev.map(slot => 
@@ -241,7 +273,7 @@ function TeamSessionPageContent({
     // 2. User is editing an already submitted roster (isEditingRoster is true)
     // 3. Roster is locked
     // 4. No session token
-    if (hasSubmittedRoster || isEditingRoster || locked || !sessionToken) {
+    if (hasSubmittedRoster || isEditingRoster || rosterLocked || !sessionToken) {
       return;
     }
 
@@ -269,7 +301,7 @@ function TeamSessionPageContent({
       console.error('Auto-save error:', error);
       // Silently fail - auto-save is a convenience feature
     }
-  }, [hasSubmittedRoster, isEditingRoster, locked, sessionToken, sessionData]);
+  }, [hasSubmittedRoster, isEditingRoster, rosterLocked, sessionToken, sessionData]);
 
   // Auto-save when roster changes (debounced)
   useEffect(() => {
@@ -409,8 +441,7 @@ function TeamSessionPageContent({
   const allFilledSlots = roster.every(slot => slot.athleteId !== null);
   
   // Determine roster editing state
-  const isRosterLocked_computed = isRosterLocked(gameStateData.rosterLockTime);
-  const isRosterEditable = !isRosterLocked_computed && (!hasSubmittedRoster || isEditingRoster);
+  const isRosterEditable = !rosterLocked && (!hasSubmittedRoster || isEditingRoster);
 
   // Format lock time display
   const lockTimeDisplay = formatLockTime(gameStateData.rosterLockTime);
@@ -457,8 +488,8 @@ function TeamSessionPageContent({
 
           {/* Roster Lock Notice */}
           {gameStateData.rosterLockTime && (
-            <div className={`roster-lock-notice ${isRosterLocked_computed ? 'locked' : 'warning'}`}>
-              {isRosterLocked_computed ? (
+            <div className={`roster-lock-notice ${rosterLocked ? 'locked' : 'warning'}`}>
+              {rosterLocked ? (
                 <>🔒 Roster locked as of {lockTimeDisplay}</>
               ) : timeUntilLock && !timeUntilLock.isPast ? (
                 <>⏰ Roster locks at {lockTimeDisplay}</>
@@ -485,8 +516,8 @@ function TeamSessionPageContent({
                 <div 
                   key={slot.slotId}
                   className={`roster-slot-legacy ${athlete ? 'filled' : 'empty'} ${!isRosterEditable ? 'locked' : ''}`}
-                  onClick={() => isRosterEditable && handleSlotClick(slot.slotId, slot.athleteId)}
-                  style={{ cursor: !isRosterEditable ? 'not-allowed' : 'pointer' }}
+                  onClick={() => handleSlotClick(slot.slotId, slot.athleteId, athlete)}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="slot-label-legacy">{slot.slotId}</div>
                   <div className="slot-content-legacy">
@@ -546,7 +577,7 @@ function TeamSessionPageContent({
             marginTop: '1rem' 
           }}>
             {/* Submit/Edit Button */}
-            {hasSubmittedRoster && !isEditingRoster && !isRosterLocked_computed ? (
+            {hasSubmittedRoster && !isEditingRoster && !rosterLocked ? (
               <Button
                 variant="outline"
                 colorPalette="navy"
@@ -564,13 +595,13 @@ function TeamSessionPageContent({
                 variant="solid"
                 colorPalette="primary"
                 size="lg"
-                disabled={!allFilledSlots || isRosterLocked_computed || isSubmitting}
+                disabled={!allFilledSlots || rosterLocked || isSubmitting}
                 isLoading={isSubmitting}
                 loadingText="Submitting team..."
                 onClick={handleSubmitRoster}
                 style={{ width: '100%' }}
               >
-                {isRosterLocked_computed ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
+                {rosterLocked ? 'Roster Locked' : allFilledSlots ? 'Submit Team' : 'Fill all slots first'}
               </Button>
             )}
 
@@ -590,6 +621,13 @@ function TeamSessionPageContent({
             <p>🔗 Session ID: {sessionToken}</p>
           </div>
         </main>
+
+        {/* Athlete Detail Modal (read-only when roster is locked) */}
+        <AthleteModal
+          isOpen={isDetailModalOpen}
+          athlete={selectedDetailAthlete}
+          onClose={() => setIsDetailModalOpen(false)}
+        />
 
         {/* Athlete Selection Modal */}
         <AthleteSelectionModal

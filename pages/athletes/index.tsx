@@ -397,7 +397,7 @@ export default function AthletesBrowsePage({ initialGameId }: AthletesBrowsePage
           zIndex={100}
           py={{ base: 2, md: 3 }}
         >
-          <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
+          <Container maxW="container.xl" px={{ base: 4, md: 6 }} mx="auto">
             {/* Responsive controls - reordered per user request */}
             <Flex 
               gap={2}
@@ -586,7 +586,7 @@ export default function AthletesBrowsePage({ initialGameId }: AthletesBrowsePage
         </Box>
 
         {/* Main Content */}
-        <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }}>
+        <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 4, md: 6 }} mx="auto">
           {/* Results Count */}
           {!loading && (
             <Text fontSize="sm" color="gray.600" mb={4}>
