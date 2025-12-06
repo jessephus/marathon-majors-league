@@ -51,6 +51,7 @@ import { Button } from '@/components/chakra/Button';
 import { NavLink } from './NavLink';
 import { MobileMenuDrawer } from '../MobileMenuDrawer';
 import { getTeamHref } from '@/lib/navigation-utils';
+import { useGameState } from '@/lib/state-provider';
 
 /**
  * Navigation item configuration
@@ -167,8 +168,91 @@ export function StickyHeader({
   className,
 }: StickyHeaderProps) {
   const router = useRouter();
+  const { gameState } = useGameState();
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [invalidRosterCount, setInvalidRosterCount] = useState(0);
+  
+  // Check roster validity on mount and when sessions update
+  useEffect(() => {
+    console.log('[StickyHeader] useEffect fired - checking roster validity');
+    
+    const checkRosterValidity = async () => {
+      try {
+        const sessionData = localStorage.getItem('marathon_fantasy_team');
+        console.log('[StickyHeader] sessionData from localStorage:', sessionData);
+        
+        if (!sessionData) {
+          console.log('[StickyHeader] No session data found, skipping validation');
+          return;
+        }
+        
+        // Parse session data if it's JSON, otherwise use as-is
+        let sessionToken = sessionData;
+        try {
+          const parsed = JSON.parse(sessionData);
+          sessionToken = parsed.token || sessionData;
+          console.log('[StickyHeader] Parsed session token:', sessionToken);
+        } catch (e) {
+          console.log('[StickyHeader] Session data is already a token string');
+        }
+        console.log('[StickyHeader] Final sessionToken:', sessionToken);
+        
+        const gameId = gameState.gameId; // Use gameId from state (includes commissioner override)
+        const url = `/api/validate-team-roster?sessionToken=${encodeURIComponent(sessionToken)}&gameId=${encodeURIComponent(gameId)}`;
+        console.log('[StickyHeader] Fetching:', url);
+        
+        const response = await fetch(url);
+        console.log('[StickyHeader] Response status:', response.status);
+        
+        if (!response.ok) {
+          console.warn('[StickyHeader] Response not OK:', response.status);
+          return; // Fail silently
+        }
+        
+        const data = await response.json();
+        console.log('[StickyHeader] Validation data:', data);
+        
+        const invalidCount = data.invalidCount || 0;
+        console.log('[StickyHeader] Setting invalidRosterCount to:', invalidCount);
+        setInvalidRosterCount(invalidCount);
+      } catch (error) {
+        console.error('[StickyHeader] Failed to validate roster:', error);
+        // Fail silently - don't break UI
+      }
+    };
+    
+    console.log('[StickyHeader] Calling checkRosterValidity on mount');
+    checkRosterValidity();
+    
+    // Listen for session updates
+    const handleSessionUpdate = () => {
+      console.log('[StickyHeader] sessionsUpdated event received');
+      checkRosterValidity();
+    };
+    window.addEventListener('sessionsUpdated', handleSessionUpdate);
+    
+    return () => {
+      console.log('[StickyHeader] Cleaning up event listener');
+      window.removeEventListener('sessionsUpdated', handleSessionUpdate);
+    };
+  }, [gameState.gameId]);
+  
+  // Handle bell icon click - navigate to team page if invalid athletes exist
+  const handleBellClick = () => {
+    console.log('[StickyHeader] Bell clicked, invalidRosterCount:', invalidRosterCount);
+    if (invalidRosterCount === 0) {
+      console.log('[StickyHeader] No invalid athletes, not navigating');
+      return;
+    }
+    
+    // Navigate to team page where user can see detailed badge indicators per athlete
+    const sessionToken = typeof window !== 'undefined' ? localStorage.getItem('marathon_fantasy_team') : null;
+    console.log('[StickyHeader] Navigating to team page with token:', sessionToken);
+    if (sessionToken) {
+      router.push(`/team/${sessionToken}`);
+    }
+  };
   
   // Handle logout
   const handleLogout = async () => {
@@ -379,22 +463,37 @@ export function StickyHeader({
         </Link>
         
         {/* Notifications Icon - Optional */}
-        {showNotifications && (
-          <Box
-            as="button"
-            aria-label="Notifications"
-            p={2}
-            borderRadius="md"
-            _hover={{ bg: 'whiteAlpha.200' }}
-            _active={{ bg: 'whiteAlpha.300' }}
-            transition="background-color 0.15s"
-            display={{ base: 'flex', md: 'none' }}
-          >
-            <BellIcon style={{ width: '20px', height: '20px' }} />
-          </Box>
-        )}
-        
-        {/* Logout Button - Desktop */}
+                {showNotifications && (
+                  <Box position="relative">
+                    <Box
+                      as="button"
+                      aria-label="Roster notifications"
+                      p={2}
+                      borderRadius="md"
+                      _hover={{ bg: 'whiteAlpha.200' }}
+                      _active={{ bg: 'whiteAlpha.300' }}
+                      transition="background-color 0.15s"
+                      display="flex" // Changed: Always visible, not mobile-only
+                      onClick={handleBellClick}
+                      cursor={invalidRosterCount > 0 ? 'pointer' : 'default'}
+                    >
+                      <BellIcon style={{ width: '20px', height: '20px' }} />
+                    </Box>
+                    {invalidRosterCount > 0 && (
+                      <Box
+                        position="absolute"
+                        top="6px"
+                        right="6px"
+                        width="10px"
+                        height="10px"
+                        bg="red.500"
+                        borderRadius="full"
+                        border="2px solid white"
+                        pointerEvents="none"
+                      />
+                    )}
+                  </Box>
+                )}        {/* Logout Button - Desktop */}
         <Button
           colorPalette="gold"
           variant="outline"

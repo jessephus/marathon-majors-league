@@ -8,7 +8,7 @@
 import React from 'react';
 import { SLOT_CONFIG } from '@/lib/budget-utils';
 import { getCountryFlag } from '@/lib/ui-helpers';
-import { IconButton } from '@/components/chakra';
+import { IconButton, Badge } from '@/components/chakra';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface Athlete {
@@ -36,6 +36,7 @@ interface RosterSlotsProps {
   isLocked: boolean;
   onSlotClick: (slotId: string, currentAthleteId: number | null, athlete: Athlete | null) => void;
   onRemoveAthlete: (slotId: string) => void;
+  invalidAthleteIds?: Set<number>;
 }
 
 export default function RosterSlots({
@@ -44,6 +45,7 @@ export default function RosterSlots({
   isLocked,
   onSlotClick,
   onRemoveAthlete,
+  invalidAthleteIds,
 }: RosterSlotsProps) {
   // Get athlete data by ID
   const getAthleteById = (athleteId: number | null): Athlete | null => {
@@ -83,7 +85,14 @@ export default function RosterSlots({
         ) : (
           <div className="slot-content filled">
             <div className="slot-athlete-info">
-              <div className="athlete-name">{athlete.name}</div>
+              <div className="athlete-name">
+                {athlete.name}
+                {invalidAthleteIds?.has(athlete.id) && (
+                  <Badge colorPalette="error" size="sm" ml={2}>
+                    ⚠️ Not Confirmed
+                  </Badge>
+                )}
+              </div>
               <div className="athlete-details">
                 <span className="athlete-country">{getCountryFlag(athlete.country)}</span>
                 <span className="athlete-pb">PB: {athlete.pb}</span>
