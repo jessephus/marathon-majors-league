@@ -46,6 +46,8 @@ export default function ResultsManagementPanel() {
   const [editedTimes, setEditedTimes] = useState<Record<number, string>>({});
   const [selectedSplit, setSelectedSplit] = useState<string>('finishTime');
   const [allAthletes, setAllAthletes] = useState<any[]>([]);
+  const [confirmedAthleteIds, setConfirmedAthleteIds] = useState<number[]>([]);
+  const [selectedGender, setSelectedGender] = useState<'men' | 'women'>('men');
   const [newRow, setNewRow] = useState<NewResultRow | null>(null);
   
   // Track if initial load is in progress to prevent duplicate fetches
@@ -71,7 +73,8 @@ export default function ResultsManagementPanel() {
     const initializeData = async () => {
       await Promise.all([
         loadResults(),
-        loadAthletes()
+        loadAthletes(),
+        loadConfirmedAthletes()
       ]);
       loadingRef.current = false;
     };
@@ -98,6 +101,31 @@ export default function ResultsManagementPanel() {
       setAllAthletes(combined);
     } catch (err) {
       console.error('Failed to load athletes:', err);
+    }
+  }
+
+  async function loadConfirmedAthletes() {
+    try {
+      // If there's no active race, clear confirmed list
+      const raceId = gameState?.activeRaceId;
+      if (!raceId) {
+        setConfirmedAthleteIds([]);
+        return;
+      }
+
+      // Request only confirmed athletes for the active race
+      const params: any = { confirmedOnly: true };
+      if (gameState?.gameId) params.gameId = gameState.gameId;
+      if (raceId) params.raceId = raceId;
+
+      const data = await apiClient.athletes.list(params);
+      const confirmed = [...(data.men || []), ...(data.women || [])];
+      const ids = confirmed.map((a: any) => a.id);
+      setConfirmedAthleteIds(ids);
+    } catch (err) {
+      console.error('Failed to load confirmed athletes for active race:', err);
+      // Fallback: empty confirmed list => caller will use allAthletes
+      setConfirmedAthleteIds([]);
     }
   }
 
@@ -229,13 +257,31 @@ export default function ResultsManagementPanel() {
       alert('Please save or cancel the current new result before adding another.');
       return;
     }
-
-    // Get athletes not already in results
+    // Build available athletes: start with those without results
     const resultAthleteIds = new Set(results.map(r => r.athleteId));
-    const availableAthletes = allAthletes.filter(a => !resultAthleteIds.has(a.id));
+    let availableAthletes = allAthletes.filter(a => !resultAthleteIds.has(a.id));
+
+    // Filter by gender selection (robust to 'men'/'women' or 'male'/'female')
+    const genderMatches = (ath: any, gender: 'men' | 'women') => {
+      if (!ath || !ath.gender) return true; // don't filter if missing
+      const g = String(ath.gender).toLowerCase();
+      if (gender === 'men') return g.startsWith('m') || g === 'men' || g === 'male';
+      return g.startsWith('w') || g === 'women' || g === 'female';
+    };
+
+    availableAthletes = availableAthletes.filter(a => genderMatches(a, selectedGender));
+
+    // If we have a confirmed-athlete list for the active race, restrict to it
+    if (confirmedAthleteIds && confirmedAthleteIds.length > 0) {
+      const confirmedSet = new Set(confirmedAthleteIds);
+      availableAthletes = availableAthletes.filter(a => confirmedSet.has(a.id));
+    }
+
+    // Sort alphabetically by name for predictable ordering
+    availableAthletes.sort((x, y) => (String(x.name || '').localeCompare(String(y.name || ''))));
 
     if (availableAthletes.length === 0) {
-      alert('All athletes already have results. Delete a result to add a different athlete.');
+      alert('No confirmed athletes available to add (or all confirmed athletes already have results) for the selected gender.');
       return;
     }
 
@@ -497,6 +543,51 @@ export default function ResultsManagementPanel() {
     }
   }
 
+  // Available athletes for new-result dropdown (confirmed for race, match gender, exclude those with results)
+  const availableAthletes = React.useMemo(() => {
+    try {
+      const confirmedSet = new Set((confirmedAthleteIds || []).map(id => Number(id)));
+      const hasConfirmed = Array.isArray(confirmedAthleteIds) && confirmedAthleteIds.length > 0;
+
+      const genderMatches = (ath: any, gender: 'men' | 'women') => {
+        const g = (ath?.gender || '').toString().toLowerCase().trim();
+        // normalize common gender tokens and match explicitly to avoid substring collisions
+        const isMale = g === 'm' || g === 'male' || g === 'man' || g === 'men';
+        const isFemale = g === 'f' || g === 'female' || g === 'woman' || g === 'women';
+        return gender === 'men' ? isMale : isFemale;
+      };
+
+      return (allAthletes || [])
+        .filter((a: any) => {
+          if (!a) return false;
+          const aid = Number(a.id);
+          if (results.find(r => Number(r.athleteId) === aid)) return false; // already has result
+          if (!genderMatches(a, selectedGender)) return false;
+          if (hasConfirmed && !confirmedSet.has(aid)) return false; // not confirmed for this race
+          return true;
+        })
+        .sort((x: any, y: any) => String(x.name || '').localeCompare(String(y.name || '')));
+    } catch (e) {
+      return [];
+    }
+  }, [allAthletes, confirmedAthleteIds, results, selectedGender]);
+
+  // Results to display in the management table, filtered by selected gender
+  const displayedResults = React.useMemo(() => {
+    try {
+      const gm = (r: AthleteResult) => {
+        const g = (r?.gender || '').toString().toLowerCase().trim();
+        const isMale = g === 'm' || g === 'male' || g === 'man' || g === 'men';
+        const isFemale = g === 'f' || g === 'female' || g === 'woman' || g === 'women';
+        return selectedGender === 'men' ? isMale : isFemale;
+      };
+
+      return (results || []).filter(r => gm(r));
+    } catch (e) {
+      return results || [];
+    }
+  }, [results, selectedGender]);
+
   if (loading) {
     return <SkeletonLoader lines={5} />;
   }
@@ -511,8 +602,8 @@ export default function ResultsManagementPanel() {
         </div>
       )}
 
-      <div className="panel-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div className="panel-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="panel-controls" style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="panel-actions" style={{ display: 'flex', gap: '0.5rem' }}>
           <Button
             variant="solid"
             colorPalette="success"
@@ -545,6 +636,30 @@ export default function ResultsManagementPanel() {
           </Button>
         </div>
 
+        <div className="gender-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="gender-toggle" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>Gender:</label>
+          <div id="gender-toggle" style={{ display: 'flex', gap: '0.25rem' }}>
+            <Button
+              size="sm"
+              variant={selectedGender === 'men' ? 'solid' : 'outline'}
+              colorPalette={selectedGender === 'men' ? 'navy' : 'navy'}
+              onClick={() => setSelectedGender('men')}
+              aria-pressed={selectedGender === 'men'}
+            >
+              Men
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedGender === 'women' ? 'solid' : 'outline'}
+              colorPalette={selectedGender === 'women' ? 'navy' : 'navy'}
+              onClick={() => setSelectedGender('women')}
+              aria-pressed={selectedGender === 'women'}
+            >
+              Women
+            </Button>
+          </div>
+        </div>
+
         <div className="split-selector" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label htmlFor="split-select" style={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>
             Show Split:
@@ -565,8 +680,8 @@ export default function ResultsManagementPanel() {
       </div>
 
       <div className="results-list">
-        {results.length === 0 && !newRow ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>No results yet. Add results to get started.</p>
+        {displayedResults.length === 0 && !newRow ? (
+          <p style={{ textAlign: 'center', color: '#666' }}>No results for the selected gender. Add results to get started.</p>
         ) : (
           <table className="results-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -601,23 +716,21 @@ export default function ResultsManagementPanel() {
                       value={newRow.athleteId.toString()}
                       onChange={(e) => {
                         const athleteId = parseInt(e.target.value);
-                        const athlete = allAthletes.find(a => a.id === athleteId);
+                        const athlete = (allAthletes || []).find(a => Number(a.id) === athleteId);
                         if (athlete) {
                           setNewRow({
                             ...newRow,
-                            athleteId: athlete.id,
+                            athleteId: Number(athlete.id),
                             athleteName: athlete.name,
                             country: athlete.country,
                             gender: athlete.gender
                           });
                         }
                       }}
-                      options={allAthletes
-                        .filter(a => !results.find(r => r.athleteId === a.id))
-                        .map(athlete => ({
-                          value: athlete.id.toString(),
-                          label: athlete.name
-                        }))}
+                      options={availableAthletes.map(athlete => ({
+                        value: String(athlete.id),
+                        label: athlete.name
+                      }))}
                       variant="outline"
                       size="sm"
                     />
@@ -660,7 +773,7 @@ export default function ResultsManagementPanel() {
               )}
 
               {/* Existing results */}
-              {results.map((result, idx) => (
+              {displayedResults.map((result, idx) => (
                 <tr key={result.athleteId} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '0.5rem', textAlign: 'center' }}>{result.position || '-'}</td>
                   <td style={{ padding: '0.5rem' }}>{result.athleteName}</td>
