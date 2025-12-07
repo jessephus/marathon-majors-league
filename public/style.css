@@ -5167,7 +5167,8 @@ footer .footer-copyright {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  overflow: hidden;
+    /* Allow badge to overflow; inner clipper handles circular masking */
+    overflow: visible;
   flex-shrink: 0;
   background: #f0f0f0;
 }

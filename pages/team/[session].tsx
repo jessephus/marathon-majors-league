@@ -644,10 +644,10 @@ function TeamSessionPageContent({
                                 style={{
                                   position: 'absolute',
                                   // keep badge inside visible area of parent
-                                  top: '2px',
-                                  right: '2px',
-                                  width: '12px',
-                                  height: '12px',
+                                  top: '-3px',
+                                  right: '-3px',
+                                  width: '15px',
+                                  height: '15px',
                                   backgroundColor: '#DC2626',
                                   borderRadius: '50%',
                                   border: '1px solid white',
