@@ -480,16 +480,24 @@ export function StickyHeader({
         flex={{ base: '0 0 auto', lg: 1 }} 
         justify="flex-end"
       >
-        {/* Notification Bell - Shows when invalid athletes detected */}
-        {showNotifications && invalidRosterCount > 0 && (
-          <Tooltip 
-            label={`${invalidRosterCount} athlete${invalidRosterCount > 1 ? 's' : ''} on your roster ${invalidRosterCount > 1 ? 'are' : 'is'} not confirmed for this race`}
+        {/* Notification Bell - bell always shows when enabled; badge only when there are alerts */}
+        {showNotifications && (
+          <Tooltip
+            label={
+              invalidRosterCount > 0
+                ? `${invalidRosterCount} athlete${invalidRosterCount > 1 ? 's' : ''} on your roster ${invalidRosterCount > 1 ? 'are' : 'is'} not confirmed for this race`
+                : 'Notifications'
+            }
             placement="bottom"
           >
-            <Box 
+            <Box
               as="button"
               position="relative"
-              aria-label={`${invalidRosterCount} invalid athlete notification`}
+              aria-label={
+                invalidRosterCount > 0
+                  ? `${invalidRosterCount} invalid athlete notification`
+                  : 'Notifications'
+              }
               p={2}
               borderRadius="md"
               _hover={{ bg: 'whiteAlpha.200' }}
@@ -503,28 +511,30 @@ export function StickyHeader({
               cursor="pointer"
             >
               <BellIcon style={{ width: '24px', height: '24px', color: 'white' }} />
-              
-              {/* Notification Badge */}
-              <Box
-                position="absolute"
-                top="4px"
-                right="4px"
-                minW="20px"
-                height="20px"
-                bg="error.600"
-                borderRadius="full"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                fontSize="xs"
-                fontWeight="bold"
-                color="white"
-                px={1}
-                border="2px solid"
-                borderColor="navy.900"
-              >
-                {invalidRosterCount}
-              </Box>
+
+              {/* Notification Badge - render only when there are invalid roster items */}
+              {invalidRosterCount > 0 && (
+                <Box
+                  position="absolute"
+                  top="0px"
+                  right="-2px"
+                  minW="20px"
+                  height="20px"
+                  bg="error.600"
+                  borderRadius="full"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  fontSize="xs"
+                  fontWeight="bold"
+                  color="white"
+                  px={1}
+                  border="2px solid"
+                  borderColor="navy.900"
+                >
+                  {invalidRosterCount}
+                </Box>
+              )}
             </Box>
           </Tooltip>
         )}
