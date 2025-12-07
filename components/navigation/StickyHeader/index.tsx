@@ -35,7 +35,8 @@
  * - Design: docs/CORE_DESIGN_GUIDELINES.md (Navigation System)
  */
 
-import { Flex, Box, HStack, VStack, Heading, Text, Image, Tooltip } from '@chakra-ui/react';
+import { Flex, Box, HStack, VStack, Heading, Text, Image } from '@chakra-ui/react';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
@@ -172,6 +173,7 @@ export function StickyHeader({
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [invalidRosterCount, setInvalidRosterCount] = useState<number>(0);
+  const [isCheckingRoster, setIsCheckingRoster] = useState(false);
   
   // Handle logout
   const handleLogout = async () => {
@@ -230,6 +232,120 @@ export function StickyHeader({
     window.addEventListener('sessionsUpdated', handleSessionUpdate);
     return () => window.removeEventListener('sessionsUpdated', handleSessionUpdate);
   }, [navItems]);
+  
+  // Check for invalid athletes in user's roster
+  useEffect(() => {
+    if (!showNotifications) return;
+
+    // Helper: attempt to read sessionToken from localStorage with retries
+    const getSessionTokenWithRetries = async (attempts = 4) => {
+      const delays = [150, 300, 600, 1200];
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const raw = localStorage.getItem('marathon_fantasy_team');
+          if (!raw) {
+            console.log(`[StickyHeader] [attempt ${i + 1}] No raw session in localStorage`);
+          } else {
+            // Log raw value for debugging on first few attempts (do not log excessively)
+            if (i === 0) console.log('[StickyHeader] raw stored session:', raw);
+            try {
+              const parsed = JSON.parse(raw);
+              // tolerate multiple token field names for robustness
+              const token = parsed?.sessionToken || parsed?.token || parsed?.session_id || parsed?.session || null;
+              if (token) return token;
+              console.log(`[StickyHeader] [attempt ${i + 1}] session object present but no token field`);
+            } catch (parseErr) {
+              console.warn('[StickyHeader] Failed to parse stored session JSON:', parseErr);
+            }
+          }
+        } catch (err) {
+          console.error('[StickyHeader] Error reading localStorage:', err);
+        }
+
+        // Wait a bit before next attempt
+        const wait = delays[i] ?? 500;
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((res) => setTimeout(res, wait));
+      }
+      return null;
+    };
+
+    const checkRosterValidity = async () => {
+      if (typeof window === 'undefined') return;
+
+      console.log('[StickyHeader] 🔔 Checking roster validity...');
+      setIsCheckingRoster(true);
+
+      try {
+        const sessionToken = await getSessionTokenWithRetries();
+        if (!sessionToken) {
+          console.log('[StickyHeader] ❌ No sessionToken available after retries');
+          setInvalidRosterCount(0);
+          return;
+        }
+
+        // Derive gameId to send to the validation API. Prefer gameState, then session object, then cookie, else 'default'
+        const deriveGameId = () => {
+          try {
+            if (gameState?.gameId) return String(gameState.gameId);
+            const raw = localStorage.getItem('marathon_fantasy_team');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed?.gameId) return String(parsed.gameId);
+              if (parsed?.game_id) return String(parsed.game_id);
+            }
+            // Cookie fallback: current_game_id (used in SSR/other parts of app)
+            const cookieMatch = document.cookie.match(/(?:^|; )current_game_id=([^;]+)/);
+            if (cookieMatch) return decodeURIComponent(cookieMatch[1]);
+          } catch (err) {
+            // ignore and fall through
+          }
+          return 'default';
+        };
+
+        const gameId = deriveGameId();
+        console.log('[StickyHeader] 📡 Calling validation API with token (masked):', `${String(sessionToken).slice(0, 6)}...`, ' gameId=', `${String(gameId).slice(0,6)}...`);
+
+        const response = await fetch(`/api/validate-team-roster?sessionToken=${encodeURIComponent(sessionToken)}&gameId=${encodeURIComponent(gameId)}`);
+        if (response.ok) {
+          const data = await response.json();
+          const invalidCount = data.invalidAthletes?.length || data.invalidCount || 0;
+          console.log('[StickyHeader] ✅ Validation response:', { invalidCount, invalidAthletes: data.invalidAthletes });
+          setInvalidRosterCount(invalidCount);
+        } else {
+          // Log more details when validation fails (404 often means session not found/inactive)
+          let body = null;
+          try { body = await response.json(); } catch (e) { /* ignore */ }
+          console.log('[StickyHeader] ⚠️ Validation failed:', response.status, body);
+          setInvalidRosterCount(0);
+        }
+      } catch (error) {
+        console.error('[StickyHeader] ❌ Failed to validate roster:', error);
+        setInvalidRosterCount(0);
+      } finally {
+        setIsCheckingRoster(false);
+      }
+    };
+
+    // Initial check on mount
+    checkRosterValidity();
+
+    // Re-check when sessions are updated
+    window.addEventListener('sessionsUpdated', checkRosterValidity);
+
+    // Re-check when navigating to team or standings pages (when roster might change)
+    const handleRouteChange = () => {
+      // Small delay to allow session updates to complete
+      setTimeout(checkRosterValidity, 500);
+    };
+
+    router.events?.on('routeChangeComplete', handleRouteChange);
+
+    return () => {
+      window.removeEventListener('sessionsUpdated', checkRosterValidity);
+      router.events?.off('routeChangeComplete', handleRouteChange);
+    };
+  }, [showNotifications, router.events]);
   
   // Track scroll position to add shadow with smooth transition
   useEffect(() => {
@@ -364,6 +480,55 @@ export function StickyHeader({
         flex={{ base: '0 0 auto', lg: 1 }} 
         justify="flex-end"
       >
+        {/* Notification Bell - Shows when invalid athletes detected */}
+        {showNotifications && invalidRosterCount > 0 && (
+          <Tooltip 
+            label={`${invalidRosterCount} athlete${invalidRosterCount > 1 ? 's' : ''} on your roster ${invalidRosterCount > 1 ? 'are' : 'is'} not confirmed for this race`}
+            placement="bottom"
+          >
+            <Box 
+              as="button"
+              position="relative"
+              aria-label={`${invalidRosterCount} invalid athlete notification`}
+              p={2}
+              borderRadius="md"
+              _hover={{ bg: 'whiteAlpha.200' }}
+              _active={{ bg: 'whiteAlpha.300' }}
+              transition="background-color 0.15s"
+              onClick={() => {
+                // Navigate to team page
+                const teamHref = getTeamHref();
+                router.push(teamHref);
+              }}
+              cursor="pointer"
+            >
+              <BellIcon style={{ width: '24px', height: '24px', color: 'white' }} />
+              
+              {/* Notification Badge */}
+              <Box
+                position="absolute"
+                top="4px"
+                right="4px"
+                minW="20px"
+                height="20px"
+                bg="error.600"
+                borderRadius="full"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                fontSize="xs"
+                fontWeight="bold"
+                color="white"
+                px={1}
+                border="2px solid"
+                borderColor="navy.900"
+              >
+                {invalidRosterCount}
+              </Box>
+            </Box>
+          </Tooltip>
+        )}
+        
         {/* Help Link - Desktop only */}
         <Link href="/help" passHref legacyBehavior>
           <Box 

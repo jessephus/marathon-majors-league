@@ -549,9 +549,31 @@ function TeamSessionPageContent({
           {/* Roster Slots - Legacy Style (No Gender Sections) */}
           <div className="roster-slots-container-legacy">
             {roster.map(slot => {
+              // Get athlete arrays from game state
+              const menAthletes = gameState.athletes?.men || athletesData.men || [];
+              const womenAthletes = gameState.athletes?.women || athletesData.women || [];
+              
               const athlete = slot.athleteId 
                 ? (slot.slotId.startsWith('M') ? menAthletes : womenAthletes).find(a => a.id === slot.athleteId)
                 : null;
+
+              // DEBUG: Log athlete ID check for invalid badges
+              if (athlete) {
+                const athleteIdNum = Number(athlete.id);
+                const isInvalidAthlete = invalidAthleteIds.has(athleteIdNum);
+
+                console.log('[DEBUG Badge Check]', {
+                  slot: slot.slotId,
+                  athleteName: athlete.name,
+                  athleteId: athlete.id,
+                  athleteIdType: typeof athlete.id,
+                  athleteIdNum,
+                  invalidAthleteIds: Array.from(invalidAthleteIds),
+                  hasMatchNumber: isInvalidAthlete,
+                  // Use numeric check to avoid Set<number>.has type errors
+                  hasMatchNumericFallback: invalidAthleteIds.has(athleteIdNum)
+                });
+              }
 
               // Get gender for fallback images
               const gender = slot.slotId.startsWith('M') ? 'men' : 'women';
@@ -570,49 +592,91 @@ function TeamSessionPageContent({
                   <div className="slot-content-legacy">
                     {athlete ? (
                       <>
-                        <div className="slot-headshot-legacy" style={{ position: 'relative' }}>
-                          <img 
-                            src={athleteHeadshotUrl}
-                            alt={athlete.name}
-                            className="slot-headshot-img-legacy"
-                            onError={(e) => {
-                              // Set fallback image on error (same as modal pattern)
-                              e.currentTarget.src = getRunnerSvg(gender);
+                        <div className="slot-headshot-legacy">
+                          {/*
+                            Keep a dedicated overflow-hidden circular container for the avatar
+                            so the image stays circular (object-fit: cover). Position the
+                            badge absolutely inside this container so it moves with the avatar.
+                          */}
+                          <div
+                            className="slot-headshot-outer-legacy"
+                            style={{
+                              // parent allows badge to overflow while we clip the img inside
+                              overflow: 'visible',
+                              borderRadius: '50%',
+                              width: '48px',
+                              height: '48px',
+                              position: 'relative',
+                              display: 'inline-block'
                             }}
-                          />
-                          {invalidAthleteIds.has(athlete.id) && (
-                            <div 
+                          >
+                            {/* inner clipper keeps the image circular while allowing the badge to sit outside */}
+                            <div
                               style={{
-                                position: 'absolute',
-                                top: '-8px',
-                                right: '-8px',
-                                width: '28px',
-                                height: '28px',
-                                backgroundColor: '#DC2626',
+                                overflow: 'hidden',
                                 borderRadius: '50%',
-                                border: '3px solid white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '18px',
-                                fontWeight: 'bold',
-                                color: 'white',
-                                zIndex: 10,
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                width: '48px',
+                                height: '48px'
                               }}
-                              title="Athlete not confirmed for this race"
                             >
-                              ❌
+                              <img
+                                src={athleteHeadshotUrl}
+                                alt={athlete.name}
+                                className="slot-headshot-img-legacy"
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  objectPosition: 'center',
+                                  display: 'block',
+                                  transform: 'translateZ(0)'
+                                }}
+                                onError={(e) => {
+                                  // Set fallback image on error (same as modal pattern)
+                                  e.currentTarget.src = getRunnerSvg(gender);
+                                }}
+                              />
                             </div>
-                          )}
+
+                            {/* Badge positioned so it remains visible (inside parent bounds) */}
+                            {(invalidAthleteIds.has(Number(athlete.id))) && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  // keep badge inside visible area of parent
+                                  top: '2px',
+                                  right: '2px',
+                                  width: '12px',
+                                  height: '12px',
+                                  backgroundColor: '#DC2626',
+                                  borderRadius: '50%',
+                                  border: '1px solid white',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  color: 'white',
+                                  zIndex: 10,
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
+                                }}
+                                title="Athlete not confirmed for this race"
+                              />
+                            )}
+                          </div>
                         </div>
                         <div className="slot-athlete-info-legacy">
                           <div className="slot-athlete-name-legacy">
                             {athlete.name}
-                            {invalidAthleteIds.has(athlete.id) && (
-                              <Badge colorPalette="error" size="sm" ml={2}>
-                                 ❌ Not Racing ❌
-                              </Badge>
+                            {invalidAthleteIds && (
+                              (() => {
+                                const isInvalid = invalidAthleteIds.has(Number(athlete.id));
+                                return isInvalid ? (
+                                  <Badge colorPalette="error" size="sm" ml={2}>
+                                    ⚠️ Not Racing
+                                  </Badge>
+                                ) : null;
+                              })()
                             )}
                           </div>
                           <div className="slot-athlete-details-legacy">
