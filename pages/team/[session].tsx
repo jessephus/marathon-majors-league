@@ -217,7 +217,18 @@ function TeamSessionPageContent({
         
         if (response.ok) {
           const data = await response.json();
-          setInvalidAthleteIds(new Set(data.invalidAthleteIds || []));
+          // API returns string IDs, convert to numbers for Set comparison
+          // The Set will be checked against athlete.id (which is a number)
+          const invalidIds: Set<number> = new Set(
+            (data.invalidAthleteIds || []).map((id: string | number) => Number(id))
+          );
+          console.log('[TeamSessionPageContent] Validation result:', {
+            invalidCount: invalidIds.size,
+            invalidIds: Array.from(invalidIds),
+            totalChecked: data.totalChecked,
+            activeRaceId: data.activeRaceId
+          });
+          setInvalidAthleteIds(invalidIds);
         } else {
           console.warn('[TeamSessionPageContent] Validation failed with status:', response.status);
         }
@@ -559,7 +570,7 @@ function TeamSessionPageContent({
                   <div className="slot-content-legacy">
                     {athlete ? (
                       <>
-                        <div className="slot-headshot-legacy">
+                        <div className="slot-headshot-legacy" style={{ position: 'relative' }}>
                           <img 
                             src={athleteHeadshotUrl}
                             alt={athlete.name}
@@ -569,13 +580,38 @@ function TeamSessionPageContent({
                               e.currentTarget.src = getRunnerSvg(gender);
                             }}
                           />
+                          {invalidAthleteIds.has(athlete.id) && (
+                            <div 
+                              style={{
+                                position: 'absolute',
+                                top: '-8px',
+                                right: '-8px',
+                                width: '28px',
+                                height: '28px',
+                                backgroundColor: '#DC2626',
+                                borderRadius: '50%',
+                                border: '3px solid white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '18px',
+                                fontWeight: 'bold',
+                                color: 'white',
+                                zIndex: 10,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                              }}
+                              title="Athlete not confirmed for this race"
+                            >
+                              ❌
+                            </div>
+                          )}
                         </div>
                         <div className="slot-athlete-info-legacy">
                           <div className="slot-athlete-name-legacy">
                             {athlete.name}
                             {invalidAthleteIds.has(athlete.id) && (
                               <Badge colorPalette="error" size="sm" ml={2}>
-                                ⚠️ Not Confirmed
+                                 ❌ Not Racing ❌
                               </Badge>
                             )}
                           </div>
