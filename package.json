@@ -1,7 +1,7 @@
 {
   "name": "marathon-majors-fantasy-league",
   "version": "2.0.0",
-  "description": "Marathon Majors Fantasy League - Daily fantasy sports for major marathons",
+  "description": "Marathon Majors Fantasy League - daily fantasy sports for major marathons",
   "type": "module",
   "main": "pages/index.js",
   "scripts": {
