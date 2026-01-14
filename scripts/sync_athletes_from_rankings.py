@@ -553,8 +553,10 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
         print(f"   Remaining athletes will be processed in subsequent runs")
         
         # Prioritize athletes that haven't been fetched recently
+        # Use datetime.min for None values to prioritize never-fetched athletes first
+        from datetime import datetime
         athletes_needing_enrichment.sort(
-            key=lambda a: existing_athletes.get(a.get('world_athletics_id'), {}).get('last_fetched_at', '1970-01-01')
+            key=lambda a: existing_athletes.get(a.get('world_athletics_id'), {}).get('last_fetched_at') or datetime.min
         )
         athletes_needing_enrichment = athletes_needing_enrichment[:MAX_ENRICHMENTS_PER_RUN]
         
