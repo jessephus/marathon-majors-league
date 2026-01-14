@@ -74,6 +74,10 @@ RANKING_URL_TEMPLATE = f"{BASE_URL}/world-rankings/marathon/{{gender}}?page={{pa
 REQUEST_TIMEOUT = 30
 DELAY_BETWEEN_REQUESTS = 2  # Be polite to the server
 DELAY_BETWEEN_PROFILES = 3  # Even more polite for profile fetches
+# Batching limit: prevent timeouts when many athletes need enrichment
+# Math: 50 athletes × 3 seconds = 150 seconds + API overhead ≈ 3-5 minutes (safe margin under 30-min timeout)
+# In case of mass updates (e.g., ranking system changes), will process over multiple runs
+MAX_ENRICHMENTS_PER_RUN = 50  # Limit enrichments to prevent timeouts (~3-5 minutes per run)
 IMAGE_TEST_TIMEOUT = 5  # Timeout for testing image URLs
 
 # ============================================================================
@@ -525,6 +529,40 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
     skipped_count = 0
     enriched_count = 0
     
+    # Detect how many athletes will need enrichment (quick scan)
+    athletes_needing_enrichment = []
+    for athlete in athletes:
+        wa_id = athlete.get('world_athletics_id')
+        existing = existing_athletes.get(wa_id)
+        
+        needs_enrichment = (
+            force_update or 
+            not existing or 
+            existing.get('world_athletics_marathon_ranking_score') != athlete.get('world_athletics_marathon_ranking_score')
+        )
+        
+        if needs_enrichment:
+            athletes_needing_enrichment.append(athlete)
+    
+    # Apply batching if too many athletes need enrichment
+    total_needing_enrichment = len(athletes_needing_enrichment)
+    if not force_update and total_needing_enrichment > MAX_ENRICHMENTS_PER_RUN:
+        print(f"\n⚠️  BATCHING ENABLED:")
+        print(f"   {total_needing_enrichment} athletes need enrichment (limit: {MAX_ENRICHMENTS_PER_RUN})")
+        print(f"   Will process oldest {MAX_ENRICHMENTS_PER_RUN} athletes this run")
+        print(f"   Remaining athletes will be processed in subsequent runs")
+        
+        # Prioritize athletes that haven't been fetched recently
+        athletes_needing_enrichment.sort(
+            key=lambda a: existing_athletes.get(a.get('world_athletics_id'), {}).get('last_fetched_at', '1970-01-01')
+        )
+        athletes_needing_enrichment = athletes_needing_enrichment[:MAX_ENRICHMENTS_PER_RUN]
+        
+        # Convert back to set for faster lookup
+        athletes_to_enrich_ids = {a.get('world_athletics_id') for a in athletes_needing_enrichment}
+    else:
+        athletes_to_enrich_ids = None  # Enrich all that need it
+    
     for i, athlete in enumerate(athletes, 1):
         print(f"\n[{i}/{len(athletes)}] Processing {athlete['name']}...")
         
@@ -536,6 +574,24 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
         # Check if we can skip enrichment (athlete exists with same score)
         wa_id = athlete.get('world_athletics_id')
         existing = existing_athletes.get(wa_id)
+        
+        # Skip if batching is active and this athlete is not in the batch
+        if athletes_to_enrich_ids is not None and wa_id not in athletes_to_enrich_ids:
+            if existing:
+                print(f"  ⏸️  Deferred to next run (batching active)")
+                # Use existing data for now
+                athlete['marathon_rank'] = existing.get('marathon_rank')
+                athlete['road_running_rank'] = existing.get('road_running_rank')
+                athlete['overall_rank'] = existing.get('overall_rank')
+                athlete['personal_best'] = existing.get('personal_best')
+                athlete['season_best'] = existing.get('season_best')
+                athlete['age'] = existing.get('age')
+                athlete['date_of_birth'] = existing.get('date_of_birth')
+                athlete['sponsor'] = existing.get('sponsor')
+                athlete['headshot_url'] = existing.get('headshot_url')
+                enriched.append(athlete)
+                skipped_count += 1
+                continue
         
         # Skip cache check if force_update is enabled
         if not force_update and existing:
@@ -600,6 +656,12 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
     print(f"   Fetched profiles: {enriched_count}")
     print(f"   Used cached data: {skipped_count}")
     print(f"   Total processed: {len(enriched)}")
+    
+    # Show batching progress if applicable
+    if athletes_to_enrich_ids is not None:
+        deferred_count = total_needing_enrichment - enriched_count
+        print(f"   Deferred to next run: {deferred_count}")
+        print(f"   Batch progress: {enriched_count}/{total_needing_enrichment} ({int(enriched_count/total_needing_enrichment*100)}%)")
     
     return enriched
 
