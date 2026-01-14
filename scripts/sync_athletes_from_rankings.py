@@ -549,15 +549,13 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
     if not force_update and total_needing_enrichment > MAX_ENRICHMENTS_PER_RUN:
         print(f"\n⚠️  BATCHING ENABLED:")
         print(f"   {total_needing_enrichment} athletes need enrichment (limit: {MAX_ENRICHMENTS_PER_RUN})")
-        print(f"   Will process oldest {MAX_ENRICHMENTS_PER_RUN} athletes this run")
+        print(f"   Will process the best ranked {MAX_ENRICHMENTS_PER_RUN} athletes this run")
         print(f"   Remaining athletes will be processed in subsequent runs")
         
-        # Prioritize athletes that haven't been fetched recently
-        # Use timezone-aware minimum datetime for None values to prioritize never-fetched athletes first
-        from datetime import datetime, timezone
-        min_datetime_utc = datetime.min.replace(tzinfo=timezone.utc)
+        # Prioritize elite athletes first (lower rank numbers = better ranking)
+        # Rank 1-10 processed before rank 100-200 to ensure top athletes stay current
         athletes_needing_enrichment.sort(
-            key=lambda a: existing_athletes.get(a.get('world_athletics_id'), {}).get('last_fetched_at') or min_datetime_utc
+            key=lambda a: a.get('rank', 999)  # Default to 999 for athletes without rank
         )
         athletes_needing_enrichment = athletes_needing_enrichment[:MAX_ENRICHMENTS_PER_RUN]
         
@@ -577,24 +575,6 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
         # Check if we can skip enrichment (athlete exists with same score)
         wa_id = athlete.get('world_athletics_id')
         existing = existing_athletes.get(wa_id)
-        
-        # Skip if batching is active and this athlete is not in the batch
-        if athletes_to_enrich_ids is not None and wa_id not in athletes_to_enrich_ids:
-            if existing:
-                print(f"  ⏸️  Deferred to next run (batching active)")
-                # Use existing data for now
-                athlete['marathon_rank'] = existing.get('marathon_rank')
-                athlete['road_running_rank'] = existing.get('road_running_rank')
-                athlete['overall_rank'] = existing.get('overall_rank')
-                athlete['personal_best'] = existing.get('personal_best')
-                athlete['season_best'] = existing.get('season_best')
-                athlete['age'] = existing.get('age')
-                athlete['date_of_birth'] = existing.get('date_of_birth')
-                athlete['sponsor'] = existing.get('sponsor')
-                athlete['headshot_url'] = existing.get('headshot_url')
-                enriched.append(athlete)
-                skipped_count += 1
-                continue
         
         # Skip cache check if force_update is enabled
         if not force_update and existing:
@@ -633,6 +613,24 @@ def enrich_athletes(athletes: List[Dict], existing_athletes: Dict[str, Dict] = N
                     # Use existing headshot URL as-is
                     athlete['headshot_url'] = existing_headshot
                 
+                enriched.append(athlete)
+                skipped_count += 1
+                continue
+        
+        # Now check if batching is active and this athlete is deferred
+        if athletes_to_enrich_ids is not None and wa_id not in athletes_to_enrich_ids:
+            if existing:
+                print(f"  ⏸️  Deferred to next run (batching limit reached)")
+                # Use existing data for now
+                athlete['marathon_rank'] = existing.get('marathon_rank')
+                athlete['road_running_rank'] = existing.get('road_running_rank')
+                athlete['overall_rank'] = existing.get('overall_rank')
+                athlete['personal_best'] = existing.get('personal_best')
+                athlete['season_best'] = existing.get('season_best')
+                athlete['age'] = existing.get('age')
+                athlete['date_of_birth'] = existing.get('date_of_birth')
+                athlete['sponsor'] = existing.get('sponsor')
+                athlete['headshot_url'] = existing.get('headshot_url')
                 enriched.append(athlete)
                 skipped_count += 1
                 continue
