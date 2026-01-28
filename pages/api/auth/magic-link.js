@@ -157,7 +157,7 @@ async function handleVerifyMagicLink(req, res) {
     
     // For verify_email purpose, mark email as verified
     if (purpose === 'verify_email') {
-      const { updateUser } = await import('../../db.js');
+      const { updateUser } = await import('../db.js');
       await updateUser(user_id, {
         email_verified: true,
         email_verified_at: new Date()

@@ -142,7 +142,7 @@ async function handleLogin(req, res) {
       }
       
       // Verify OTP code from database
-      const { verifyOTP } = await import('../../db.js');
+      const { verifyOTP } = await import('../db.js');
       const otpResult = await verifyOTP(user.id, code, method);
       
       if (!otpResult || !otpResult.valid) {
