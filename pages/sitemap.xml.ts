@@ -14,9 +14,6 @@
 import { GetServerSidePropsContext } from 'next';
 import { neon } from '@neondatabase/serverless';
 
-// Initialize Neon SQL client
-const sql = neon(process.env.DATABASE_URL);
-
 interface SitemapUrl {
   loc: string;
   lastmod: string;
@@ -39,6 +36,9 @@ ${urls.map(({ loc, lastmod, changefreq, priority }) => `  <url>
 export async function getServerSideProps({ res }: GetServerSidePropsContext) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://marathonmajorsfantasy.com';
   const today = new Date().toISOString().split('T')[0];
+  
+  // Initialize Neon SQL client at runtime (not build time)
+  const sql = process.env.DATABASE_URL ? neon(process.env.DATABASE_URL) : null;
 
   const urls: SitemapUrl[] = [
     // Static pages - High priority
@@ -79,6 +79,11 @@ export async function getServerSideProps({ res }: GetServerSidePropsContext) {
   ];
 
   try {
+    // Skip database queries if no connection available (e.g., during build)
+    if (!sql) {
+      throw new Error('Database not available');
+    }
+    
     // Fetch active races for dynamic URLs
     const races = await sql`
       SELECT id, name, date, updated_at
