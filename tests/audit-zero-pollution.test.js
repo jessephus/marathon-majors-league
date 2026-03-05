@@ -14,6 +14,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { neon } from '@neondatabase/serverless';
 
+if (!process.env.DATABASE_URL) {
+  console.log('⚠️  DATABASE_URL is not set - skipping zero pollution audit (requires database connection)');
+  process.exit(0);
+}
+
 const sql = neon(process.env.DATABASE_URL);
 
 console.log('🔍 Running Zero Pollution Audit...');
