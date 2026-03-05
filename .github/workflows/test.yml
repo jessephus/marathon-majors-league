@@ -43,6 +43,19 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      - name: Check database availability
+        id: check-db
+        run: |
+          if [ -n "$DATABASE_URL" ]; then
+            echo "db_available=true" >> $GITHUB_OUTPUT
+            echo "✅ DATABASE_URL is configured - server-dependent tests will run"
+          else
+            echo "db_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ DATABASE_URL is not configured - skipping server-dependent tests (expected for Dependabot PRs)"
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
       # State Manager Tests (no server required - uses tsx for TypeScript execution)
       - name: Run state manager unit tests
         id: test-state-unit
@@ -105,11 +118,13 @@ jobs:
         continue-on-error: true
       
       - name: Build application
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
       - name: Start server in background
+        if: steps.check-db.outputs.db_available == 'true'
         run: |
           PORT=3000 npm start > server.log 2>&1 &
           echo $! > server.pid
@@ -119,6 +134,7 @@ jobs:
           PORT: 3000
       
       - name: Wait for server to be ready
+        if: steps.check-db.outputs.db_available == 'true'
         run: |
           echo "Waiting for server to start..."
           for i in {1..60}; do
@@ -137,6 +153,7 @@ jobs:
       
       - name: Run API endpoint tests
         id: test-api
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:api
         continue-on-error: true
         env:
@@ -145,6 +162,7 @@ jobs:
       
       - name: Run database tests
         id: test-db
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:db
         continue-on-error: true
         env:
@@ -153,6 +171,7 @@ jobs:
       
       - name: Run race management tests
         id: test-race
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:race
         continue-on-error: true
         env:
@@ -161,6 +180,7 @@ jobs:
       
       - name: Run frontend integration tests
         id: test-frontend
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:frontend
         continue-on-error: true
         env:
@@ -169,6 +189,7 @@ jobs:
       
       - name: Run game flow tests
         id: test-flow
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:flow
         continue-on-error: true
         env:
@@ -177,6 +198,7 @@ jobs:
       
       - name: Run Next.js routing tests
         id: test-nextjs
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:nextjs
         continue-on-error: true
         env:
@@ -185,6 +207,7 @@ jobs:
       
       - name: Run salary cap draft tests
         id: test-salarycap
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:salarycap
         continue-on-error: true
         env:
@@ -193,6 +216,7 @@ jobs:
       
       - name: Run performance benchmarks
         id: test-performance
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:performance
         continue-on-error: true
         env:
@@ -201,6 +225,7 @@ jobs:
       
       - name: Run legacy regression tests
         id: test-legacy
+        if: steps.check-db.outputs.db_available == 'true'
         run: npm run test:legacy
         continue-on-error: true
         env:
@@ -209,6 +234,7 @@ jobs:
       
       - name: Run audit zero pollution test
         id: test-audit
+        if: steps.check-db.outputs.db_available == 'true'
         run: node tests/audit-zero-pollution.test.js
         continue-on-error: true
         env:
@@ -468,58 +494,53 @@ jobs:
             TESTS_FAILED=true
           fi
           
-          # Check each test outcome
-          if [ "${{ steps.test-api.outcome }}" != "success" ]; then
+          # Check each test outcome (server-dependent tests may be skipped when DATABASE_URL is unavailable)
+          if [ "${{ steps.test-api.outcome }}" == "failure" ]; then
             echo "❌ API endpoint tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-db.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-db.outcome }}" == "failure" ]; then
             echo "❌ Database tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-race.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-race.outcome }}" == "failure" ]; then
             echo "❌ Race management tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-frontend.outcome }}" != "success" ]; then
-            echo "❌ Race management tests failed"
-            TESTS_FAILED=true
-          fi
-          
-          if [ "${{ steps.test-frontend.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-frontend.outcome }}" == "failure" ]; then
             echo "❌ Frontend integration tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-flow.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-flow.outcome }}" == "failure" ]; then
             echo "❌ Game flow tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-nextjs.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-nextjs.outcome }}" == "failure" ]; then
             echo "❌ Next.js routing tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-salarycap.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-salarycap.outcome }}" == "failure" ]; then
             echo "❌ Salary cap draft tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-performance.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-performance.outcome }}" == "failure" ]; then
             echo "❌ Performance benchmarks failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-legacy.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-legacy.outcome }}" == "failure" ]; then
             echo "❌ Legacy regression tests failed"
             TESTS_FAILED=true
           fi
           
-          if [ "${{ steps.test-audit.outcome }}" != "success" ]; then
+          if [ "${{ steps.test-audit.outcome }}" == "failure" ]; then
             echo "❌ Audit zero pollution test failed"
             TESTS_FAILED=true
           fi
