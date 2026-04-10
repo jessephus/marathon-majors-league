@@ -353,7 +353,7 @@ export default function Footer({
       </div>
       
       {showCopyright && (
-        <p className="footer-copyright">Marathon Majors League &copy; 2025</p>
+        <p className="footer-copyright">Made by GitHub Copilot 🤖 with help from Jesse Geraci 🧘🏽‍♂️</p>
       )}
     </footer>
   );

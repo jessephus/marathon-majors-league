@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Migration script `012_add_race_news_table.sql` for news feed feature
 
 ### Changed
+- **Footer Attribution Copy** (April 10, 2026)
+  - Replaced the shared footer copyright notice with GitHub Copilot and Jesse Geraci attribution copy
+  - File: `components/Footer.tsx`
 - **Documentation Organization** (November 19, 2025)
   - Cleaned up docs folder by removing 6 temporary PROCESS documents (1,717 lines)
   - Removed completed summaries: PROCESS_CLEANUP_SUMMARY, PROCESS_CONSOLIDATION_PLAN, PROCESS_DRAFT_FEATURE_EXTRACTION, PROCESS_EDITABLE_WA_ID_FEATURE, PROCESS_MONOLITH_CLEANUP_SUMMARY, PROCESS_UTILITY_EXTRACTION
